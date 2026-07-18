@@ -13,8 +13,6 @@ from scripts.validation.claim_events.finite_source_unit.contracts import (
 _PRE_REGISTERED_REPEAT_INDICES = frozenset({1, 2, 3})
 _BASE_PROVIDER_CALL_COUNT = 2
 _MAX_SCHEMA_RETRY_COUNT = 1
-_SEALED_EVENT_COUNT = 2
-_SEALED_LINK_COUNT = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,8 +32,11 @@ class NestedHoldoutGateInputs:
     verification_decision_count: int
     entailed_candidate_count: int
     trusted_candidate_count: int
+    review_only_candidate_count: int
+    rejected_candidate_count: int
     acceptable_projection_count: int
     fully_recovered_projection_count: int
+    minimum_acceptable_projection_link_count: int
     observed_binding_rejection_count: int
     binding_rejection_count: int
     schema_retry_count: int
@@ -67,8 +68,8 @@ def nested_holdout_gate_requirements(
     return {
         "repeat_index_pre_registered": inputs.repeat_index in _PRE_REGISTERED_REPEAT_INDICES,
         "sealed_graph_shape_verified": (
-            inputs.hidden_expert_event_count == _SEALED_EVENT_COUNT
-            and inputs.hidden_expert_link_count == _SEALED_LINK_COUNT
+            inputs.hidden_expert_event_count > 0
+            and inputs.hidden_expert_link_count >= 0
         ),
         "agent_execution_complete": inputs.agent_execution_complete,
         "expected_category_is_scientific": (
@@ -92,7 +93,11 @@ def nested_holdout_gate_requirements(
             and inputs.verification_decision_count == candidate_count
         ),
         "all_candidates_source_entailed": inputs.entailed_candidate_count == candidate_count,
-        "all_candidates_structure_trusted": inputs.trusted_candidate_count == candidate_count,
+        "rejected_candidate_zero": inputs.rejected_candidate_count == 0,
+        "review_only_candidates_preserved": (
+            inputs.trusted_candidate_count + inputs.review_only_candidate_count
+            == candidate_count
+        ),
         "acceptable_projection_set_nonempty": inputs.acceptable_projection_count > 0,
         "complete_acceptable_projection_recovered": (
             inputs.fully_recovered_projection_count > 0
@@ -115,7 +120,10 @@ def nested_holdout_gate_requirements(
             and inputs.weak_review_attempt_count == 1
         ),
         "binding_rejection_zero": inputs.binding_rejection_count == 0,
-        "controlled_event_link_present": inputs.controlled_event_link_count > 0,
+        "required_controlled_event_links_present": (
+            inputs.controlled_event_link_count
+            >= inputs.minimum_acceptable_projection_link_count
+        ),
         "controlled_event_link_ambiguity_zero": (
             inputs.controlled_event_link_ambiguity_count == 0
         ),

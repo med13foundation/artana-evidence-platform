@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import product
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -21,14 +22,14 @@ if TYPE_CHECKING:
         SealedProjectionSet,
     )
 
-_EXPECTED_EVENT_COUNT = 2
-_EXPECTED_LINK_COUNT = 1
-
 
 @dataclass(frozen=True, slots=True)
 class NestedEventMatchResult:
-    """Unique event identities and complete expert-link matches."""
+    """Per-event identities and complete one-to-one graph assignments."""
 
+    event_inventory_ids: tuple[tuple[str, tuple[str, ...]], ...]
+    expected_event_count: int
+    expected_link_count: int
     inner_inventory_ids: tuple[str, ...]
     outer_inventory_ids: tuple[str, ...]
     expert_link_match_count: int
@@ -37,9 +38,12 @@ class NestedEventMatchResult:
     @property
     def completely_recovered_once(self) -> bool:
         return (
-            len(self.inner_inventory_ids) == 1
-            and len(self.outer_inventory_ids) == 1
-            and self.expert_link_match_count == 1
+            len(self.event_inventory_ids) == self.expected_event_count
+            and all(
+                len(inventory_ids) == 1
+                for _, inventory_ids in self.event_inventory_ids
+            )
+            and self.expert_link_match_count == self.expected_link_count
             and self.complete_graph_match_count == 1
         )
 
@@ -69,63 +73,150 @@ def match_nested_event_graph(
     links: tuple[BoundControlledEventLink, ...],
     event_semantics: tuple[SealedEventSemantics, ...] | None = None,
 ) -> NestedEventMatchResult:
-    """Match exact source identities while allowing source-valid extra claims."""
+    """Match a complete finite projection while allowing unrelated valid claims."""
 
-    if (
-        len(expert_graph.events) != _EXPECTED_EVENT_COUNT
-        or len(expert_graph.links) != _EXPECTED_LINK_COUNT
-    ):
-        raise ValueError("nested holdout matcher requires two events and one link")
-    expert_link = expert_graph.links[0]
-    events_by_id = {event.event_id: event for event in expert_graph.events}
+    if not expert_graph.events:
+        raise ValueError("holdout matcher requires at least one projected event")
     semantics_by_id = {
         semantics.event_id: semantics for semantics in (event_semantics or ())
     }
-    inner = events_by_id[expert_link.controlled_event_id]
-    outer = events_by_id[expert_link.controller_event_id]
-    trusted_by_id = {candidate.inventory_id: candidate for candidate in trusted}
-    inner_ids = tuple(
-        candidate.inventory_id
-        for candidate in trusted
-        if _event_matches(
-            inner,
-            candidate,
-            semantics_by_id.get(inner.event_id),
-            expected_reference_argument_count=0,
+    reference_count_by_event = {
+        event.event_id: sum(
+            link.controller_event_id == event.event_id for link in expert_graph.links
         )
-    )
-    outer_ids = tuple(
-        candidate.inventory_id
-        for candidate in trusted
-        if _event_matches(
-            outer,
-            candidate,
-            semantics_by_id.get(outer.event_id),
-            expected_reference_argument_count=1,
-        )
-    )
-    matched_links = tuple(
-        link
-        for link in links
-        if link.controlled_inventory_id in inner_ids
-        and link.controller_inventory_id in outer_ids
-        and link.controller_event_role.value == expert_link.event_role
-        and _link_uses_reference_argument(
-            link=link,
-            expert=outer,
-            candidate=trusted_by_id[link.controller_inventory_id],
-        )
-    )
-    complete_pairs = {
-        (link.controller_inventory_id, link.controlled_inventory_id)
-        for link in matched_links
+        for event in expert_graph.events
     }
-    return NestedEventMatchResult(
-        inner_inventory_ids=tuple(sorted(inner_ids)),
-        outer_inventory_ids=tuple(sorted(outer_ids)),
-        expert_link_match_count=len(matched_links),
-        complete_graph_match_count=len(complete_pairs),
+    candidates_by_event = {
+        event.event_id: tuple(
+            candidate
+            for candidate in trusted
+            if _event_matches(
+                event,
+                candidate,
+                semantics_by_id.get(event.event_id),
+                expected_reference_argument_count=reference_count_by_event[event.event_id],
+            )
+        )
+        for event in expert_graph.events
+    }
+    event_ids = tuple(event.event_id for event in expert_graph.events)
+    assignments = _candidate_assignments(
+        event_ids=event_ids,
+        candidates_by_event=candidates_by_event,
     )
+    complete_assignments = tuple(
+        assignment
+        for assignment in assignments
+        if _matched_link_count(
+            assignment=assignment,
+            graph=expert_graph,
+            links=links,
+        )
+        == len(expert_graph.links)
+    )
+    first_link = expert_graph.links[0] if expert_graph.links else None
+    return NestedEventMatchResult(
+        event_inventory_ids=tuple(
+            (
+                event_id,
+                tuple(
+                    sorted(
+                        candidate.inventory_id
+                        for candidate in candidates_by_event[event_id]
+                    ),
+                ),
+            )
+            for event_id in event_ids
+        ),
+        expected_event_count=len(expert_graph.events),
+        expected_link_count=len(expert_graph.links),
+        inner_inventory_ids=(
+            ()
+            if first_link is None
+            else tuple(
+                sorted(
+                    candidate.inventory_id
+                    for candidate in candidates_by_event[
+                        first_link.controlled_event_id
+                    ]
+                ),
+            )
+        ),
+        outer_inventory_ids=(
+            ()
+            if first_link is None
+            else tuple(
+                sorted(
+                    candidate.inventory_id
+                    for candidate in candidates_by_event[
+                        first_link.controller_event_id
+                    ]
+                ),
+            )
+        ),
+        expert_link_match_count=max(
+            (
+                _matched_link_count(
+                    assignment=assignment,
+                    graph=expert_graph,
+                    links=links,
+                )
+                for assignment in assignments
+            ),
+            default=0,
+        ),
+        complete_graph_match_count=len(complete_assignments),
+    )
+
+
+def _candidate_assignments(
+    *,
+    event_ids: tuple[str, ...],
+    candidates_by_event: dict[str, tuple[BoundClaimInventoryItem, ...]],
+) -> tuple[dict[str, BoundClaimInventoryItem], ...]:
+    candidate_groups = tuple(candidates_by_event[event_id] for event_id in event_ids)
+    if any(not group for group in candidate_groups):
+        return ()
+    assignments: list[dict[str, BoundClaimInventoryItem]] = []
+    for combination in product(*candidate_groups):
+        inventory_ids = tuple(candidate.inventory_id for candidate in combination)
+        if len(set(inventory_ids)) != len(inventory_ids):
+            continue
+        assignments.append(dict(zip(event_ids, combination, strict=True)))
+    return tuple(assignments)
+
+
+def _matched_link_count(
+    *,
+    assignment: dict[str, BoundClaimInventoryItem],
+    graph: SealedNestedEventGraph,
+    links: tuple[BoundControlledEventLink, ...],
+) -> int:
+    events_by_id = {event.event_id: event for event in graph.events}
+    matched_count = 0
+    for expected in graph.links:
+        controller = assignment[expected.controller_event_id]
+        controlled = assignment[expected.controlled_event_id]
+        matching_links = tuple(
+            link
+            for link in links
+            if link.controller_inventory_id == controller.inventory_id
+            and link.controlled_inventory_id == controlled.inventory_id
+            and link.controller_event_role.value == expected.event_role
+            and _link_uses_reference_argument(
+                link=link,
+                expert=events_by_id[expected.controller_event_id],
+                candidate=controller,
+                expected_reference_argument_count=sum(
+                    item.controller_event_id == expected.controller_event_id
+                    for item in graph.links
+                ),
+            )
+        )
+        if len(matching_links) != 1:
+            continue
+        matched_count += 1
+    return matched_count
 
 
 def match_projection_set(
@@ -198,8 +289,21 @@ def _direct_argument_match_indices(
     *,
     expected_reference_argument_count: int,
 ) -> tuple[int, ...] | None:
-    if len(candidate.bound_arguments) != (
-        len(expert.arguments) + expected_reference_argument_count
+    actual_reference_argument_count = len(candidate.bound_arguments) - len(
+        expert.arguments,
+    )
+    if (
+        actual_reference_argument_count < 0
+        or (
+            expected_reference_argument_count == 0
+            and actual_reference_argument_count != 0
+        )
+        or (
+            expected_reference_argument_count > 0
+            and not 1
+            <= actual_reference_argument_count
+            <= expected_reference_argument_count
+        )
     ):
         return None
     matched_indices: list[int] = []
@@ -222,11 +326,12 @@ def _link_uses_reference_argument(
     link: BoundControlledEventLink,
     expert: SealedEvent,
     candidate: BoundClaimInventoryItem,
+    expected_reference_argument_count: int,
 ) -> bool:
     direct_indices = _direct_argument_match_indices(
         expert,
         candidate,
-        expected_reference_argument_count=1,
+        expected_reference_argument_count=expected_reference_argument_count,
     )
     return (
         direct_indices is not None

@@ -45,8 +45,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v14"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v13"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v15"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v14"
 _BINDING_REPAIR_PROMPT_VERSION = "tg04.finite_source_unit.binding_repair.v2"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
@@ -468,6 +468,11 @@ CAUSAL EVENT AND ENTITY SEMANTICS:
 - For a coordinated claim with a shared argument, exact_span must be one
   contiguous verbatim source span covering the shared argument, cue, and theme.
   Never insert "..." or omit intervening source words.
+- For a statistically nonsignificant increase, decrease, or regulation, preserve
+  the tested directional event_type and use NULL_RESULT polarity. Use NO_EFFECT
+  only when the source states no effect and no more specific tested relationship
+  is explicit. Preserve every coordinated outcome and source-explicit population
+  or biological context as typed arguments.
 
 prompt_version: {_EXTRACTION_PROMPT_VERSION}
 
@@ -564,6 +569,10 @@ For every candidate, independently return these additional categorical findings:
   argument type; ABSTAIN only when a categorical judgment is unresolved.
   Specifically, INSUFFICIENT must use REJECT, never REVIEW_ONLY; REVIEW_ONLY
   requires ENTAILED plus a non-invalid structural trust blocker.
+- A statistically nonsignificant directional result keeps its tested event type
+  with NULL_RESULT polarity; NO_EFFECT is valid only when no more specific tested
+  relationship is explicit. Every coordinated outcome and source-explicit
+  population or biological context must remain structurally represented.
 
 prompt_version: {_VERIFICATION_PROMPT_VERSION}
 

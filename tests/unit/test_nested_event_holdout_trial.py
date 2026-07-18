@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import os
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
 from artana_evidence_api.document_extraction_support.claim_frames import (
+    BoundControlledEventLink,
     ClaimEventRole,
     ClaimInventoryItem,
     ClaimKind,
@@ -43,6 +45,7 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sec
     select_second_nested_event_holdout,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.selection import (
+    CompleteGraphSelectionProfile,
     ProjectionProvenance,
     SealedArgument,
     SealedEvent,
@@ -52,11 +55,17 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sel
     SealedProjectionSet,
     SealedTrigger,
     canonical_projection_set,
+    enumerate_complete_event_graph_candidates,
     select_nested_event_holdout,
     validate_sealed_projection_set,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.third_selection import (
     select_third_nested_event_holdout,
+)
+from scripts.validation.claim_events.finite_source_unit.service import (
+    _binding_repair_prompt,
+    _extraction_prompt,
+    _verification_prompt,
 )
 from scripts.validation.claim_events.finite_source_unit.source_units import (
     FrozenSourceUnit,
@@ -67,6 +76,17 @@ _SOURCE = (
     "factors synergize to resist this repression."
 )
 _SOURCE_OFFSET = 770
+_NULL_SOURCE = (
+    "However, we did not observe any significant changes in the level of "
+    "phospho-STAT3 or phospho-p38 upon BMP-6 treatment of B cells (data not shown)."
+)
+_NULL_SOURCE_OFFSET = 1022
+_MULTI_LINK_SOURCE = (
+    "Thus, although CD3, CD28, and CD2 activate many of the same signaling "
+    "molecules, they differed in their capacity to induce the tyrosine "
+    "phosphorylation of HSI."
+)
+_MULTI_LINK_SOURCE_OFFSET = 1593
 
 
 def _argument(role: str, event_role: str, exact_span: str) -> dict[str, object]:
@@ -188,6 +208,178 @@ def _frozen_test_unit() -> FrozenSourceUnit:
     )
 
 
+def _null_result_inventory(*, split_events: bool = True):
+    def item(themes: tuple[str, ...]) -> ClaimInventoryItem:
+        return ClaimInventoryItem.model_validate(
+            {
+                "exact_span": _NULL_SOURCE,
+                "relation_cue_span": "changes",
+                "arguments": [
+                    _argument("GENE_OR_PROTEIN", "CAUSE", "BMP-6"),
+                    *(
+                        _argument("BIOMARKER", "THEME", theme)
+                        for theme in themes
+                    ),
+                    _argument("POPULATION", "CONTEXT", "B cells"),
+                ],
+                "source_locator": "normalized_extraction_text",
+                "claim_kind": "SCIENTIFIC_FINDING",
+                "event_type": "REGULATION",
+                "polarity": "NULL_RESULT",
+                "epistemic_status": "ASSERTED",
+                "inventory_rationale": "The source reports a null regulation result.",
+            },
+        )
+
+    items = (
+        (item(("phospho-STAT3",)), item(("phospho-p38",)))
+        if split_events
+        else (item(("phospho-STAT3", "phospho-p38")),)
+    )
+    return bind_claim_inventory(
+        items,
+        source_text=_NULL_SOURCE,
+        source_sha256=hashlib.sha256(_NULL_SOURCE.encode()).hexdigest(),
+        chunk_index=9,
+        source_start_offset=_NULL_SOURCE_OFFSET,
+    )
+
+
+def _null_result_graph(*, split_events: bool = True) -> SealedNestedEventGraph:
+    stat3 = SealedArgument(
+        "THEME",
+        "T14",
+        "BIOMARKER",
+        "phospho-STAT3",
+        1090,
+        1103,
+    )
+    p38 = SealedArgument(
+        "THEME",
+        "T15",
+        "BIOMARKER",
+        "phospho-p38",
+        1107,
+        1118,
+    )
+    themes = ((stat3,), (p38,)) if split_events else ((stat3, p38),)
+    events = tuple(
+        SealedEvent(
+            event_id=f"SOURCE-NULL-{index}",
+            event_type="REGULATION",
+            trigger=SealedTrigger("changes", 1066, 1073),
+            arguments=(
+                SealedArgument(
+                    "CAUSE",
+                    "T16",
+                    "GENE_OR_PROTEIN",
+                    "BMP-6",
+                    1124,
+                    1129,
+                ),
+                *event_themes,
+                SealedArgument(
+                    "CONTEXT",
+                    "SOURCE-POPULATION",
+                    "POPULATION",
+                    "B cells",
+                    1143,
+                    1150,
+                ),
+            ),
+        )
+        for index, event_themes in enumerate(themes, start=1)
+    )
+    return SealedNestedEventGraph(events=events, links=())
+
+
+def _multi_link_inventory():
+    inner = _item(
+        exact_span="tyrosine phosphorylation of HSI",
+        cue="phosphorylation",
+        event_type="PHOSPHORYLATION",
+        arguments=[
+            _argument("OTHER_ENTITY", "SITE", "tyrosine"),
+            _argument("GENE_OR_PROTEIN", "THEME", "HSI"),
+        ],
+    )
+    process = _argument(
+        "BIOLOGICAL_PROCESS",
+        "THEME",
+        "tyrosine phosphorylation of HSI",
+    )
+    cd28 = _item(
+        exact_span=_MULTI_LINK_SOURCE,
+        cue="induce",
+        event_type="POSITIVE_REGULATION",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "CAUSE", "CD28"),
+            process,
+        ],
+    )
+    cd2_argument = _argument("GENE_OR_PROTEIN", "CAUSE", "CD2")
+    cd2_argument["mention_anchors"] = [
+        {
+            "mention_span": "CD2",
+            "left_context": "and ",
+            "right_context": " activate",
+        },
+    ]
+    cd2 = _item(
+        exact_span=_MULTI_LINK_SOURCE,
+        cue="induce",
+        event_type="POSITIVE_REGULATION",
+        arguments=[cd2_argument, process],
+    )
+    return bind_claim_inventory(
+        (cd28, cd2, inner),
+        source_text=_MULTI_LINK_SOURCE,
+        source_sha256=hashlib.sha256(_MULTI_LINK_SOURCE.encode()).hexdigest(),
+        chunk_index=9,
+        source_start_offset=_MULTI_LINK_SOURCE_OFFSET,
+    )
+
+
+def _multi_link_graph() -> SealedNestedEventGraph:
+    inner = SealedEvent(
+        event_id="E43",
+        event_type="PHOSPHORYLATION",
+        trigger=SealedTrigger("phosphorylation", 1729, 1744),
+        arguments=(
+            SealedArgument("SITE", "T63", "OTHER_ENTITY", "tyrosine", 1720, 1728),
+            SealedArgument("THEME", "T32", "GENE_OR_PROTEIN", "HSI", 1748, 1751),
+        ),
+    )
+    outers = tuple(
+        SealedEvent(
+            event_id=event_id,
+            event_type="POSITIVE_REGULATION",
+            trigger=SealedTrigger("induce", 1709, 1715),
+            arguments=(
+                SealedArgument(
+                    "CAUSE",
+                    reference_id,
+                    "GENE_OR_PROTEIN",
+                    span,
+                    start,
+                    start + len(span),
+                ),
+            ),
+        )
+        for event_id, reference_id, span, start in (
+            ("E41", "T30", "CD28", 1613),
+            ("E42", "T31", "CD2", 1623),
+        )
+    )
+    return SealedNestedEventGraph(
+        events=(*outers, inner),
+        links=(
+            SealedEventLink("E41", "THEME", "E43"),
+            SealedEventLink("E42", "THEME", "E43"),
+        ),
+    )
+
+
 def _alternative_sealed_graph() -> SealedNestedEventGraph:
     graph = _sealed_graph()
     ets_start = _SOURCE_OFFSET + _SOURCE.index("Ets")
@@ -225,8 +417,11 @@ def _baseline_gate() -> NestedHoldoutGateInputs:
         verification_decision_count=2,
         entailed_candidate_count=2,
         trusted_candidate_count=2,
+        review_only_candidate_count=0,
+        rejected_candidate_count=0,
         acceptable_projection_count=1,
         fully_recovered_projection_count=1,
+        minimum_acceptable_projection_link_count=1,
         observed_binding_rejection_count=0,
         binding_rejection_count=0,
         schema_retry_count=0,
@@ -305,6 +500,100 @@ def test_projection_set_requires_one_complete_projection_without_partial_credit(
     assert partial.fully_recovered_projection_ids == ()
     assert partial.projections[0].match.inner_inventory_ids
     assert partial.projections[0].match.outer_inventory_ids == ()
+
+
+@pytest.mark.parametrize("split_events", [True, False])
+def test_projection_matcher_accepts_complete_zero_link_event_shapes(
+    split_events: bool,
+) -> None:
+    trusted = _null_result_inventory(split_events=split_events)
+
+    result = match_nested_event_graph(
+        expert_graph=_null_result_graph(split_events=split_events),
+        trusted=trusted,
+        links=(),
+    )
+
+    assert result.completely_recovered_once is True
+    assert result.expected_link_count == 0
+    assert result.expert_link_match_count == 0
+    assert result.complete_graph_match_count == 1
+
+
+def test_projection_matcher_requires_every_link_in_a_three_event_graph() -> None:
+    trusted = _multi_link_inventory()
+    link_result = link_controlled_events(trusted)
+    assert link_result.ambiguities == ()
+    assert len(link_result.links) == 2
+
+    complete = match_nested_event_graph(
+        expert_graph=_multi_link_graph(),
+        trusted=trusted,
+        links=link_result.links,
+    )
+    incomplete = match_nested_event_graph(
+        expert_graph=_multi_link_graph(),
+        trusted=trusted,
+        links=link_result.links[:1],
+    )
+
+    assert complete.completely_recovered_once is True
+    assert complete.expected_event_count == 3
+    assert complete.expected_link_count == 2
+    assert incomplete.completely_recovered_once is False
+    assert incomplete.expert_link_match_count == 1
+
+
+def test_projection_matcher_allows_one_reference_argument_for_multiple_siblings() -> None:
+    trusted = _multi_link_inventory()
+    cd28, cd2, phosphorylation = trusted
+    base_graph = _multi_link_graph()
+    shared_reference_graph = replace(
+        base_graph,
+        links=(
+            SealedEventLink("E41", "THEME", "E42"),
+            SealedEventLink("E41", "THEME", "E43"),
+            SealedEventLink("E42", "THEME", "E43"),
+        ),
+    )
+    links = (
+        BoundControlledEventLink(
+            link_id="shared-1",
+            controller_inventory_id=cd28.inventory_id,
+            controller_argument_index=1,
+            controller_event_role=ClaimEventRole.THEME,
+            controlled_inventory_id=cd2.inventory_id,
+            reference_source_start=1720,
+            reference_source_end=1751,
+        ),
+        BoundControlledEventLink(
+            link_id="shared-2",
+            controller_inventory_id=cd28.inventory_id,
+            controller_argument_index=1,
+            controller_event_role=ClaimEventRole.THEME,
+            controlled_inventory_id=phosphorylation.inventory_id,
+            reference_source_start=1720,
+            reference_source_end=1751,
+        ),
+        BoundControlledEventLink(
+            link_id="nested-3",
+            controller_inventory_id=cd2.inventory_id,
+            controller_argument_index=1,
+            controller_event_role=ClaimEventRole.THEME,
+            controlled_inventory_id=phosphorylation.inventory_id,
+            reference_source_start=1720,
+            reference_source_end=1751,
+        ),
+    )
+
+    result = match_nested_event_graph(
+        expert_graph=shared_reference_graph,
+        trusted=trusted,
+        links=links,
+    )
+
+    assert result.completely_recovered_once is True
+    assert result.expert_link_match_count == 3
 
 
 def test_projection_set_never_combines_partial_matches_across_alternatives() -> None:
@@ -555,15 +844,31 @@ def test_gate_allows_extra_claims_only_when_all_are_entailed_and_trusted() -> No
     ]
     unsafe_extra = replace(valid_extra, trusted_candidate_count=2)
     assert not nested_holdout_gate_requirements(unsafe_extra)[
-        "all_candidates_structure_trusted"
+        "review_only_candidates_preserved"
+    ]
+
+    review_only_extra = replace(
+        valid_extra,
+        trusted_candidate_count=2,
+        review_only_candidate_count=1,
+    )
+    assert all(nested_holdout_gate_requirements(review_only_extra).values())
+
+    rejected_extra = replace(
+        review_only_extra,
+        review_only_candidate_count=0,
+        rejected_candidate_count=1,
+    )
+    assert not nested_holdout_gate_requirements(rejected_extra)[
+        "rejected_candidate_zero"
     ]
 
 
 def test_gate_fails_closed_on_each_nested_identity_boundary() -> None:
     baseline = _baseline_gate()
     mutations = (
-        {"hidden_expert_event_count": 1},
-        {"hidden_expert_link_count": 0},
+        {"hidden_expert_event_count": 0},
+        {"hidden_expert_link_count": -1},
         {"expected_eligibility_category": SourceUnitEligibilityCategory.HYPOTHESIS},
         {"acceptable_projection_count": 0},
         {"fully_recovered_projection_count": 0},
@@ -612,6 +917,33 @@ def test_selection_recomputes_frozen_holdout_when_corpus_is_available() -> None:
     assert selection.candidate_unit_count == 16
     assert len(selection.expert_graph.events) == 2
     assert len(selection.expert_graph.links) == 1
+
+
+def test_complete_graph_null_profile_is_corpus_categorical_and_nonempty() -> None:
+    corpus = os.getenv("ARTANA_TG04_BIONLP_CORPUS_ROOT")
+    if corpus is None:
+        pytest.skip("set ARTANA_TG04_BIONLP_CORPUS_ROOT for corpus-integrity test")
+
+    universe = enumerate_complete_event_graph_candidates(
+        corpus_root=Path(corpus),
+        selection_seed="profile-contract-only",
+        profile=CompleteGraphSelectionProfile.NEGATED_RESULT_GRAPH,
+    )
+
+    assert universe.candidates
+    for candidate in universe.candidates:
+        local_ids = {event.event_id for event in candidate.local_events}
+        controlled_ids = {
+            argument.reference_id
+            for event in candidate.local_events
+            for argument in event.arguments
+            if argument.reference_id in local_ids
+        }
+        assert any(
+            modifier.modifier_type == "Negation"
+            and modifier.event_id in local_ids - controlled_ids
+            for modifier in candidate.document.modifiers
+        )
 
 
 def test_verified_archive_is_the_only_live_corpus_input() -> None:
@@ -709,6 +1041,29 @@ def test_third_selection_freezes_projection_set_before_execution() -> None:
     assert selection.expected_eligibility_category is (
         SourceUnitEligibilityCategory.MIXED_SCIENTIFIC
     )
+
+
+def test_agent_prompt_interfaces_cannot_receive_hidden_projection_data() -> None:
+    unit = FrozenSourceUnit(
+        unit_id="source-unit-prompt-blindness",
+        index=9,
+        source_start=_NULL_SOURCE_OFFSET,
+        source_end=_NULL_SOURCE_OFFSET + len(_NULL_SOURCE),
+        text=_NULL_SOURCE,
+        source_sha256=hashlib.sha256(_NULL_SOURCE.encode()).hexdigest(),
+    )
+    secret = "sealed-projection-secret-that-must-not-leak"
+    agent_inputs = (
+        _extraction_prompt(unit),
+        _verification_prompt(unit=unit, candidates=_null_result_inventory()),
+    )
+    for prompt_builder in (
+        _extraction_prompt,
+        _verification_prompt,
+        _binding_repair_prompt,
+    ):
+        assert "projection" not in inspect.signature(prompt_builder).parameters
+    assert all(secret not in prompt for prompt in agent_inputs)
 
 
 def test_nested_holdout_cli_exit_status_follows_gate() -> None:

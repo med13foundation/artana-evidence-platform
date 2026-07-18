@@ -41,8 +41,6 @@ _EXPECTED_INCOMPATIBLE_DOCUMENT_IDS: Final = (
 )
 _EXPECTED_ELIGIBLE_UNIT_COUNT: Final = 16
 _MINIMUM_INNER_DIRECT_ARGUMENTS: Final = 2
-_NESTED_PROJECTION_EVENT_COUNT: Final = 2
-_NESTED_PROJECTION_LINK_COUNT: Final = 1
 _EXPECTED_SELECTION_RANK: Final = (
     "0757a19258cb5e142ad2b9828c6ee0ed9755767ab90ddbad972c75867d3577af"
 )
@@ -139,6 +137,13 @@ class ProjectionProvenance(StrEnum):
     SOURCE_VALID_ALTERNATIVE = "SOURCE_VALID_ALTERNATIVE"
 
 
+class CompleteGraphSelectionProfile(StrEnum):
+    """Corpus-authored categorical filter applied before content-blind ranking."""
+
+    ANY_CLOSED_GRAPH = "ANY_CLOSED_GRAPH"
+    NEGATED_RESULT_GRAPH = "NEGATED_RESULT_GRAPH"
+
+
 @dataclass(frozen=True, slots=True)
 class SealedEventSemantics:
     """Source-adjudicated statement status for one projected event."""
@@ -213,6 +218,26 @@ class NestedEventCandidateUniverse:
     document_count: int
     incompatible_document_ids: tuple[str, ...]
     candidates: tuple[NestedEventCandidate, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CompleteEventGraphCandidate:
+    """One unit whose complete representable event graph is source-local."""
+
+    rank: str
+    case_id: str
+    unit: FrozenSourceUnit
+    document: StandoffDocument
+    local_events: tuple[EventAnnotation, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CompleteEventGraphCandidateUniverse:
+    """Recomputed complete-graph universe before seeded ranking."""
+
+    document_count: int
+    incompatible_document_ids: tuple[str, ...]
+    candidates: tuple[CompleteEventGraphCandidate, ...]
 
 
 def select_nested_event_holdout(
@@ -330,6 +355,138 @@ def enumerate_nested_event_candidates(
     )
 
 
+def enumerate_complete_event_graph_candidates(
+    *,
+    corpus_root: Path,
+    selection_seed: str,
+    excluded_document_ids: frozenset[str] = frozenset(),
+    profile: CompleteGraphSelectionProfile = (
+        CompleteGraphSelectionProfile.ANY_CLOSED_GRAPH
+    ),
+) -> CompleteEventGraphCandidateUniverse:
+    """Enumerate units only when every local corpus event forms one closed graph."""
+
+    if not selection_seed.strip():
+        raise ValueError("complete-event selection seed must be nonempty")
+    development_ids = frozenset(TG04_DEVELOPMENT_DOCUMENT_IDS)
+    document_ids = tuple(
+        sorted(
+            path.stem
+            for path in corpus_root.glob("*.txt")
+            if path.stem not in development_ids
+        ),
+    )
+    incompatible: list[str] = []
+    candidates: list[CompleteEventGraphCandidate] = []
+    for document_id in document_ids:
+        if document_id in excluded_document_ids:
+            continue
+        try:
+            document = load_standoff_document(corpus_root, document_id)
+        except ValueError:
+            incompatible.append(document_id)
+            continue
+        case_id = f"bionlp-ge-2011-holdout:{document_id}"
+        for unit in enumerate_source_units(case_id=case_id, source_text=document.source_text):
+            local_events = _complete_local_event_graph(document=document, unit=unit)
+            if local_events is None:
+                continue
+            if not _selection_profile_allows(
+                profile=profile,
+                document=document,
+                local_events=local_events,
+            ):
+                continue
+            rank = hashlib.sha256(
+                f"{selection_seed}:{unit.unit_id}".encode(),
+            ).hexdigest()
+            candidates.append(
+                CompleteEventGraphCandidate(
+                    rank=rank,
+                    case_id=case_id,
+                    unit=unit,
+                    document=document,
+                    local_events=local_events,
+                ),
+            )
+    return CompleteEventGraphCandidateUniverse(
+        document_count=len(document_ids),
+        incompatible_document_ids=tuple(incompatible),
+        candidates=tuple(candidates),
+    )
+
+
+def _selection_profile_allows(
+    *,
+    profile: CompleteGraphSelectionProfile,
+    document: StandoffDocument,
+    local_events: tuple[EventAnnotation, ...],
+) -> bool:
+    if profile is CompleteGraphSelectionProfile.ANY_CLOSED_GRAPH:
+        return True
+    local_event_ids = {event.event_id for event in local_events}
+    controlled_event_ids = {
+        argument.reference_id
+        for event in local_events
+        for argument in event.arguments
+        if argument.reference_id in local_event_ids
+    }
+    top_level_event_ids = local_event_ids - controlled_event_ids
+    return any(
+        modifier.modifier_type == "Negation"
+        and modifier.event_id in top_level_event_ids
+        for modifier in document.modifiers
+    )
+
+
+def _complete_local_event_graph(
+    *,
+    document: StandoffDocument,
+    unit: FrozenSourceUnit,
+) -> tuple[EventAnnotation, ...] | None:
+    """Return every local event only when all identities are closed and representable."""
+
+    local_events = tuple(
+        event
+        for event in document.events
+        if _event_trigger_is_local(document, event, unit)
+    )
+    if len(local_events) < 2:
+        return None
+    local_ids = {event.event_id for event in local_events}
+    linked_ids: set[str] = set()
+    for event in local_events:
+        if event.event_type not in _EVENT_TYPE_MAP:
+            return None
+        direct_arguments = tuple(
+            argument
+            for argument in event.arguments
+            if argument.reference_id in document.text_bounds
+        )
+        event_arguments = tuple(
+            argument
+            for argument in event.arguments
+            if argument.reference_id not in document.text_bounds
+        )
+        if not direct_arguments:
+            return None
+        if not _direct_arguments_are_local(document, direct_arguments, unit):
+            return None
+        if any(
+            document.text_bounds[argument.reference_id].annotation_type
+            not in _PARTICIPANT_TYPE_MAP
+            for argument in direct_arguments
+        ):
+            return None
+        if any(argument.reference_id not in local_ids for argument in event_arguments):
+            return None
+        for argument in event_arguments:
+            linked_ids.update((event.event_id, argument.reference_id))
+    if linked_ids != local_ids:
+        return None
+    return tuple(sorted(local_events, key=lambda event: event.event_id))
+
+
 def _eligible_nested_pairs(
     *,
     document: StandoffDocument,
@@ -418,6 +575,39 @@ def seal_nested_event_graph(candidate: NestedEventCandidate) -> SealedNestedEven
     )
 
 
+def seal_complete_event_graph(
+    candidate: CompleteEventGraphCandidate,
+) -> SealedNestedEventGraph:
+    """Seal every event and event reference in a closed source-local graph."""
+
+    local_ids = {event.event_id for event in candidate.local_events}
+    links = tuple(
+        sorted(
+            (
+                SealedEventLink(
+                    controller_event_id=event.event_id,
+                    event_role=_normalized_role(argument.role),
+                    controlled_event_id=argument.reference_id,
+                )
+                for event in candidate.local_events
+                for argument in event.arguments
+                if argument.reference_id in local_ids
+            ),
+            key=lambda link: (
+                link.controller_event_id,
+                link.event_role,
+                link.controlled_event_id,
+            ),
+        ),
+    )
+    return SealedNestedEventGraph(
+        events=tuple(
+            _seal_event(candidate.document, event) for event in candidate.local_events
+        ),
+        links=links,
+    )
+
+
 def canonical_projection_set(
     graph: SealedNestedEventGraph,
     *,
@@ -472,16 +662,16 @@ def validate_sealed_projection_set(
         for projection in projection_set.projections
         if projection.projection_id == projection_set.canonical_projection_id
     )
-    if canonical.provenance is not ProjectionProvenance.BIONLP_EXPERT:
-        raise RuntimeError("canonical projection must preserve BioNLP provenance")
-    if (
-        sum(
-            projection.provenance is ProjectionProvenance.BIONLP_EXPERT
-            for projection in projection_set.projections
-        )
-        != 1
+    bionlp_projection_count = sum(
+        projection.provenance is ProjectionProvenance.BIONLP_EXPERT
+        for projection in projection_set.projections
+    )
+    if bionlp_projection_count > 1:
+        raise RuntimeError("sealed projection set permits at most one BioNLP graph")
+    if bionlp_projection_count == 1 and (
+        canonical.provenance is not ProjectionProvenance.BIONLP_EXPERT
     ):
-        raise RuntimeError("sealed projection set requires one BioNLP expert graph")
+        raise RuntimeError("BioNLP projection must be canonical when credit-eligible")
 
     projection_hashes: set[str] = set()
     for projection in projection_set.projections:
@@ -516,11 +706,8 @@ def _validate_projection_graph(
     *,
     unit: FrozenSourceUnit,
 ) -> None:
-    if (
-        len(graph.events) != _NESTED_PROJECTION_EVENT_COUNT
-        or len(graph.links) != _NESTED_PROJECTION_LINK_COUNT
-    ):
-        raise RuntimeError("sealed nested projection requires two events and one link")
+    if not graph.events:
+        raise RuntimeError("sealed projection requires at least one event")
     event_ids = tuple(event.event_id for event in graph.events)
     if len(set(event_ids)) != len(event_ids):
         raise RuntimeError("sealed projection event IDs must be unique")
@@ -560,9 +747,12 @@ def _validate_projection_graph(
             raise RuntimeError("sealed projection event link cannot be self-referential")
         if link.event_role not in {"CAUSE", "THEME"}:
             raise RuntimeError("sealed projection event link role is unsupported")
-    link = graph.links[0]
-    if {link.controller_event_id, link.controlled_event_id} != set(event_ids):
-        raise RuntimeError("sealed projection link must connect both projected events")
+    link_identities = tuple(
+        (link.controller_event_id, link.event_role, link.controlled_event_id)
+        for link in graph.links
+    )
+    if len(set(link_identities)) != len(link_identities):
+        raise RuntimeError("sealed projection event links must be unique")
 
 
 def _require_verbatim_local_span(
@@ -644,6 +834,9 @@ def _sha256_json(value: object) -> str:
 
 
 __all__ = [
+    "CompleteGraphSelectionProfile",
+    "CompleteEventGraphCandidate",
+    "CompleteEventGraphCandidateUniverse",
     "NestedHoldoutSelection",
     "NestedEventCandidate",
     "NestedEventCandidateUniverse",
@@ -656,8 +849,10 @@ __all__ = [
     "SealedNestedEventGraph",
     "SealedProjectionSet",
     "canonical_projection_set",
+    "enumerate_complete_event_graph_candidates",
     "enumerate_nested_event_candidates",
     "seal_nested_event_graph",
+    "seal_complete_event_graph",
     "select_nested_event_holdout",
     "validate_sealed_projection_set",
 ]

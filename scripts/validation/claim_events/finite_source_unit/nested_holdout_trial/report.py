@@ -20,6 +20,9 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.mat
 from scripts.validation.claim_events.finite_source_unit.runner import (
     receipt_expectations_for_finite_source_records,
 )
+from scripts.validation.claim_events.finite_source_unit.contracts import (
+    ProjectionEligibilityDecision,
+)
 from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
     model_json,
     sha256_json,
@@ -117,9 +120,23 @@ def build_nested_holdout_report(  # noqa: PLR0913
         verification_decision_count=len(agent_run.verified),
         entailed_candidate_count=len(agent_run.entailed),
         trusted_candidate_count=len(agent_run.trusted),
+        review_only_candidate_count=sum(
+            candidate.verification.projection_eligibility
+            is ProjectionEligibilityDecision.REVIEW_ONLY
+            for candidate in agent_run.verified
+        ),
+        rejected_candidate_count=sum(
+            candidate.verification.projection_eligibility
+            is ProjectionEligibilityDecision.REJECT
+            for candidate in agent_run.verified
+        ),
         acceptable_projection_count=len(selection.projection_set.projections),
         fully_recovered_projection_count=len(
             projection_match.fully_recovered_projection_ids
+        ),
+        minimum_acceptable_projection_link_count=min(
+            len(projection.graph.links)
+            for projection in selection.projection_set.projections
         ),
         observed_binding_rejection_count=len(agent_run.observed_binding_rejections),
         binding_rejection_count=agent_run.binding_rejection_count,
@@ -231,7 +248,9 @@ def build_nested_holdout_report(  # noqa: PLR0913
             "sealed_expert_graph_was_hidden_from_agents": True,
             "sealed_projection_set_was_hidden_from_agents": True,
             "additional_source_valid_claims_are_allowed": True,
-            "all_additional_claims_must_be_entailed_and_structure_trusted": True,
+            "all_additional_claims_must_be_entailed": True,
+            "entailed_unresolved_claims_may_remain_review_only": True,
+            "rejected_additional_claims_are_allowed": False,
             "benchmark_credit_awarded": False,
             "scientific_readiness_proven": False,
             "persistence_authorized": False,
