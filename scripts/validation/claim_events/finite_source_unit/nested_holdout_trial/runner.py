@@ -15,6 +15,9 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.cor
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.report import (
     build_nested_holdout_report,
 )
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.second_selection import (
+    select_second_nested_event_holdout,
+)
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.selection import (
     NestedHoldoutSelection,
     select_nested_event_holdout,
@@ -43,6 +46,39 @@ def run_nested_event_holdout_trial(
             corpus_root=corpus_root,
             archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
         )
+    return _run_selected_trial(
+        selection=selection,
+        run_id=run_id,
+        repeat_index=repeat_index,
+    )
+
+
+def run_second_nested_event_holdout_trial(
+    *,
+    archive: Path,
+    run_id: str,
+    repeat_index: int,
+) -> dict[str, object]:
+    """Run the sealed post-remediation holdout without exposing its expert graph."""
+
+    with verified_corpus_root(archive) as corpus_root:
+        selection = select_second_nested_event_holdout(
+            corpus_root=corpus_root,
+            archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+        )
+    return _run_selected_trial(
+        selection=selection,
+        run_id=run_id,
+        repeat_index=repeat_index,
+    )
+
+
+def _run_selected_trial(
+    *,
+    selection: NestedHoldoutSelection,
+    run_id: str,
+    repeat_index: int,
+) -> dict[str, object]:
     repository_evidence = collect_repository_evidence(_REPO_ROOT)
     if repository_evidence["clean"] is not True:
         raise RuntimeError("nested holdout trial requires a clean tracked worktree")
@@ -92,4 +128,7 @@ async def _run_trial(
     )
 
 
-__all__ = ["run_nested_event_holdout_trial"]
+__all__ = [
+    "run_nested_event_holdout_trial",
+    "run_second_nested_event_holdout_trial",
+]

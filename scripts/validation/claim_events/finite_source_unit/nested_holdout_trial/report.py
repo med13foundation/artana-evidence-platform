@@ -128,21 +128,22 @@ def build_nested_holdout_report(  # noqa: PLR0913
     requirements = nested_holdout_gate_requirements(gate_inputs)
     passed = all(requirements.values())
     report: dict[str, object] = {
-        "schema_version": "tg04_nested_event_holdout.v1",
+        "schema_version": f"tg04_nested_event_holdout.v{selection.trial_generation}",
         "run_id": run_id,
         "repeat_index": repeat_index,
         "pre_registered_repeat_indices": [1, 2, 3],
         "generated_at": datetime.now(UTC).isoformat(),
         "configured_model_id": configured_model_id,
         "execution_model_id": execution_model_id,
-        "task_id": "fresh_nested_event_identity_holdout",
+        "task_id": f"fresh_nested_event_identity_holdout_v{selection.trial_generation}",
         "repository_evidence": repository_evidence,
         "freshness": {
-            "selection_seed": "4aa22b9b:nested-event-holdout",
-            "selection_rule": "lowest_sha256_eligible_unit_outside_development_panel",
+            "selection_seed": selection.selection_seed,
+            "selection_rule": selection.selection_rule,
             "selection_rank": selection.selection_rank,
+            "excluded_document_ids": selection.excluded_document_ids,
             "development_document_count": 40,
-            "holdout_document_count": selection.holdout_document_count,
+            "non_development_document_count": selection.holdout_document_count,
             "eligible_unit_count": selection.candidate_unit_count,
             "incompatible_document_ids": selection.incompatible_document_ids,
             "convenience_sample": True,

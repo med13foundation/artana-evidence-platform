@@ -50,6 +50,12 @@ _EXPECTED_EXPERT_GRAPH_SHA256: Final = (
 )
 _ARTICLE_URL: Final = "https://pubmed.ncbi.nlm.nih.gov/9233802/"
 _EVENT_TYPE_MAP: Final = {
+    "Gene_expression": "EXPRESSION",
+    "Transcription": "TRANSCRIPTION",
+    "Protein_catabolism": "DEGRADATION",
+    "Phosphorylation": "PHOSPHORYLATION",
+    "Localization": "LOCALIZATION",
+    "Binding": "BINDING",
     "Regulation": "REGULATION",
     "Positive_regulation": "POSITIVE_REGULATION",
     "Negative_regulation": "NEGATIVE_REGULATION",
@@ -118,6 +124,10 @@ class NestedHoldoutSelection:
     case_id: str
     unit: FrozenSourceUnit
     expert_graph: SealedNestedEventGraph
+    trial_generation: int
+    selection_seed: str
+    selection_rule: str
+    excluded_document_ids: tuple[str, ...]
     selection_rank: str
     candidate_unit_count: int
     holdout_document_count: int
@@ -128,12 +138,21 @@ class NestedHoldoutSelection:
 
 
 @dataclass(frozen=True, slots=True)
-class _Candidate:
+class NestedEventCandidate:
     rank: str
     case_id: str
     unit: FrozenSourceUnit
     document: StandoffDocument
     nested_pairs: tuple[tuple[EventAnnotation, EventAnnotation], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class NestedEventCandidateUniverse:
+    """Recomputed holdout universe before seeded candidate ranking."""
+
+    document_count: int
+    incompatible_document_ids: tuple[str, ...]
+    candidates: tuple[NestedEventCandidate, ...]
 
 
 def select_nested_event_holdout(
@@ -145,45 +164,19 @@ def select_nested_event_holdout(
 
     if archive_sha256 != TG04_BIONLP_ARCHIVE_SHA256:
         raise RuntimeError("BioNLP holdout archive hash changed")
-    development_ids = frozenset(TG04_DEVELOPMENT_DOCUMENT_IDS)
-    document_ids = tuple(
-        sorted(path.stem for path in corpus_root.glob("*.txt") if path.stem not in development_ids)
+    universe = enumerate_nested_event_candidates(
+        corpus_root=corpus_root,
+        selection_seed=_SELECTION_SEED,
     )
-    if len(document_ids) != _EXPECTED_DOCUMENT_COUNT:
+    if universe.document_count != _EXPECTED_DOCUMENT_COUNT:
         raise RuntimeError("BioNLP holdout document universe changed")
-
-    incompatible: list[str] = []
-    candidates: list[_Candidate] = []
-    for document_id in document_ids:
-        try:
-            document = load_standoff_document(corpus_root, document_id)
-        except ValueError:
-            incompatible.append(document_id)
-            continue
-        case_id = f"bionlp-ge-2011-holdout:{document_id}"
-        for unit in enumerate_source_units(case_id=case_id, source_text=document.source_text):
-            nested_pairs = _eligible_nested_pairs(document=document, unit=unit)
-            if not nested_pairs:
-                continue
-            rank = hashlib.sha256(
-                f"{_SELECTION_SEED}:{unit.unit_id}".encode(),
-            ).hexdigest()
-            candidates.append(
-                _Candidate(
-                    rank=rank,
-                    case_id=case_id,
-                    unit=unit,
-                    document=document,
-                    nested_pairs=nested_pairs,
-                ),
-            )
-    if tuple(incompatible) != _EXPECTED_INCOMPATIBLE_DOCUMENT_IDS:
+    if universe.incompatible_document_ids != _EXPECTED_INCOMPATIBLE_DOCUMENT_IDS:
         raise RuntimeError("BioNLP holdout importer exclusions changed")
-    if len(candidates) != _EXPECTED_ELIGIBLE_UNIT_COUNT:
+    if len(universe.candidates) != _EXPECTED_ELIGIBLE_UNIT_COUNT:
         raise RuntimeError("BioNLP eligible nested-event unit count changed")
 
-    selected = min(candidates, key=lambda candidate: candidate.rank)
-    graph = _seal_graph(selected)
+    selected = min(universe.candidates, key=lambda candidate: candidate.rank)
+    graph = seal_nested_event_graph(selected)
     graph_sha256 = _sha256_json(graph.as_json())
     if (
         selected.rank != _EXPECTED_SELECTION_RANK
@@ -199,13 +192,69 @@ def select_nested_event_holdout(
         case_id=selected.case_id,
         unit=selected.unit,
         expert_graph=graph,
+        trial_generation=1,
+        selection_seed=_SELECTION_SEED,
+        selection_rule="lowest_sha256_eligible_unit_outside_development_panel",
+        excluded_document_ids=(),
         selection_rank=selected.rank,
-        candidate_unit_count=len(candidates),
-        holdout_document_count=len(document_ids),
-        incompatible_document_ids=tuple(incompatible),
+        candidate_unit_count=len(universe.candidates),
+        holdout_document_count=universe.document_count,
+        incompatible_document_ids=universe.incompatible_document_ids,
         archive_sha256=archive_sha256,
         expert_graph_sha256=graph_sha256,
         authoritative_article_url=_ARTICLE_URL,
+    )
+
+
+def enumerate_nested_event_candidates(
+    *,
+    corpus_root: Path,
+    selection_seed: str,
+    excluded_document_ids: frozenset[str] = frozenset(),
+) -> NestedEventCandidateUniverse:
+    """Enumerate eligible units without inspecting or ranking source meaning."""
+
+    if not selection_seed.strip():
+        raise ValueError("nested-event selection seed must be nonempty")
+    development_ids = frozenset(TG04_DEVELOPMENT_DOCUMENT_IDS)
+    document_ids = tuple(
+        sorted(
+            path.stem
+            for path in corpus_root.glob("*.txt")
+            if path.stem not in development_ids
+        ),
+    )
+    incompatible: list[str] = []
+    candidates: list[NestedEventCandidate] = []
+    for document_id in document_ids:
+        if document_id in excluded_document_ids:
+            continue
+        try:
+            document = load_standoff_document(corpus_root, document_id)
+        except ValueError:
+            incompatible.append(document_id)
+            continue
+        case_id = f"bionlp-ge-2011-holdout:{document_id}"
+        for unit in enumerate_source_units(case_id=case_id, source_text=document.source_text):
+            nested_pairs = _eligible_nested_pairs(document=document, unit=unit)
+            if not nested_pairs:
+                continue
+            rank = hashlib.sha256(
+                f"{selection_seed}:{unit.unit_id}".encode(),
+            ).hexdigest()
+            candidates.append(
+                NestedEventCandidate(
+                    rank=rank,
+                    case_id=case_id,
+                    unit=unit,
+                    document=document,
+                    nested_pairs=nested_pairs,
+                ),
+            )
+    return NestedEventCandidateUniverse(
+        document_count=len(document_ids),
+        incompatible_document_ids=tuple(incompatible),
+        candidates=tuple(candidates),
     )
 
 
@@ -266,7 +315,7 @@ def _direct_arguments_are_local(
     )
 
 
-def _seal_graph(candidate: _Candidate) -> SealedNestedEventGraph:
+def seal_nested_event_graph(candidate: NestedEventCandidate) -> SealedNestedEventGraph:
     events_by_id: dict[str, SealedEvent] = {}
     links: list[SealedEventLink] = []
     for outer, inner in candidate.nested_pairs:
@@ -359,9 +408,13 @@ def _sha256_json(value: object) -> str:
 
 __all__ = [
     "NestedHoldoutSelection",
+    "NestedEventCandidate",
+    "NestedEventCandidateUniverse",
     "SealedArgument",
     "SealedEvent",
     "SealedEventLink",
     "SealedNestedEventGraph",
+    "enumerate_nested_event_candidates",
+    "seal_nested_event_graph",
     "select_nested_event_holdout",
 ]

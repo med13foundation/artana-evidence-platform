@@ -9,12 +9,16 @@ from pathlib import Path
 
 import pytest
 from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimEventRole,
     ClaimInventoryItem,
     bind_claim_inventory,
     link_controlled_events,
 )
 
 from scripts.run_nested_event_holdout_trial import nested_holdout_trial_exit_code
+from scripts.run_second_nested_event_holdout_trial import (
+    second_nested_holdout_exit_code,
+)
 from scripts.validation.claim_events.bionlp_import import TG04_BIONLP_ARCHIVE_SHA256
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitCoverageDecision,
@@ -30,6 +34,9 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.gat
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.matching import (
     match_nested_event_graph,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.second_selection import (
+    select_second_nested_event_holdout,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.selection import (
     SealedArgument,
@@ -215,6 +222,26 @@ def test_wrong_outer_cause_cannot_receive_nested_graph_credit() -> None:
     assert result.complete_graph_match_count == 0
 
 
+def test_wrong_event_reference_role_cannot_receive_graph_credit() -> None:
+    trusted = _trusted_inventory()
+    links = link_controlled_events(trusted)
+    wrong_role = replace(
+        links.links[0],
+        controller_event_role=ClaimEventRole.CAUSE,
+    )
+
+    result = match_nested_event_graph(
+        expert_graph=_sealed_graph(),
+        trusted=trusted,
+        links=(wrong_role,),
+    )
+
+    assert result.inner_inventory_ids
+    assert result.outer_inventory_ids
+    assert result.expert_link_match_count == 0
+    assert result.complete_graph_match_count == 0
+
+
 def test_unrelated_source_bound_extra_claim_does_not_change_sealed_match() -> None:
     inner, outer = _trusted_inventory()
     extra = _item(
@@ -323,7 +350,50 @@ def test_verified_archive_is_the_only_live_corpus_input() -> None:
     assert selection.unit.text == _SOURCE
 
 
+def test_second_selection_excludes_exposed_unit_and_seals_causal_link() -> None:
+    corpus = os.getenv("ARTANA_TG04_BIONLP_CORPUS_ROOT")
+    if corpus is None:
+        pytest.skip("set ARTANA_TG04_BIONLP_CORPUS_ROOT for corpus-integrity test")
+
+    selection = select_second_nested_event_holdout(
+        corpus_root=Path(corpus),
+        archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+    )
+
+    assert selection.trial_generation == 2
+    assert selection.case_id == (
+        "bionlp-ge-2011-holdout:PMC-2806624-07-DISCUSSION"
+    )
+    assert selection.unit.index == 54
+    assert selection.unit.unit_id == (
+        "source-unit-edb3591fbea79678533ddb57259dddfc3be3bb0e8f003c2e06c62fbf4b50f0cd"
+    )
+    assert selection.unit.source_sha256 == (
+        "70de20a933092f2eb987b0ac86b6c988e38c6acf5d71461eb132147699ef53b6"
+    )
+    assert selection.unit.input_sha256 == (
+        "4e9bca5f89e9ece248a0acc9405ebdc7abb6b386ef69c3b910a9c8aaa82df920"
+    )
+    assert selection.selection_rank == (
+        "23e11013c67e5cc27925588c0999a74af6192f4a6626c9a4ea644ee7479adbac"
+    )
+    assert selection.expert_graph_sha256 == (
+        "b881b0e63ac7ea503820a444b0352160277e5b4d6df695430a283a0eea610696"
+    )
+    assert selection.candidate_unit_count == 15
+    assert selection.excluded_document_ids == ("PMID-9233802",)
+    assert selection.expert_graph.links[0].event_role == "CAUSE"
+    assert ClaimEventRole.CAUSE.value == selection.expert_graph.links[0].event_role
+    assert {event.event_type for event in selection.expert_graph.events} == {
+        "BINDING",
+        "NEGATIVE_REGULATION",
+    }
+
+
 def test_nested_holdout_cli_exit_status_follows_gate() -> None:
     assert nested_holdout_trial_exit_code({"gate": {"passed": True}}) == 0
     assert nested_holdout_trial_exit_code({"gate": {"passed": False}}) == 1
     assert nested_holdout_trial_exit_code({}) == 1
+    assert second_nested_holdout_exit_code({"gate": {"passed": True}}) == 0
+    assert second_nested_holdout_exit_code({"gate": {"passed": False}}) == 1
+    assert second_nested_holdout_exit_code({}) == 1

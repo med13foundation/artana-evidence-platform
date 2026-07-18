@@ -64,6 +64,7 @@ def match_nested_event_graph(
         for link in links
         if link.controlled_inventory_id in inner_ids
         and link.controller_inventory_id in outer_ids
+        and link.controller_event_role.value == expert_link.event_role
     )
     complete_pairs = {
         (link.controller_inventory_id, link.controlled_inventory_id)
