@@ -363,7 +363,7 @@ evidence-selection-semantic-benchmark-v2-check: ## Verify benchmark v2 integrity
 
 agent-output-boundary-check: ## Validate registered agent output schema boundaries
 	$(call check_venv)
-	PYTHONPATH="$(CURDIR)/services:$(CURDIR)" $(USE_PYTHON) scripts/ci/validate_agent_output_boundaries.py --check-report docs/validation/reports/2026-07-11-pr-semantic-pr3-agent-output-registry.json
+	PYTHONPATH="$(CURDIR)/services:$(CURDIR)" $(USE_PYTHON) scripts/ci/validate_agent_output_boundaries.py --check-report docs/validation/reports/2026-07-18-tg04-agent-output-registry.json
 
 evidence-selection-semantic-agent-evaluation: ## Run PR 2 live-agent semantic quality gate
 	$(call check_venv)

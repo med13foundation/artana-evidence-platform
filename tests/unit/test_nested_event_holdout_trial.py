@@ -10,19 +10,21 @@ from pathlib import Path
 
 import pytest
 from artana_evidence_api.document_extraction_support.claim_frames import (
+    BoundClaimInventoryItem,
     BoundControlledEventLink,
     ClaimEventRole,
     ClaimInventoryItem,
     ClaimKind,
     InventoryEpistemicStatus,
+    InventoryPolarity,
     bind_claim_inventory,
     link_controlled_events,
 )
 
-from scripts.run_nested_event_holdout_trial import nested_holdout_trial_exit_code
 from scripts.run_fourth_nested_event_holdout_trial import (
     fourth_nested_holdout_exit_code,
 )
+from scripts.run_nested_event_holdout_trial import nested_holdout_trial_exit_code
 from scripts.run_second_nested_event_holdout_trial import (
     second_nested_holdout_exit_code,
 )
@@ -36,13 +38,15 @@ from scripts.validation.claim_events.finite_source_unit.contracts import (
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.corpus import (
     verified_corpus_root,
 )
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.fourth_selection import (
+    _projection_set as fourth_projection_set,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.fourth_selection import (
+    select_fourth_nested_event_holdout,
+)
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.gate import (
     NestedHoldoutGateInputs,
     nested_holdout_gate_requirements,
-)
-from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.fourth_selection import (
-    _projection_set as fourth_projection_set,
-    select_fourth_nested_event_holdout,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.matching import (
     match_nested_event_graph,
@@ -57,6 +61,7 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sel
     SealedArgument,
     SealedEvent,
     SealedEventLink,
+    SealedEventSemantics,
     SealedGraphProjection,
     SealedNestedEventGraph,
     SealedProjectionSet,
@@ -228,10 +233,7 @@ def _null_result_inventory(*, split_events: bool = True):
                 "relation_cue_span": "changes",
                 "arguments": [
                     _argument("GENE_OR_PROTEIN", "CAUSE", "BMP-6"),
-                    *(
-                        _argument("BIOMARKER", "THEME", theme)
-                        for theme in themes
-                    ),
+                    *(_argument("BIOMARKER", "THEME", theme) for theme in themes),
                     _argument("POPULATION", "CONTEXT", "B cells"),
                 ],
                 "source_locator": "normalized_extraction_text",
@@ -434,6 +436,15 @@ def _population_contrast_inventory(
             {
                 "exact_span": _POPULATION_CONTRAST_SOURCE,
                 "relation_cue_span": cue,
+                "relation_cue_anchor": (
+                    {
+                        "mention_span": "not",
+                        "left_context": "cells, but ",
+                        "right_context": " in activated T cells",
+                    }
+                    if cue == "not"
+                    else None
+                ),
                 "arguments": [
                     cause,
                     theme,
@@ -499,6 +510,153 @@ def _population_contrast_inventory(
         source_sha256=hashlib.sha256(_POPULATION_CONTRAST_SOURCE.encode()).hexdigest(),
         chunk_index=25,
         source_start_offset=_POPULATION_CONTRAST_OFFSET,
+    )
+
+
+def _observational_population_contrast_inventory() -> tuple[
+    BoundClaimInventoryItem, ...
+]:
+    def item(*, population: str, cue: str, polarity: str) -> ClaimInventoryItem:
+        return ClaimInventoryItem.model_validate(
+            {
+                "exact_span": _POPULATION_CONTRAST_SOURCE,
+                "relation_cue_span": cue,
+                "relation_cue_anchor": (
+                    {
+                        "mention_span": "not",
+                        "left_context": "cells, but ",
+                        "right_context": " in activated T cells",
+                    }
+                    if cue == "not"
+                    else None
+                ),
+                "arguments": [
+                    _argument("GENE_OR_PROTEIN", "THEME", "A3G"),
+                    _argument(
+                        "INTERVENTION",
+                        "CONTEXT",
+                        "IFN-alpha treatment",
+                    ),
+                    _argument(
+                        "TIMEFRAME",
+                        "CONTEXT",
+                        "after IFN-alpha treatment",
+                    ),
+                    _argument("POPULATION", "CONTEXT", population),
+                    *(
+                        [
+                            _argument(
+                                "BIOLOGICAL_PROCESS",
+                                "THEME",
+                                "expression of A3G",
+                            ),
+                        ]
+                        if cue == "not"
+                        else []
+                    ),
+                ],
+                "source_locator": "normalized_extraction_text",
+                "claim_kind": "SCIENTIFIC_FINDING",
+                "event_type": "INCREASE",
+                "polarity": polarity,
+                "epistemic_status": "ASSERTED",
+                "inventory_rationale": "The source reports a contextual change.",
+            },
+        )
+
+    return bind_claim_inventory(
+        (
+            item(
+                population="resting primary CD4 T cells",
+                cue="enhanced expression",
+                polarity="SUPPORT",
+            ),
+            item(
+                population="activated T cells",
+                cue="not",
+                polarity="NULL_RESULT",
+            ),
+        ),
+        source_text=_POPULATION_CONTRAST_SOURCE,
+        source_sha256=hashlib.sha256(_POPULATION_CONTRAST_SOURCE.encode()).hexdigest(),
+        chunk_index=25,
+        source_start_offset=_POPULATION_CONTRAST_OFFSET,
+    )
+
+
+def _observational_population_contrast_graph() -> SealedNestedEventGraph:
+    theme = SealedArgument(
+        "THEME",
+        "T20",
+        "GENE_OR_PROTEIN",
+        "A3G",
+        3454,
+        3457,
+    )
+    intervention = SealedArgument(
+        "CONTEXT",
+        "SOURCE-INTERVENTION",
+        "INTERVENTION",
+        "IFN-alpha treatment",
+        3464,
+        3483,
+    )
+    timeframe = SealedArgument(
+        "CONTEXT",
+        "SOURCE-TIMEFRAME",
+        "TIMEFRAME",
+        "after IFN-alpha treatment",
+        3458,
+        3483,
+    )
+    return SealedNestedEventGraph(
+        events=(
+            SealedEvent(
+                "SOURCE-RESTING",
+                "INCREASE",
+                SealedTrigger("enhanced expression", 3431, 3450),
+                (
+                    theme,
+                    intervention,
+                    timeframe,
+                    SealedArgument(
+                        "CONTEXT",
+                        "SOURCE-RESTING-POPULATION",
+                        "POPULATION",
+                        "resting primary CD4 T cells",
+                        3487,
+                        3514,
+                    ),
+                ),
+            ),
+            SealedEvent(
+                "SOURCE-ACTIVATED",
+                "INCREASE",
+                SealedTrigger("not", 3520, 3523),
+                (
+                    theme,
+                    intervention,
+                    timeframe,
+                    SealedArgument(
+                        "THEME",
+                        "SOURCE-EXPRESSION-PROCESS",
+                        "BIOLOGICAL_PROCESS",
+                        "expression of A3G",
+                        3440,
+                        3457,
+                    ),
+                    SealedArgument(
+                        "CONTEXT",
+                        "SOURCE-ACTIVATED-POPULATION",
+                        "POPULATION",
+                        "activated T cells",
+                        3527,
+                        3544,
+                    ),
+                ),
+            ),
+        ),
+        links=(),
     )
 
 
@@ -599,7 +757,9 @@ def test_wrong_outer_cause_cannot_receive_nested_graph_credit() -> None:
     assert result.complete_graph_match_count == 0
 
 
-def test_projection_set_requires_one_complete_projection_without_partial_credit() -> None:
+def test_projection_set_requires_one_complete_projection_without_partial_credit() -> (
+    None
+):
     canonical_trusted = _trusted_inventory()
     canonical_links = link_controlled_events(canonical_trusted)
     projection_set = _projection_set(_sealed_graph())
@@ -704,6 +864,35 @@ def test_population_contrast_projection_preserves_positive_and_null_outcomes(
     )
 
 
+def test_temporal_treatment_context_is_not_forced_into_causation() -> None:
+    trusted = _observational_population_contrast_inventory()
+    graph = _observational_population_contrast_graph()
+
+    result = match_nested_event_graph(
+        expert_graph=graph,
+        trusted=trusted,
+        links=(),
+        event_semantics=(
+            SealedEventSemantics(
+                event_id="SOURCE-RESTING",
+                claim_kind=ClaimKind.SCIENTIFIC_FINDING,
+                polarity=InventoryPolarity.SUPPORT,
+                epistemic_status=InventoryEpistemicStatus.ASSERTED,
+            ),
+            SealedEventSemantics(
+                event_id="SOURCE-ACTIVATED",
+                claim_kind=ClaimKind.SCIENTIFIC_FINDING,
+                polarity=InventoryPolarity.NULL_RESULT,
+                epistemic_status=InventoryEpistemicStatus.ASSERTED,
+            ),
+        ),
+    )
+
+    assert result.completely_recovered_once is True
+    assert result.expected_link_count == 0
+    assert result.expert_link_match_count == 0
+
+
 def test_projection_matcher_requires_every_link_in_a_three_event_graph() -> None:
     trusted = _multi_link_inventory()
     link_result = link_controlled_events(trusted)
@@ -728,7 +917,9 @@ def test_projection_matcher_requires_every_link_in_a_three_event_graph() -> None
     assert incomplete.expert_link_match_count == 1
 
 
-def test_projection_matcher_allows_one_reference_argument_for_multiple_siblings() -> None:
+def test_projection_matcher_allows_one_reference_argument_for_multiple_siblings() -> (
+    None
+):
     trusted = _multi_link_inventory()
     cd28, cd2, phosphorylation = trusted
     base_graph = _multi_link_graph()
@@ -792,7 +983,9 @@ def test_projection_set_never_combines_partial_matches_across_alternatives() -> 
                 graph=_alternative_sealed_graph(),
                 event_semantics=_projection_set(
                     _alternative_sealed_graph(),
-                ).projections[0].event_semantics,
+                )
+                .projections[0]
+                .event_semantics,
             ),
         ),
     )
@@ -906,7 +1099,10 @@ def test_projection_set_rejects_identity_and_source_drift_before_execution() -> 
     )
     extra_event_graph = replace(
         projection.graph,
-        events=(*projection.graph.events, replace(projection.graph.events[0], event_id="E4")),
+        events=(
+            *projection.graph.events,
+            replace(projection.graph.events[0], event_id="E4"),
+        ),
     )
     duplicate_argument_graph = replace(
         projection.graph,
@@ -1155,9 +1351,7 @@ def test_second_selection_excludes_exposed_unit_and_seals_causal_link() -> None:
     )
 
     assert selection.trial_generation == 2
-    assert selection.case_id == (
-        "bionlp-ge-2011-holdout:PMC-2806624-07-DISCUSSION"
-    )
+    assert selection.case_id == ("bionlp-ge-2011-holdout:PMC-2806624-07-DISCUSSION")
     assert selection.unit.index == 54
     assert selection.unit.unit_id == (
         "source-unit-edb3591fbea79678533ddb57259dddfc3be3bb0e8f003c2e06c62fbf4b50f0cd"
@@ -1195,9 +1389,7 @@ def test_third_selection_freezes_projection_set_before_execution() -> None:
     )
 
     assert selection.trial_generation == 3
-    assert selection.case_id == (
-        "bionlp-ge-2011-holdout:PMC-2222968-08-Discussion"
-    )
+    assert selection.case_id == ("bionlp-ge-2011-holdout:PMC-2222968-08-Discussion")
     assert selection.unit.index == 23
     assert selection.candidate_unit_count == 14
     assert selection.excluded_document_ids == (
@@ -1274,7 +1466,10 @@ def test_fourth_selection_is_direct_seeded_and_frozen_after_prompt_commit() -> N
     for hidden_value in (
         selection.expert_graph_sha256,
         selection.projection_set_sha256,
-        *(projection.projection_id for projection in selection.projection_set.projections),
+        *(
+            projection.projection_id
+            for projection in selection.projection_set.projections
+        ),
         *(
             projection.scientific_rationale
             for projection in selection.projection_set.projections

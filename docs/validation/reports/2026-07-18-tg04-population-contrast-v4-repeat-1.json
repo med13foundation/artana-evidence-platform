@@ -1,0 +1,2925 @@
+{
+  "agent_outputs": {
+    "error_type": null,
+    "extraction": {
+      "decision": "EXPLICIT_EVENT",
+      "eligibility_category": "MIXED_SCIENTIFIC",
+      "events": [
+        {
+          "arguments": [
+            {
+              "event_role": "THEME",
+              "exact_span": "A3G",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "GENE_OR_PROTEIN",
+              "role_rationale": "A3G is the entity whose expression is enhanced."
+            },
+            {
+              "event_role": "CONTEXT",
+              "exact_span": "IFN-alpha treatment",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "INTERVENTION",
+              "role_rationale": "The treatment is the source-explicit experimental context associated with the enhanced expression."
+            },
+            {
+              "event_role": "CONTEXT",
+              "exact_span": "resting primary CD4 T cells",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "POPULATION",
+              "role_rationale": "This is the source-explicit population in which enhanced expression is reported."
+            }
+          ],
+          "claim_kind": "SCIENTIFIC_FINDING",
+          "epistemic_status": "ASSERTED",
+          "event_type": "INCREASE",
+          "exact_span": "enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells",
+          "inventory_rationale": "The source asserts enhanced A3G expression after IFN-alpha treatment in resting primary CD4 T cells.",
+          "polarity": "SUPPORT",
+          "relation_cue_anchor": null,
+          "relation_cue_span": "enhanced expression",
+          "source_locator": "normalized_extraction_text"
+        },
+        {
+          "arguments": [
+            {
+              "event_role": "THEME",
+              "exact_span": "A3G",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "GENE_OR_PROTEIN",
+              "role_rationale": "A3G is the entity whose treatment-associated enhanced expression is absent in the contrasted population."
+            },
+            {
+              "event_role": "CONTEXT",
+              "exact_span": "IFN-alpha treatment",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "INTERVENTION",
+              "role_rationale": "The treatment context is shared with the explicitly contrasted null result."
+            },
+            {
+              "event_role": "CONTEXT",
+              "exact_span": "activated T cells",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "POPULATION",
+              "role_rationale": "This is the population in which the source explicitly reports that the enhanced expression does not occur."
+            }
+          ],
+          "claim_kind": "SCIENTIFIC_FINDING",
+          "epistemic_status": "ASSERTED",
+          "event_type": "INCREASE",
+          "exact_span": "enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells, but not in activated T cells",
+          "inventory_rationale": "The coordinated contrast explicitly states that the enhanced expression is not observed in activated T cells, preserving the tested increase as a null result.",
+          "polarity": "NULL_RESULT",
+          "relation_cue_anchor": null,
+          "relation_cue_span": "not",
+          "source_locator": "normalized_extraction_text"
+        }
+      ],
+      "reasoning": "The unit contains both an asserted increase in A3G expression in resting primary CD4 T cells after IFN-alpha treatment and an explicit population-specific null result for activated T cells."
+    },
+    "verification": {
+      "coverage_decision": "CANDIDATES_COMPLETE",
+      "coverage_reasoning": "The source explicitly asserts an enhanced-expression finding in resting primary CD4 T cells and an explicit null result for activated T cells. The supplied candidates represent both source-distinct outcomes, including their treatment and population contexts.",
+      "decisions": [
+        {
+          "argument_semantic_decisions": [
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "A3G is a named gene product, and it is correctly represented as the THEME of the increased-expression event.",
+              "type_decision": "VALID"
+            },
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "IFN-alpha treatment is correctly represented as an intervention context for the reported expression result.",
+              "type_decision": "VALID"
+            },
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "Resting primary CD4 T cells are correctly represented as the population context for the finding.",
+              "type_decision": "VALID"
+            }
+          ],
+          "decision": "ENTAILED",
+          "direction_encoding": "STRUCTURED",
+          "event_type_decision": "VALID",
+          "evidence_spans": [
+            "enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells"
+          ],
+          "falsification_condition": "This decision would be falsified if the source did not assert enhanced A3G expression in resting primary CD4 T cells after IFN-alpha treatment.",
+          "projection_eligibility": "ELIGIBLE",
+          "reasoning": "The source explicitly reports enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells. The increase direction, asserted status, trigger, theme, treatment context, and population context are all preserved.",
+          "structure_decision": "COMPLETE"
+        },
+        {
+          "argument_semantic_decisions": [
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "A3G is a named gene product and is correctly represented as the THEME of the tested increased-expression relationship, whose result is null in activated T cells.",
+              "type_decision": "VALID"
+            },
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "IFN-alpha treatment is correctly represented as an intervention context for the tested expression relationship.",
+              "type_decision": "VALID"
+            },
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "Activated T cells are correctly represented as the population context for the explicit null result.",
+              "type_decision": "VALID"
+            }
+          ],
+          "decision": "ENTAILED",
+          "direction_encoding": "STRUCTURED",
+          "event_type_decision": "VALID",
+          "evidence_spans": [
+            "enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells, but not in activated T cells"
+          ],
+          "falsification_condition": "This decision would be falsified if the source asserted enhanced A3G expression after IFN-alpha treatment in activated T cells, or if it did not explicitly state the absence of that result in activated T cells.",
+          "projection_eligibility": "ELIGIBLE",
+          "reasoning": "The source explicitly states that the enhanced-expression result occurs in resting primary CD4 T cells but not in activated T cells. The candidate preserves the tested increase direction with NULL_RESULT polarity and includes the theme, intervention context, and activated-cell population context.",
+          "structure_decision": "COMPLETE"
+        }
+      ],
+      "eligibility_category": "MIXED_SCIENTIFIC"
+    }
+  },
+  "attempts": [
+    {
+      "attempt_role": "primary",
+      "error_type": null,
+      "evidence_unit_sha256": "7364d36704f14e3f60d354e2f18b96dac133cffbcf57a996e3b177d62a3b1f87",
+      "input_sha256": "edad292a41024ae49be065c99d69c8036b6db71e4ae37cdb7a8b2134a08e7d0b",
+      "invocation_id": "f9148b33-39f8-4f77-9759-318840da5701",
+      "kernel_event_seq": 3,
+      "kernel_run_id": "research-init-extraction:f9148b33-39f8-4f77-9759-318840da5701",
+      "model_id": "openai/gpt-5.6-luna",
+      "output_schema_identity": "scripts.validation.claim_events.finite_source_unit.contracts.SourceUnitExtractionOutput",
+      "pass_role": "primary",
+      "payload_sha256": "d2ac4184e4da4fd829156f240f06f48942a63b427b1ff8950dcc2b53e7c18e39",
+      "prompt_sha256": "bac587ce8a2ab3a9e2ae9fd672f6d9c2a0a2d96246492c776c949b5ac14cbabc",
+      "provider_execution_response_id": "resp_bGl0ZWxsbTpjdXN0b21fbGxtX3Byb3ZpZGVyOm9wZW5haTttb2RlbF9pZDpOb25lO3Jlc3BvbnNlX2lkOnJlc3BfMGFkMzA0NmM2N2E2YmNmNTAwNmE1YjlkMmNlNDIwODE5OWIyMGM3NDU2NjRjZmI5MzU=",
+      "provider_output_sha256": "067da4d65a98d88d38d63e39a2d8a9fa991fc0f7d88aef715e8925a1fbfbcf1b",
+      "provider_response_id": "resp_0ad3046c67a6bcf5006a5b9d2ce4208199b20c745664cfb935",
+      "raw_model_payload": {
+        "decision": "EXPLICIT_EVENT",
+        "eligibility_category": "MIXED_SCIENTIFIC",
+        "events": [
+          {
+            "arguments": [
+              {
+                "event_role": "THEME",
+                "exact_span": "A3G",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "GENE_OR_PROTEIN",
+                "role_rationale": "A3G is the entity whose expression is enhanced."
+              },
+              {
+                "event_role": "CONTEXT",
+                "exact_span": "IFN-alpha treatment",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "INTERVENTION",
+                "role_rationale": "The treatment is the source-explicit experimental context associated with the enhanced expression."
+              },
+              {
+                "event_role": "CONTEXT",
+                "exact_span": "resting primary CD4 T cells",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "POPULATION",
+                "role_rationale": "This is the source-explicit population in which enhanced expression is reported."
+              }
+            ],
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_type": "INCREASE",
+            "exact_span": "enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells",
+            "inventory_rationale": "The source asserts enhanced A3G expression after IFN-alpha treatment in resting primary CD4 T cells.",
+            "polarity": "SUPPORT",
+            "relation_cue_anchor": null,
+            "relation_cue_span": "enhanced expression",
+            "source_locator": "normalized_extraction_text"
+          },
+          {
+            "arguments": [
+              {
+                "event_role": "THEME",
+                "exact_span": "A3G",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "GENE_OR_PROTEIN",
+                "role_rationale": "A3G is the entity whose treatment-associated enhanced expression is absent in the contrasted population."
+              },
+              {
+                "event_role": "CONTEXT",
+                "exact_span": "IFN-alpha treatment",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "INTERVENTION",
+                "role_rationale": "The treatment context is shared with the explicitly contrasted null result."
+              },
+              {
+                "event_role": "CONTEXT",
+                "exact_span": "activated T cells",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "POPULATION",
+                "role_rationale": "This is the population in which the source explicitly reports that the enhanced expression does not occur."
+              }
+            ],
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_type": "INCREASE",
+            "exact_span": "enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells, but not in activated T cells",
+            "inventory_rationale": "The coordinated contrast explicitly states that the enhanced expression is not observed in activated T cells, preserving the tested increase as a null result.",
+            "polarity": "NULL_RESULT",
+            "relation_cue_anchor": null,
+            "relation_cue_span": "not",
+            "source_locator": "normalized_extraction_text"
+          }
+        ],
+        "reasoning": "The unit contains both an asserted increase in A3G expression in resting primary CD4 T cells after IFN-alpha treatment and an explicit population-specific null result for activated T cells."
+      },
+      "replayed": false,
+      "retry_context": null,
+      "semantic_unit_id": "source-unit-372b0632f7433058002746584f09b6a55db2fcde52724d1f59104731edb29870",
+      "source_sha256": "9548ffaadbde4f7f6f4419345ecd93d9f549c04c4c03b0988233610da28eb1cf",
+      "step_key": "tg04.finite_source_unit.extraction.v15.d659a24ed56f1c4b",
+      "validation_outcome": "accepted"
+    },
+    {
+      "attempt_role": "weak_review",
+      "error_type": null,
+      "evidence_unit_sha256": "7364d36704f14e3f60d354e2f18b96dac133cffbcf57a996e3b177d62a3b1f87",
+      "input_sha256": "edad292a41024ae49be065c99d69c8036b6db71e4ae37cdb7a8b2134a08e7d0b",
+      "invocation_id": "61c91eab-812d-4fdd-96cd-13cc247a4b29",
+      "kernel_event_seq": 3,
+      "kernel_run_id": "research-init-extraction:61c91eab-812d-4fdd-96cd-13cc247a4b29",
+      "model_id": "openai/gpt-5.6-luna",
+      "output_schema_identity": "scripts.validation.claim_events.finite_source_unit.contracts.SourceUnitVerificationOutput",
+      "pass_role": "weak_review",
+      "payload_sha256": "a6516e8f77d9557a43fc3a0df686f38e576429218403dba7259f8d08f9183801",
+      "prompt_sha256": "0e2a1f54aaec59aed16da7f8e385d388f339cf752ddf91f8ab4cccb0f6f7d363",
+      "provider_execution_response_id": "resp_bGl0ZWxsbTpjdXN0b21fbGxtX3Byb3ZpZGVyOm9wZW5haTttb2RlbF9pZDpOb25lO3Jlc3BvbnNlX2lkOnJlc3BfMGFiZTk5MDdjMmJhNzg2MTAwNmE1YjlkM2EyMjE0ODE5YTkxODVjZTBhMTdjMzQzYjg=",
+      "provider_output_sha256": "9b9263df15b8cf9f377fab948b6f9438a899d911cf6e86793d5d98968d20aeb2",
+      "provider_response_id": "resp_0abe9907c2ba7861006a5b9d3a2214819a9185ce0a17c343b8",
+      "raw_model_payload": {
+        "coverage_decision": "CANDIDATES_COMPLETE",
+        "coverage_reasoning": "The source explicitly asserts an enhanced-expression finding in resting primary CD4 T cells and an explicit null result for activated T cells. The supplied candidates represent both source-distinct outcomes, including their treatment and population contexts.",
+        "decisions": [
+          {
+            "argument_semantic_decisions": [
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "A3G is a named gene product, and it is correctly represented as the THEME of the increased-expression event.",
+                "type_decision": "VALID"
+              },
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "IFN-alpha treatment is correctly represented as an intervention context for the reported expression result.",
+                "type_decision": "VALID"
+              },
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "Resting primary CD4 T cells are correctly represented as the population context for the finding.",
+                "type_decision": "VALID"
+              }
+            ],
+            "decision": "ENTAILED",
+            "direction_encoding": "STRUCTURED",
+            "event_type_decision": "VALID",
+            "evidence_spans": [
+              "enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells"
+            ],
+            "falsification_condition": "This decision would be falsified if the source did not assert enhanced A3G expression in resting primary CD4 T cells after IFN-alpha treatment.",
+            "projection_eligibility": "ELIGIBLE",
+            "reasoning": "The source explicitly reports enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells. The increase direction, asserted status, trigger, theme, treatment context, and population context are all preserved.",
+            "structure_decision": "COMPLETE"
+          },
+          {
+            "argument_semantic_decisions": [
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "A3G is a named gene product and is correctly represented as the THEME of the tested increased-expression relationship, whose result is null in activated T cells.",
+                "type_decision": "VALID"
+              },
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "IFN-alpha treatment is correctly represented as an intervention context for the tested expression relationship.",
+                "type_decision": "VALID"
+              },
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "Activated T cells are correctly represented as the population context for the explicit null result.",
+                "type_decision": "VALID"
+              }
+            ],
+            "decision": "ENTAILED",
+            "direction_encoding": "STRUCTURED",
+            "event_type_decision": "VALID",
+            "evidence_spans": [
+              "enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells, but not in activated T cells"
+            ],
+            "falsification_condition": "This decision would be falsified if the source asserted enhanced A3G expression after IFN-alpha treatment in activated T cells, or if it did not explicitly state the absence of that result in activated T cells.",
+            "projection_eligibility": "ELIGIBLE",
+            "reasoning": "The source explicitly states that the enhanced-expression result occurs in resting primary CD4 T cells but not in activated T cells. The candidate preserves the tested increase direction with NULL_RESULT polarity and includes the theme, intervention context, and activated-cell population context.",
+            "structure_decision": "COMPLETE"
+          }
+        ],
+        "eligibility_category": "MIXED_SCIENTIFIC"
+      },
+      "replayed": false,
+      "retry_context": null,
+      "semantic_unit_id": "source-unit-372b0632f7433058002746584f09b6a55db2fcde52724d1f59104731edb29870",
+      "source_sha256": "9548ffaadbde4f7f6f4419345ecd93d9f549c04c4c03b0988233610da28eb1cf",
+      "step_key": "tg04.finite_source_unit.verification.v14.82213ba384e55a82",
+      "validation_outcome": "accepted"
+    }
+  ],
+  "conclusion_scope": {
+    "additional_source_valid_claims_are_allowed": true,
+    "all_additional_claims_must_be_entailed": true,
+    "benchmark_credit_awarded": false,
+    "deterministic_extraction_fallback_available": false,
+    "entailed_unresolved_claims_may_remain_review_only": true,
+    "execution_path": "agent_only_source_unit",
+    "persistence_authorized": false,
+    "rejected_additional_claims_are_allowed": false,
+    "scientific_readiness_proven": false,
+    "sealed_expert_graph_was_hidden_from_agents": true,
+    "sealed_projection_set_was_hidden_from_agents": true,
+    "single_fresh_unit_convenience_sample": true
+  },
+  "configured_model_id": "openai:gpt-5.6-luna",
+  "controlled_event_link_ambiguities": [],
+  "controlled_event_links": [],
+  "deterministic_projection_match": {
+    "fully_recovered_projection_ids": [],
+    "projections": [
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 2,
+          "expected_link_count": 0,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-protein-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-EXPRESSION",
+              []
+            ],
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 3,
+          "expected_link_count": 1,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-protein-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 2,
+          "expected_link_count": 0,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-process-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-EXPRESSION",
+              []
+            ],
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 3,
+          "expected_link_count": 1,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-process-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 2,
+          "expected_link_count": 0,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-intervention-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-EXPRESSION",
+              []
+            ],
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 3,
+          "expected_link_count": 1,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-intervention-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 2,
+          "expected_link_count": 0,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-exposure-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-EXPRESSION",
+              []
+            ],
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 3,
+          "expected_link_count": 1,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-exposure-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 2,
+          "expected_link_count": 0,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-and-process-protein-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-EXPRESSION",
+              []
+            ],
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 3,
+          "expected_link_count": 1,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-and-process-protein-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 2,
+          "expected_link_count": 0,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-and-process-process-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-EXPRESSION",
+              []
+            ],
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 3,
+          "expected_link_count": 1,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-and-process-process-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 2,
+          "expected_link_count": 0,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-and-process-intervention-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-EXPRESSION",
+              []
+            ],
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 3,
+          "expected_link_count": 1,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-and-process-intervention-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 2,
+          "expected_link_count": 0,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-and-process-exposure-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "SOURCE-EXPRESSION",
+              []
+            ],
+            [
+              "SOURCE-RESTING",
+              []
+            ],
+            [
+              "SOURCE-ACTIVATED",
+              []
+            ]
+          ],
+          "expected_event_count": 3,
+          "expected_link_count": 1,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "source-valid-direction-and-process-exposure-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE"
+      }
+    ]
+  },
+  "execution_model_id": "openai/gpt-5.6-luna",
+  "expected_eligibility_category": "MIXED_SCIENTIFIC",
+  "freshness": {
+    "convenience_sample": true,
+    "development_document_count": 40,
+    "eligible_unit_count": 11,
+    "excluded_document_ids": [
+      "PMC-2222968-00-TIAB",
+      "PMC-2222968-08-Discussion",
+      "PMC-2806624-07-DISCUSSION",
+      "PMID-9233802"
+    ],
+    "fresh_at_repeat_1_execution": true,
+    "incompatible_document_ids": [
+      "PMC-1134658-08-Discussion",
+      "PMC-1920263-11-RESULTS-03",
+      "PMID-7747440"
+    ],
+    "non_development_document_count": 219,
+    "selection_rank": "05cfb02937b265d91cd4669909ce4a940cecb302624f85ec1ff71e55da230e17",
+    "selection_rule": "lowest_sha256_closed_top_level_negated_graph_outside_exposed_panels",
+    "selection_seed": "f2d1c55426cf241fa95b7bf06db11cab12749204b0cfd81e8d851811b230cff7"
+  },
+  "gate": {
+    "decision": "STOP_AND_RECALIBRATE_NESTED_EVENT_EXTRACTION",
+    "passed": false,
+    "requirements": {
+      "acceptable_projection_set_nonempty": true,
+      "agent_execution_complete": true,
+      "all_candidates_source_entailed": true,
+      "attempt_model_identity_bound": true,
+      "audit_attempt_topology_exact": true,
+      "audit_identity_bound": true,
+      "binding_rejection_zero": true,
+      "binding_repair_accounted": true,
+      "candidate_inventory_complete": true,
+      "complete_acceptable_projection_recovered": false,
+      "controlled_event_link_ambiguity_zero": true,
+      "expected_category_is_scientific": true,
+      "explicit_candidate_inventory_nonempty": true,
+      "extractor_recognized_expected_science": true,
+      "independent_categories_agree": true,
+      "invalid_agent_output_zero": true,
+      "model_transport_identity_absent": true,
+      "provider_lineage_complete": true,
+      "provider_receipts_verified": true,
+      "rejected_candidate_zero": true,
+      "repeat_index_pre_registered": true,
+      "required_controlled_event_links_present": true,
+      "review_only_candidates_preserved": true,
+      "schema_retry_bounded": true,
+      "sealed_graph_shape_verified": true,
+      "verifier_recognized_expected_science": true
+    }
+  },
+  "gate_inputs": {
+    "acceptable_projection_count": 16,
+    "agent_execution_complete": true,
+    "attempt_model_id_mismatch_count": 0,
+    "audit_identity_mismatch_count": 0,
+    "binding_rejection_count": 0,
+    "controlled_event_link_ambiguity_count": 0,
+    "controlled_event_link_count": 0,
+    "distinct_provider_response_id_count": 2,
+    "entailed_candidate_count": 2,
+    "expected_eligibility_category": "MIXED_SCIENTIFIC",
+    "extracted_candidate_count": 2,
+    "extraction_category": "MIXED_SCIENTIFIC",
+    "extraction_decision": "EXPLICIT_EVENT",
+    "extraction_provider_response_id_count": 1,
+    "fully_recovered_projection_count": 0,
+    "hidden_expert_event_count": 2,
+    "hidden_expert_link_count": 1,
+    "invalid_agent_output_count": 0,
+    "minimum_acceptable_projection_link_count": 0,
+    "model_transport_identity_field_count": 0,
+    "observed_binding_rejection_count": 0,
+    "primary_extraction_attempt_count": 1,
+    "provider_receipt_gate_passed": true,
+    "rejected_candidate_count": 0,
+    "repeat_index": 1,
+    "reported_schema_retry_count": 0,
+    "review_only_candidate_count": 0,
+    "schema_retry_attempt_count": 0,
+    "schema_retry_count": 0,
+    "trusted_candidate_count": 2,
+    "unidentified_provider_attempt_count": 0,
+    "verification_category": "MIXED_SCIENTIFIC",
+    "verification_coverage": "CANDIDATES_COMPLETE",
+    "verification_decision_count": 2,
+    "verification_provider_response_id_count": 1,
+    "verified_provider_receipt_count": 2,
+    "weak_review_attempt_count": 1
+  },
+  "generated_at": "2026-07-18T15:35:35.382635+00:00",
+  "observed_binding_rejections": [],
+  "pre_registered_repeat_indices": [
+    1,
+    2,
+    3
+  ],
+  "provider_receipts": {
+    "expected_count": 2,
+    "receipts": [
+      {
+        "error_type": null,
+        "expected_case_id": "source-unit-372b0632f7433058002746584f09b6a55db2fcde52724d1f59104731edb29870",
+        "expected_evidence_unit_sha256": "7364d36704f14e3f60d354e2f18b96dac133cffbcf57a996e3b177d62a3b1f87",
+        "expected_input_sha256": "edad292a41024ae49be065c99d69c8036b6db71e4ae37cdb7a8b2134a08e7d0b",
+        "expected_invocation_id": "f9148b33-39f8-4f77-9759-318840da5701",
+        "expected_kernel_run_id": "research-init-extraction:f9148b33-39f8-4f77-9759-318840da5701",
+        "expected_model_id": "gpt-5.6-luna",
+        "expected_output_schema_sha256": "86dfa60862254bae50ceafe42ba3feac5ef97c9d6923b3930bc4873641b350b3",
+        "expected_output_sha256": "067da4d65a98d88d38d63e39a2d8a9fa991fc0f7d88aef715e8925a1fbfbcf1b",
+        "expected_payload_sha256": "d2ac4184e4da4fd829156f240f06f48942a63b427b1ff8950dcc2b53e7c18e39",
+        "expected_prompt_sha256": "bac587ce8a2ab3a9e2ae9fd672f6d9c2a0a2d96246492c776c949b5ac14cbabc",
+        "expected_source_sha256": "9548ffaadbde4f7f6f4419345ecd93d9f549c04c4c03b0988233610da28eb1cf",
+        "failure": "none",
+        "incomplete_details_absent": true,
+        "input_topology_verified": true,
+        "invocation_topology_supported": true,
+        "invocation_topology_verified": true,
+        "output_schema_verification_source": "provider_input_binding",
+        "provider_output_hash_matched": false,
+        "provider_output_verification_source": "structured_payload_with_verified_envelope",
+        "provider_response_schema_supported": false,
+        "provider_status": "completed",
+        "response_completed_verified": true,
+        "response_id": "resp_0ad3046c67a6bcf5006a5b9d2ce4208199b20c745664cfb935",
+        "retrieved_evidence_unit_sha256": "7364d36704f14e3f60d354e2f18b96dac133cffbcf57a996e3b177d62a3b1f87",
+        "retrieved_input_sha256": "edad292a41024ae49be065c99d69c8036b6db71e4ae37cdb7a8b2134a08e7d0b",
+        "retrieved_invocation_id": "f9148b33-39f8-4f77-9759-318840da5701",
+        "retrieved_kernel_run_id": "research-init-extraction:f9148b33-39f8-4f77-9759-318840da5701",
+        "retrieved_model_id": "gpt-5.6-luna",
+        "retrieved_output_schema_sha256": "86dfa60862254bae50ceafe42ba3feac5ef97c9d6923b3930bc4873641b350b3",
+        "retrieved_output_sha256": "629541adfc68d2f5e5aab9fe45c10e0d03a7f64bc3ceb61d0e0ddb2b6c607b8d",
+        "retrieved_payload_sha256": "d2ac4184e4da4fd829156f240f06f48942a63b427b1ff8950dcc2b53e7c18e39",
+        "retrieved_prompt_sha256": "bac587ce8a2ab3a9e2ae9fd672f6d9c2a0a2d96246492c776c949b5ac14cbabc",
+        "retrieved_source_sha256": "9548ffaadbde4f7f6f4419345ecd93d9f549c04c4c03b0988233610da28eb1cf",
+        "standalone_context_verified": true,
+        "status": "verified_live"
+      },
+      {
+        "error_type": null,
+        "expected_case_id": "source-unit-372b0632f7433058002746584f09b6a55db2fcde52724d1f59104731edb29870",
+        "expected_evidence_unit_sha256": "7364d36704f14e3f60d354e2f18b96dac133cffbcf57a996e3b177d62a3b1f87",
+        "expected_input_sha256": "edad292a41024ae49be065c99d69c8036b6db71e4ae37cdb7a8b2134a08e7d0b",
+        "expected_invocation_id": "61c91eab-812d-4fdd-96cd-13cc247a4b29",
+        "expected_kernel_run_id": "research-init-extraction:61c91eab-812d-4fdd-96cd-13cc247a4b29",
+        "expected_model_id": "gpt-5.6-luna",
+        "expected_output_schema_sha256": "bbeb30bdc39fa6031583b6fe1b462a2bf5c969802c1da56689cd91140f6025d3",
+        "expected_output_sha256": "9b9263df15b8cf9f377fab948b6f9438a899d911cf6e86793d5d98968d20aeb2",
+        "expected_payload_sha256": "a6516e8f77d9557a43fc3a0df686f38e576429218403dba7259f8d08f9183801",
+        "expected_prompt_sha256": "0e2a1f54aaec59aed16da7f8e385d388f339cf752ddf91f8ab4cccb0f6f7d363",
+        "expected_source_sha256": "9548ffaadbde4f7f6f4419345ecd93d9f549c04c4c03b0988233610da28eb1cf",
+        "failure": "none",
+        "incomplete_details_absent": true,
+        "input_topology_verified": true,
+        "invocation_topology_supported": true,
+        "invocation_topology_verified": true,
+        "output_schema_verification_source": "provider_input_binding",
+        "provider_output_hash_matched": false,
+        "provider_output_verification_source": "structured_payload_with_verified_envelope",
+        "provider_response_schema_supported": false,
+        "provider_status": "completed",
+        "response_completed_verified": true,
+        "response_id": "resp_0abe9907c2ba7861006a5b9d3a2214819a9185ce0a17c343b8",
+        "retrieved_evidence_unit_sha256": "7364d36704f14e3f60d354e2f18b96dac133cffbcf57a996e3b177d62a3b1f87",
+        "retrieved_input_sha256": "edad292a41024ae49be065c99d69c8036b6db71e4ae37cdb7a8b2134a08e7d0b",
+        "retrieved_invocation_id": "61c91eab-812d-4fdd-96cd-13cc247a4b29",
+        "retrieved_kernel_run_id": "research-init-extraction:61c91eab-812d-4fdd-96cd-13cc247a4b29",
+        "retrieved_model_id": "gpt-5.6-luna",
+        "retrieved_output_schema_sha256": "bbeb30bdc39fa6031583b6fe1b462a2bf5c969802c1da56689cd91140f6025d3",
+        "retrieved_output_sha256": "806b825a973502ba42c523bfb2c420dec7f9415b24ed856acc7bef275a0f8475",
+        "retrieved_payload_sha256": "a6516e8f77d9557a43fc3a0df686f38e576429218403dba7259f8d08f9183801",
+        "retrieved_prompt_sha256": "0e2a1f54aaec59aed16da7f8e385d388f339cf752ddf91f8ab4cccb0f6f7d363",
+        "retrieved_source_sha256": "9548ffaadbde4f7f6f4419345ecd93d9f549c04c4c03b0988233610da28eb1cf",
+        "standalone_context_verified": true,
+        "status": "verified_live"
+      }
+    ],
+    "status": "verified_live",
+    "verified_count": 2
+  },
+  "repeat_index": 1,
+  "report_sha256": "5209c8aa2a793af30f577afdec8d92c4164b25e1560d399f74d27cef59a31190",
+  "repository_evidence": {
+    "clean": true,
+    "commit": "9d55601c0944f665e5d907645cdadba2ee415e6a",
+    "tracked_tree_oid": "1da1fa67b2bf95b0b5b86070a7f7d38c89300f34",
+    "tracked_tree_sha256": "083ff366daab9e1aabb99f183c44814a8581b33dce9d8cd8e058b27cf6d43b75"
+  },
+  "run_id": "tg04-population-contrast-v4-2026-07-18",
+  "schema_version": "tg04_nested_event_holdout.v4",
+  "sealed_expert_graph": {
+    "events": [
+      {
+        "arguments": [
+          {
+            "event_role": "CAUSE",
+            "exact_span": "IFN-alpha",
+            "participant_type": "GENE_OR_PROTEIN",
+            "reference_id": "T21",
+            "source_end": 3473,
+            "source_start": 3464
+          }
+        ],
+        "event_id": "E25",
+        "event_type": "POSITIVE_REGULATION",
+        "trigger": {
+          "exact_span": "enhanced",
+          "source_end": 3439,
+          "source_start": 3431
+        }
+      },
+      {
+        "arguments": [
+          {
+            "event_role": "THEME",
+            "exact_span": "A3G",
+            "participant_type": "GENE_OR_PROTEIN",
+            "reference_id": "T20",
+            "source_end": 3457,
+            "source_start": 3454
+          }
+        ],
+        "event_id": "E26",
+        "event_type": "EXPRESSION",
+        "trigger": {
+          "exact_span": "expression",
+          "source_end": 3450,
+          "source_start": 3440
+        }
+      }
+    ],
+    "links": [
+      {
+        "controlled_event_id": "E26",
+        "controller_event_id": "E25",
+        "event_role": "THEME"
+      }
+    ]
+  },
+  "sealed_projection_set": {
+    "canonical_projection_id": "source-valid-direction-protein-process",
+    "projections": [
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T21",
+                  "source_end": 3473,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T21",
+                  "source_end": 3473,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": []
+        },
+        "projection_id": "source-valid-direction-protein-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction cue, protein cause representation, and process theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-EXPRESSION",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "THEME",
+                  "exact_span": "A3G",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T20",
+                  "source_end": 3457,
+                  "source_start": 3454
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-EXPRESSION",
+              "event_type": "EXPRESSION",
+              "trigger": {
+                "exact_span": "expression",
+                "source_end": 3450,
+                "source_start": 3440
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T21",
+                  "source_end": 3473,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T21",
+                  "source_end": 3473,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "OUTCOME",
+                  "reference_id": "SOURCE-EXPRESSION-OUTCOME",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": [
+            {
+              "controlled_event_id": "SOURCE-EXPRESSION",
+              "controller_event_id": "SOURCE-RESTING",
+              "event_role": "THEME"
+            }
+          ]
+        },
+        "projection_id": "source-valid-direction-protein-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction cue, protein cause representation, and resting-decomposed theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-PROCESS",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-PROCESS",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": []
+        },
+        "projection_id": "source-valid-direction-process-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction cue, process cause representation, and process theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-EXPRESSION",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "THEME",
+                  "exact_span": "A3G",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T20",
+                  "source_end": 3457,
+                  "source_start": 3454
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-EXPRESSION",
+              "event_type": "EXPRESSION",
+              "trigger": {
+                "exact_span": "expression",
+                "source_end": 3450,
+                "source_start": 3440
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-PROCESS",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-PROCESS",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "OUTCOME",
+                  "reference_id": "SOURCE-EXPRESSION-OUTCOME",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": [
+            {
+              "controlled_event_id": "SOURCE-EXPRESSION",
+              "controller_event_id": "SOURCE-RESTING",
+              "event_role": "THEME"
+            }
+          ]
+        },
+        "projection_id": "source-valid-direction-process-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction cue, process cause representation, and resting-decomposed theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "INTERVENTION",
+                  "reference_id": "SOURCE-INTERVENTION",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "INTERVENTION",
+                  "reference_id": "SOURCE-INTERVENTION",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": []
+        },
+        "projection_id": "source-valid-direction-intervention-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction cue, intervention cause representation, and process theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-EXPRESSION",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "THEME",
+                  "exact_span": "A3G",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T20",
+                  "source_end": 3457,
+                  "source_start": 3454
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-EXPRESSION",
+              "event_type": "EXPRESSION",
+              "trigger": {
+                "exact_span": "expression",
+                "source_end": 3450,
+                "source_start": 3440
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "INTERVENTION",
+                  "reference_id": "SOURCE-INTERVENTION",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "INTERVENTION",
+                  "reference_id": "SOURCE-INTERVENTION",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "OUTCOME",
+                  "reference_id": "SOURCE-EXPRESSION-OUTCOME",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": [
+            {
+              "controlled_event_id": "SOURCE-EXPRESSION",
+              "controller_event_id": "SOURCE-RESTING",
+              "event_role": "THEME"
+            }
+          ]
+        },
+        "projection_id": "source-valid-direction-intervention-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction cue, intervention cause representation, and resting-decomposed theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "EXPOSURE",
+                  "reference_id": "SOURCE-EXPOSURE",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "EXPOSURE",
+                  "reference_id": "SOURCE-EXPOSURE",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": []
+        },
+        "projection_id": "source-valid-direction-exposure-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction cue, exposure cause representation, and process theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-EXPRESSION",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "THEME",
+                  "exact_span": "A3G",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T20",
+                  "source_end": 3457,
+                  "source_start": 3454
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-EXPRESSION",
+              "event_type": "EXPRESSION",
+              "trigger": {
+                "exact_span": "expression",
+                "source_end": 3450,
+                "source_start": 3440
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "EXPOSURE",
+                  "reference_id": "SOURCE-EXPOSURE",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "EXPOSURE",
+                  "reference_id": "SOURCE-EXPOSURE",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "OUTCOME",
+                  "reference_id": "SOURCE-EXPRESSION-OUTCOME",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced",
+                "source_end": 3439,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": [
+            {
+              "controlled_event_id": "SOURCE-EXPRESSION",
+              "controller_event_id": "SOURCE-RESTING",
+              "event_role": "THEME"
+            }
+          ]
+        },
+        "projection_id": "source-valid-direction-exposure-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction cue, exposure cause representation, and resting-decomposed theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T21",
+                  "source_end": 3473,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T21",
+                  "source_end": 3473,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": []
+        },
+        "projection_id": "source-valid-direction-and-process-protein-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction-and-process cue, protein cause representation, and process theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-EXPRESSION",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "THEME",
+                  "exact_span": "A3G",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T20",
+                  "source_end": 3457,
+                  "source_start": 3454
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-EXPRESSION",
+              "event_type": "EXPRESSION",
+              "trigger": {
+                "exact_span": "expression",
+                "source_end": 3450,
+                "source_start": 3440
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T21",
+                  "source_end": 3473,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T21",
+                  "source_end": 3473,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "OUTCOME",
+                  "reference_id": "SOURCE-EXPRESSION-OUTCOME",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": [
+            {
+              "controlled_event_id": "SOURCE-EXPRESSION",
+              "controller_event_id": "SOURCE-RESTING",
+              "event_role": "THEME"
+            }
+          ]
+        },
+        "projection_id": "source-valid-direction-and-process-protein-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction-and-process cue, protein cause representation, and resting-decomposed theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-PROCESS",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-PROCESS",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": []
+        },
+        "projection_id": "source-valid-direction-and-process-process-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction-and-process cue, process cause representation, and process theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-EXPRESSION",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "THEME",
+                  "exact_span": "A3G",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T20",
+                  "source_end": 3457,
+                  "source_start": 3454
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-EXPRESSION",
+              "event_type": "EXPRESSION",
+              "trigger": {
+                "exact_span": "expression",
+                "source_end": 3450,
+                "source_start": 3440
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-PROCESS",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-PROCESS",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "OUTCOME",
+                  "reference_id": "SOURCE-EXPRESSION-OUTCOME",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": [
+            {
+              "controlled_event_id": "SOURCE-EXPRESSION",
+              "controller_event_id": "SOURCE-RESTING",
+              "event_role": "THEME"
+            }
+          ]
+        },
+        "projection_id": "source-valid-direction-and-process-process-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction-and-process cue, process cause representation, and resting-decomposed theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "INTERVENTION",
+                  "reference_id": "SOURCE-INTERVENTION",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "INTERVENTION",
+                  "reference_id": "SOURCE-INTERVENTION",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": []
+        },
+        "projection_id": "source-valid-direction-and-process-intervention-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction-and-process cue, intervention cause representation, and process theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-EXPRESSION",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "THEME",
+                  "exact_span": "A3G",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T20",
+                  "source_end": 3457,
+                  "source_start": 3454
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-EXPRESSION",
+              "event_type": "EXPRESSION",
+              "trigger": {
+                "exact_span": "expression",
+                "source_end": 3450,
+                "source_start": 3440
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "INTERVENTION",
+                  "reference_id": "SOURCE-INTERVENTION",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "INTERVENTION",
+                  "reference_id": "SOURCE-INTERVENTION",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "OUTCOME",
+                  "reference_id": "SOURCE-EXPRESSION-OUTCOME",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": [
+            {
+              "controlled_event_id": "SOURCE-EXPRESSION",
+              "controller_event_id": "SOURCE-RESTING",
+              "event_role": "THEME"
+            }
+          ]
+        },
+        "projection_id": "source-valid-direction-and-process-intervention-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction-and-process cue, intervention cause representation, and resting-decomposed theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "EXPOSURE",
+                  "reference_id": "SOURCE-EXPOSURE",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "EXPOSURE",
+                  "reference_id": "SOURCE-EXPOSURE",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "BIOLOGICAL_PROCESS",
+                  "reference_id": "SOURCE-EXPRESSION-PROCESS",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": []
+        },
+        "projection_id": "source-valid-direction-and-process-exposure-process",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction-and-process cue, exposure cause representation, and process theme shape."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-EXPRESSION",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-RESTING",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "SOURCE-ACTIVATED",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "THEME",
+                  "exact_span": "A3G",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T20",
+                  "source_end": 3457,
+                  "source_start": 3454
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-EXPRESSION",
+              "event_type": "EXPRESSION",
+              "trigger": {
+                "exact_span": "expression",
+                "source_end": 3450,
+                "source_start": 3440
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "EXPOSURE",
+                  "reference_id": "SOURCE-EXPOSURE",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "resting primary CD4 T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-RESTING-POPULATION",
+                  "source_end": 3514,
+                  "source_start": 3487
+                }
+              ],
+              "event_id": "SOURCE-RESTING",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "IFN-alpha treatment",
+                  "participant_type": "EXPOSURE",
+                  "reference_id": "SOURCE-EXPOSURE",
+                  "source_end": 3483,
+                  "source_start": 3464
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "expression of A3G",
+                  "participant_type": "OUTCOME",
+                  "reference_id": "SOURCE-EXPRESSION-OUTCOME",
+                  "source_end": 3457,
+                  "source_start": 3440
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "activated T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-ACTIVATED-POPULATION",
+                  "source_end": 3544,
+                  "source_start": 3527
+                }
+              ],
+              "event_id": "SOURCE-ACTIVATED",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "enhanced expression",
+                "source_end": 3450,
+                "source_start": 3431
+              }
+            }
+          ],
+          "links": [
+            {
+              "controlled_event_id": "SOURCE-EXPRESSION",
+              "controller_event_id": "SOURCE-RESTING",
+              "event_role": "THEME"
+            }
+          ]
+        },
+        "projection_id": "source-valid-direction-and-process-exposure-resting-decomposed",
+        "provenance": "SOURCE_VALID_ALTERNATIVE",
+        "scientific_rationale": "The projection preserves IFN-alpha exposure, A3G, and the opposing resting-cell supported versus activated-cell null outcomes using the direction-and-process cue, exposure cause representation, and resting-decomposed theme shape."
+      }
+    ]
+  },
+  "source_corpus": {
+    "archive_sha256": "f70e5f6d6e2a7f7fcdb5c8671715f3909a77662a6238015b2916ce939f2a890f",
+    "expert_graph_sha256": "1420609f10dbb6e2d667acdc6d3d0909a96ccd1572a032ef4986bd1ab4f746ca",
+    "projection_set_sha256": "5d725c8feedfaf292cb3753c7c9cd8a557ceb7eeba23538068325f7f4f1f237d"
+  },
+  "task_id": "fresh_nested_event_identity_holdout_v4",
+  "unit": {
+    "authoritative_article_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1920263/",
+    "case_id": "bionlp-ge-2011-holdout:PMC-1920263-15-DISCUSSION",
+    "input_sha256": "edad292a41024ae49be065c99d69c8036b6db71e4ae37cdb7a8b2134a08e7d0b",
+    "source_end": 3550,
+    "source_sha256": "9548ffaadbde4f7f6f4419345ecd93d9f549c04c4c03b0988233610da28eb1cf",
+    "source_start": 3398,
+    "text": "Another publication describes an enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells, but not in activated T cells (53).",
+    "unit_id": "source-unit-372b0632f7433058002746584f09b6a55db2fcde52724d1f59104731edb29870",
+    "unit_index": 25
+  },
+  "unresolved_binding_rejections": [],
+  "verified_candidates": [
+    {
+      "inventory_id": "0534777f2b99b2ef65edab20d9e9d585dc82700a92df503e95e659824e5df2e4",
+      "item": {
+        "arguments": [
+          {
+            "event_role": "THEME",
+            "exact_span": "A3G",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "GENE_OR_PROTEIN",
+            "role_rationale": "A3G is the entity whose expression is enhanced."
+          },
+          {
+            "event_role": "CONTEXT",
+            "exact_span": "IFN-alpha treatment",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "INTERVENTION",
+            "role_rationale": "The treatment is the source-explicit experimental context associated with the enhanced expression."
+          },
+          {
+            "event_role": "CONTEXT",
+            "exact_span": "resting primary CD4 T cells",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "POPULATION",
+            "role_rationale": "This is the source-explicit population in which enhanced expression is reported."
+          }
+        ],
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "ASSERTED",
+        "event_type": "INCREASE",
+        "exact_span": "enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells",
+        "inventory_rationale": "The source asserts enhanced A3G expression after IFN-alpha treatment in resting primary CD4 T cells.",
+        "polarity": "SUPPORT",
+        "relation_cue_anchor": null,
+        "relation_cue_span": "enhanced expression",
+        "source_locator": "normalized_extraction_text"
+      },
+      "verification": {
+        "argument_semantic_decisions": [
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "A3G is a named gene product, and it is correctly represented as the THEME of the increased-expression event.",
+            "type_decision": "VALID"
+          },
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "IFN-alpha treatment is correctly represented as an intervention context for the reported expression result.",
+            "type_decision": "VALID"
+          },
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "Resting primary CD4 T cells are correctly represented as the population context for the finding.",
+            "type_decision": "VALID"
+          }
+        ],
+        "decision": "ENTAILED",
+        "direction_encoding": "STRUCTURED",
+        "event_type_decision": "VALID",
+        "evidence_spans": [
+          "enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells"
+        ],
+        "falsification_condition": "This decision would be falsified if the source did not assert enhanced A3G expression in resting primary CD4 T cells after IFN-alpha treatment.",
+        "projection_eligibility": "ELIGIBLE",
+        "reasoning": "The source explicitly reports enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells. The increase direction, asserted status, trigger, theme, treatment context, and population context are all preserved.",
+        "structure_decision": "COMPLETE"
+      }
+    },
+    {
+      "inventory_id": "3f57279598e9507600821f27dee642498a8520ccef64ba6b084d9730547f81c7",
+      "item": {
+        "arguments": [
+          {
+            "event_role": "THEME",
+            "exact_span": "A3G",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "GENE_OR_PROTEIN",
+            "role_rationale": "A3G is the entity whose treatment-associated enhanced expression is absent in the contrasted population."
+          },
+          {
+            "event_role": "CONTEXT",
+            "exact_span": "IFN-alpha treatment",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "INTERVENTION",
+            "role_rationale": "The treatment context is shared with the explicitly contrasted null result."
+          },
+          {
+            "event_role": "CONTEXT",
+            "exact_span": "activated T cells",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "POPULATION",
+            "role_rationale": "This is the population in which the source explicitly reports that the enhanced expression does not occur."
+          }
+        ],
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "ASSERTED",
+        "event_type": "INCREASE",
+        "exact_span": "enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells, but not in activated T cells",
+        "inventory_rationale": "The coordinated contrast explicitly states that the enhanced expression is not observed in activated T cells, preserving the tested increase as a null result.",
+        "polarity": "NULL_RESULT",
+        "relation_cue_anchor": null,
+        "relation_cue_span": "not",
+        "source_locator": "normalized_extraction_text"
+      },
+      "verification": {
+        "argument_semantic_decisions": [
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "A3G is a named gene product and is correctly represented as the THEME of the tested increased-expression relationship, whose result is null in activated T cells.",
+            "type_decision": "VALID"
+          },
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "IFN-alpha treatment is correctly represented as an intervention context for the tested expression relationship.",
+            "type_decision": "VALID"
+          },
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "Activated T cells are correctly represented as the population context for the explicit null result.",
+            "type_decision": "VALID"
+          }
+        ],
+        "decision": "ENTAILED",
+        "direction_encoding": "STRUCTURED",
+        "event_type_decision": "VALID",
+        "evidence_spans": [
+          "enhanced expression of A3G after IFN-alpha treatment in resting primary CD4 T cells, but not in activated T cells"
+        ],
+        "falsification_condition": "This decision would be falsified if the source asserted enhanced A3G expression after IFN-alpha treatment in activated T cells, or if it did not explicitly state the absence of that result in activated T cells.",
+        "projection_eligibility": "ELIGIBLE",
+        "reasoning": "The source explicitly states that the enhanced-expression result occurs in resting primary CD4 T cells but not in activated T cells. The candidate preserves the tested increase direction with NULL_RESULT polarity and includes the theme, intervention context, and activated-cell population context.",
+        "structure_decision": "COMPLETE"
+      }
+    }
+  ]
+}

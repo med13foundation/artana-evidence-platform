@@ -24,6 +24,11 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     derive_claim_local_source_region,
     normalize_claim_frame,
 )
+from artana_evidence_api.document_extraction_support.llm_extraction.claim_framing_semantics import (
+    causal_subject_role_violation,
+    directional_projection_violation,
+    endpoint_role_ambiguity_violation,
+)
 from artana_evidence_api.document_extraction_support.llm_extraction.prompt_versions import (
     CLAIM_FRAMING_PROMPT_VERSION,
 )
@@ -359,6 +364,26 @@ def _require_inventory_consistency(
         raise StructuredModelSemanticError(
             "framed relation endpoints must come from typed inventory arguments",
         )
+    endpoint_ambiguity = endpoint_role_ambiguity_violation(
+        subject=relation.subject,
+        object_=relation.object,
+        inventory_claim=inventory_claim,
+    )
+    if endpoint_ambiguity is not None:
+        raise StructuredModelSemanticError(endpoint_ambiguity)
+    causal_violation = causal_subject_role_violation(
+        relation_type=relation.relation_type,
+        subject=relation.subject,
+        inventory_claim=inventory_claim,
+    )
+    if causal_violation is not None:
+        raise StructuredModelSemanticError(causal_violation)
+    directional_violation = directional_projection_violation(
+        relation_type=relation.relation_type,
+        inventory_claim=inventory_claim,
+    )
+    if directional_violation is not None:
+        raise StructuredModelSemanticError(directional_violation)
     _require_role_retention(relation=relation, inventory_claim=inventory_claim)
 
 

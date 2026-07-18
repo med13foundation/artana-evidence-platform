@@ -160,9 +160,9 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v26:claim_inventory.v20+"
-        "claim_inventory_completeness.v20+claim_inventory_recovery.v11+"
-        "claim_framing.v7"
+        "document_extraction.claim_pipeline.v28:claim_inventory.v21+"
+        "claim_inventory_completeness.v21+claim_inventory_recovery.v11+"
+        "claim_framing.v8"
     )
 
 
@@ -178,6 +178,13 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
     assert "agent is not a substitute for cause" in normalized_prompt
     assert "cytokines, growth factors" in normalized_prompt
     assert "not as a generic label for an administered protein" in normalized_prompt
+    assert "does not by itself establish causation" in normalized_prompt
+    assert (
+        "intervention, exposure, or another source-valid context" in normalized_prompt
+    )
+    assert "timeframe/context argument" in normalized_prompt
+    assert "elliptical contrast" in normalized_prompt
+    assert "entity alone is not a complete outcome" in normalized_prompt
     assert "inventory it as a separate sibling event" in normalized_prompt
     assert "separate sibling event whose own arguments" in normalized_prompt
     assert "do not duplicate an inner participant on the outer event" in (
@@ -212,6 +219,14 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
     assert "directional language is outside exact_span" in completeness_prompt
     assert "directionally resolved outer event" in completeness_prompt
     assert "across the complete frozen chunk" in completeness_prompt
+    assert "temporal phrase is a timeframe argument" in completeness_prompt
+    assert "typed source-bound argument for the inherited tested process" in (
+        completeness_prompt
+    )
+
+    framing_prompt = SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT.casefold()
+    assert "context argument is a qualifier" in framing_prompt
+    assert "source-explicit cause or agent event_role" in framing_prompt
 
 
 def test_claim_event_type_is_closed_and_required_across_inventory_prompts() -> None:
@@ -372,22 +387,26 @@ def _inventory_claim(
     if endpoint_role_order == "B_SUBJECT_A_OBJECT":
         endpoint_a_role = "CONDITION"
         endpoint_b_role = "INTERVENTION"
+        endpoint_a_event_role = "THEME"
+        endpoint_b_event_role = "AGENT"
     else:
         endpoint_a_role = "INTERVENTION"
         endpoint_b_role = "CONDITION"
+        endpoint_a_event_role = "AGENT"
+        endpoint_b_event_role = "THEME"
     return {
         "exact_span": exact_span,
         "relation_cue_span": relation_cue_span,
         "arguments": [
             {
                 "role": endpoint_a_role,
-                "event_role": "AGENT",
+                "event_role": endpoint_a_event_role,
                 "exact_span": endpoint_a_span,
                 "role_rationale": "First typed biomedical argument.",
             },
             {
                 "role": endpoint_b_role,
-                "event_role": "THEME",
+                "event_role": endpoint_b_event_role,
                 "exact_span": endpoint_b_span,
                 "role_rationale": "Second typed biomedical argument.",
             },
@@ -479,6 +498,7 @@ def _relation_payload(
     population: dict[str, object] | None = None,
     intervention: dict[str, object] | None = None,
     outcome: dict[str, object] | None = None,
+    timeframe: dict[str, object] | None = None,
 ) -> dict[str, object]:
     review_only = polarity != "SUPPORT" or epistemic_status != "ASSERTED"
     absent = _absent_qualifier
@@ -503,7 +523,7 @@ def _relation_payload(
         "outcome": outcome or absent(),
         "study_design": absent(),
         "treatment_setting": absent(),
-        "timeframe": absent(),
+        "timeframe": timeframe or absent(),
         "threshold": absent(),
         "source_measurements": [],
         "extraction_rationale": "The exact source span supports this frame.",
@@ -538,6 +558,306 @@ async def _run_pipeline(
         step_runner=runner,
         execution_namespace="unit-test",
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "relation_type",
+    [
+        "ACTIVATES",
+        "ENHANCES",
+        "promotes",
+        "ASSOCIATED_WITH",
+        "POSITIVE_REGULATION",
+    ],
+)
+async def test_temporal_context_cannot_lose_semantics_in_framing(
+    relation_type: str,
+) -> None:
+    text = "A3G expression increased after IFN-alpha treatment."
+    inventory_claim = {
+        "exact_span": text,
+        "relation_cue_span": "increased",
+        "arguments": [
+            {
+                "role": "GENE_OR_PROTEIN",
+                "event_role": "THEME",
+                "exact_span": "A3G",
+                "role_rationale": "A3G is the measured gene product.",
+            },
+            {
+                "role": "BIOLOGICAL_PROCESS",
+                "event_role": "THEME",
+                "exact_span": "A3G expression",
+                "role_rationale": "The changed process is explicit.",
+            },
+            {
+                "role": "INTERVENTION",
+                "event_role": "CONTEXT",
+                "exact_span": "IFN-alpha treatment",
+                "role_rationale": "The treatment is experimental context only.",
+            },
+            {
+                "role": "TIMEFRAME",
+                "event_role": "CONTEXT",
+                "exact_span": "after IFN-alpha treatment",
+                "role_rationale": "The temporal ordering is explicit.",
+            },
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "INCREASE",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "The source reports a non-causal contextual change.",
+    }
+    invalid_causal_frame = _framed_relation(
+        sentence=text,
+        subject="IFN-alpha treatment",
+        relation_type=relation_type,
+        object_="A3G",
+    )
+    invalid_causal_frame["relations"][0]["timeframe"] = _present_qualifier(
+        "after IFN-alpha treatment",
+        "after IFN-alpha treatment",
+    )
+    abstention = {
+        "decision": "ABSTAIN",
+        "abstention_reason": "RELATION_AMBIGUOUS",
+        "abstention_rationale": "The context does not establish a causal edge.",
+        "decision_rationale": "No binary causal projection is source-supported.",
+        "relations": [],
+    }
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [inventory_claim]},
+            _complete_inventory(),
+            invalid_causal_frame,
+            abstention,
+        ),
+    )
+
+    result = await _run_pipeline(text=text, runner=runner)
+
+    assert result.candidates == []
+    framing_records = [
+        record
+        for record in result.model_attempt_records
+        if record.pass_role == "claim_framing"
+    ]
+    assert [record.validation_outcome for record in framing_records] == [
+        "semantic_invalid",
+        "accepted",
+    ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("relation_type", ["ACTIVATES", "ENHANCES", "promotes"])
+@pytest.mark.parametrize(
+    ("text", "relation_cue_span"),
+    [
+        ("IFN-alpha treatment increased A3G expression.", "increased"),
+        (
+            "IFN-alpha treatment was reported to induce A3G expression.",
+            "induce",
+        ),
+    ],
+)
+async def test_explicit_causal_language_can_produce_causal_relation(
+    text: str,
+    relation_cue_span: str,
+    relation_type: str,
+) -> None:
+    inventory_claim = {
+        "exact_span": text,
+        "relation_cue_span": relation_cue_span,
+        "arguments": [
+            {
+                "role": "INTERVENTION",
+                "event_role": "CAUSE",
+                "exact_span": "IFN-alpha treatment",
+                "role_rationale": "The grammatical controller is explicit.",
+            },
+            {
+                "role": "GENE_OR_PROTEIN",
+                "event_role": "THEME",
+                "exact_span": "A3G",
+                "role_rationale": "A3G is the regulated gene product.",
+            },
+            {
+                "role": "BIOLOGICAL_PROCESS",
+                "event_role": "THEME",
+                "exact_span": "A3G expression",
+                "role_rationale": "The regulated process is explicit.",
+            },
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "POSITIVE_REGULATION",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "The source explicitly names the causal controller.",
+    }
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [inventory_claim]},
+            _complete_inventory(),
+            _framed_relation(
+                sentence=text,
+                subject="IFN-alpha treatment",
+                relation_type=relation_type,
+                object_="A3G expression",
+            ),
+        ),
+    )
+
+    result = await _run_pipeline(text=text, runner=runner)
+
+    assert [
+        (candidate.relation_type, candidate.subject_label)
+        for candidate in result.candidates
+    ] == [
+        ("ACTIVATES", "IFN-alpha treatment"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_timeframe_blocks_causal_frame_even_if_inventory_says_cause() -> None:
+    text = "A3G expression increased after IFN-alpha treatment."
+    inventory_claim = {
+        "exact_span": text,
+        "relation_cue_span": "increased",
+        "arguments": [
+            {
+                "role": "GENE_OR_PROTEIN",
+                "event_role": "THEME",
+                "exact_span": "A3G",
+                "role_rationale": "A3G is the measured gene product.",
+            },
+            {
+                "role": "INTERVENTION",
+                "event_role": "CAUSE",
+                "exact_span": "IFN-alpha treatment",
+                "role_rationale": "This deliberately simulates a wrong causal label.",
+            },
+            {
+                "role": "TIMEFRAME",
+                "event_role": "CONTEXT",
+                "exact_span": "after IFN-alpha treatment",
+                "role_rationale": "The temporal ordering is explicit.",
+            },
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "POSITIVE_REGULATION",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "Adversarial inconsistent inventory fixture.",
+    }
+    invalid_frame = _framed_relation(
+        sentence=text,
+        subject="IFN-alpha treatment",
+        relation_type="ENHANCES",
+        object_="A3G",
+    )
+    invalid_frame["relations"][0]["timeframe"] = _present_qualifier(
+        "after IFN-alpha treatment",
+        "after IFN-alpha treatment",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [inventory_claim]},
+            _complete_inventory(),
+            invalid_frame,
+            {
+                "decision": "ABSTAIN",
+                "abstention_reason": "SOURCE_CONFLICT",
+                "abstention_rationale": "Temporal context is not a causal edge.",
+                "decision_rationale": "The inventory conflicts with the source.",
+                "relations": [],
+            },
+        ),
+    )
+
+    result = await _run_pipeline(text=text, runner=runner)
+
+    assert result.candidates == []
+    framing_records = [
+        record
+        for record in result.model_attempt_records
+        if record.pass_role == "claim_framing"
+    ]
+    assert [record.validation_outcome for record in framing_records] == [
+        "semantic_invalid",
+        "accepted",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_conflicting_endpoint_event_roles_fail_closed() -> None:
+    text = "IFN-alpha treatment increased A3G expression."
+    inventory_claim = {
+        "exact_span": text,
+        "relation_cue_span": "increased",
+        "arguments": [
+            {
+                "role": "INTERVENTION",
+                "event_role": "CAUSE",
+                "exact_span": "IFN-alpha treatment",
+                "role_rationale": "The treatment is presented as cause.",
+            },
+            {
+                "role": "OTHER_ENTITY",
+                "event_role": "CONTEXT",
+                "exact_span": "IFN-alpha treatment",
+                "role_rationale": "This conflicting duplicate is adversarial.",
+            },
+            {
+                "role": "BIOLOGICAL_PROCESS",
+                "event_role": "THEME",
+                "exact_span": "A3G expression",
+                "role_rationale": "The changed process is explicit.",
+            },
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "POSITIVE_REGULATION",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "Adversarial conflicting endpoint roles.",
+    }
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [inventory_claim]},
+            _complete_inventory(),
+            _framed_relation(
+                sentence=text,
+                subject="IFN-alpha treatment",
+                relation_type="ACTIVATES",
+                object_="A3G expression",
+            ),
+            {
+                "decision": "ABSTAIN",
+                "abstention_reason": "SOURCE_CONFLICT",
+                "abstention_rationale": "The endpoint roles conflict.",
+                "decision_rationale": "The inventory is internally ambiguous.",
+                "relations": [],
+            },
+        ),
+    )
+
+    result = await _run_pipeline(text=text, runner=runner)
+
+    assert result.candidates == []
+    framing_records = [
+        record
+        for record in result.model_attempt_records
+        if record.pass_role == "claim_framing"
+    ]
+    assert [record.validation_outcome for record in framing_records] == [
+        "semantic_invalid",
+        "accepted",
+    ]
 
 
 async def _run_inventory(
@@ -2777,8 +3097,9 @@ async def test_non_positive_claims_over_limit_are_routed_without_loss() -> None:
 
 
 @pytest.mark.asyncio
-async def test_nested_event_identity_is_preserved_and_binary_projection_is_review_only(
-) -> None:
+async def test_nested_event_identity_is_preserved_and_binary_projection_is_review_only() -> (
+    None
+):
     text = "Runx deficiency reduced TGF-beta induction of Foxp3."
     outer = {
         "exact_span": text,

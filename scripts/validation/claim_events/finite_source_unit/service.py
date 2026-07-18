@@ -37,6 +37,9 @@ from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitExtractionOutput,
     SourceUnitVerificationOutput,
 )
+from scripts.validation.claim_events.finite_source_unit.structural_invariants import (
+    trusted_structure_violation,
+)
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
@@ -45,8 +48,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v15"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v14"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v16"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v15"
 _BINDING_REPAIR_PROMPT_VERSION = "tg04.finite_source_unit.binding_repair.v2"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
@@ -176,6 +179,10 @@ def bind_source_unit_verification(
                 raise StructuredModelSemanticError(
                     "ENTAILED evidence must cover the trigger and every argument",
                 )
+        if decision.trusted_projection_eligible:
+            structural_violation = trusted_structure_violation(candidate)
+            if structural_violation is not None:
+                raise StructuredModelSemanticError(structural_violation)
         verified.append(
             VerifiedEventCandidate(claim=candidate, verification=decision),
         )
@@ -277,7 +284,9 @@ async def repair_source_unit_extraction(  # noqa: PLR0913
             replay_policy="fork_on_drift",
         )
 
-    def validate_repair(output: SourceUnitExtractionOutput) -> SourceUnitExtractionResult:
+    def validate_repair(
+        output: SourceUnitExtractionOutput,
+    ) -> SourceUnitExtractionResult:
         result = bind_source_unit_extraction(output, unit=unit)
         if result.rejected:
             raise StructuredModelSemanticError(
@@ -310,6 +319,7 @@ async def repair_source_unit_extraction(  # noqa: PLR0913
         ),
         validate_semantics=validate_repair,
     )
+
 
 async def verify_source_unit_candidates(  # noqa: PLR0913
     *,
@@ -473,6 +483,20 @@ CAUSAL EVENT AND ENTITY SEMANTICS:
   only when the source states no effect and no more specific tested relationship
   is explicit. Preserve every coordinated outcome and source-explicit population
   or biological context as typed arguments.
+- Temporal or experimental context such as "after treatment", "before or during
+  treatment", "following exposure", "upon administration", or "prior to treatment"
+  does not by itself assert causation. When a source reports a directional change
+  in that context without a causal verb,
+  use INCREASE or DECREASE, keep the treatment as INTERVENTION, EXPOSURE, or
+  another source-valid CONTEXT argument, and preserve the complete temporal phrase
+  including its intervention or exposure as a TIMEFRAME/CONTEXT argument. Preserve
+  the changed process in the cue or a
+  typed BIOLOGICAL_PROCESS, OUTCOME, or MEASUREMENT argument.
+- An elliptical contrast such as "but not in activated cells" inherits the
+  complete tested predicate from its coordinated antecedent. When its local cue
+  is only "not", preserve the inherited process as a typed BIOLOGICAL_PROCESS,
+  OUTCOME, or MEASUREMENT argument with a source-bound antecedent span. The entity
+  alone is not a complete outcome.
 
 prompt_version: {_EXTRACTION_PROMPT_VERSION}
 
@@ -573,6 +597,13 @@ For every candidate, independently return these additional categorical findings:
   with NULL_RESULT polarity; NO_EFFECT is valid only when no more specific tested
   relationship is explicit. Every coordinated outcome and source-explicit
   population or biological context must remain structurally represented.
+- "After treatment", "following exposure", and similar temporal or experimental
+  context do not establish CAUSE without causal source language. INCREASE or
+  DECREASE with a typed intervention/exposure CONTEXT is valid only when the
+  temporal phrase is preserved as TIMEFRAME and the changed process and every
+  population-specific outcome remain explicit. An elliptical null contrast with
+  cue "not" is incomplete unless a typed argument preserves its inherited tested
+  process.
 
 prompt_version: {_VERIFICATION_PROMPT_VERSION}
 

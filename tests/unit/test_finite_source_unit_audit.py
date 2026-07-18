@@ -204,9 +204,7 @@ def _event_item(
     )
 
 
-_BINDING_REPAIR_SOURCE = (
-    "FOXP3 was measured, and IL-4 inhibited FOXP3 expression."
-)
+_BINDING_REPAIR_SOURCE = "FOXP3 was measured, and IL-4 inhibited FOXP3 expression."
 
 
 def _binding_repair_event(*, theme_right_context: str) -> ClaimInventoryItem:
@@ -258,6 +256,40 @@ def _candidate_verification_payload(
         "reasoning": "Categorical source-only verification.",
         "falsification_condition": "The source does not state the event.",
     }
+
+
+def _eligible_verification_for(
+    item: ClaimInventoryItem,
+) -> SourceUnitVerificationOutput:
+    return SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "NULL_RESULT"
+            if item.polarity.value == "NULL_RESULT"
+            else "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "The supplied candidate covers the unit.",
+            "decisions": [
+                {
+                    "decision": "ENTAILED",
+                    "structure_decision": "COMPLETE",
+                    "direction_encoding": "STRUCTURED",
+                    "event_type_decision": "VALID",
+                    "argument_semantic_decisions": [
+                        {
+                            "type_decision": "VALID",
+                            "event_role_decision": "VALID",
+                            "reasoning": "The source supports this typed role.",
+                        }
+                        for _argument in item.arguments
+                    ],
+                    "projection_eligibility": "ELIGIBLE",
+                    "evidence_spans": [item.exact_span],
+                    "reasoning": "The candidate appears complete.",
+                    "falsification_condition": "A material structure is missing.",
+                },
+            ],
+        },
+    )
 
 
 def test_source_units_preserve_deterministic_offsets_and_coverage() -> None:
@@ -490,9 +522,7 @@ def test_binding_repair_invariant_rejects_scientific_mutation() -> None:
     mutated_cause["event_role"] = "THEME"
     argument_mutation = original.model_copy(
         update={
-            "events": (
-                ClaimInventoryItem.model_validate(argument_mutation_payload),
-            ),
+            "events": (ClaimInventoryItem.model_validate(argument_mutation_payload),),
         },
     )
     added_event = original.model_copy(
@@ -693,6 +723,259 @@ def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> 
             unit=unit,
             candidates=extraction.accepted,
         )
+
+
+@pytest.mark.parametrize(
+    ("source", "timeframe_span"),
+    [
+        (
+            "A3G expression increased after IFN-alpha treatment.",
+            "after IFN-alpha treatment",
+        ),
+        (
+            "A3G expression increased before IFN-alpha treatment.",
+            "before IFN-alpha treatment",
+        ),
+        (
+            "A3G expression increased during IFN-alpha treatment.",
+            "during IFN-alpha treatment",
+        ),
+        (
+            "A3G expression increased following IFN-alpha treatment.",
+            "following IFN-alpha treatment",
+        ),
+        (
+            "A3G expression increased upon IFN-alpha treatment.",
+            "upon IFN-alpha treatment",
+        ),
+        (
+            "A3G expression increased prior to IFN-alpha treatment.",
+            "prior to IFN-alpha treatment",
+        ),
+    ],
+)
+def test_eligible_contextual_event_requires_source_bound_timeframe(
+    source: str,
+    timeframe_span: str,
+) -> None:
+    unit = enumerate_source_units(case_id="temporal-context", source_text=source)[0]
+    missing_timeframe = ClaimInventoryItem.model_validate(
+        {
+            "exact_span": source,
+            "relation_cue_span": "increased",
+            "arguments": [
+                {
+                    "role": "GENE_OR_PROTEIN",
+                    "event_role": "THEME",
+                    "exact_span": "A3G",
+                    "role_rationale": "A3G is the measured gene product.",
+                },
+                {
+                    "role": "BIOLOGICAL_PROCESS",
+                    "event_role": "THEME",
+                    "exact_span": "A3G expression",
+                    "role_rationale": "The changed process is explicit.",
+                },
+                {
+                    "role": "INTERVENTION",
+                    "event_role": "CONTEXT",
+                    "exact_span": "IFN-alpha treatment",
+                    "role_rationale": "The treatment is contextual.",
+                },
+            ],
+            "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "event_type": "INCREASE",
+            "polarity": "SUPPORT",
+            "epistemic_status": "ASSERTED",
+            "inventory_rationale": "The source reports a contextual increase.",
+        },
+    )
+    extraction = bind_source_unit_extraction(
+        SourceUnitExtractionOutput(
+            eligibility_category=SourceUnitEligibilityCategory.FINDING,
+            decision=SourceUnitDecision.EXPLICIT_EVENT,
+            events=(missing_timeframe,),
+            reasoning="One explicit event.",
+        ),
+        unit=unit,
+    )
+
+    with pytest.raises(StructuredModelSemanticError, match="TIMEFRAME"):
+        bind_source_unit_verification(
+            _eligible_verification_for(missing_timeframe),
+            unit=unit,
+            candidates=extraction.accepted,
+        )
+
+    partial_payload = missing_timeframe.model_dump(mode="json")
+    partial_arguments = partial_payload["arguments"]
+    assert isinstance(partial_arguments, list)
+    partial_arguments.append(
+        {
+            "role": "TIMEFRAME",
+            "event_role": "CONTEXT",
+            "exact_span": timeframe_span.removesuffix(" IFN-alpha treatment"),
+            "role_rationale": "This deliberately omits the contextual object.",
+        },
+    )
+    partial = ClaimInventoryItem.model_validate(partial_payload)
+    partial_extraction = bind_source_unit_extraction(
+        SourceUnitExtractionOutput(
+            eligibility_category=SourceUnitEligibilityCategory.FINDING,
+            decision=SourceUnitDecision.EXPLICIT_EVENT,
+            events=(partial,),
+            reasoning="One lossy explicit event.",
+        ),
+        unit=unit,
+    )
+    with pytest.raises(StructuredModelSemanticError, match="complete temporal"):
+        bind_source_unit_verification(
+            _eligible_verification_for(partial),
+            unit=unit,
+            candidates=partial_extraction.accepted,
+        )
+
+    complete_payload = missing_timeframe.model_dump(mode="json")
+    complete_arguments = complete_payload["arguments"]
+    assert isinstance(complete_arguments, list)
+    complete_arguments.append(
+        {
+            "role": "TIMEFRAME",
+            "event_role": "CONTEXT",
+            "exact_span": timeframe_span,
+            "role_rationale": "The temporal ordering is explicit.",
+        },
+    )
+    complete = ClaimInventoryItem.model_validate(complete_payload)
+    complete_extraction = bind_source_unit_extraction(
+        SourceUnitExtractionOutput(
+            eligibility_category=SourceUnitEligibilityCategory.FINDING,
+            decision=SourceUnitDecision.EXPLICIT_EVENT,
+            events=(complete,),
+            reasoning="One complete explicit event.",
+        ),
+        unit=unit,
+    )
+
+    assert (
+        len(
+            bind_source_unit_verification(
+                _eligible_verification_for(complete),
+                unit=unit,
+                candidates=complete_extraction.accepted,
+            ),
+        )
+        == 1
+    )
+
+
+def test_eligible_elliptical_null_requires_inherited_process() -> None:
+    source = "A3G expression increased in resting cells, but not in activated cells."
+    unit = enumerate_source_units(case_id="elliptical-null", source_text=source)[0]
+    missing_process = ClaimInventoryItem.model_validate(
+        {
+            "exact_span": source,
+            "relation_cue_span": "not",
+            "arguments": [
+                {
+                    "role": "GENE_OR_PROTEIN",
+                    "event_role": "THEME",
+                    "exact_span": "A3G",
+                    "role_rationale": "A3G is the tested gene product.",
+                },
+                {
+                    "role": "POPULATION",
+                    "event_role": "CONTEXT",
+                    "exact_span": "activated cells",
+                    "role_rationale": "This is the null-result population.",
+                },
+            ],
+            "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "event_type": "INCREASE",
+            "polarity": "NULL_RESULT",
+            "epistemic_status": "ASSERTED",
+            "inventory_rationale": "The contrast states a population-specific null.",
+        },
+    )
+    extraction = bind_source_unit_extraction(
+        SourceUnitExtractionOutput(
+            eligibility_category=SourceUnitEligibilityCategory.NULL_RESULT,
+            decision=SourceUnitDecision.EXPLICIT_EVENT,
+            events=(missing_process,),
+            reasoning="One explicit null event.",
+        ),
+        unit=unit,
+    )
+
+    with pytest.raises(StructuredModelSemanticError, match="inherited tested process"):
+        bind_source_unit_verification(
+            _eligible_verification_for(missing_process),
+            unit=unit,
+            candidates=extraction.accepted,
+        )
+
+    unrelated_payload = missing_process.model_dump(mode="json")
+    unrelated_arguments = unrelated_payload["arguments"]
+    assert isinstance(unrelated_arguments, list)
+    unrelated_arguments.append(
+        {
+            "role": "BIOLOGICAL_PROCESS",
+            "event_role": "THEME",
+            "exact_span": "resting cells",
+            "role_rationale": "This deliberately selects an unrelated span.",
+        },
+    )
+    unrelated = ClaimInventoryItem.model_validate(unrelated_payload)
+    unrelated_extraction = bind_source_unit_extraction(
+        SourceUnitExtractionOutput(
+            eligibility_category=SourceUnitEligibilityCategory.NULL_RESULT,
+            decision=SourceUnitDecision.EXPLICIT_EVENT,
+            events=(unrelated,),
+            reasoning="One lossy explicit null event.",
+        ),
+        unit=unit,
+    )
+    with pytest.raises(StructuredModelSemanticError, match="inherited tested process"):
+        bind_source_unit_verification(
+            _eligible_verification_for(unrelated),
+            unit=unit,
+            candidates=unrelated_extraction.accepted,
+        )
+
+    complete_payload = missing_process.model_dump(mode="json")
+    complete_arguments = complete_payload["arguments"]
+    assert isinstance(complete_arguments, list)
+    complete_arguments.append(
+        {
+            "role": "BIOLOGICAL_PROCESS",
+            "event_role": "THEME",
+            "exact_span": "A3G expression",
+            "role_rationale": "The inherited tested process is explicit.",
+        },
+    )
+    complete = ClaimInventoryItem.model_validate(complete_payload)
+    complete_extraction = bind_source_unit_extraction(
+        SourceUnitExtractionOutput(
+            eligibility_category=SourceUnitEligibilityCategory.NULL_RESULT,
+            decision=SourceUnitDecision.EXPLICIT_EVENT,
+            events=(complete,),
+            reasoning="One complete explicit null event.",
+        ),
+        unit=unit,
+    )
+
+    assert (
+        len(
+            bind_source_unit_verification(
+                _eligible_verification_for(complete),
+                unit=unit,
+                candidates=complete_extraction.accepted,
+            ),
+        )
+        == 1
+    )
 
 
 def test_projection_eligibility_fails_closed_on_structure_and_argument_types() -> None:
