@@ -78,8 +78,7 @@ class _SuccessfulClient:
 
 
 class _ProcedureSequenceClient:
-    def __init__(self, unit_id: str) -> None:
-        self._unit_id = unit_id
+    def __init__(self) -> None:
         self.calls: list[type[object]] = []
 
     async def step(self, **kwargs: object) -> object:
@@ -89,7 +88,6 @@ class _ProcedureSequenceClient:
         output: SourceUnitExtractionOutput | SourceUnitVerificationOutput
         if output_schema is SourceUnitExtractionOutput:
             output = SourceUnitExtractionOutput(
-                unit_id=self._unit_id,
                 eligibility_category=SourceUnitEligibilityCategory.PROCEDURE,
                 decision=SourceUnitDecision.NO_EVENT,
                 events=(),
@@ -99,11 +97,9 @@ class _ProcedureSequenceClient:
         else:
             assert output_schema is SourceUnitVerificationOutput
             output = SourceUnitVerificationOutput(
-                unit_id=self._unit_id,
                 eligibility_category=SourceUnitEligibilityCategory.PROCEDURE,
                 coverage_decision=SourceUnitCoverageDecision.NO_EVENT_CONFIRMED,
                 coverage_reasoning="Electroporation is procedural setup.",
-                covered_candidate_ids=(),
                 decisions=(),
             )
             response_id = "resp_procedure_verification"
@@ -173,7 +169,6 @@ def test_source_units_preserve_deterministic_offsets_and_coverage() -> None:
 async def test_extraction_uses_artana_invocation_bound_run_id() -> None:
     unit = enumerate_source_units(case_id="case-1", source_text="Methods only.")[0]
     output = SourceUnitExtractionOutput(
-        unit_id=unit.unit_id,
         eligibility_category=SourceUnitEligibilityCategory.PROCEDURE,
         decision=SourceUnitDecision.NO_EVENT,
         events=(),
@@ -195,13 +190,15 @@ async def test_extraction_uses_artana_invocation_bound_run_id() -> None:
     assert result.attempt_record.kernel_run_id == (
         f"research-init-extraction:{result.attempt_record.invocation_id}"
     )
+    assert result.attempt_record.semantic_unit_id == unit.unit_id
+    assert result.attempt_record.source_sha256 == unit.source_sha256
+    assert result.attempt_record.input_sha256 == unit.input_sha256
 
 
 def test_extraction_contract_rejects_category_payload_conflicts() -> None:
     with pytest.raises(ValidationError, match="requires at least one event"):
         SourceUnitExtractionOutput.model_validate(
             {
-                "unit_id": "unit-1",
                 "eligibility_category": "FINDING",
                 "decision": "EXPLICIT_EVENT",
                 "events": [],
@@ -212,7 +209,6 @@ def test_extraction_contract_rejects_category_payload_conflicts() -> None:
     with pytest.raises(ValidationError, match="cannot contain events"):
         SourceUnitExtractionOutput.model_validate(
             {
-                "unit_id": "unit-1",
                 "eligibility_category": "PROCEDURE",
                 "decision": "NO_EVENT",
                 "events": [_event_item().model_dump(mode="json")],
@@ -236,7 +232,6 @@ def test_extraction_decision_must_match_eligibility_category(
     with pytest.raises(ValidationError, match="must match the eligibility"):
         SourceUnitExtractionOutput.model_validate(
             {
-                "unit_id": "unit-1",
                 "eligibility_category": eligibility_category,
                 "decision": decision,
                 "events": (
@@ -253,7 +248,6 @@ def test_item_binding_preserves_valid_candidate_and_rejected_sibling() -> None:
     source = "Title. IL-4 inhibited FOXP3 expression."
     unit = enumerate_source_units(case_id="case-1", source_text=source)[1]
     output = SourceUnitExtractionOutput(
-        unit_id=unit.unit_id,
         eligibility_category=SourceUnitEligibilityCategory.FINDING,
         decision=SourceUnitDecision.EXPLICIT_EVENT,
         events=(
@@ -276,7 +270,6 @@ def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> 
     unit = enumerate_source_units(case_id="case-1", source_text=source)[1]
     extraction = bind_source_unit_extraction(
         SourceUnitExtractionOutput(
-            unit_id=unit.unit_id,
             eligibility_category=SourceUnitEligibilityCategory.FINDING,
             decision=SourceUnitDecision.EXPLICIT_EVENT,
             events=(_event_item(),),
@@ -284,17 +277,13 @@ def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> 
         ),
         unit=unit,
     )
-    candidate_id = extraction.accepted[0].inventory_id
     valid = SourceUnitVerificationOutput.model_validate(
         {
-            "unit_id": unit.unit_id,
             "eligibility_category": "FINDING",
             "coverage_decision": "CANDIDATES_COMPLETE",
             "coverage_reasoning": "The supplied event covers the unit.",
-            "covered_candidate_ids": [candidate_id],
             "decisions": [
                 {
-                    "candidate_id": candidate_id,
                     "decision": "ENTAILED",
                     "evidence_spans": ["IL-4 inhibited FOXP3 expression."],
                     "reasoning": "The complete event is literal.",
@@ -312,12 +301,21 @@ def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> 
 
     assert verified[0].verification.decision.value == "ENTAILED"
 
+    redirected_candidate = replace(
+        extraction.accepted[0],
+        source_sha256="0" * 64,
+    )
+    with pytest.raises(StructuredModelSemanticError, match="source identity"):
+        bind_source_unit_verification(
+            valid,
+            unit=unit,
+            candidates=(redirected_candidate,),
+        )
+
     missing = SourceUnitVerificationOutput(
-        unit_id=unit.unit_id,
         eligibility_category=SourceUnitEligibilityCategory.FINDING,
         coverage_decision=SourceUnitCoverageDecision.MISSING_EVENT,
         coverage_reasoning="The candidate inventory is unresolved.",
-        covered_candidate_ids=(),
         decisions=(),
     )
     with pytest.raises(StructuredModelSemanticError, match="cover"):
@@ -329,14 +327,11 @@ def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> 
 
     fabricated = SourceUnitVerificationOutput.model_validate(
         {
-            "unit_id": unit.unit_id,
             "eligibility_category": "FINDING",
             "coverage_decision": "CANDIDATES_COMPLETE",
             "coverage_reasoning": "The supplied event covers the unit.",
-            "covered_candidate_ids": [candidate_id],
             "decisions": [
                 {
-                    "candidate_id": candidate_id,
                     "decision": "ENTAILED",
                     "evidence_spans": ["Outside knowledge"],
                     "reasoning": "Unsupported evidence.",
@@ -354,14 +349,11 @@ def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> 
 
     partial = SourceUnitVerificationOutput.model_validate(
         {
-            "unit_id": unit.unit_id,
             "eligibility_category": "FINDING",
             "coverage_decision": "CANDIDATES_COMPLETE",
             "coverage_reasoning": "The supplied event covers the unit.",
-            "covered_candidate_ids": [candidate_id],
             "decisions": [
                 {
-                    "candidate_id": candidate_id,
                     "decision": "ENTAILED",
                     "evidence_spans": ["IL-4"],
                     "reasoning": "Only one participant was cited.",
@@ -384,11 +376,9 @@ def test_no_event_unit_receives_independent_coverage_review() -> None:
         source_text="Cells were measured by luciferase assay.",
     )[0]
     output = SourceUnitVerificationOutput(
-        unit_id=unit.unit_id,
         eligibility_category=SourceUnitEligibilityCategory.MEASUREMENT_ONLY,
         coverage_decision=SourceUnitCoverageDecision.NO_EVENT_CONFIRMED,
         coverage_reasoning="The source describes a procedure without a result.",
-        covered_candidate_ids=(),
         decisions=(),
     )
 
@@ -402,7 +392,6 @@ def test_false_candidate_can_be_rejected_while_unit_confirms_no_event() -> None:
     item = _event_item(exact_span=source)
     extraction = bind_source_unit_extraction(
         SourceUnitExtractionOutput(
-            unit_id=unit.unit_id,
             eligibility_category=SourceUnitEligibilityCategory.FINDING,
             decision=SourceUnitDecision.EXPLICIT_EVENT,
             events=(item,),
@@ -410,17 +399,13 @@ def test_false_candidate_can_be_rejected_while_unit_confirms_no_event() -> None:
         ),
         unit=unit,
     )
-    candidate_id = extraction.accepted[0].inventory_id
     verification = SourceUnitVerificationOutput.model_validate(
         {
-            "unit_id": unit.unit_id,
             "eligibility_category": "MEASUREMENT_ONLY",
             "coverage_decision": "NO_EVENT_CONFIRMED",
             "coverage_reasoning": "Measurement alone does not state a relationship.",
-            "covered_candidate_ids": [],
             "decisions": [
                 {
-                    "candidate_id": candidate_id,
                     "decision": "INSUFFICIENT",
                     "evidence_spans": [],
                     "reasoning": "The proposed inhibition is absent.",
@@ -443,7 +428,6 @@ def test_false_candidate_can_be_rejected_while_unit_confirms_no_event() -> None:
         "eligibility_category",
         "coverage_decision",
         "candidate_decision",
-        "covered_ids",
         "error",
     ),
     [
@@ -451,21 +435,12 @@ def test_false_candidate_can_be_rejected_while_unit_confirms_no_event() -> None:
             "FINDING",
             "CANDIDATES_COMPLETE",
             "INSUFFICIENT",
-            [],
             "requires an ENTAILED candidate",
-        ),
-        (
-            "FINDING",
-            "MISSING_EVENT",
-            "ENTAILED",
-            [],
-            "must equal ENTAILED candidates",
         ),
         (
             "PROCEDURE",
             "NO_EVENT_CONFIRMED",
             "ENTAILED",
-            ["candidate-1"],
             "cannot contain ENTAILED candidates",
         ),
     ],
@@ -474,20 +449,16 @@ def test_verification_rejects_contradictory_coverage_truth_table(
     eligibility_category: str,
     coverage_decision: str,
     candidate_decision: str,
-    covered_ids: list[str],
     error: str,
 ) -> None:
     with pytest.raises(ValidationError, match=error):
         SourceUnitVerificationOutput.model_validate(
             {
-                "unit_id": "opaque-unit",
                 "eligibility_category": eligibility_category,
                 "coverage_decision": coverage_decision,
                 "coverage_reasoning": "Adversarial truth-table probe.",
-                "covered_candidate_ids": covered_ids,
                 "decisions": [
                     {
-                        "candidate_id": "candidate-1",
                         "decision": candidate_decision,
                         "evidence_spans": (
                             ["complete event"]
@@ -517,11 +488,9 @@ def test_verification_coverage_must_match_eligibility_category(
     with pytest.raises(ValidationError, match="must match the eligibility"):
         SourceUnitVerificationOutput.model_validate(
             {
-                "unit_id": "opaque-unit",
                 "eligibility_category": eligibility_category,
                 "coverage_decision": coverage_decision,
                 "coverage_reasoning": "Adversarial category mismatch.",
-                "covered_candidate_ids": [],
                 "decisions": [],
             },
         )
@@ -531,14 +500,11 @@ def test_abstaining_verifier_cannot_return_an_entailed_candidate() -> None:
     with pytest.raises(ValidationError, match="ABSTAIN cannot contain ENTAILED"):
         SourceUnitVerificationOutput.model_validate(
             {
-                "unit_id": "opaque-unit",
                 "eligibility_category": "ABSTAIN",
                 "coverage_decision": "ABSTAIN",
                 "coverage_reasoning": "The category cannot be resolved safely.",
-                "covered_candidate_ids": ["candidate-1"],
                 "decisions": [
                     {
-                        "candidate_id": "candidate-1",
                         "decision": "ENTAILED",
                         "evidence_spans": ["complete event"],
                         "reasoning": "Contradictory entailed output.",
@@ -549,33 +515,71 @@ def test_abstaining_verifier_cannot_return_an_entailed_candidate() -> None:
         )
 
 
-def test_agent_contracts_contain_no_numeric_score_fields() -> None:
+def test_agent_contracts_contain_only_scientific_output_fields() -> None:
     extraction_fields = set(SourceUnitExtractionOutput.model_fields)
     verification_fields = set(SourceUnitVerificationOutput.model_fields)
 
     assert extraction_fields == {
-        "unit_id",
         "eligibility_category",
         "decision",
         "events",
         "reasoning",
     }
     assert verification_fields == {
-        "unit_id",
         "eligibility_category",
         "coverage_decision",
         "coverage_reasoning",
-        "covered_candidate_ids",
         "decisions",
     }
+
+
+def test_agent_contracts_reject_transport_identity_fields() -> None:
+    with pytest.raises(ValidationError, match="unit_id"):
+        SourceUnitExtractionOutput.model_validate(
+            {
+                "unit_id": "model-controlled-unit",
+                "eligibility_category": "PROCEDURE",
+                "decision": "NO_EVENT",
+                "events": [],
+                "reasoning": "A procedure is stated.",
+            },
+        )
+
+    verification_payload: dict[str, object] = {
+        "eligibility_category": "PROCEDURE",
+        "coverage_decision": "NO_EVENT_CONFIRMED",
+        "coverage_reasoning": "A procedure is stated.",
+        "decisions": [],
+    }
+    for forbidden_field in ("unit_id", "covered_candidate_ids"):
+        with pytest.raises(ValidationError, match=forbidden_field):
+            SourceUnitVerificationOutput.model_validate(
+                {**verification_payload, forbidden_field: "model-controlled"},
+            )
+
+    with pytest.raises(ValidationError, match="candidate_id"):
+        SourceUnitVerificationOutput.model_validate(
+            {
+                "eligibility_category": "PROCEDURE",
+                "coverage_decision": "NO_EVENT_CONFIRMED",
+                "coverage_reasoning": "A procedure is stated.",
+                "decisions": [
+                    {
+                        "candidate_id": "model-controlled-candidate",
+                        "decision": "INSUFFICIENT",
+                        "evidence_spans": [],
+                        "reasoning": "No result is stated.",
+                        "falsification_condition": "A result is explicit.",
+                    },
+                ],
+            },
+        )
 
 
 def test_both_agents_receive_the_same_scientific_eligibility_policy() -> None:
     unit = enumerate_source_units(
         case_id="frozen-procedure-control",
-        source_text=(
-            "Reporter vectors were added to CD4+ T cells and electroporated."
-        ),
+        source_text=("Reporter vectors were added to CD4+ T cells and electroporated."),
     )[0]
 
     prompts = (
@@ -588,7 +592,32 @@ def test_both_agents_receive_the_same_scientific_eligibility_policy() -> None:
         assert "PROCEDURE: sample handling" in prompt
         assert "MEASUREMENT_ONLY: an outcome is measured" in prompt
         assert "Only FINDING, HYPOTHESIS, and NULL_RESULT" in prompt
+        assert unit.unit_id not in prompt
+        assert unit.input_sha256 not in prompt
+        assert "unit_id:" not in prompt
+        assert "unit_input_sha256:" not in prompt
         assert "A methods sentence is scientific only when it" in prompt
+
+
+def test_verifier_prompt_contains_no_opaque_candidate_identity() -> None:
+    source = "IL-4 inhibited FOXP3 expression."
+    unit = enumerate_source_units(case_id="case-1", source_text=source)[0]
+    extraction = bind_source_unit_extraction(
+        SourceUnitExtractionOutput(
+            eligibility_category=SourceUnitEligibilityCategory.FINDING,
+            decision=SourceUnitDecision.EXPLICIT_EVENT,
+            events=(_event_item(),),
+            reasoning="One explicit event.",
+        ),
+        unit=unit,
+    )
+
+    prompt = _verification_prompt(unit=unit, candidates=extraction.accepted)
+
+    assert extraction.accepted[0].inventory_id not in prompt
+    assert "candidate_id" not in prompt
+    assert "source_sha256" not in prompt
+    assert "input_sha256" not in prompt
 
 
 def test_independent_eligibility_categories_must_agree() -> None:
@@ -678,7 +707,9 @@ def test_procedure_unit_gate_fails_closed_on_every_safety_boundary() -> None:
 
 def test_procedure_runner_freezes_the_previously_disputed_unit() -> None:
     fixture = load_fixture(
-        Path("scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json"),
+        Path(
+            "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json"
+        ),
     )
 
     unit = select_procedure_unit(fixture)
@@ -695,10 +726,12 @@ def test_procedure_runner_freezes_the_previously_disputed_unit() -> None:
 @pytest.mark.asyncio
 async def test_procedure_runner_executes_exactly_one_call_per_agent_role() -> None:
     fixture = load_fixture(
-        Path("scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json"),
+        Path(
+            "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json"
+        ),
     )
     unit = select_procedure_unit(fixture)
-    client = _ProcedureSequenceClient(unit.unit_id)
+    client = _ProcedureSequenceClient()
 
     result = await _execute_agents(
         client=cast("FiniteSourceUnitModelClient", client),
@@ -720,6 +753,7 @@ async def test_procedure_runner_executes_exactly_one_call_per_agent_role() -> No
         "resp_procedure_extraction",
         "resp_procedure_verification",
     }
+    assert {record.semantic_unit_id for record in result.records} == {unit.unit_id}
     assert result.error_type is None
 
 
@@ -757,16 +791,21 @@ def test_restart_gate_blocks_binding_rejections_and_unconfirmed_coverage() -> No
 
 
 def test_unmatched_discovery_count_includes_stress_lane_events() -> None:
-    assert source_supported_unmatched_count(
-        entailed_count=3,
-        exact_match_count=1,
-    ) == 2
+    assert (
+        source_supported_unmatched_count(
+            entailed_count=3,
+            exact_match_count=1,
+        )
+        == 2
+    )
 
 
 @pytest.mark.asyncio
 async def test_provider_timeout_produces_failed_case_evidence() -> None:
     fixture = load_fixture(
-        Path("scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json"),
+        Path(
+            "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json"
+        ),
     )
     case = _select_panel(fixture).cases[-1]
 

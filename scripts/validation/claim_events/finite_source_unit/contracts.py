@@ -59,11 +59,10 @@ class SourceUnitCoverageDecision(StrEnum):
 
 
 class SourceUnitExtractionOutput(BaseModel):
-    """Categorical extraction result for exactly one frozen source unit."""
+    """Scientific extraction result bound to a unit outside model output."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    unit_id: str = Field(..., min_length=1, max_length=300)
     eligibility_category: SourceUnitEligibilityCategory = Field(..., strict=False)
     decision: SourceUnitDecision = Field(..., strict=False)
     events: tuple[ClaimInventoryItem, ...] = Field(default=(), max_length=16)
@@ -83,8 +82,7 @@ class SourceUnitExtractionOutput(BaseModel):
             if self.eligibility_category.scientific
             else (
                 SourceUnitDecision.ABSTAIN
-                if self.eligibility_category
-                is SourceUnitEligibilityCategory.ABSTAIN
+                if self.eligibility_category is SourceUnitEligibilityCategory.ABSTAIN
                 else SourceUnitDecision.NO_EVENT
             )
         )
@@ -100,11 +98,10 @@ class SourceUnitExtractionOutput(BaseModel):
 
 
 class CandidateVerification(BaseModel):
-    """One categorical verification bound to a stable candidate identity."""
+    """One categorical verification paired to its candidate by input order."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    candidate_id: str = Field(..., min_length=1, max_length=300)
     decision: EntailmentDecision = Field(..., strict=False)
     evidence_spans: tuple[str, ...] = Field(default=(), max_length=16)
     reasoning: str = Field(..., min_length=1, max_length=4000)
@@ -131,44 +128,27 @@ class CandidateVerification(BaseModel):
 
     @model_validator(mode="after")
     def require_evidence_for_decisive_findings(self) -> CandidateVerification:
-        if self.decision in {
-            EntailmentDecision.ENTAILED,
-            EntailmentDecision.CONTRADICTED,
-        } and not self.evidence_spans:
+        if (
+            self.decision
+            in {
+                EntailmentDecision.ENTAILED,
+                EntailmentDecision.CONTRADICTED,
+            }
+            and not self.evidence_spans
+        ):
             raise ValueError("decisive verification requires exact evidence spans")
         return self
 
 
 class SourceUnitVerificationOutput(BaseModel):
-    """Independent verification results for every supplied candidate."""
+    """Ordered scientific verification results without transport identity."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    unit_id: str = Field(..., min_length=1, max_length=300)
     eligibility_category: SourceUnitEligibilityCategory = Field(..., strict=False)
     coverage_decision: SourceUnitCoverageDecision = Field(..., strict=False)
     coverage_reasoning: str = Field(..., min_length=1, max_length=4000)
-    covered_candidate_ids: tuple[str, ...] = Field(default=(), max_length=16)
     decisions: tuple[CandidateVerification, ...] = Field(default=(), max_length=16)
-
-    @field_validator("covered_candidate_ids", mode="before")
-    @classmethod
-    def freeze_covered_candidate_ids(cls, value: object) -> object:
-        if isinstance(value, list):
-            return tuple(value)
-        return value
-
-    @field_validator("covered_candidate_ids")
-    @classmethod
-    def require_unique_covered_candidate_ids(
-        cls,
-        value: tuple[str, ...],
-    ) -> tuple[str, ...]:
-        if any(not candidate_id.strip() for candidate_id in value):
-            raise ValueError("covered candidate IDs must be nonempty")
-        if len(set(value)) != len(value):
-            raise ValueError("covered candidate IDs must be unique")
-        return value
 
     @field_validator("decisions", mode="before")
     @classmethod
@@ -177,39 +157,25 @@ class SourceUnitVerificationOutput(BaseModel):
             return tuple(value)
         return value
 
-    @field_validator("decisions")
-    @classmethod
-    def require_unique_candidate_ids(
-        cls,
-        value: tuple[CandidateVerification, ...],
-    ) -> tuple[CandidateVerification, ...]:
-        ids = tuple(decision.candidate_id for decision in value)
-        if len(set(ids)) != len(ids):
-            raise ValueError("verification candidate IDs must be unique")
-        return value
-
     @model_validator(mode="after")
     def bind_coverage_to_entailed_candidates(self) -> SourceUnitVerificationOutput:
-        entailed_ids = {
-            decision.candidate_id
+        entailed_count = sum(
+            decision.decision is EntailmentDecision.ENTAILED
             for decision in self.decisions
-            if decision.decision is EntailmentDecision.ENTAILED
-        }
-        if set(self.covered_candidate_ids) != entailed_ids:
-            raise ValueError("covered candidate IDs must equal ENTAILED candidates")
+        )
         if (
             self.coverage_decision is SourceUnitCoverageDecision.CANDIDATES_COMPLETE
-            and not entailed_ids
+            and entailed_count == 0
         ):
             raise ValueError("CANDIDATES_COMPLETE requires an ENTAILED candidate")
         if (
             self.coverage_decision is SourceUnitCoverageDecision.NO_EVENT_CONFIRMED
-            and entailed_ids
+            and entailed_count > 0
         ):
             raise ValueError("NO_EVENT_CONFIRMED cannot contain ENTAILED candidates")
         if (
             self.eligibility_category is SourceUnitEligibilityCategory.ABSTAIN
-            and entailed_ids
+            and entailed_count > 0
         ):
             raise ValueError("ABSTAIN cannot contain ENTAILED candidates")
         if self.eligibility_category.scientific:
