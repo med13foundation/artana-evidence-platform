@@ -1,0 +1,45 @@
+{
+  "agent_execution_attempted": false,
+  "candidate_unit_count": 6,
+  "decision": "STOP_EXPERT_GRAPH_INCOMPLETE",
+  "expert_graph_sha256": "f728c428f796d227d33125f79aea64f6c4877e1b7c4cd2ad52db3c5f3c9ac1f3",
+  "exposure_scan": {
+    "exposed_candidate_count": 0,
+    "repository_exposure_count": 0,
+    "selected_source_exposed": false
+  },
+  "gate": {
+    "passed": false,
+    "requirements": {
+      "complete_source_event_set": false,
+      "model_not_exposed_before_preflight": true,
+      "selection_seed_chained_directly": true,
+      "source_not_previously_exposed": true
+    }
+  },
+  "generated_at": "2026-07-18T16:45:34Z",
+  "gold_coverage_failure": {
+    "covered_claim": "NIK cannot phosphorylate IkappaB-alpha directly.",
+    "missing_claim": "Mutated NIK inhibited stimulus-induced kappaB-dependent transcription more effectively than mutated IKK-alpha or -beta.",
+    "reason": "The selected sentence contains a second directional scientific finding that has no corresponding local BioNLP event. Corpus graph closure therefore does not establish complete scientific-claim coverage."
+  },
+  "preflight_reason": "The hidden source passed repository exposure checks, but its expert graph omits a material scientific claim in the same source unit.",
+  "repository_evidence": {
+    "commit": "0afe8fdb0f339108b7c7b86acc25425fee64ffb4",
+    "tracked_tree_oid": "8fcd8208f409190c3e0d2251d704ae1b9842b768"
+  },
+  "schema_version": "tg04_nested_event_holdout_selection_preflight.v1",
+  "selected_unit": {
+    "case_id": "bionlp-ge-2011-holdout:PMID-10455128",
+    "input_sha256": "d29545825fec72556980b676fd2c773bd929504aa58900a493361dadff341e6c",
+    "selection_rank": "04981891d7f34ae448b3fb35aae350483a1533aadf99a1c53b328383bde27453",
+    "source_sha256": "3b47d24ab4ce782f136d1b98367e13c58837a02f6453ed7f7e19fcb914a4ec80",
+    "text": "NIK cannot phosphorylate IkappaB-alpha directly, but it appears to be a functionally important subunit, because mutated NIK inhibited stimulus-induced kappaB-dependent transcription more effectively than mutated IKK-alpha or -beta.",
+    "unit_id": "source-unit-806615403c467020ece4b7f989470a0f15b1d0bb11a8952ac9c541df93939fbb",
+    "unit_index": 9
+  },
+  "selection_profile": "NEGATED_RESULT_GRAPH",
+  "selection_seed": "189ff284fbbdefe98caf50243d2f3b367e81245acd7e6f56b379b8d5246d0594",
+  "source_corpus_archive_sha256": "f70e5f6d6e2a7f7fcdb5c8671715f3909a77662a6238015b2916ce939f2a890f",
+  "trial_generation": 7
+}
