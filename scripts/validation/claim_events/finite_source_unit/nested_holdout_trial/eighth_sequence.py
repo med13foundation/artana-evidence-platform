@@ -200,7 +200,7 @@ def finalize_eighth_repeat(
     )
     require_replayed_eighth_qualification(report)
     output_report = _read_json(authorization.output)
-    if output_report != report:
+    if sha256_json(output_report) != sha256_json(report):
         raise RuntimeError("eighth holdout output does not match the executed report")
     _require_fresh_provider_receipts(report)
     report_sha256 = report.get("report_sha256")

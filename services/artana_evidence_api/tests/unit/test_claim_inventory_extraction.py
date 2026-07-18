@@ -160,8 +160,8 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v29:claim_inventory.v22+"
-        "claim_inventory_completeness.v22+claim_inventory_recovery.v11+"
+        "document_extraction.claim_pipeline.v30:claim_inventory.v23+"
+        "claim_inventory_completeness.v23+claim_inventory_recovery.v11+"
         "claim_framing.v8"
     )
 
@@ -229,6 +229,11 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
         assert "statistical significance" in prompt
         assert "null_result" in prompt
         assert "p-value" in prompt
+        assert "negated significance predicate" in prompt
+        assert "molecular cargo" in prompt
+        assert "independent cause roles" in prompt
+    assert "without the direction word" in normalized_prompt
+    assert "separable direction word" in completeness_prompt
     assert "does not establish no change or no biological effect" in normalized_prompt
     assert "nonsignificance as no change or no effect" in completeness_prompt
 

@@ -48,8 +48,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v17"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v16"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v18"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v17"
 _BINDING_REPAIR_PROMPT_VERSION = "tg04.finite_source_unit.binding_repair.v2"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
@@ -499,6 +499,16 @@ CAUSAL EVENT AND ENTITY SEMANTICS:
   negated significance phrase. Never rewrite nonsignificance as no change or no
   effect, and never invent a p-value, effect size, confidence interval, or numeric
   magnitude.
+- Anchor the provisional trend to its source-explicit trend or tendency language.
+  Never use a positive fragment taken from inside the sibling's negated
+  significance predicate as the trend cue. Keep direction in event_type and keep
+  the statistical-significance qualifier, without the direction word, as the
+  MEASUREMENT when the source supports that separation.
+- When an experimental manipulation phrase contains a named molecular cargo that
+  is separately represented as the biological CAUSE, keep the whole manipulation
+  as INTERVENTION/CONTEXT. Do not assign both the manipulation and its molecular
+  cargo independent CAUSE roles unless the source explicitly gives each a
+  distinct causal action.
 - Temporal or experimental context such as "after treatment", "before or during
   treatment", "following exposure", "upon administration", or "prior to treatment"
   does not by itself assert causation. When a source reports a directional change
@@ -632,6 +642,10 @@ For every candidate, independently return these additional categorical findings:
   MISSING_EVENT when either sibling is absent, nonsignificance is broadened to no
   effect or no change, or a p-value, effect size, confidence interval, or numeric
   magnitude is invented.
+- Mark the inventory incomplete or structurally lossy when a trend cue is copied
+  from inside the sibling's negated-significance predicate, when a direction word
+  is incorrectly bundled into a separable statistical-significance MEASUREMENT,
+  or when a manipulation and its molecular cargo duplicate the same CAUSE role.
 - "After treatment", "following exposure", and similar temporal or experimental
   context do not establish CAUSE without causal source language. INCREASE or
   DECREASE with a typed intervention/exposure CONTEXT is valid only when the

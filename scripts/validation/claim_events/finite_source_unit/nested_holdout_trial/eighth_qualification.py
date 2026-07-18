@@ -41,6 +41,9 @@ from scripts.validation.claim_events.finite_source_unit.service import (
     canonical_source_unit_extraction_prompt,
     canonical_source_unit_verification_prompt,
 )
+from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
+    sha256_json,
+)
 from scripts.validation.claim_events.finite_source_unit.source_units import (
     FrozenSourceUnit,
 )
@@ -258,9 +261,7 @@ def _require_canonical_provider_prompts(
         if not isinstance(attempt, dict):
             raise TypeError("eighth holdout attempt must be an object")
         role = attempt.get("attempt_role")
-        output_schema: (
-            type[SourceUnitExtractionOutput | SourceUnitVerificationOutput]
-        )
+        output_schema: type[SourceUnitExtractionOutput | SourceUnitVerificationOutput]
         if role == "primary":
             output_schema = SourceUnitExtractionOutput
             prompt = canonical_source_unit_extraction_prompt(unit)
@@ -318,7 +319,7 @@ def _response_ids(attempts: list[object], roles: set[str]) -> set[str]:
 
 
 def _require_equal(report: dict[str, object], key: str, expected: object) -> None:
-    if report.get(key) != expected:
+    if sha256_json(report.get(key)) != sha256_json(expected):
         raise RuntimeError(f"eighth holdout {key} differs from deterministic replay")
 
 

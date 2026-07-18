@@ -293,6 +293,29 @@ def test_minimal_self_signed_report_cannot_finalize(tmp_path: Path) -> None:
         finalize_eighth_repeat(authorization, report=report)
 
 
+def test_persisted_json_arrays_equal_in_memory_tuples(
+    tmp_path: Path,
+) -> None:
+    repository = _git_repository(tmp_path)
+    output = tmp_path / "tuple-roundtrip.json"
+    authorization = reserve_eighth_repeat(
+        repository_root=repository,
+        run_id="tg04-v8-tuple-roundtrip",
+        repeat_index=1,
+        output=output,
+        previous_report=None,
+    )
+    report = _report(authorization=authorization, passed=False)
+    source_corpus = report["source_corpus"]
+    assert isinstance(source_corpus, dict)
+    source_corpus["serialization_probe"] = ("one", "two")
+    report.pop("report_sha256")
+    report["report_sha256"] = sha256_json(report)
+    output.write_text(json.dumps(report), encoding="utf-8")
+
+    finalize_eighth_repeat(authorization, report=report)
+
+
 def test_receipt_shaped_report_cannot_finalize_without_live_provider_match(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

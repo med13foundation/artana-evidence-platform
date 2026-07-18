@@ -1,0 +1,1294 @@
+{
+  "agent_outputs": {
+    "error_type": null,
+    "extraction": {
+      "decision": "EXPLICIT_EVENT",
+      "eligibility_category": "MIXED_SCIENTIFIC",
+      "events": [
+        {
+          "arguments": [
+            {
+              "event_role": "CAUSE",
+              "exact_span": "the transfection of CD4+ T cells with RUNX3",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "INTERVENTION",
+              "role_rationale": "The transfection is the source-described intervention proposed as producing the change."
+            },
+            {
+              "event_role": "CONTEXT",
+              "exact_span": "CD4+ T cells",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "POPULATION",
+              "role_rationale": "The cells receiving the transfection define the experimental population."
+            },
+            {
+              "event_role": "CAUSE",
+              "exact_span": "RUNX3",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "GENE_OR_PROTEIN",
+              "role_rationale": "RUNX3 is the source-specified biological material used in the transfection."
+            },
+            {
+              "event_role": "THEME",
+              "exact_span": "FOXP3",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "GENE_OR_PROTEIN",
+              "role_rationale": "FOXP3 is the biological entity whose increase was evaluated."
+            },
+            {
+              "event_role": "MEASURE",
+              "exact_span": "statistically significant increase",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "MEASUREMENT",
+              "role_rationale": "This phrase specifies the tested directional outcome and its significance criterion."
+            }
+          ],
+          "claim_kind": "SCIENTIFIC_FINDING",
+          "epistemic_status": "PROVISIONAL",
+          "event_type": "POSITIVE_REGULATION",
+          "exact_span": "Although there was a trend, the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3",
+          "inventory_rationale": "The sentence explicitly reports a trend toward an increase associated with the transfection, while qualifying that the increase was not statistically significant.",
+          "polarity": "SUPPORT",
+          "relation_cue_anchor": null,
+          "relation_cue_span": "lead to",
+          "source_locator": "normalized_extraction_text"
+        },
+        {
+          "arguments": [
+            {
+              "event_role": "CAUSE",
+              "exact_span": "the transfection of CD4+ T cells with RUNX3",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "INTERVENTION",
+              "role_rationale": "The transfection is the tested intervention whose effect on FOXP3 failed the stated significance criterion."
+            },
+            {
+              "event_role": "CONTEXT",
+              "exact_span": "CD4+ T cells",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "POPULATION",
+              "role_rationale": "The cells receiving the transfection define the experimental population."
+            },
+            {
+              "event_role": "CAUSE",
+              "exact_span": "RUNX3",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "GENE_OR_PROTEIN",
+              "role_rationale": "RUNX3 is the source-specified biological material used in the transfection."
+            },
+            {
+              "event_role": "THEME",
+              "exact_span": "FOXP3",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "GENE_OR_PROTEIN",
+              "role_rationale": "FOXP3 is the biological entity whose increase was tested."
+            },
+            {
+              "event_role": "MEASURE",
+              "exact_span": "statistically significant increase",
+              "mention_anchors": [],
+              "referent_anchors": [],
+              "role": "MEASUREMENT",
+              "role_rationale": "This phrase states the specific directional relationship that did not reach statistical significance."
+            }
+          ],
+          "claim_kind": "SCIENTIFIC_FINDING",
+          "epistemic_status": "ASSERTED",
+          "event_type": "POSITIVE_REGULATION",
+          "exact_span": "the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3",
+          "inventory_rationale": "The source explicitly states that the tested positive regulatory effect, namely an increase in FOXP3, was not statistically significant.",
+          "polarity": "NULL_RESULT",
+          "relation_cue_anchor": null,
+          "relation_cue_span": "did not lead to statistically significant increase",
+          "source_locator": "normalized_extraction_text"
+        }
+      ],
+      "reasoning": "The unit contains both a provisional directional trend and an explicit null significance result. The transfection is an explicit causal intervention, so both sibling events are represented as positive regulation rather than as an uncaused increase."
+    },
+    "verification": {
+      "coverage_decision": "CANDIDATES_COMPLETE",
+      "coverage_reasoning": "The source explicitly reports both a directional trend toward increased FOXP3 and a statistically nonsignificant result for that tested relationship. The two supplied candidates represent these required sibling events, preserving the intervention, population, cause, theme, and statistical-significance measurement.",
+      "decisions": [
+        {
+          "argument_semantic_decisions": [
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "The transfection of CD4+ T cells with RUNX3 is an explicit intervention serving as the causal event in the stated relationship.",
+              "type_decision": "VALID"
+            },
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "CD4+ T cells are an explicit biological population providing context for the intervention and outcome.",
+              "type_decision": "VALID"
+            },
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "RUNX3 is a named gene or protein and is explicitly part of the transfection intervention, supporting its CAUSE assignment.",
+              "type_decision": "VALID"
+            },
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "FOXP3 is a named gene or protein and is the explicit regulated theme.",
+              "type_decision": "VALID"
+            },
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "The phrase 'statistically significant increase' explicitly supplies the measurement/significance qualification retained for the trend event.",
+              "type_decision": "VALID"
+            }
+          ],
+          "decision": "ENTAILED",
+          "direction_encoding": "STRUCTURED",
+          "event_type_decision": "VALID",
+          "evidence_spans": [
+            "Although there was a trend, the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3"
+          ],
+          "falsification_condition": "This decision would be falsified if the source did not support a directional trend toward increased FOXP3 or if the trend were explicitly reported in the opposite direction.",
+          "projection_eligibility": "ELIGIBLE",
+          "reasoning": "The source explicitly states that there was a trend toward increased FOXP3 in the context of transfection with RUNX3. The trend is directional, provisional, and distinct from the separately stated failure to reach statistical significance.",
+          "structure_decision": "COMPLETE"
+        },
+        {
+          "argument_semantic_decisions": [
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "The transfection of CD4+ T cells with RUNX3 is explicitly the intervention serving as the causal event in the tested relationship.",
+              "type_decision": "VALID"
+            },
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "CD4+ T cells are an explicit population context for the intervention and FOXP3 outcome.",
+              "type_decision": "VALID"
+            },
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "RUNX3 is a named gene or protein and is explicitly part of the transfection intervention.",
+              "type_decision": "VALID"
+            },
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "FOXP3 is a named gene or protein and is the explicit theme of the tested increase relationship.",
+              "type_decision": "VALID"
+            },
+            {
+              "event_role_decision": "VALID",
+              "reasoning": "The complete phrase 'statistically significant increase' is explicitly negated by 'did not lead to,' representing the null significance finding without broadening it to no increase.",
+              "type_decision": "VALID"
+            }
+          ],
+          "decision": "ENTAILED",
+          "direction_encoding": "STRUCTURED",
+          "event_type_decision": "VALID",
+          "evidence_spans": [
+            "the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3"
+          ],
+          "falsification_condition": "This decision would be falsified if the source asserted statistical significance, reported no increase rather than nonsignificance, or omitted the tested increase relationship.",
+          "projection_eligibility": "ELIGIBLE",
+          "reasoning": "The source explicitly states that the RUNX3 transfection did not lead to a statistically significant increase in FOXP3. The tested increase relationship remains the event type, while the result is correctly represented as a NULL_RESULT with asserted epistemic status.",
+          "structure_decision": "COMPLETE"
+        }
+      ],
+      "eligibility_category": "MIXED_SCIENTIFIC"
+    }
+  },
+  "attempts": [
+    {
+      "attempt_role": "primary",
+      "error_type": null,
+      "evidence_unit_sha256": "d9e04311e0751b0afd3e93fd20e970aa5e0c67df194bf347614f63d88e307c6e",
+      "input_sha256": "606efd1510850b66276d48b00a042680aa0982e9d233195c3b1906cfb9b513db",
+      "invocation_id": "6d8865f1-afd3-45ae-befe-458e13a5aa74",
+      "kernel_event_seq": 3,
+      "kernel_run_id": "research-init-extraction:6d8865f1-afd3-45ae-befe-458e13a5aa74",
+      "model_id": "openai/gpt-5.6-luna",
+      "output_schema_identity": "scripts.validation.claim_events.finite_source_unit.contracts.SourceUnitExtractionOutput",
+      "pass_role": "primary",
+      "payload_sha256": "4ae1d0b0c174c7a48e3810a3a8fe50ade995463139b51b7817847fcd53dc233c",
+      "prompt_sha256": "44e664a530286a2a45639de31d6416d80373b317749b52e8efce642f54f27196",
+      "provider_execution_response_id": "resp_bGl0ZWxsbTpjdXN0b21fbGxtX3Byb3ZpZGVyOm9wZW5haTttb2RlbF9pZDpOb25lO3Jlc3BvbnNlX2lkOnJlc3BfMDNlZDgyMzJiNTJiZWU4MjAwNmE1YmMyMzUzMjc4ODE5ODlmMDhiZDNmOWQyYjhlZDg=",
+      "provider_output_sha256": "3e3b376d7802ce00683e04caea60d67d4560f1c884a2a89ad252166a69371def",
+      "provider_response_id": "resp_03ed8232b52bee82006a5bc235327881989f08bd3f9d2b8ed8",
+      "raw_model_payload": {
+        "decision": "EXPLICIT_EVENT",
+        "eligibility_category": "MIXED_SCIENTIFIC",
+        "events": [
+          {
+            "arguments": [
+              {
+                "event_role": "CAUSE",
+                "exact_span": "the transfection of CD4+ T cells with RUNX3",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "INTERVENTION",
+                "role_rationale": "The transfection is the source-described intervention proposed as producing the change."
+              },
+              {
+                "event_role": "CONTEXT",
+                "exact_span": "CD4+ T cells",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "POPULATION",
+                "role_rationale": "The cells receiving the transfection define the experimental population."
+              },
+              {
+                "event_role": "CAUSE",
+                "exact_span": "RUNX3",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "GENE_OR_PROTEIN",
+                "role_rationale": "RUNX3 is the source-specified biological material used in the transfection."
+              },
+              {
+                "event_role": "THEME",
+                "exact_span": "FOXP3",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "GENE_OR_PROTEIN",
+                "role_rationale": "FOXP3 is the biological entity whose increase was evaluated."
+              },
+              {
+                "event_role": "MEASURE",
+                "exact_span": "statistically significant increase",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "MEASUREMENT",
+                "role_rationale": "This phrase specifies the tested directional outcome and its significance criterion."
+              }
+            ],
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "PROVISIONAL",
+            "event_type": "POSITIVE_REGULATION",
+            "exact_span": "Although there was a trend, the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3",
+            "inventory_rationale": "The sentence explicitly reports a trend toward an increase associated with the transfection, while qualifying that the increase was not statistically significant.",
+            "polarity": "SUPPORT",
+            "relation_cue_anchor": null,
+            "relation_cue_span": "lead to",
+            "source_locator": "normalized_extraction_text"
+          },
+          {
+            "arguments": [
+              {
+                "event_role": "CAUSE",
+                "exact_span": "the transfection of CD4+ T cells with RUNX3",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "INTERVENTION",
+                "role_rationale": "The transfection is the tested intervention whose effect on FOXP3 failed the stated significance criterion."
+              },
+              {
+                "event_role": "CONTEXT",
+                "exact_span": "CD4+ T cells",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "POPULATION",
+                "role_rationale": "The cells receiving the transfection define the experimental population."
+              },
+              {
+                "event_role": "CAUSE",
+                "exact_span": "RUNX3",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "GENE_OR_PROTEIN",
+                "role_rationale": "RUNX3 is the source-specified biological material used in the transfection."
+              },
+              {
+                "event_role": "THEME",
+                "exact_span": "FOXP3",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "GENE_OR_PROTEIN",
+                "role_rationale": "FOXP3 is the biological entity whose increase was tested."
+              },
+              {
+                "event_role": "MEASURE",
+                "exact_span": "statistically significant increase",
+                "mention_anchors": [],
+                "referent_anchors": [],
+                "role": "MEASUREMENT",
+                "role_rationale": "This phrase states the specific directional relationship that did not reach statistical significance."
+              }
+            ],
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_type": "POSITIVE_REGULATION",
+            "exact_span": "the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3",
+            "inventory_rationale": "The source explicitly states that the tested positive regulatory effect, namely an increase in FOXP3, was not statistically significant.",
+            "polarity": "NULL_RESULT",
+            "relation_cue_anchor": null,
+            "relation_cue_span": "did not lead to statistically significant increase",
+            "source_locator": "normalized_extraction_text"
+          }
+        ],
+        "reasoning": "The unit contains both a provisional directional trend and an explicit null significance result. The transfection is an explicit causal intervention, so both sibling events are represented as positive regulation rather than as an uncaused increase."
+      },
+      "replayed": false,
+      "retry_context": null,
+      "semantic_unit_id": "source-unit-def51372591d9c4244a4dac031c801c8781aa4006f6718ddd8bfb77dece566a2",
+      "source_sha256": "09a14c9ddcfd3ef03820e5fe7f3a62164fdf051f3a46335b8523c0681ed5fe35",
+      "step_key": "tg04.finite_source_unit.extraction.v17.3ec249ea570b53cc",
+      "validation_outcome": "accepted"
+    },
+    {
+      "attempt_role": "weak_review",
+      "error_type": null,
+      "evidence_unit_sha256": "d9e04311e0751b0afd3e93fd20e970aa5e0c67df194bf347614f63d88e307c6e",
+      "input_sha256": "606efd1510850b66276d48b00a042680aa0982e9d233195c3b1906cfb9b513db",
+      "invocation_id": "7ea74722-44f3-484d-92de-39f017da5651",
+      "kernel_event_seq": 3,
+      "kernel_run_id": "research-init-extraction:7ea74722-44f3-484d-92de-39f017da5651",
+      "model_id": "openai/gpt-5.6-luna",
+      "output_schema_identity": "scripts.validation.claim_events.finite_source_unit.contracts.SourceUnitVerificationOutput",
+      "pass_role": "weak_review",
+      "payload_sha256": "5a56fa98426ca0c2497667f397e54609a7dd420e06d2b5b6ae0b76609c0202ea",
+      "prompt_sha256": "243c1747f05a33f450301a18456a6d55e75712e79ce58c4c08a7d57f98c85d29",
+      "provider_execution_response_id": "resp_bGl0ZWxsbTpjdXN0b21fbGxtX3Byb3ZpZGVyOm9wZW5haTttb2RlbF9pZDpOb25lO3Jlc3BvbnNlX2lkOnJlc3BfMDE0ZGYwZTRiOTFlNGQ5NDAwNmE1YmMyNDVhNjc0ODE5OWI0Y2MwZTg3YTk5YWI3YzA=",
+      "provider_output_sha256": "8e6faf34f3d576d7f65025be46d0faaab9cfb49974bc20ff7198940eca32131b",
+      "provider_response_id": "resp_014df0e4b91e4d94006a5bc245a6748199b4cc0e87a99ab7c0",
+      "raw_model_payload": {
+        "coverage_decision": "CANDIDATES_COMPLETE",
+        "coverage_reasoning": "The source explicitly reports both a directional trend toward increased FOXP3 and a statistically nonsignificant result for that tested relationship. The two supplied candidates represent these required sibling events, preserving the intervention, population, cause, theme, and statistical-significance measurement.",
+        "decisions": [
+          {
+            "argument_semantic_decisions": [
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "The transfection of CD4+ T cells with RUNX3 is an explicit intervention serving as the causal event in the stated relationship.",
+                "type_decision": "VALID"
+              },
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "CD4+ T cells are an explicit biological population providing context for the intervention and outcome.",
+                "type_decision": "VALID"
+              },
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "RUNX3 is a named gene or protein and is explicitly part of the transfection intervention, supporting its CAUSE assignment.",
+                "type_decision": "VALID"
+              },
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "FOXP3 is a named gene or protein and is the explicit regulated theme.",
+                "type_decision": "VALID"
+              },
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "The phrase 'statistically significant increase' explicitly supplies the measurement/significance qualification retained for the trend event.",
+                "type_decision": "VALID"
+              }
+            ],
+            "decision": "ENTAILED",
+            "direction_encoding": "STRUCTURED",
+            "event_type_decision": "VALID",
+            "evidence_spans": [
+              "Although there was a trend, the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3"
+            ],
+            "falsification_condition": "This decision would be falsified if the source did not support a directional trend toward increased FOXP3 or if the trend were explicitly reported in the opposite direction.",
+            "projection_eligibility": "ELIGIBLE",
+            "reasoning": "The source explicitly states that there was a trend toward increased FOXP3 in the context of transfection with RUNX3. The trend is directional, provisional, and distinct from the separately stated failure to reach statistical significance.",
+            "structure_decision": "COMPLETE"
+          },
+          {
+            "argument_semantic_decisions": [
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "The transfection of CD4+ T cells with RUNX3 is explicitly the intervention serving as the causal event in the tested relationship.",
+                "type_decision": "VALID"
+              },
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "CD4+ T cells are an explicit population context for the intervention and FOXP3 outcome.",
+                "type_decision": "VALID"
+              },
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "RUNX3 is a named gene or protein and is explicitly part of the transfection intervention.",
+                "type_decision": "VALID"
+              },
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "FOXP3 is a named gene or protein and is the explicit theme of the tested increase relationship.",
+                "type_decision": "VALID"
+              },
+              {
+                "event_role_decision": "VALID",
+                "reasoning": "The complete phrase 'statistically significant increase' is explicitly negated by 'did not lead to,' representing the null significance finding without broadening it to no increase.",
+                "type_decision": "VALID"
+              }
+            ],
+            "decision": "ENTAILED",
+            "direction_encoding": "STRUCTURED",
+            "event_type_decision": "VALID",
+            "evidence_spans": [
+              "the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3"
+            ],
+            "falsification_condition": "This decision would be falsified if the source asserted statistical significance, reported no increase rather than nonsignificance, or omitted the tested increase relationship.",
+            "projection_eligibility": "ELIGIBLE",
+            "reasoning": "The source explicitly states that the RUNX3 transfection did not lead to a statistically significant increase in FOXP3. The tested increase relationship remains the event type, while the result is correctly represented as a NULL_RESULT with asserted epistemic status.",
+            "structure_decision": "COMPLETE"
+          }
+        ],
+        "eligibility_category": "MIXED_SCIENTIFIC"
+      },
+      "replayed": false,
+      "retry_context": null,
+      "semantic_unit_id": "source-unit-def51372591d9c4244a4dac031c801c8781aa4006f6718ddd8bfb77dece566a2",
+      "source_sha256": "09a14c9ddcfd3ef03820e5fe7f3a62164fdf051f3a46335b8523c0681ed5fe35",
+      "step_key": "tg04.finite_source_unit.verification.v16.4642d7d85cb9bedb",
+      "validation_outcome": "accepted"
+    }
+  ],
+  "conclusion_scope": {
+    "additional_source_valid_claims_are_allowed": true,
+    "all_additional_claims_must_be_entailed": true,
+    "benchmark_credit_awarded": false,
+    "deterministic_extraction_fallback_available": false,
+    "entailed_unresolved_claims_may_remain_review_only": true,
+    "execution_path": "agent_only_source_unit",
+    "persistence_authorized": false,
+    "rejected_additional_claims_are_allowed": false,
+    "scientific_readiness_proven": false,
+    "sealed_expert_graph_was_hidden_from_agents": true,
+    "sealed_projection_set_was_hidden_from_agents": true,
+    "single_fresh_unit_convenience_sample": true
+  },
+  "configured_model_id": "openai:gpt-5.6-luna",
+  "controlled_event_link_ambiguities": [],
+  "controlled_event_links": [],
+  "deterministic_projection_match": {
+    "fully_recovered_projection_ids": [],
+    "projections": [
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "AGENT-EXPERT-TREND",
+              []
+            ],
+            [
+              "AGENT-EXPERT-SIGNIFICANCE-NULL",
+              []
+            ]
+          ],
+          "expected_event_count": 2,
+          "expected_link_count": 0,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "agent-expert-canonical",
+        "provenance": "AGENT_EXPERT_ADJUDICATED"
+      },
+      {
+        "completely_recovered_once": false,
+        "match": {
+          "complete_graph_match_count": 0,
+          "event_inventory_ids": [
+            [
+              "AGENT-EXPERT-TREND",
+              []
+            ],
+            [
+              "AGENT-EXPERT-SIGNIFICANCE-NULL",
+              []
+            ]
+          ],
+          "expected_event_count": 2,
+          "expected_link_count": 0,
+          "expert_link_match_count": 0,
+          "inner_inventory_ids": [],
+          "outer_inventory_ids": []
+        },
+        "projection_id": "agent-expert-intervention-no-determiner",
+        "provenance": "AGENT_EXPERT_ADJUDICATED"
+      }
+    ]
+  },
+  "execution_model_id": "openai/gpt-5.6-luna",
+  "expected_eligibility_category": "MIXED_SCIENTIFIC",
+  "freshness": {
+    "convenience_sample": true,
+    "development_document_count": 40,
+    "eligible_unit_count": 5,
+    "excluded_document_ids": [
+      "PMC-1134658-05-Results-04",
+      "PMC-1920263-15-DISCUSSION",
+      "PMC-2222968-00-TIAB",
+      "PMC-2222968-08-Discussion",
+      "PMC-2806624-07-DISCUSSION",
+      "PMID-10455128",
+      "PMID-8690900",
+      "PMID-9233802"
+    ],
+    "fresh_at_repeat_1_execution": true,
+    "incompatible_document_ids": [
+      "PMC-1134658-08-Discussion",
+      "PMC-1920263-11-RESULTS-03",
+      "PMID-7747440"
+    ],
+    "non_development_document_count": 219,
+    "selection_rank": "35c6070fb7790cd858ee7ee13aabf5ac4f4c78cde085025ef1fecc5164b0655e",
+    "selection_rule": "lowest_sha256_hidden_candidate_with_pre_model_agent_expert_gold",
+    "selection_seed": "969619fd2b8faf60d81c34ba9b12c3f100d69f3af56dcda431072dd009156916"
+  },
+  "gate": {
+    "decision": "STOP_AND_RECALIBRATE_NESTED_EVENT_EXTRACTION",
+    "passed": false,
+    "requirements": {
+      "acceptable_projection_set_nonempty": true,
+      "agent_execution_complete": true,
+      "all_candidates_source_entailed": true,
+      "attempt_model_identity_bound": true,
+      "audit_attempt_topology_exact": true,
+      "audit_identity_bound": true,
+      "binding_rejection_zero": true,
+      "binding_repair_accounted": true,
+      "candidate_inventory_complete": true,
+      "complete_acceptable_projection_recovered": false,
+      "controlled_event_link_ambiguity_zero": true,
+      "expected_category_is_scientific": true,
+      "explicit_candidate_inventory_nonempty": true,
+      "extractor_recognized_expected_science": true,
+      "independent_categories_agree": true,
+      "invalid_agent_output_zero": true,
+      "model_transport_identity_absent": true,
+      "provider_lineage_complete": true,
+      "provider_receipts_verified": true,
+      "rejected_candidate_zero": true,
+      "repeat_index_pre_registered": true,
+      "required_controlled_event_links_present": true,
+      "review_only_candidates_preserved": true,
+      "schema_retry_bounded": true,
+      "sealed_graph_shape_verified": true,
+      "verifier_recognized_expected_science": true
+    }
+  },
+  "gate_inputs": {
+    "acceptable_projection_count": 2,
+    "agent_execution_complete": true,
+    "attempt_model_id_mismatch_count": 0,
+    "audit_identity_mismatch_count": 0,
+    "binding_rejection_count": 0,
+    "controlled_event_link_ambiguity_count": 0,
+    "controlled_event_link_count": 0,
+    "distinct_provider_response_id_count": 2,
+    "entailed_candidate_count": 2,
+    "expected_eligibility_category": "MIXED_SCIENTIFIC",
+    "extracted_candidate_count": 2,
+    "extraction_category": "MIXED_SCIENTIFIC",
+    "extraction_decision": "EXPLICIT_EVENT",
+    "extraction_provider_response_id_count": 1,
+    "fully_recovered_projection_count": 0,
+    "hidden_expert_event_count": 2,
+    "hidden_expert_link_count": 0,
+    "invalid_agent_output_count": 0,
+    "minimum_acceptable_projection_link_count": 0,
+    "model_transport_identity_field_count": 0,
+    "observed_binding_rejection_count": 0,
+    "primary_extraction_attempt_count": 1,
+    "provider_receipt_gate_passed": true,
+    "rejected_candidate_count": 0,
+    "repeat_index": 1,
+    "reported_schema_retry_count": 0,
+    "review_only_candidate_count": 0,
+    "schema_retry_attempt_count": 0,
+    "schema_retry_count": 0,
+    "trusted_candidate_count": 2,
+    "unidentified_provider_attempt_count": 0,
+    "verification_category": "MIXED_SCIENTIFIC",
+    "verification_coverage": "CANDIDATES_COMPLETE",
+    "verification_decision_count": 2,
+    "verification_provider_response_id_count": 1,
+    "verified_provider_receipt_count": 2,
+    "weak_review_attempt_count": 1
+  },
+  "generated_at": "2026-07-18T18:13:44.202410+00:00",
+  "observed_binding_rejections": [],
+  "pre_registered_repeat_indices": [
+    1,
+    2,
+    3
+  ],
+  "provider_receipts": {
+    "expected_count": 2,
+    "receipts": [
+      {
+        "error_type": null,
+        "expected_case_id": "source-unit-def51372591d9c4244a4dac031c801c8781aa4006f6718ddd8bfb77dece566a2",
+        "expected_evidence_unit_sha256": "d9e04311e0751b0afd3e93fd20e970aa5e0c67df194bf347614f63d88e307c6e",
+        "expected_input_sha256": "606efd1510850b66276d48b00a042680aa0982e9d233195c3b1906cfb9b513db",
+        "expected_invocation_id": "6d8865f1-afd3-45ae-befe-458e13a5aa74",
+        "expected_kernel_run_id": "research-init-extraction:6d8865f1-afd3-45ae-befe-458e13a5aa74",
+        "expected_model_id": "gpt-5.6-luna",
+        "expected_output_schema_sha256": "86dfa60862254bae50ceafe42ba3feac5ef97c9d6923b3930bc4873641b350b3",
+        "expected_output_sha256": "3e3b376d7802ce00683e04caea60d67d4560f1c884a2a89ad252166a69371def",
+        "expected_payload_sha256": "4ae1d0b0c174c7a48e3810a3a8fe50ade995463139b51b7817847fcd53dc233c",
+        "expected_prompt_sha256": "44e664a530286a2a45639de31d6416d80373b317749b52e8efce642f54f27196",
+        "expected_source_sha256": "09a14c9ddcfd3ef03820e5fe7f3a62164fdf051f3a46335b8523c0681ed5fe35",
+        "failure": "none",
+        "incomplete_details_absent": true,
+        "input_topology_verified": true,
+        "invocation_topology_supported": true,
+        "invocation_topology_verified": true,
+        "output_schema_verification_source": "provider_input_binding",
+        "provider_output_hash_matched": false,
+        "provider_output_verification_source": "structured_payload_with_verified_envelope",
+        "provider_response_schema_supported": false,
+        "provider_status": "completed",
+        "response_completed_verified": true,
+        "response_id": "resp_03ed8232b52bee82006a5bc235327881989f08bd3f9d2b8ed8",
+        "retrieved_evidence_unit_sha256": "d9e04311e0751b0afd3e93fd20e970aa5e0c67df194bf347614f63d88e307c6e",
+        "retrieved_input_sha256": "606efd1510850b66276d48b00a042680aa0982e9d233195c3b1906cfb9b513db",
+        "retrieved_invocation_id": "6d8865f1-afd3-45ae-befe-458e13a5aa74",
+        "retrieved_kernel_run_id": "research-init-extraction:6d8865f1-afd3-45ae-befe-458e13a5aa74",
+        "retrieved_model_id": "gpt-5.6-luna",
+        "retrieved_output_schema_sha256": "86dfa60862254bae50ceafe42ba3feac5ef97c9d6923b3930bc4873641b350b3",
+        "retrieved_output_sha256": "ac12dd791692abc0fa5757f52dafec9717e2e1051fc6aa6fec904ac56024e743",
+        "retrieved_payload_sha256": "4ae1d0b0c174c7a48e3810a3a8fe50ade995463139b51b7817847fcd53dc233c",
+        "retrieved_prompt_sha256": "44e664a530286a2a45639de31d6416d80373b317749b52e8efce642f54f27196",
+        "retrieved_source_sha256": "09a14c9ddcfd3ef03820e5fe7f3a62164fdf051f3a46335b8523c0681ed5fe35",
+        "standalone_context_verified": true,
+        "status": "verified_live"
+      },
+      {
+        "error_type": null,
+        "expected_case_id": "source-unit-def51372591d9c4244a4dac031c801c8781aa4006f6718ddd8bfb77dece566a2",
+        "expected_evidence_unit_sha256": "d9e04311e0751b0afd3e93fd20e970aa5e0c67df194bf347614f63d88e307c6e",
+        "expected_input_sha256": "606efd1510850b66276d48b00a042680aa0982e9d233195c3b1906cfb9b513db",
+        "expected_invocation_id": "7ea74722-44f3-484d-92de-39f017da5651",
+        "expected_kernel_run_id": "research-init-extraction:7ea74722-44f3-484d-92de-39f017da5651",
+        "expected_model_id": "gpt-5.6-luna",
+        "expected_output_schema_sha256": "bbeb30bdc39fa6031583b6fe1b462a2bf5c969802c1da56689cd91140f6025d3",
+        "expected_output_sha256": "8e6faf34f3d576d7f65025be46d0faaab9cfb49974bc20ff7198940eca32131b",
+        "expected_payload_sha256": "5a56fa98426ca0c2497667f397e54609a7dd420e06d2b5b6ae0b76609c0202ea",
+        "expected_prompt_sha256": "243c1747f05a33f450301a18456a6d55e75712e79ce58c4c08a7d57f98c85d29",
+        "expected_source_sha256": "09a14c9ddcfd3ef03820e5fe7f3a62164fdf051f3a46335b8523c0681ed5fe35",
+        "failure": "none",
+        "incomplete_details_absent": true,
+        "input_topology_verified": true,
+        "invocation_topology_supported": true,
+        "invocation_topology_verified": true,
+        "output_schema_verification_source": "provider_input_binding",
+        "provider_output_hash_matched": false,
+        "provider_output_verification_source": "structured_payload_with_verified_envelope",
+        "provider_response_schema_supported": false,
+        "provider_status": "completed",
+        "response_completed_verified": true,
+        "response_id": "resp_014df0e4b91e4d94006a5bc245a6748199b4cc0e87a99ab7c0",
+        "retrieved_evidence_unit_sha256": "d9e04311e0751b0afd3e93fd20e970aa5e0c67df194bf347614f63d88e307c6e",
+        "retrieved_input_sha256": "606efd1510850b66276d48b00a042680aa0982e9d233195c3b1906cfb9b513db",
+        "retrieved_invocation_id": "7ea74722-44f3-484d-92de-39f017da5651",
+        "retrieved_kernel_run_id": "research-init-extraction:7ea74722-44f3-484d-92de-39f017da5651",
+        "retrieved_model_id": "gpt-5.6-luna",
+        "retrieved_output_schema_sha256": "bbeb30bdc39fa6031583b6fe1b462a2bf5c969802c1da56689cd91140f6025d3",
+        "retrieved_output_sha256": "30b4edc93eebf91e6e74d11e005e5c3ce2901d658d39ed389a827fbc6272e122",
+        "retrieved_payload_sha256": "5a56fa98426ca0c2497667f397e54609a7dd420e06d2b5b6ae0b76609c0202ea",
+        "retrieved_prompt_sha256": "243c1747f05a33f450301a18456a6d55e75712e79ce58c4c08a7d57f98c85d29",
+        "retrieved_source_sha256": "09a14c9ddcfd3ef03820e5fe7f3a62164fdf051f3a46335b8523c0681ed5fe35",
+        "standalone_context_verified": true,
+        "status": "verified_live"
+      }
+    ],
+    "status": "verified_live",
+    "verified_count": 2
+  },
+  "repeat_authorization": {
+    "repeat_index": 1,
+    "run_id": "tg04-v8-agent-expert-2026-07-18",
+    "token_sha256": "706134022d64fc90f9379e54b71a8c67b5eaabb4d49ac091592ec49141ff991e"
+  },
+  "repeat_index": 1,
+  "report_sha256": "b1498772852d13333a1201ddaa02c55098fdcc183bee01ef9da0915faf0ceafd",
+  "repository_evidence": {
+    "clean": true,
+    "commit": "1dd10f107d7fd9e709175e0e0c2ede0215ea0d42",
+    "tracked_tree_oid": "ca1ebae0ca7d28c9fa97d55485a56d2d954c0175",
+    "tracked_tree_sha256": "dda5b46ed17e64b2473e8568e8684f75d0ca3b8bc35d7c539c581cc2aa3736a4"
+  },
+  "run_id": "tg04-v8-agent-expert-2026-07-18",
+  "schema_version": "tg04_nested_event_holdout.v8",
+  "sealed_expert_graph": {
+    "events": [
+      {
+        "arguments": [
+          {
+            "event_role": "CONTEXT",
+            "exact_span": "the transfection of CD4+ T cells with RUNX3",
+            "participant_type": "INTERVENTION",
+            "reference_id": "SOURCE-INTERVENTION",
+            "source_end": 1980,
+            "source_start": 1937
+          },
+          {
+            "event_role": "CONTEXT",
+            "exact_span": "CD4+ T cells",
+            "participant_type": "POPULATION",
+            "reference_id": "SOURCE-POPULATION",
+            "source_end": 1969,
+            "source_start": 1957
+          },
+          {
+            "event_role": "CAUSE",
+            "exact_span": "RUNX3",
+            "participant_type": "GENE_OR_PROTEIN",
+            "reference_id": "T37",
+            "source_end": 1980,
+            "source_start": 1975
+          },
+          {
+            "event_role": "THEME",
+            "exact_span": "FOXP3",
+            "participant_type": "GENE_OR_PROTEIN",
+            "reference_id": "T38",
+            "source_end": 2040,
+            "source_start": 2035
+          },
+          {
+            "event_role": "MEASURE",
+            "exact_span": "statistically significant",
+            "participant_type": "MEASUREMENT",
+            "reference_id": "SOURCE-SIGNIFICANCE",
+            "source_end": 2022,
+            "source_start": 1997
+          }
+        ],
+        "event_id": "AGENT-EXPERT-TREND",
+        "event_type": "POSITIVE_REGULATION",
+        "trigger": {
+          "exact_span": "trend",
+          "source_end": 1935,
+          "source_start": 1930
+        }
+      },
+      {
+        "arguments": [
+          {
+            "event_role": "CONTEXT",
+            "exact_span": "the transfection of CD4+ T cells with RUNX3",
+            "participant_type": "INTERVENTION",
+            "reference_id": "SOURCE-INTERVENTION",
+            "source_end": 1980,
+            "source_start": 1937
+          },
+          {
+            "event_role": "CONTEXT",
+            "exact_span": "CD4+ T cells",
+            "participant_type": "POPULATION",
+            "reference_id": "SOURCE-POPULATION",
+            "source_end": 1969,
+            "source_start": 1957
+          },
+          {
+            "event_role": "CAUSE",
+            "exact_span": "RUNX3",
+            "participant_type": "GENE_OR_PROTEIN",
+            "reference_id": "T37",
+            "source_end": 1980,
+            "source_start": 1975
+          },
+          {
+            "event_role": "THEME",
+            "exact_span": "FOXP3",
+            "participant_type": "GENE_OR_PROTEIN",
+            "reference_id": "T38",
+            "source_end": 2040,
+            "source_start": 2035
+          },
+          {
+            "event_role": "MEASURE",
+            "exact_span": "statistically significant",
+            "participant_type": "MEASUREMENT",
+            "reference_id": "SOURCE-SIGNIFICANCE",
+            "source_end": 2022,
+            "source_start": 1997
+          }
+        ],
+        "event_id": "AGENT-EXPERT-SIGNIFICANCE-NULL",
+        "event_type": "POSITIVE_REGULATION",
+        "trigger": {
+          "exact_span": "did not lead to statistically significant increase",
+          "source_end": 2031,
+          "source_start": 1981
+        }
+      }
+    ],
+    "links": []
+  },
+  "sealed_projection_set": {
+    "canonical_projection_id": "agent-expert-canonical",
+    "projections": [
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "PROVISIONAL",
+            "event_id": "AGENT-EXPERT-TREND",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "AGENT-EXPERT-SIGNIFICANCE-NULL",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "the transfection of CD4+ T cells with RUNX3",
+                  "participant_type": "INTERVENTION",
+                  "reference_id": "SOURCE-INTERVENTION",
+                  "source_end": 1980,
+                  "source_start": 1937
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "CD4+ T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-POPULATION",
+                  "source_end": 1969,
+                  "source_start": 1957
+                },
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "RUNX3",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T37",
+                  "source_end": 1980,
+                  "source_start": 1975
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "FOXP3",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T38",
+                  "source_end": 2040,
+                  "source_start": 2035
+                },
+                {
+                  "event_role": "MEASURE",
+                  "exact_span": "statistically significant",
+                  "participant_type": "MEASUREMENT",
+                  "reference_id": "SOURCE-SIGNIFICANCE",
+                  "source_end": 2022,
+                  "source_start": 1997
+                }
+              ],
+              "event_id": "AGENT-EXPERT-TREND",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "trend",
+                "source_end": 1935,
+                "source_start": 1930
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "the transfection of CD4+ T cells with RUNX3",
+                  "participant_type": "INTERVENTION",
+                  "reference_id": "SOURCE-INTERVENTION",
+                  "source_end": 1980,
+                  "source_start": 1937
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "CD4+ T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-POPULATION",
+                  "source_end": 1969,
+                  "source_start": 1957
+                },
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "RUNX3",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T37",
+                  "source_end": 1980,
+                  "source_start": 1975
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "FOXP3",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T38",
+                  "source_end": 2040,
+                  "source_start": 2035
+                },
+                {
+                  "event_role": "MEASURE",
+                  "exact_span": "statistically significant",
+                  "participant_type": "MEASUREMENT",
+                  "reference_id": "SOURCE-SIGNIFICANCE",
+                  "source_end": 2022,
+                  "source_start": 1997
+                }
+              ],
+              "event_id": "AGENT-EXPERT-SIGNIFICANCE-NULL",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "did not lead to statistically significant increase",
+                "source_end": 2031,
+                "source_start": 1981
+              }
+            }
+          ],
+          "links": []
+        },
+        "projection_id": "agent-expert-canonical",
+        "provenance": "AGENT_EXPERT_ADJUDICATED",
+        "scientific_rationale": "Independent pre-model reviewers preserve the provisional positive trend separately from the asserted statistical-significance null, including RUNX3, CD4+ T cells, FOXP3, intervention context, and the significance measurement."
+      },
+      {
+        "event_semantics": [
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "PROVISIONAL",
+            "event_id": "AGENT-EXPERT-TREND",
+            "polarity": "SUPPORT"
+          },
+          {
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "epistemic_status": "ASSERTED",
+            "event_id": "AGENT-EXPERT-SIGNIFICANCE-NULL",
+            "polarity": "NULL_RESULT"
+          }
+        ],
+        "graph": {
+          "events": [
+            {
+              "arguments": [
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "transfection of CD4+ T cells with RUNX3",
+                  "participant_type": "INTERVENTION",
+                  "reference_id": "SOURCE-INTERVENTION",
+                  "source_end": 1980,
+                  "source_start": 1941
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "CD4+ T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-POPULATION",
+                  "source_end": 1969,
+                  "source_start": 1957
+                },
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "RUNX3",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T37",
+                  "source_end": 1980,
+                  "source_start": 1975
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "FOXP3",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T38",
+                  "source_end": 2040,
+                  "source_start": 2035
+                },
+                {
+                  "event_role": "MEASURE",
+                  "exact_span": "statistically significant",
+                  "participant_type": "MEASUREMENT",
+                  "reference_id": "SOURCE-SIGNIFICANCE",
+                  "source_end": 2022,
+                  "source_start": 1997
+                }
+              ],
+              "event_id": "AGENT-EXPERT-TREND",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "trend",
+                "source_end": 1935,
+                "source_start": 1930
+              }
+            },
+            {
+              "arguments": [
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "transfection of CD4+ T cells with RUNX3",
+                  "participant_type": "INTERVENTION",
+                  "reference_id": "SOURCE-INTERVENTION",
+                  "source_end": 1980,
+                  "source_start": 1941
+                },
+                {
+                  "event_role": "CONTEXT",
+                  "exact_span": "CD4+ T cells",
+                  "participant_type": "POPULATION",
+                  "reference_id": "SOURCE-POPULATION",
+                  "source_end": 1969,
+                  "source_start": 1957
+                },
+                {
+                  "event_role": "CAUSE",
+                  "exact_span": "RUNX3",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T37",
+                  "source_end": 1980,
+                  "source_start": 1975
+                },
+                {
+                  "event_role": "THEME",
+                  "exact_span": "FOXP3",
+                  "participant_type": "GENE_OR_PROTEIN",
+                  "reference_id": "T38",
+                  "source_end": 2040,
+                  "source_start": 2035
+                },
+                {
+                  "event_role": "MEASURE",
+                  "exact_span": "statistically significant",
+                  "participant_type": "MEASUREMENT",
+                  "reference_id": "SOURCE-SIGNIFICANCE",
+                  "source_end": 2022,
+                  "source_start": 1997
+                }
+              ],
+              "event_id": "AGENT-EXPERT-SIGNIFICANCE-NULL",
+              "event_type": "POSITIVE_REGULATION",
+              "trigger": {
+                "exact_span": "did not lead to statistically significant increase",
+                "source_end": 2031,
+                "source_start": 1981
+              }
+            }
+          ],
+          "links": []
+        },
+        "projection_id": "agent-expert-intervention-no-determiner",
+        "provenance": "AGENT_EXPERT_ADJUDICATED",
+        "scientific_rationale": "Independent pre-model reviewers preserve the provisional positive trend separately from the asserted statistical-significance null, including RUNX3, CD4+ T cells, FOXP3, intervention context, and the significance measurement."
+      }
+    ]
+  },
+  "source_corpus": {
+    "archive_sha256": "f70e5f6d6e2a7f7fcdb5c8671715f3909a77662a6238015b2916ce939f2a890f",
+    "expert_graph_sha256": "2abda3dfab2fa4f2b35f321a7c603cf8f45c6adbb92ed63d7c69c7565dad7677",
+    "projection_set_sha256": "5c8e13c4eac5087d151c1b4b391b1215555ce401fdbb1c38a95b61853ed6cde6"
+  },
+  "task_id": "fresh_nested_event_identity_holdout_v8",
+  "unit": {
+    "authoritative_article_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2806624/",
+    "case_id": "bionlp-ge-2011-holdout:PMC-2806624-04-RESULTS-03",
+    "input_sha256": "606efd1510850b66276d48b00a042680aa0982e9d233195c3b1906cfb9b513db",
+    "source_end": 2051,
+    "source_sha256": "09a14c9ddcfd3ef03820e5fe7f3a62164fdf051f3a46335b8523c0681ed5fe35",
+    "source_start": 1909,
+    "text": "Although there was a trend, the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3 (Fig. S5).",
+    "unit_id": "source-unit-def51372591d9c4244a4dac031c801c8781aa4006f6718ddd8bfb77dece566a2",
+    "unit_index": 10
+  },
+  "unresolved_binding_rejections": [],
+  "verified_candidates": [
+    {
+      "inventory_id": "a8a09358fc3a1a5ab87133deb4ccc8ae4a49291ea6eb3861967fd9bc7b721413",
+      "item": {
+        "arguments": [
+          {
+            "event_role": "CAUSE",
+            "exact_span": "the transfection of CD4+ T cells with RUNX3",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "INTERVENTION",
+            "role_rationale": "The transfection is the source-described intervention proposed as producing the change."
+          },
+          {
+            "event_role": "CONTEXT",
+            "exact_span": "CD4+ T cells",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "POPULATION",
+            "role_rationale": "The cells receiving the transfection define the experimental population."
+          },
+          {
+            "event_role": "CAUSE",
+            "exact_span": "RUNX3",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "GENE_OR_PROTEIN",
+            "role_rationale": "RUNX3 is the source-specified biological material used in the transfection."
+          },
+          {
+            "event_role": "THEME",
+            "exact_span": "FOXP3",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "GENE_OR_PROTEIN",
+            "role_rationale": "FOXP3 is the biological entity whose increase was evaluated."
+          },
+          {
+            "event_role": "MEASURE",
+            "exact_span": "statistically significant increase",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "MEASUREMENT",
+            "role_rationale": "This phrase specifies the tested directional outcome and its significance criterion."
+          }
+        ],
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "PROVISIONAL",
+        "event_type": "POSITIVE_REGULATION",
+        "exact_span": "Although there was a trend, the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3",
+        "inventory_rationale": "The sentence explicitly reports a trend toward an increase associated with the transfection, while qualifying that the increase was not statistically significant.",
+        "polarity": "SUPPORT",
+        "relation_cue_anchor": null,
+        "relation_cue_span": "lead to",
+        "source_locator": "normalized_extraction_text"
+      },
+      "verification": {
+        "argument_semantic_decisions": [
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "The transfection of CD4+ T cells with RUNX3 is an explicit intervention serving as the causal event in the stated relationship.",
+            "type_decision": "VALID"
+          },
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "CD4+ T cells are an explicit biological population providing context for the intervention and outcome.",
+            "type_decision": "VALID"
+          },
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "RUNX3 is a named gene or protein and is explicitly part of the transfection intervention, supporting its CAUSE assignment.",
+            "type_decision": "VALID"
+          },
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "FOXP3 is a named gene or protein and is the explicit regulated theme.",
+            "type_decision": "VALID"
+          },
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "The phrase 'statistically significant increase' explicitly supplies the measurement/significance qualification retained for the trend event.",
+            "type_decision": "VALID"
+          }
+        ],
+        "decision": "ENTAILED",
+        "direction_encoding": "STRUCTURED",
+        "event_type_decision": "VALID",
+        "evidence_spans": [
+          "Although there was a trend, the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3"
+        ],
+        "falsification_condition": "This decision would be falsified if the source did not support a directional trend toward increased FOXP3 or if the trend were explicitly reported in the opposite direction.",
+        "projection_eligibility": "ELIGIBLE",
+        "reasoning": "The source explicitly states that there was a trend toward increased FOXP3 in the context of transfection with RUNX3. The trend is directional, provisional, and distinct from the separately stated failure to reach statistical significance.",
+        "structure_decision": "COMPLETE"
+      }
+    },
+    {
+      "inventory_id": "59fdad761bd155cd5fd74a4d1f5113b21ca03974c36357cee4f0b39571d94d5a",
+      "item": {
+        "arguments": [
+          {
+            "event_role": "CAUSE",
+            "exact_span": "the transfection of CD4+ T cells with RUNX3",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "INTERVENTION",
+            "role_rationale": "The transfection is the tested intervention whose effect on FOXP3 failed the stated significance criterion."
+          },
+          {
+            "event_role": "CONTEXT",
+            "exact_span": "CD4+ T cells",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "POPULATION",
+            "role_rationale": "The cells receiving the transfection define the experimental population."
+          },
+          {
+            "event_role": "CAUSE",
+            "exact_span": "RUNX3",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "GENE_OR_PROTEIN",
+            "role_rationale": "RUNX3 is the source-specified biological material used in the transfection."
+          },
+          {
+            "event_role": "THEME",
+            "exact_span": "FOXP3",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "GENE_OR_PROTEIN",
+            "role_rationale": "FOXP3 is the biological entity whose increase was tested."
+          },
+          {
+            "event_role": "MEASURE",
+            "exact_span": "statistically significant increase",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "MEASUREMENT",
+            "role_rationale": "This phrase states the specific directional relationship that did not reach statistical significance."
+          }
+        ],
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "ASSERTED",
+        "event_type": "POSITIVE_REGULATION",
+        "exact_span": "the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3",
+        "inventory_rationale": "The source explicitly states that the tested positive regulatory effect, namely an increase in FOXP3, was not statistically significant.",
+        "polarity": "NULL_RESULT",
+        "relation_cue_anchor": null,
+        "relation_cue_span": "did not lead to statistically significant increase",
+        "source_locator": "normalized_extraction_text"
+      },
+      "verification": {
+        "argument_semantic_decisions": [
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "The transfection of CD4+ T cells with RUNX3 is explicitly the intervention serving as the causal event in the tested relationship.",
+            "type_decision": "VALID"
+          },
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "CD4+ T cells are an explicit population context for the intervention and FOXP3 outcome.",
+            "type_decision": "VALID"
+          },
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "RUNX3 is a named gene or protein and is explicitly part of the transfection intervention.",
+            "type_decision": "VALID"
+          },
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "FOXP3 is a named gene or protein and is the explicit theme of the tested increase relationship.",
+            "type_decision": "VALID"
+          },
+          {
+            "event_role_decision": "VALID",
+            "reasoning": "The complete phrase 'statistically significant increase' is explicitly negated by 'did not lead to,' representing the null significance finding without broadening it to no increase.",
+            "type_decision": "VALID"
+          }
+        ],
+        "decision": "ENTAILED",
+        "direction_encoding": "STRUCTURED",
+        "event_type_decision": "VALID",
+        "evidence_spans": [
+          "the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3"
+        ],
+        "falsification_condition": "This decision would be falsified if the source asserted statistical significance, reported no increase rather than nonsignificance, or omitted the tested increase relationship.",
+        "projection_eligibility": "ELIGIBLE",
+        "reasoning": "The source explicitly states that the RUNX3 transfection did not lead to a statistically significant increase in FOXP3. The tested increase relationship remains the event type, while the result is correctly represented as a NULL_RESULT with asserted epistemic status.",
+        "structure_decision": "COMPLETE"
+      }
+    }
+  ]
+}
