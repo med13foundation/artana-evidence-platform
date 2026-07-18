@@ -40,8 +40,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v2"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v2"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v3"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v3"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
 Return exactly one eligibility_category:
@@ -101,8 +101,6 @@ def bind_source_unit_extraction(
 ) -> SourceUnitExtractionResult:
     """Bind every event independently and preserve rejected siblings."""
 
-    if output.unit_id != unit.unit_id:
-        raise StructuredModelSemanticError("extraction output unit_id mismatch")
     binding = bind_claim_inventory_items(
         output.events,
         source_text=unit.text,
@@ -125,15 +123,19 @@ def bind_source_unit_verification(
 ) -> tuple[VerifiedEventCandidate, ...]:
     """Require one source-bound categorical decision per supplied candidate."""
 
-    if output.unit_id != unit.unit_id:
-        raise StructuredModelSemanticError("verification output unit_id mismatch")
-    by_id = {candidate.inventory_id: candidate for candidate in candidates}
-    decision_by_id = {
-        decision.candidate_id: decision for decision in output.decisions
-    }
-    if set(decision_by_id) != set(by_id):
+    if any(
+        candidate.source_sha256 != unit.source_sha256
+        or candidate.chunk_index != unit.index
+        or candidate.source_start < unit.source_start
+        or candidate.source_end > unit.source_end
+        for candidate in candidates
+    ):
         raise StructuredModelSemanticError(
-            "verification decisions must cover the supplied candidates exactly",
+            "verification candidate source identity mismatch",
+        )
+    if len(output.decisions) != len(candidates):
+        raise StructuredModelSemanticError(
+            "ordered verification decisions must cover supplied candidates exactly",
         )
     if (
         not candidates
@@ -144,8 +146,7 @@ def bind_source_unit_verification(
         )
 
     verified: list[VerifiedEventCandidate] = []
-    for candidate in candidates:
-        decision = decision_by_id[candidate.inventory_id]
+    for candidate, decision in zip(candidates, output.decisions, strict=True):
         claim_text = candidate.item.exact_span
         if any(span not in claim_text for span in decision.evidence_spans):
             raise StructuredModelSemanticError(
@@ -237,9 +238,7 @@ async def verify_source_unit_candidates(  # noqa: PLR0913
     """Independently verify every accepted candidate using only its source unit."""
 
     prompt = _verification_prompt(unit=unit, candidates=candidates)
-    candidate_identity = "\n".join(
-        candidate.inventory_id for candidate in candidates
-    )
+    candidate_identity = "\n".join(candidate.inventory_id for candidate in candidates)
     step_key = fingerprinted_step_key(
         _VERIFICATION_PROMPT_VERSION,
         model_id,
@@ -297,11 +296,10 @@ For each event, copy exact_span, relation_cue_span, and every argument span
 verbatim. Use normalized_extraction_text as source_locator. Keep claim_kind,
 event_type, polarity, and epistemic_status independent. Do not invent missing
 participants, normalize surface text, merge events, or return numeric scores.
+Do not return source-unit identifiers or input hashes. The audited orchestrator
+binds transport identity outside the scientific output.
 
 prompt_version: {_EXTRACTION_PROMPT_VERSION}
-unit_id: {unit.unit_id}
-unit_char_range: {unit.source_start}-{unit.source_end}
-unit_input_sha256: {unit.input_sha256}
 
 --- FROZEN SOURCE UNIT ---
 {unit.text}
@@ -314,13 +312,7 @@ def _verification_prompt(
     unit: FrozenSourceUnit,
     candidates: tuple[BoundClaimInventoryItem, ...],
 ) -> str:
-    payload = [
-        {
-            "candidate_id": candidate.inventory_id,
-            "candidate": _blinded_candidate(candidate),
-        }
-        for candidate in candidates
-    ]
+    payload = [_blinded_candidate(candidate) for candidate in candidates]
     return f"""You are an independent source-only biomedical verifier.
 
 Use only the frozen source unit.
@@ -332,22 +324,22 @@ For FINDING, HYPOTHESIS, or NULL_RESULT, return CANDIDATES_COMPLETE when supplie
 candidates cover every scientific event or MISSING_EVENT otherwise. For
 PROCEDURE, MEASUREMENT_ONLY, or NO_EVENT, return NO_EVENT_CONFIRMED because those
 categories are not scientific events. Map ABSTAIN to ABSTAIN. Review the unit
-even when no candidates were supplied. Return covered_candidate_ids as exactly
-the candidate IDs judged ENTAILED. A false extracted candidate may be rejected
-while the unit is NO_EVENT_CONFIRMED.
+even when no candidates were supplied. A false extracted candidate may be
+rejected while the unit is NO_EVENT_CONFIRMED.
 
 For every supplied candidate, return exactly one categorical decision:
 ENTAILED, CONTRADICTED, INSUFFICIENT, or ABSTAIN.
+Return decisions in exactly the same order as the supplied candidate list.
 ENTAILED requires the complete event, its direction, polarity, epistemic status,
 trigger, and all material arguments to be explicit in the source. Copy literal
 evidence spans from inside that candidate's exact_span. The evidence must cover
 the trigger and every material argument. Provide concise reasoning and a
 condition that would falsify your decision. Do not repair candidates, use
 outside knowledge, compare against benchmark labels, or return numeric scores.
+Do not return source-unit identifiers, candidate identifiers, or input hashes.
+The audited orchestrator binds transport identity outside scientific output.
 
 prompt_version: {_VERIFICATION_PROMPT_VERSION}
-unit_id: {unit.unit_id}
-unit_input_sha256: {unit.input_sha256}
 
 --- FROZEN SOURCE UNIT ---
 {unit.text}
