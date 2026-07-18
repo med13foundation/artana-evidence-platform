@@ -48,6 +48,7 @@ class NestedHoldoutGateInputs:
     provider_receipt_gate_passed: bool
     model_transport_identity_field_count: int
     audit_identity_mismatch_count: int
+    attempt_model_id_mismatch_count: int
 
 
 def nested_holdout_gate_requirements(
@@ -104,6 +105,7 @@ def nested_holdout_gate_requirements(
         ),
         "model_transport_identity_absent": inputs.model_transport_identity_field_count == 0,
         "audit_identity_bound": inputs.audit_identity_mismatch_count == 0,
+        "attempt_model_identity_bound": inputs.attempt_model_id_mismatch_count == 0,
     }
 
 

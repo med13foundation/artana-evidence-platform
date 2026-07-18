@@ -43,6 +43,7 @@ def build_nested_holdout_report(  # noqa: PLR0913
     selection: NestedHoldoutSelection,
     run_id: str,
     repeat_index: int,
+    configured_model_id: str,
     execution_model_id: str,
     repository_evidence: dict[str, object],
     agent_run: SingleUnitAgentRunEvidence,
@@ -120,6 +121,9 @@ def build_nested_holdout_report(  # noqa: PLR0913
             agent_run.records,
             unit=selection.unit,
         ),
+        attempt_model_id_mismatch_count=sum(
+            record.model_id != execution_model_id for record in agent_run.records
+        ),
     )
     requirements = nested_holdout_gate_requirements(gate_inputs)
     passed = all(requirements.values())
@@ -129,7 +133,8 @@ def build_nested_holdout_report(  # noqa: PLR0913
         "repeat_index": repeat_index,
         "pre_registered_repeat_indices": [1, 2, 3],
         "generated_at": datetime.now(UTC).isoformat(),
-        "model_id": execution_model_id,
+        "configured_model_id": configured_model_id,
+        "execution_model_id": execution_model_id,
         "task_id": "fresh_nested_event_identity_holdout",
         "repository_evidence": repository_evidence,
         "freshness": {

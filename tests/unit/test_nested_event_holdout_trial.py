@@ -178,6 +178,7 @@ def _baseline_gate() -> NestedHoldoutGateInputs:
         provider_receipt_gate_passed=True,
         model_transport_identity_field_count=0,
         audit_identity_mismatch_count=0,
+        attempt_model_id_mismatch_count=0,
     )
 
 
@@ -282,6 +283,7 @@ def test_gate_fails_closed_on_each_nested_identity_boundary() -> None:
         {"controlled_event_link_count": 2},
         {"controlled_event_link_ambiguity_count": 1},
         {"provider_receipt_gate_passed": False},
+        {"attempt_model_id_mismatch_count": 1},
     )
     for mutation in mutations:
         assert not all(

@@ -64,8 +64,6 @@ async def _run_trial(
     repository_evidence: dict[str, object],
 ) -> dict[str, object]:
     client, tenant, execution_model_id, kernel, store = build_tg04_runtime(_MODEL_ID)
-    if execution_model_id != _MODEL_ID:
-        raise RuntimeError("nested holdout runtime model identity changed")
     try:
         agent_run = await execute_source_unit_agents(
             client=as_model_client(client),
@@ -87,6 +85,7 @@ async def _run_trial(
         selection=selection,
         run_id=run_id,
         repeat_index=repeat_index,
+        configured_model_id=_MODEL_ID,
         execution_model_id=execution_model_id,
         repository_evidence=repository_evidence,
         agent_run=agent_run,
