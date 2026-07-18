@@ -369,7 +369,7 @@
         "document_extraction_support/llm_extraction/claim_inventory.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_inventory.v17"
+        "document_extraction.claim_inventory.v18"
       ],
       "schema_id": "document_extraction.claim_inventory.v3",
       "schema_names": [
@@ -500,7 +500,7 @@
         "document_extraction_support/llm_extraction/claim_inventory.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_inventory_completeness.v17"
+        "document_extraction.claim_inventory_completeness.v18"
       ],
       "schema_id": "document_extraction.claim_inventory_completeness.v3",
       "schema_names": [

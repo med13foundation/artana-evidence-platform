@@ -40,8 +40,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v11"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v10"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v12"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v11"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
 Return exactly one eligibility_category:
@@ -320,15 +320,17 @@ binds transport identity outside the scientific output.
 CONTROLLED-EVENT DECOMPOSITION:
 When one source cue positively or negatively regulates another biological event,
 represent the outer event as POSITIVE_REGULATION, NEGATIVE_REGULATION, or
-REGULATION rather than collapsing it into the controlled event type. The outer
-event owns its outer CAUSE, the controlled BIOLOGICAL_PROCESS as THEME, and its
-outer context. When the controlled event is itself explicitly asserted,
+REGULATION rather than collapsing it into the referenced event type. Assign the
+referenced BIOLOGICAL_PROCESS its source-explicit outer role: THEME when the
+outer event controls it and CAUSE when that process causes the outer event.
+Preserve other outer causes, themes, and context independently. When the
+referenced event is itself explicitly asserted,
 including an event nominalization such as "TGF-beta induction of Foxp3," return
 it as a separate sibling event whose own arguments carry the inner event roles.
-When one coordinated process explicitly contains multiple controlled sibling
+When one coordinated process explicitly contains multiple referenced sibling
 events, return each source-distinct inner event; deterministic source binding
 may link the outer process to each sibling.
-When the controlled process is anaphoric, preserve its complete explicit
+When the referenced process is anaphoric, preserve its complete explicit
 antecedent in referent_anchors so source binding can link the sibling events.
 Do not duplicate an inner participant on the outer event unless the source
 independently assigns it an outer role. Deterministic source binding links outer
@@ -395,10 +397,10 @@ categories are not scientific events. Map ABSTAIN to ABSTAIN. Review the unit
 even when no candidates were supplied. A false extracted candidate may be
 rejected while the unit is NO_EVENT_CONFIRMED.
 
-An explicitly asserted controlled event is a distinct event even when an outer
-regulation also carries that process as a THEME. The inner event owns its
-participants and their inner roles; the outer event owns its outer cause,
-process theme, and context. Do not require inner participants to be duplicated
+An explicitly asserted referenced event is distinct even when an outer
+regulation carries that process as a THEME or CAUSE. The inner event owns its
+participants and their inner roles; the outer event preserves the process's
+source-explicit role plus its other cause, theme, and context. Do not require inner participants to be duplicated
 on the outer event unless the source independently assigns them an outer role.
 When one coordinated process explicitly contains multiple source-distinct inner
 events, require every sibling rather than merging them.

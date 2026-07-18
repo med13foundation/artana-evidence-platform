@@ -96,9 +96,10 @@ def test_unique_source_containment_links_outer_theme_to_inner_event() -> None:
     assert len(result.links) == 1
     link = result.links[0]
     assert link.controller_inventory_id == outer.inventory_id
-    assert link.controller_theme_argument_index == 1
+    assert link.controller_argument_index == 1
+    assert link.controller_event_role.value == "THEME"
     assert link.controlled_inventory_id == inner.inventory_id
-    assert _SOURCE[link.theme_source_start : link.theme_source_end] == (
+    assert _SOURCE[link.reference_source_start : link.reference_source_end] == (
         "TGF-beta induction of Foxp3"
     )
 
@@ -337,6 +338,56 @@ def test_agent_declared_anaphoric_process_referent_links_sibling_events() -> Non
         bound[0].inventory_id,
         bound[1].inventory_id,
     }
+
+
+def test_agent_declared_event_cause_referent_links_inner_binding() -> None:
+    source = (
+        "Specifically, Foxp3 physically interacts with RORgammat, and this "
+        "interaction inhibits RORgammat function (Zhou et al., 2008)."
+    )
+    inner = _item(
+        exact_span="Foxp3 physically interacts with RORgammat",
+        cue="interacts",
+        event_type="BINDING",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "THEME", "Foxp3"),
+            _argument("GENE_OR_PROTEIN", "THEME", "RORgammat"),
+        ],
+    )
+    outer = _item(
+        exact_span="this interaction inhibits RORgammat function",
+        cue="inhibits",
+        event_type="NEGATIVE_REGULATION",
+        arguments=[
+            {
+                **_argument("BIOLOGICAL_PROCESS", "CAUSE", "this interaction"),
+                "referent_anchors": [
+                    {
+                        "mention_span": (
+                            "Foxp3 physically interacts with RORgammat"
+                        ),
+                        "left_context": "Specifically, ",
+                        "right_context": ", and this interaction",
+                    },
+                ],
+            },
+            _argument("GENE_OR_PROTEIN", "THEME", "RORgammat"),
+        ],
+    )
+    bound = bind_claim_inventory(
+        (inner, outer),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )
+
+    result = link_controlled_events(bound)
+
+    assert result.ambiguities == ()
+    assert len(result.links) == 1
+    assert result.links[0].controller_event_role.value == "CAUSE"
+    assert result.links[0].controller_inventory_id == bound[1].inventory_id
+    assert result.links[0].controlled_inventory_id == bound[0].inventory_id
 
 
 def test_referent_anchors_change_claim_identity_without_rewriting_surface() -> None:

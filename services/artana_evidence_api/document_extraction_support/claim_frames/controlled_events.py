@@ -27,6 +27,12 @@ _CONTROL_EVENT_TYPES = frozenset(
         ClaimEventType.NEGATIVE_REGULATION,
     },
 )
+_EVENT_REFERENCE_ROLES = frozenset(
+    {
+        ClaimEventRole.CAUSE,
+        ClaimEventRole.THEME,
+    },
+)
 _NON_CORE_EVENT_ROLES = frozenset(
     {
         ClaimEventRole.CONTEXT,
@@ -46,10 +52,11 @@ class BoundControlledEventLink:
 
     link_id: str
     controller_inventory_id: str
-    controller_theme_argument_index: int
+    controller_argument_index: int
+    controller_event_role: ClaimEventRole
     controlled_inventory_id: str
-    theme_source_start: int
-    theme_source_end: int
+    reference_source_start: int
+    reference_source_end: int
 
     def as_json(self) -> dict[str, object]:
         """Serialize the stable link without reconstructing scientific meaning."""
@@ -57,10 +64,11 @@ class BoundControlledEventLink:
         return {
             "link_id": self.link_id,
             "controller_inventory_id": self.controller_inventory_id,
-            "controller_theme_argument_index": self.controller_theme_argument_index,
+            "controller_argument_index": self.controller_argument_index,
+            "controller_event_role": self.controller_event_role.value,
             "controlled_inventory_id": self.controlled_inventory_id,
-            "theme_source_start": self.theme_source_start,
-            "theme_source_end": self.theme_source_end,
+            "reference_source_start": self.reference_source_start,
+            "reference_source_end": self.reference_source_end,
         }
 
 
@@ -69,20 +77,22 @@ class ControlledEventLinkAmbiguity:
     """One outer process span that matches multiple sibling event identities."""
 
     controller_inventory_id: str
-    controller_theme_argument_index: int
+    controller_argument_index: int
+    controller_event_role: ClaimEventRole
     candidate_inventory_ids: tuple[str, ...]
-    theme_source_start: int
-    theme_source_end: int
+    reference_source_start: int
+    reference_source_end: int
 
     def as_json(self) -> dict[str, object]:
         """Serialize fail-closed ambiguity evidence for review and audit."""
 
         return {
             "controller_inventory_id": self.controller_inventory_id,
-            "controller_theme_argument_index": self.controller_theme_argument_index,
+            "controller_argument_index": self.controller_argument_index,
+            "controller_event_role": self.controller_event_role.value,
             "candidate_inventory_ids": self.candidate_inventory_ids,
-            "theme_source_start": self.theme_source_start,
-            "theme_source_end": self.theme_source_end,
+            "reference_source_start": self.reference_source_start,
+            "reference_source_end": self.reference_source_end,
         }
 
 
@@ -108,17 +118,17 @@ def link_controlled_events(
             semantic_argument = argument.argument
             if not (
                 semantic_argument.role is ClaimArgumentRole.BIOLOGICAL_PROCESS
-                and semantic_argument.event_role is ClaimEventRole.THEME
+                and semantic_argument.event_role in _EVENT_REFERENCE_ROLES
             ):
                 continue
-            for theme_mention in (*argument.mentions, *argument.referent_mentions):
+            for reference_mention in (*argument.mentions, *argument.referent_mentions):
                 candidates = tuple(
                     candidate
                     for candidate in inventory
                     if _is_controlled_event_candidate(
                         controller=controller,
                         candidate=candidate,
-                        theme_mention=theme_mention,
+                        reference_mention=reference_mention,
                     )
                 )
                 competing = _competing_candidate_ids(candidates)
@@ -126,10 +136,11 @@ def link_controlled_events(
                     ambiguities.append(
                         ControlledEventLinkAmbiguity(
                             controller_inventory_id=controller.inventory_id,
-                            controller_theme_argument_index=argument_index,
+                            controller_argument_index=argument_index,
+                            controller_event_role=semantic_argument.event_role,
                             candidate_inventory_ids=competing,
-                            theme_source_start=theme_mention.source_start,
-                            theme_source_end=theme_mention.source_end,
+                            reference_source_start=reference_mention.source_start,
+                            reference_source_end=reference_mention.source_end,
                         ),
                     )
                     continue
@@ -137,8 +148,9 @@ def link_controlled_events(
                     _build_link(
                         controller=controller,
                         argument_index=argument_index,
+                        event_role=semantic_argument.event_role,
                         controlled=candidate,
-                        theme_mention=theme_mention,
+                        reference_mention=reference_mention,
                     )
                     for candidate in candidates
                 )
@@ -149,8 +161,8 @@ def link_controlled_events(
                 ambiguities,
                 key=lambda item: (
                     item.controller_inventory_id,
-                    item.controller_theme_argument_index,
-                    item.theme_source_start,
+                    item.controller_argument_index,
+                    item.reference_source_start,
                 ),
             ),
         ),
@@ -161,13 +173,13 @@ def _is_controlled_event_candidate(
     *,
     controller: BoundClaimInventoryItem,
     candidate: BoundClaimInventoryItem,
-    theme_mention: BoundClaimMention,
+    reference_mention: BoundClaimMention,
 ) -> bool:
     if (
         candidate.inventory_id == controller.inventory_id
         or candidate.source_sha256 != controller.source_sha256
         or candidate.chunk_index != controller.chunk_index
-        or not _mention_is_contained(candidate.trigger_mention, theme_mention)
+        or not _mention_is_contained(candidate.trigger_mention, reference_mention)
     ):
         return False
     core_arguments = tuple(
@@ -176,7 +188,10 @@ def _is_controlled_event_candidate(
         if argument.argument.event_role not in _NON_CORE_EVENT_ROLES
     )
     return bool(core_arguments) and all(
-        any(_mention_is_contained(mention, theme_mention) for mention in argument.mentions)
+        any(
+            _mention_is_contained(mention, reference_mention)
+            for mention in argument.mentions
+        )
         for argument in core_arguments
     )
 
@@ -248,25 +263,28 @@ def _build_link(
     *,
     controller: BoundClaimInventoryItem,
     argument_index: int,
+    event_role: ClaimEventRole,
     controlled: BoundClaimInventoryItem,
-    theme_mention: BoundClaimMention,
+    reference_mention: BoundClaimMention,
 ) -> BoundControlledEventLink:
     identity = {
         "controller_inventory_id": controller.inventory_id,
-        "controller_theme_argument_index": argument_index,
+        "controller_argument_index": argument_index,
+        "controller_event_role": event_role.value,
         "controlled_inventory_id": controlled.inventory_id,
-        "theme_source_start": theme_mention.source_start,
-        "theme_source_end": theme_mention.source_end,
+        "reference_source_start": reference_mention.source_start,
+        "reference_source_end": reference_mention.source_end,
     }
     return BoundControlledEventLink(
         link_id=hashlib.sha256(
             json.dumps(identity, sort_keys=True, separators=(",", ":")).encode(),
         ).hexdigest(),
         controller_inventory_id=controller.inventory_id,
-        controller_theme_argument_index=argument_index,
+        controller_argument_index=argument_index,
+        controller_event_role=event_role,
         controlled_inventory_id=controlled.inventory_id,
-        theme_source_start=theme_mention.source_start,
-        theme_source_end=theme_mention.source_end,
+        reference_source_start=reference_mention.source_start,
+        reference_source_end=reference_mention.source_end,
     )
 
 
