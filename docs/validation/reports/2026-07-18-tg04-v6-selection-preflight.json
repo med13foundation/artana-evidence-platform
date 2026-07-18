@@ -1,0 +1,40 @@
+{
+  "agent_execution_attempted": false,
+  "candidate_unit_count": 7,
+  "decision": "STOP_SELECTION_SOURCE_ALREADY_EXPOSED",
+  "expert_graph_sha256": "acc300e87268ac81ce1fbc0a30f7a6e965a8a8b1aa8b66156a3b608e0f7069f7",
+  "exposure_evidence": {
+    "line": 92,
+    "path": "tests/unit/test_nested_event_holdout_trial.py",
+    "source_match": "exact"
+  },
+  "gate": {
+    "passed": false,
+    "requirements": {
+      "complete_source_event_set": true,
+      "model_not_exposed_before_preflight": true,
+      "selection_seed_chained_directly": true,
+      "source_not_previously_exposed": false
+    }
+  },
+  "generated_at": "2026-07-18T16:28:15Z",
+  "preflight_reason": "The exact selected source sentence is a committed regression fixture, so it is development-visible and cannot qualify as a hidden unit.",
+  "repository_evidence": {
+    "commit": "33c85a17e48b87b9a1af5f5fe2ea073ef99c2982",
+    "tracked_tree_oid": "e15544323e4f87ab316015c4df7f49610c85a388"
+  },
+  "schema_version": "tg04_nested_event_holdout_selection_preflight.v1",
+  "selected_unit": {
+    "case_id": "bionlp-ge-2011-holdout:PMC-1134658-05-Results-04",
+    "input_sha256": "71178d78240b6b00ee33d67414e4f5b51c016dcc0d622770590531ba9dbb7a0d",
+    "selection_rank": "08298b57be73906ac5b65369a09fd873b7999ae5fa9477243e1a2f938e85553f",
+    "source_sha256": "c547ef2b51164e3b092fdffe7224336cca0872124369a39a03e8e03a843b82e6",
+    "text": "However, we did not observe any significant changes in the level of phospho-STAT3 or phospho-p38 upon BMP-6 treatment of B cells (data not shown).",
+    "unit_id": "source-unit-aee902eae50d7ad850a0d0a5b5e388d3806708a6743bdf8465d07d257fcfde71",
+    "unit_index": 9
+  },
+  "selection_profile": "NEGATED_RESULT_GRAPH",
+  "selection_seed": "ba840f58a450494b769f1177a968196689573f5e5894f18cff2f6a721468401d",
+  "source_corpus_archive_sha256": "f70e5f6d6e2a7f7fcdb5c8671715f3909a77662a6238015b2916ce939f2a890f",
+  "trial_generation": 6
+}
