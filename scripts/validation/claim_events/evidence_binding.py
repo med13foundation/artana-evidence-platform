@@ -644,6 +644,7 @@ def _validate_predictions(
                 "source_locator": event.get("source_locator"),
                 "claim_kind": event.get("claim_kind"),
                 "event_type": event.get("event_type"),
+                "assertion_scope": event.get("assertion_scope"),
                 "polarity": event.get("polarity"),
                 "epistemic_status": event.get("epistemic_status"),
                 "inventory_rationale": event.get("inventory_rationale"),

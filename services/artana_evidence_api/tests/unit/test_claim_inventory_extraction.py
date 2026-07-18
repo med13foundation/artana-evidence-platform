@@ -160,8 +160,8 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v30:claim_inventory.v23+"
-        "claim_inventory_completeness.v23+claim_inventory_recovery.v11+"
+            "document_extraction.claim_pipeline.v32:claim_inventory.v25+"
+            "claim_inventory_completeness.v25+claim_inventory_recovery.v12+"
         "claim_framing.v8"
     )
 
@@ -186,6 +186,9 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
     assert "elliptical contrast" in normalized_prompt
     assert "entity alone is not a complete outcome" in normalized_prompt
     assert "inventory it as a separate sibling event" in normalized_prompt
+    assert "unique local_event_id" in normalized_prompt
+    assert "set controlled_event_ref" in normalized_prompt
+    assert "never guess an identifier" in normalized_prompt
     assert "separate sibling event whose own arguments" in normalized_prompt
     assert "do not duplicate an inner participant on the outer event" in (
         normalized_prompt
@@ -257,6 +260,7 @@ def test_claim_event_type_is_closed_and_required_across_inventory_prompts() -> N
         "DECREASE",
         "ASSOCIATION",
         "TREATMENT_RESPONSE",
+        "PROLIFERATION",
         "NO_EFFECT",
         "OTHER_EXPLICIT",
     }
@@ -427,6 +431,7 @@ def _inventory_claim(
         "source_locator": "normalized_extraction_text",
         "claim_kind": claim_kind,
         "event_type": event_type,
+        "assertion_scope": "SOURCE_ASSERTED",
         "polarity": polarity,
         "epistemic_status": epistemic_status,
         "inventory_rationale": "The span states one explicit source-local claim.",
@@ -620,6 +625,7 @@ async def test_temporal_context_cannot_lose_semantics_in_framing(
         "source_locator": "normalized_extraction_text",
         "claim_kind": "SCIENTIFIC_FINDING",
         "event_type": "INCREASE",
+        "assertion_scope": "SOURCE_ASSERTED",
         "polarity": "SUPPORT",
         "epistemic_status": "ASSERTED",
         "inventory_rationale": "The source reports a non-causal contextual change.",
@@ -707,6 +713,7 @@ async def test_explicit_causal_language_can_produce_causal_relation(
         "source_locator": "normalized_extraction_text",
         "claim_kind": "SCIENTIFIC_FINDING",
         "event_type": "POSITIVE_REGULATION",
+        "assertion_scope": "SOURCE_ASSERTED",
         "polarity": "SUPPORT",
         "epistemic_status": "ASSERTED",
         "inventory_rationale": "The source explicitly names the causal controller.",
@@ -763,6 +770,7 @@ async def test_timeframe_blocks_causal_frame_even_if_inventory_says_cause() -> N
         "source_locator": "normalized_extraction_text",
         "claim_kind": "SCIENTIFIC_FINDING",
         "event_type": "POSITIVE_REGULATION",
+        "assertion_scope": "SOURCE_ASSERTED",
         "polarity": "SUPPORT",
         "epistemic_status": "ASSERTED",
         "inventory_rationale": "Adversarial inconsistent inventory fixture.",
@@ -835,6 +843,7 @@ async def test_conflicting_endpoint_event_roles_fail_closed() -> None:
         "source_locator": "normalized_extraction_text",
         "claim_kind": "SCIENTIFIC_FINDING",
         "event_type": "POSITIVE_REGULATION",
+        "assertion_scope": "SOURCE_ASSERTED",
         "polarity": "SUPPORT",
         "epistemic_status": "ASSERTED",
         "inventory_rationale": "Adversarial conflicting endpoint roles.",
@@ -1786,6 +1795,7 @@ async def test_alk_assertion_preserves_all_roles_and_multiple_valid_frames(
         "source_locator": "normalized_extraction_text",
         "claim_kind": "SCIENTIFIC_FINDING",
         "event_type": "TREATMENT_RESPONSE",
+        "assertion_scope": "SOURCE_ASSERTED",
         "polarity": "SUPPORT",
         "epistemic_status": "ASSERTED",
         "inventory_rationale": "The sentence states one qualified treatment result.",
@@ -1937,6 +1947,7 @@ async def test_nonclinical_entity_roles_survive_in_the_claim_frame() -> None:
         "source_locator": "normalized_extraction_text",
         "claim_kind": "SCIENTIFIC_FINDING",
         "event_type": "OTHER_EXPLICIT",
+        "assertion_scope": "SOURCE_ASSERTED",
         "polarity": "SUPPORT",
         "epistemic_status": "ASSERTED",
         "inventory_rationale": "One gene claim includes process and disease roles.",
@@ -2888,6 +2899,7 @@ def test_inventory_binding_rejects_variant_with_dropped_state_suffix() -> None:
             "source_locator": "normalized_extraction_text",
             "claim_kind": "SCIENTIFIC_FINDING",
             "event_type": "TREATMENT_RESPONSE",
+            "assertion_scope": "SOURCE_ASSERTED",
             "polarity": "SUPPORT",
             "epistemic_status": "ASSERTED",
             "inventory_rationale": "The source states one treatment claim.",
@@ -3134,6 +3146,7 @@ async def test_nested_event_identity_is_preserved_and_binary_projection_is_revie
         "source_locator": "normalized_extraction_text",
         "claim_kind": "SCIENTIFIC_FINDING",
         "event_type": "NEGATIVE_REGULATION",
+        "assertion_scope": "SOURCE_ASSERTED",
         "polarity": "SUPPORT",
         "epistemic_status": "ASSERTED",
         "inventory_rationale": "The source states an outer control event.",
@@ -3158,6 +3171,7 @@ async def test_nested_event_identity_is_preserved_and_binary_projection_is_revie
         "source_locator": "normalized_extraction_text",
         "claim_kind": "SCIENTIFIC_FINDING",
         "event_type": "POSITIVE_REGULATION",
+        "assertion_scope": "SOURCE_ASSERTED",
         "polarity": "SUPPORT",
         "epistemic_status": "ASSERTED",
         "inventory_rationale": "The source states the controlled inner event.",
@@ -3215,6 +3229,185 @@ async def test_nested_event_identity_is_preserved_and_binary_projection_is_revie
     assert routed[0].trusted_evidence_eligible is False
     assert "nested_event_projection_pending" not in routed[1].review_reason_codes
     assert len(routed.controlled_event_links) == 1
+
+
+@pytest.mark.asyncio
+async def test_controlled_target_is_linked_but_never_independently_framed() -> None:
+    text = "IL-2 did not restore IL-3 expression."
+    outer = {
+        "exact_span": text,
+        "relation_cue_span": "did not restore",
+        "arguments": [
+            {
+                "role": "GENE_OR_PROTEIN",
+                "event_role": "CAUSE",
+                "exact_span": "IL-2",
+                "role_rationale": "IL-2 is the tested controller.",
+            },
+            {
+                "role": "BIOLOGICAL_PROCESS",
+                "event_role": "THEME",
+                "exact_span": "IL-3 expression",
+                "role_rationale": "The source states the controlled process.",
+            },
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "POSITIVE_REGULATION",
+        "assertion_scope": "SOURCE_ASSERTED",
+        "polarity": "NULL_RESULT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "The source states a failed restoration.",
+    }
+    target = {
+        "exact_span": "IL-3 expression",
+        "relation_cue_span": "expression",
+        "arguments": [
+            {
+                "role": "GENE_OR_PROTEIN",
+                "event_role": "THEME",
+                "exact_span": "IL-3",
+                "role_rationale": "IL-3 is the expression theme.",
+            },
+            {
+                "role": "BIOLOGICAL_PROCESS",
+                "event_role": "EFFECT",
+                "exact_span": "IL-3 expression",
+                "role_rationale": "The source names the controlled process.",
+            },
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "EXPRESSION",
+        "assertion_scope": "CONTROLLED_TARGET",
+        "polarity": "UNSCOPED",
+        "epistemic_status": "UNASSERTED",
+        "inventory_rationale": "The process is only the restoration target.",
+    }
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [outer, target]},
+            _complete_inventory(),
+            _framed_relation(
+                sentence=text,
+                subject="IL-2",
+                relation_type="ACTIVATES",
+                object_="IL-3 expression",
+                polarity="NULL_RESULT",
+            ),
+        ),
+    )
+
+    result = await _run_pipeline(text=text, runner=runner)
+
+    assert result.inventory_claim_count == 2
+    assert len(result.claim_lineage) == 1
+    assert len(result.candidates) == 1
+    assert result.candidates[0].review_status == "review_only"
+    assert len(result.non_relation_items) == 1
+    controlled_target = result.non_relation_items[0]
+    assert controlled_target.disposition.value == "CONTROLLED_TARGET_SCOPE"
+    assert controlled_target.item.assertion_scope.value == "CONTROLLED_TARGET"
+    assert len(result.controlled_event_links) == 1
+    assert result.controlled_event_links[0].controlled_inventory_id == (
+        controlled_target.inventory_id
+    )
+    assert result.unlinked_controlled_target_ids == ()
+
+
+@pytest.mark.asyncio
+async def test_orphan_controlled_target_fails_semantic_inventory_closed() -> None:
+    text = "IL-3 expression was measured."
+    target = {
+        "exact_span": text,
+        "relation_cue_span": "expression",
+        "arguments": [
+            {
+                "role": "GENE_OR_PROTEIN",
+                "event_role": "THEME",
+                "exact_span": "IL-3",
+                "role_rationale": "IL-3 is the expression theme.",
+            },
+            {
+                "role": "BIOLOGICAL_PROCESS",
+                "event_role": "EFFECT",
+                "exact_span": "IL-3 expression",
+                "role_rationale": "The source names the process.",
+            },
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "EXPRESSION",
+        "assertion_scope": "CONTROLLED_TARGET",
+        "polarity": "UNSCOPED",
+        "epistemic_status": "UNASSERTED",
+        "inventory_rationale": "Adversarial orphan target.",
+    }
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [target]},
+            _complete_inventory(),
+        ),
+    )
+
+    result = await _run_pipeline(text=text, runner=runner)
+
+    assert result.semantic_inventory_complete is False
+    assert result.candidates == []
+    assert len(result.non_relation_items) == 1
+    assert result.unlinked_controlled_target_ids == (
+        result.non_relation_items[0].inventory_id,
+    )
+
+
+@pytest.mark.asyncio
+async def test_unlinked_controller_reference_fails_semantic_inventory_closed() -> None:
+    text = "IL-2 restored IL-3 expression."
+    outer = {
+        "exact_span": text,
+        "relation_cue_span": "restored",
+        "arguments": [
+            {
+                "role": "GENE_OR_PROTEIN",
+                "event_role": "CAUSE",
+                "exact_span": "IL-2",
+                "role_rationale": "IL-2 is the stated controller.",
+            },
+            {
+                "role": "BIOLOGICAL_PROCESS",
+                "event_role": "THEME",
+                "exact_span": "IL-3 expression",
+                "role_rationale": "The source states the controlled process.",
+            },
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "POSITIVE_REGULATION",
+        "assertion_scope": "SOURCE_ASSERTED",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "The source states a restoration controller.",
+    }
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [outer]},
+            _complete_inventory(),
+            _framed_relation(
+                sentence=text,
+                subject="IL-2",
+                relation_type="ACTIVATES",
+                object_="IL-3 expression",
+            ),
+        ),
+    )
+
+    result = await _run_pipeline(text=text, runner=runner)
+
+    assert result.semantic_inventory_complete is False
+    assert result.unlinked_controlled_target_ids == ()
+    assert len(result.unlinked_controlled_event_references) == 1
+    reference = result.unlinked_controlled_event_references[0]
+    assert reference.reference_exact_span == "IL-3 expression"
 
 
 @pytest.mark.asyncio

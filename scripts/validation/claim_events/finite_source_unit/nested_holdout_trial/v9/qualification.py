@@ -1,4 +1,4 @@
-"""Independent deterministic replay of the V8 scientific qualification gate."""
+"""Independent deterministic replay of the V9 scientific qualification gate."""
 
 from __future__ import annotations
 
@@ -25,16 +25,16 @@ from scripts.validation.claim_events.finite_source_unit.contracts import (
 from scripts.validation.claim_events.finite_source_unit.discovery.identity_evidence import (
     count_model_identity_fields,
 )
-from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.eighth_selection import (
-    eighth_projection_set,
-    eighth_unit_identity,
-)
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.gate import (
     NestedHoldoutGateInputs,
     nested_holdout_gate_requirements,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.matching import (
     match_projection_set,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v9.selection import (
+    ninth_projection_set,
+    ninth_unit_identity,
 )
 from scripts.validation.claim_events.finite_source_unit.service import (
     bind_source_unit_verification,
@@ -54,13 +54,13 @@ from scripts.validation.claim_events.finite_source_unit.source_validation.replay
 )
 
 
-def require_replayed_eighth_qualification(report: dict[str, object]) -> None:
+def require_replayed_ninth_qualification(report: dict[str, object]) -> None:
     """Rebuild every scientific derived field from receipt-bound agent payloads."""
 
     unit = _required_dict(report, "unit")
-    expected_identity = eighth_unit_identity()
+    expected_identity = ninth_unit_identity()
     if any(unit.get(key) != value for key, value in expected_identity.items()):
-        raise RuntimeError("eighth holdout unit identity changed")
+        raise RuntimeError("ninth holdout unit identity changed")
     frozen_unit = FrozenSourceUnit(
         unit_id=_required_string(unit, "unit_id"),
         index=_required_int(unit, "unit_index"),
@@ -70,7 +70,7 @@ def require_replayed_eighth_qualification(report: dict[str, object]) -> None:
         source_sha256=_required_string(unit, "source_sha256"),
     )
     if frozen_unit.input_sha256 != unit.get("input_sha256"):
-        raise RuntimeError("eighth holdout source input identity changed")
+        raise RuntimeError("ninth holdout source input identity changed")
 
     agent_outputs = _required_dict(report, "agent_outputs")
     attempts = _required_list(report, "attempts")
@@ -78,7 +78,7 @@ def require_replayed_eighth_qualification(report: dict[str, object]) -> None:
         report.get("expected_eligibility_category")
         != SourceUnitEligibilityCategory.MIXED_SCIENTIFIC.value
     ):
-        raise RuntimeError("eighth holdout expected category changed")
+        raise RuntimeError("ninth holdout expected category changed")
     replayed_binding = replay_source_binding(
         unit=frozen_unit,
         agent_extraction=_required_dict(agent_outputs, "extraction"),
@@ -105,7 +105,7 @@ def require_replayed_eighth_qualification(report: dict[str, object]) -> None:
         if candidate.verification.trusted_projection_eligible
     )
     link_result = link_controlled_events(bound.accepted)
-    projection_set = eighth_projection_set()
+    projection_set = ninth_projection_set()
     projection_match = match_projection_set(
         projection_set=projection_set,
         trusted=trusted,
@@ -158,7 +158,7 @@ def require_replayed_eighth_qualification(report: dict[str, object]) -> None:
         list(orphan_target_ids),
     )
     _require_equal(
-        report, "sealed_expert_graph", projection_set.projections[0].graph.as_json()
+        report, "sealed_expert_graph", projection_set.canonical_projection.graph.as_json()
     )
     _require_equal(report, "sealed_projection_set", projection_set.as_json())
     _require_equal(report, "deterministic_projection_match", asdict(projection_match))
@@ -178,8 +178,8 @@ def require_replayed_eighth_qualification(report: dict[str, object]) -> None:
     verification_ids = _response_ids(attempts, {"weak_review"})
     gate_inputs = NestedHoldoutGateInputs(
         repeat_index=_required_int(report, "repeat_index"),
-        hidden_expert_event_count=len(projection_set.projections[0].graph.events),
-        hidden_expert_link_count=len(projection_set.projections[0].graph.links),
+        hidden_expert_event_count=len(projection_set.canonical_projection.graph.events),
+        hidden_expert_link_count=len(projection_set.canonical_projection.graph.links),
         expected_eligibility_category=SourceUnitEligibilityCategory.MIXED_SCIENTIFIC,
         agent_execution_complete=agent_outputs.get("error_type") is None,
         extraction_category=extraction.eligibility_category,
@@ -281,7 +281,7 @@ def _require_canonical_provider_prompts(
 ) -> None:
     receipt_items = receipts.get("receipts")
     if not isinstance(receipt_items, list):
-        raise TypeError("eighth holdout provider receipts must be a list")
+        raise TypeError("ninth holdout provider receipts must be a list")
     receipts_by_id = {
         item.get("response_id"): item
         for item in receipt_items
@@ -289,7 +289,7 @@ def _require_canonical_provider_prompts(
     }
     for attempt in attempts:
         if not isinstance(attempt, dict):
-            raise TypeError("eighth holdout attempt must be an object")
+            raise TypeError("ninth holdout attempt must be an object")
         role = attempt.get("attempt_role")
         output_schema: type[SourceUnitExtractionOutput | SourceUnitVerificationOutput]
         if role == "primary":
@@ -297,7 +297,7 @@ def _require_canonical_provider_prompts(
             prompt = canonical_source_unit_extraction_prompt(unit)
         elif role == "schema_retry":
             if replayed_binding is None:
-                raise RuntimeError("eighth holdout repair replay is unavailable")
+                raise RuntimeError("ninth holdout repair replay is unavailable")
             output_schema = SourceUnitExtractionOutput
             prompt = canonical_source_unit_binding_repair_prompt(
                 unit=unit,
@@ -311,11 +311,11 @@ def _require_canonical_provider_prompts(
                 candidates=candidates,
             )
         else:
-            raise RuntimeError("eighth holdout attempt role is not canonical")
+            raise RuntimeError("ninth holdout attempt role is not canonical")
         response_id = _required_string(attempt, "provider_response_id")
         receipt = receipts_by_id.get(response_id)
         if not isinstance(receipt, dict):
-            raise TypeError("eighth holdout attempt lacks its provider receipt")
+            raise TypeError("ninth holdout attempt lacks its provider receipt")
         schema_sha256 = output_schema_json_sha256(output_schema)
         provider_prompt = bind_prompt_to_invocation(
             prompt=prompt,
@@ -338,7 +338,7 @@ def _require_canonical_provider_prompts(
             or receipt.get("expected_prompt_sha256") != prompt_sha256
             or receipt.get("expected_output_schema_sha256") != schema_sha256
         ):
-            raise RuntimeError("eighth holdout provider prompt is not canonical")
+            raise RuntimeError("ninth holdout provider prompt is not canonical")
 
 
 def _attempt_count(attempts: list[object], role: str) -> int:
@@ -359,35 +359,35 @@ def _response_ids(attempts: list[object], roles: set[str]) -> set[str]:
 
 def _require_equal(report: dict[str, object], key: str, expected: object) -> None:
     if sha256_json(report.get(key)) != sha256_json(expected):
-        raise RuntimeError(f"eighth holdout {key} differs from deterministic replay")
+        raise RuntimeError(f"ninth holdout {key} differs from deterministic replay")
 
 
 def _required_dict(value: dict[str, object], key: str) -> dict[str, object]:
     item = value.get(key)
     if not isinstance(item, dict):
-        raise TypeError(f"eighth holdout {key} must be an object")
+        raise TypeError(f"ninth holdout {key} must be an object")
     return item
 
 
 def _required_list(value: dict[str, object], key: str) -> list[object]:
     item = value.get(key)
     if not isinstance(item, list):
-        raise TypeError(f"eighth holdout {key} must be a list")
+        raise TypeError(f"ninth holdout {key} must be a list")
     return item
 
 
 def _required_string(value: dict[str, object], key: str) -> str:
     item = value.get(key)
     if not isinstance(item, str):
-        raise TypeError(f"eighth holdout {key} must be text")
+        raise TypeError(f"ninth holdout {key} must be text")
     return item
 
 
 def _required_int(value: dict[str, object], key: str) -> int:
     item = value.get(key)
     if not isinstance(item, int) or isinstance(item, bool):
-        raise TypeError(f"eighth holdout {key} must be an integer")
+        raise TypeError(f"ninth holdout {key} must be an integer")
     return item
 
 
-__all__ = ["require_replayed_eighth_qualification"]
+__all__ = ["require_replayed_ninth_qualification"]

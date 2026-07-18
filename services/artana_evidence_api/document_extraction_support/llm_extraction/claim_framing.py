@@ -19,6 +19,7 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimFramingDecision,
     ClaimInventoryBindingError,
     ClaimLocalSourceRegion,
+    InventoryAssertionScope,
     QualifierState,
     claim_inventory_input_sha256,
     derive_claim_local_source_region,
@@ -343,6 +344,10 @@ def _require_inventory_consistency(
     source_region: ClaimLocalSourceRegion,
 ) -> None:
     item = inventory_claim.item
+    if item.assertion_scope is not InventoryAssertionScope.SOURCE_ASSERTED:
+        raise StructuredModelSemanticError(
+            "controlled-target inventory items cannot be independently framed",
+        )
     _require_exact_inventory_source_region(
         inventory_claim=inventory_claim,
         source_region=source_region,

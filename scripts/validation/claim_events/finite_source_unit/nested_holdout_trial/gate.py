@@ -32,6 +32,7 @@ class NestedHoldoutGateInputs:
     verification_decision_count: int
     entailed_candidate_count: int
     trusted_candidate_count: int
+    unmatched_trusted_candidate_count: int
     review_only_candidate_count: int
     rejected_candidate_count: int
     acceptable_projection_count: int
@@ -46,6 +47,8 @@ class NestedHoldoutGateInputs:
     weak_review_attempt_count: int
     controlled_event_link_count: int
     controlled_event_link_ambiguity_count: int
+    unlinked_controlled_event_reference_count: int
+    unlinked_controlled_target_count: int
     invalid_agent_output_count: int
     unidentified_provider_attempt_count: int
     extraction_provider_response_id_count: int
@@ -66,7 +69,8 @@ def nested_holdout_gate_requirements(
     candidate_count = inputs.extracted_candidate_count
     expected_provider_call_count = _BASE_PROVIDER_CALL_COUNT + inputs.schema_retry_count
     return {
-        "repeat_index_pre_registered": inputs.repeat_index in _PRE_REGISTERED_REPEAT_INDICES,
+        "repeat_index_pre_registered": inputs.repeat_index
+        in _PRE_REGISTERED_REPEAT_INDICES,
         "sealed_graph_shape_verified": (
             inputs.hidden_expert_event_count > 0
             and inputs.hidden_expert_link_count >= 0
@@ -89,10 +93,12 @@ def nested_holdout_gate_requirements(
             and candidate_count > 0
         ),
         "candidate_inventory_complete": (
-            inputs.verification_coverage is SourceUnitCoverageDecision.CANDIDATES_COMPLETE
+            inputs.verification_coverage
+            is SourceUnitCoverageDecision.CANDIDATES_COMPLETE
             and inputs.verification_decision_count == candidate_count
         ),
-        "all_candidates_source_entailed": inputs.entailed_candidate_count == candidate_count,
+        "all_candidates_source_entailed": inputs.entailed_candidate_count
+        == candidate_count,
         "rejected_candidate_zero": inputs.rejected_candidate_count == 0,
         "review_only_candidates_preserved": (
             inputs.trusted_candidate_count + inputs.review_only_candidate_count
@@ -101,6 +107,12 @@ def nested_holdout_gate_requirements(
         "acceptable_projection_set_nonempty": inputs.acceptable_projection_count > 0,
         "complete_acceptable_projection_recovered": (
             inputs.fully_recovered_projection_count > 0
+        ),
+        "single_representation_family_recovered": (
+            inputs.fully_recovered_projection_count == 1
+        ),
+        "unmatched_trusted_candidate_zero": (
+            inputs.unmatched_trusted_candidate_count == 0
         ),
         "binding_repair_accounted": (
             (
@@ -113,7 +125,9 @@ def nested_holdout_gate_requirements(
             )
         )
         and inputs.reported_schema_retry_count == inputs.schema_retry_count,
-        "schema_retry_bounded": 0 <= inputs.schema_retry_count <= _MAX_SCHEMA_RETRY_COUNT,
+        "schema_retry_bounded": 0
+        <= inputs.schema_retry_count
+        <= _MAX_SCHEMA_RETRY_COUNT,
         "audit_attempt_topology_exact": (
             inputs.primary_extraction_attempt_count == 1
             and inputs.schema_retry_attempt_count == inputs.schema_retry_count
@@ -126,6 +140,12 @@ def nested_holdout_gate_requirements(
         ),
         "controlled_event_link_ambiguity_zero": (
             inputs.controlled_event_link_ambiguity_count == 0
+        ),
+        "controlled_event_reference_orphan_zero": (
+            inputs.unlinked_controlled_event_reference_count == 0
+        ),
+        "controlled_event_target_orphan_zero": (
+            inputs.unlinked_controlled_target_count == 0
         ),
         "invalid_agent_output_zero": inputs.invalid_agent_output_count == 0,
         "provider_lineage_complete": (
@@ -140,7 +160,8 @@ def nested_holdout_gate_requirements(
             inputs.provider_receipt_gate_passed
             and inputs.verified_provider_receipt_count == expected_provider_call_count
         ),
-        "model_transport_identity_absent": inputs.model_transport_identity_field_count == 0,
+        "model_transport_identity_absent": inputs.model_transport_identity_field_count
+        == 0,
         "audit_identity_bound": inputs.audit_identity_mismatch_count == 0,
         "attempt_model_identity_bound": inputs.attempt_model_id_mismatch_count == 0,
     }

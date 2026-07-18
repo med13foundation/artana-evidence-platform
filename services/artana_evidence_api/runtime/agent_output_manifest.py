@@ -72,12 +72,18 @@ _INVENTORY_POLARITY = {
     "SUPPORT": "the source presents the described relation or effect.",
     "REFUTE": "the source explicitly contradicts the described relation or effect.",
     "NULL_RESULT": "the source reports no supported effect or association.",
+    "UNSCOPED": "the event is only a controlled target and has no standalone claim polarity.",
 }
 _INVENTORY_EPISTEMIC_STATUS = {
     "ASSERTED": "the source states the finding as an observed conclusion.",
     "PROVISIONAL": "the source marks the finding as preliminary or conditional.",
     "UNCERTAIN": "the source explicitly leaves the finding uncertain.",
     "HYPOTHESIS": "the source proposes the finding for future testing.",
+    "UNASSERTED": "the event is preserved as a controlled target, not independently asserted.",
+}
+_INVENTORY_ASSERTION_SCOPE = {
+    "SOURCE_ASSERTED": "the source independently asserts the event.",
+    "CONTROLLED_TARGET": "the source names the event only as a controlled target.",
 }
 _CLAIM_KIND = {
     "SCIENTIFIC_FINDING": "the source reports a biological relationship or result.",
@@ -138,6 +144,7 @@ _CLAIM_EVENT_TYPE = {
     "DECREASE": "the source explicitly states a decrease in a measured state or outcome.",
     "ASSOCIATION": "the source explicitly states a non-causal association.",
     "TREATMENT_RESPONSE": "the source explicitly states response to an intervention.",
+    "PROLIFERATION": "the source explicitly states cellular proliferation or proliferative response.",
     "NO_EFFECT": "the source explicitly states no effect or response.",
     "OTHER_EXPLICIT": "the source explicitly states an event not covered by another category.",
 }
@@ -493,11 +500,11 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_inventory.v3",
         schema_names=("LLMClaimInventoryResult",),
-        shape_hash="582029e8aacc68fdb0cd742401779c2f71f87594164af35aa634dcdc8df7efdd",
+        shape_hash="bacffd33f8de22ec431e9fe0761f085f0826f0583e18f703522595ed38842776",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory.v22",),
+        prompt_identifiers=("document_extraction.claim_inventory.v25",),
         categorical_fields=(
             _category(
                 "$.claims[].source_locator",
@@ -539,6 +546,14 @@ _POLICIES = (
                 ),
             ),
             _category(
+                "$.claims[].assertion_scope",
+                _INVENTORY_ASSERTION_SCOPE,
+                evidence_requirement=(
+                    "The source must distinguish an independently asserted event "
+                    "from an event preserved only as a controlled target."
+                ),
+            ),
+            _category(
                 "$.claims[].polarity",
                 _INVENTORY_POLARITY,
                 evidence_requirement=(
@@ -557,11 +572,11 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_inventory_completeness.v3",
         schema_names=("ClaimInventoryCompletenessReview",),
-        shape_hash="bb5999c5796de8b610a0a958da187e7eed6828bba160cb0f1fc28cff76ab567e",
+        shape_hash="08dc23a5480e7c5119094cfc141711347e420838896ed21909d64b21d22db261",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_completeness.v22",),
+        prompt_identifiers=("document_extraction.claim_inventory_completeness.v25",),
         categorical_fields=(
             _category(
                 "$.decision",
@@ -603,6 +618,14 @@ _POLICIES = (
                 evidence_requirement="The missing claim span must establish the event category.",
             ),
             _category(
+                "$.missing_claims[].assertion_scope",
+                _INVENTORY_ASSERTION_SCOPE,
+                evidence_requirement=(
+                    "The source must establish whether the missing event is "
+                    "independently asserted or only a controlled target."
+                ),
+            ),
+            _category(
                 "$.missing_claims[].polarity",
                 _INVENTORY_POLARITY,
                 evidence_requirement="The missing claim span must establish direction.",
@@ -621,7 +644,7 @@ _POLICIES = (
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_recovery.v11",),
+        prompt_identifiers=("document_extraction.claim_inventory_recovery.v12",),
         categorical_fields=(
             _category(
                 "$.decision",

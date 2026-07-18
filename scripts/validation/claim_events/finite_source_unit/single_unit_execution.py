@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from artana_evidence_api.document_extraction_support.claim_frames import (
     link_controlled_events,
+    unlinked_controlled_target_ids,
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     start_model_attempt_audit,
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
         BoundControlledEventLink,
         ClaimInventoryBindingRejection,
         ControlledEventLinkAmbiguity,
+        UnlinkedControlledEventReference,
     )
     from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
         ModelAttemptAuditRecord,
@@ -59,6 +61,10 @@ class SingleUnitAgentRunEvidence:
     trusted: tuple[BoundClaimInventoryItem, ...]
     controlled_event_links: tuple[BoundControlledEventLink, ...]
     controlled_event_link_ambiguities: tuple[ControlledEventLinkAmbiguity, ...]
+    unlinked_controlled_event_references: tuple[
+        UnlinkedControlledEventReference, ...
+    ]
+    unlinked_controlled_target_ids: tuple[str, ...]
     extracted_candidate_count: int
     binding_rejection_count: int
     observed_binding_rejections: tuple[ClaimInventoryBindingRejection, ...]
@@ -97,6 +103,10 @@ async def execute_source_unit_agents(  # noqa: PLR0913
     trusted: tuple[BoundClaimInventoryItem, ...] = ()
     controlled_event_links: tuple[BoundControlledEventLink, ...] = ()
     controlled_event_link_ambiguities: tuple[ControlledEventLinkAmbiguity, ...] = ()
+    unlinked_controlled_event_references: tuple[
+        UnlinkedControlledEventReference, ...
+    ] = ()
+    orphan_controlled_target_ids: tuple[str, ...] = ()
     extracted_candidate_count = binding_rejection_count = 0
     observed_binding_rejections: tuple[ClaimInventoryBindingRejection, ...] = ()
     unresolved_binding_rejections: tuple[ClaimInventoryBindingRejection, ...] = ()
@@ -141,6 +151,11 @@ async def execute_source_unit_agents(  # noqa: PLR0913
         link_result = link_controlled_events(current_extraction.accepted)
         controlled_event_links = link_result.links
         controlled_event_link_ambiguities = link_result.ambiguities
+        unlinked_controlled_event_references = link_result.unlinked_references
+        orphan_controlled_target_ids = unlinked_controlled_target_ids(
+            current_extraction.accepted,
+            link_result.links,
+        )
         verification = await verify_source_unit_candidates(
             client=client,
             tenant=tenant,
@@ -173,6 +188,8 @@ async def execute_source_unit_agents(  # noqa: PLR0913
         trusted=trusted,
         controlled_event_links=controlled_event_links,
         controlled_event_link_ambiguities=controlled_event_link_ambiguities,
+        unlinked_controlled_event_references=unlinked_controlled_event_references,
+        unlinked_controlled_target_ids=orphan_controlled_target_ids,
         extracted_candidate_count=extracted_candidate_count,
         binding_rejection_count=binding_rejection_count,
         observed_binding_rejections=observed_binding_rejections,

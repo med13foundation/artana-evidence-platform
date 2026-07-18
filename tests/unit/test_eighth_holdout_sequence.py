@@ -157,6 +157,90 @@ def test_later_repeat_requires_untampered_previous_report(tmp_path: Path) -> Non
         )
 
 
+def test_rewritten_failed_repeat_cannot_authorize_next_repeat(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _git_repository(tmp_path)
+    run_id = "tg04-v8-rewritten-failure"
+    report_path = tmp_path / "repeat-1.json"
+    repeat_1 = reserve_eighth_repeat(
+        repository_root=repository,
+        run_id=run_id,
+        repeat_index=1,
+        output=report_path,
+        previous_report=None,
+    )
+    report = _report(authorization=repeat_1, passed=False)
+    report_path.write_text(json.dumps(report), encoding="utf-8")
+    finalize_eighth_repeat(repeat_1, report=report)
+
+    gate = report["gate"]
+    assert isinstance(gate, dict)
+    requirements = gate["requirements"]
+    assert isinstance(requirements, dict)
+    requirements["complete_acceptable_projection_recovered"] = True
+    gate["passed"] = True
+    report.pop("report_sha256")
+    report["report_sha256"] = sha256_json(report)
+    report_path.write_text(json.dumps(report), encoding="utf-8")
+    reservation = json.loads(repeat_1.reservation_path.read_text(encoding="utf-8"))
+    reservation["gate_passed"] = True
+    reservation["report_sha256"] = report["report_sha256"]
+    repeat_1.reservation_path.write_text(json.dumps(reservation), encoding="utf-8")
+
+    def reject_rewritten_science(candidate: dict[str, object]) -> None:
+        candidate_gate = candidate.get("gate")
+        if isinstance(candidate_gate, dict) and candidate_gate.get("passed") is True:
+            raise RuntimeError("replayed scientific gate rejects rewritten report")
+
+    monkeypatch.setattr(
+        eighth_sequence,
+        "require_replayed_eighth_qualification",
+        reject_rewritten_science,
+    )
+    with pytest.raises(RuntimeError, match="replayed scientific gate rejects"):
+        reserve_eighth_repeat(
+            repository_root=repository,
+            run_id=run_id,
+            repeat_index=2,
+            output=tmp_path / "repeat-2.json",
+            previous_report=report_path,
+        )
+
+
+def test_later_repeat_requires_fresh_provider_receipt_retrieval(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _git_repository(tmp_path)
+    report_path = tmp_path / "repeat-1.json"
+    repeat_1 = reserve_eighth_repeat(
+        repository_root=repository,
+        run_id="tg04-v8-fresh-previous-receipts",
+        repeat_index=1,
+        output=report_path,
+        previous_report=None,
+    )
+    report = _report(authorization=repeat_1, passed=True)
+    report_path.write_text(json.dumps(report), encoding="utf-8")
+    finalize_eighth_repeat(repeat_1, report=report)
+    monkeypatch.setattr(
+        eighth_sequence.OpenAIProviderReceiptVerifier,
+        "from_environment",
+        lambda: None,
+    )
+
+    with pytest.raises(RuntimeError, match="independent live reverification"):
+        reserve_eighth_repeat(
+            repository_root=repository,
+            run_id=repeat_1.run_id,
+            repeat_index=2,
+            output=tmp_path / "repeat-2.json",
+            previous_report=report_path,
+        )
+
+
 def test_later_repeat_requires_the_same_repository_snapshot(tmp_path: Path) -> None:
     repository = _git_repository(tmp_path)
     report_path = tmp_path / "repeat-1.json"
@@ -428,11 +512,15 @@ def _report(
         "candidate_inventory_complete",
         "complete_acceptable_projection_recovered",
         "controlled_event_link_ambiguity_zero",
+        "controlled_event_reference_orphan_zero",
+        "controlled_event_target_orphan_zero",
         "invalid_agent_output_zero",
         "provider_lineage_complete",
         "provider_receipts_verified",
         "repeat_index_pre_registered",
         "sealed_graph_shape_verified",
+        "single_representation_family_recovered",
+        "unmatched_trusted_candidate_zero",
     }
     requirements = dict.fromkeys(requirement_names, True)
     if not passed:
@@ -477,6 +565,8 @@ def _report(
             "verification": verification_payload,
             "error_type": None,
         },
+        "unlinked_controlled_event_references": [],
+        "unlinked_controlled_target_ids": [],
         "attempts": [
             {
                 "provider_response_id": response_id,

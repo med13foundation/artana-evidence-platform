@@ -32,7 +32,9 @@ from artana_evidence_api.document_extraction_support.claim_frames.controlled_eve
     BoundControlledEventLink,
     ControlledEventLinkAmbiguity,
     ControlledEventLinkResult,
+    UnlinkedControlledEventReference,
     link_controlled_events,
+    unlinked_controlled_target_ids,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.event_types import (
     ClaimEventRole,
@@ -78,6 +80,7 @@ from artana_evidence_api.document_extraction_support.claim_frames.promotion_poli
 )
 from artana_evidence_api.document_extraction_support.claim_frames.semantics import (
     ClaimKind,
+    InventoryAssertionScope,
     InventoryEpistemicStatus,
     InventoryPolarity,
 )
@@ -117,8 +120,10 @@ __all__ = [
     "ClaimSourceMeasurement",
     "ControlledEventLinkAmbiguity",
     "ControlledEventLinkResult",
+    "UnlinkedControlledEventReference",
     "EpistemicStatus",
     "InventoryCompletenessDecision",
+    "InventoryAssertionScope",
     "InventoryEpistemicStatus",
     "InventoryPolarity",
     "MeasurementFieldRole",
@@ -145,6 +150,7 @@ __all__ = [
     "derive_claim_local_source_region",
     "is_positive_projection_eligible",
     "link_controlled_events",
+    "unlinked_controlled_target_ids",
     "merge_bound_claim_inventories",
     "merge_claim_inventory_binding_rejections",
     "partition_bound_claim_inventory",

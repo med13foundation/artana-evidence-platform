@@ -11,6 +11,7 @@ from typing import Final
 
 from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimKind,
+    InventoryAssertionScope,
     InventoryEpistemicStatus,
     InventoryPolarity,
 )
@@ -99,6 +100,7 @@ class SealedArgument:
     exact_span: str
     source_start: int
     source_end: int
+    referents: tuple[SealedReferenceArgument, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,6 +111,7 @@ class SealedEvent:
     event_type: str
     trigger: SealedTrigger
     arguments: tuple[SealedArgument, ...]
+    argument_alternatives: tuple[tuple[SealedArgument, ...], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -152,9 +155,38 @@ class SealedNestedEventGraph:
 
     def as_json(self) -> dict[str, object]:
         return {
-            "events": tuple(asdict(event) for event in self.events),
+            "events": tuple(_sealed_event_json(event) for event in self.events),
             "links": tuple(link.as_json() for link in self.links),
         }
+
+
+def _sealed_event_json(event: SealedEvent) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "event_id": event.event_id,
+        "event_type": event.event_type,
+        "trigger": asdict(event.trigger),
+        "arguments": tuple(_sealed_argument_json(item) for item in event.arguments),
+    }
+    if event.argument_alternatives:
+        payload["argument_alternatives"] = tuple(
+            tuple(_sealed_argument_json(item) for item in alternative)
+            for alternative in event.argument_alternatives
+        )
+    return payload
+
+
+def _sealed_argument_json(argument: SealedArgument) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "event_role": argument.event_role,
+        "reference_id": argument.reference_id,
+        "participant_type": argument.participant_type,
+        "exact_span": argument.exact_span,
+        "source_start": argument.source_start,
+        "source_end": argument.source_end,
+    }
+    if argument.referents:
+        payload["referents"] = tuple(asdict(item) for item in argument.referents)
+    return payload
 
 
 class ProjectionProvenance(StrEnum):
@@ -180,6 +212,7 @@ class SealedEventSemantics:
     claim_kind: ClaimKind
     polarity: InventoryPolarity
     epistemic_status: InventoryEpistemicStatus
+    assertion_scope: InventoryAssertionScope = InventoryAssertionScope.SOURCE_ASSERTED
 
 
 @dataclass(frozen=True, slots=True)
@@ -193,14 +226,26 @@ class SealedGraphProjection:
     event_semantics: tuple[SealedEventSemantics, ...]
 
     def as_json(self) -> dict[str, object]:
+        semantic_payloads: list[dict[str, object]] = []
+        for semantics in self.event_semantics:
+            payload = {
+                "event_id": semantics.event_id,
+                "claim_kind": semantics.claim_kind,
+                "polarity": semantics.polarity,
+                "epistemic_status": semantics.epistemic_status,
+            }
+            if (
+                semantics.assertion_scope
+                is not InventoryAssertionScope.SOURCE_ASSERTED
+            ):
+                payload["assertion_scope"] = semantics.assertion_scope
+            semantic_payloads.append(payload)
         return {
             "projection_id": self.projection_id,
             "provenance": self.provenance,
             "scientific_rationale": self.scientific_rationale,
             "graph": self.graph.as_json(),
-            "event_semantics": tuple(
-                asdict(semantics) for semantics in self.event_semantics
-            ),
+            "event_semantics": tuple(semantic_payloads),
         }
 
 
@@ -210,6 +255,19 @@ class SealedProjectionSet:
 
     canonical_projection_id: str
     projections: tuple[SealedGraphProjection, ...]
+
+    @property
+    def canonical_projection(self) -> SealedGraphProjection:
+        """Return the uniquely named scientific reference projection."""
+
+        matches = tuple(
+            projection
+            for projection in self.projections
+            if projection.projection_id == self.canonical_projection_id
+        )
+        if len(matches) != 1:
+            raise RuntimeError("sealed projection set lacks one canonical projection")
+        return matches[0]
 
     def as_json(self) -> dict[str, object]:
         return {
@@ -769,31 +827,22 @@ def _validate_projection_graph(
     if len(set(event_ids)) != len(event_ids):
         raise RuntimeError("sealed projection event IDs must be unique")
     for event in graph.events:
-        argument_identities = tuple(
-            (
-                argument.event_role,
-                argument.participant_type,
-                argument.exact_span,
-                argument.source_start,
-                argument.source_end,
-            )
-            for argument in event.arguments
-        )
-        if len(set(argument_identities)) != len(argument_identities):
-            raise RuntimeError("sealed projection arguments must be unique")
         _require_verbatim_local_span(
             unit=unit,
             exact_span=event.trigger.exact_span,
             source_start=event.trigger.source_start,
             source_end=event.trigger.source_end,
         )
-        for argument in event.arguments:
-            _require_verbatim_local_span(
-                unit=unit,
-                exact_span=argument.exact_span,
-                source_start=argument.source_start,
-                source_end=argument.source_end,
-            )
+        argument_sets = (event.arguments, *event.argument_alternatives)
+        if len(
+            {
+                _sha256_json(tuple(_sealed_argument_json(item) for item in items))
+                for items in argument_sets
+            }
+        ) != len(argument_sets):
+            raise RuntimeError("sealed event argument alternatives must be distinct")
+        for arguments in argument_sets:
+            _validate_sealed_arguments(arguments, unit=unit)
     for link in graph.links:
         if (
             link.controller_event_id not in event_ids
@@ -831,6 +880,39 @@ def _validate_projection_graph(
     )
     if len(set(link_identities)) != len(link_identities):
         raise RuntimeError("sealed projection event links must be unique")
+
+
+def _validate_sealed_arguments(
+    arguments: tuple[SealedArgument, ...],
+    *,
+    unit: FrozenSourceUnit,
+) -> None:
+    argument_identities = tuple(
+        (
+            argument.event_role,
+            argument.participant_type,
+            argument.exact_span,
+            argument.source_start,
+            argument.source_end,
+        )
+        for argument in arguments
+    )
+    if len(set(argument_identities)) != len(argument_identities):
+        raise RuntimeError("sealed projection arguments must be unique")
+    for argument in arguments:
+        _require_verbatim_local_span(
+            unit=unit,
+            exact_span=argument.exact_span,
+            source_start=argument.source_start,
+            source_end=argument.source_end,
+        )
+        for referent in argument.referents:
+            _require_verbatim_local_span(
+                unit=unit,
+                exact_span=referent.exact_span,
+                source_start=referent.source_start,
+                source_end=referent.source_end,
+            )
 
 
 def _require_verbatim_local_span(

@@ -30,6 +30,7 @@ class InventoryPolarity(str, Enum):
     SUPPORT = "SUPPORT"
     REFUTE = "REFUTE"
     NULL_RESULT = "NULL_RESULT"
+    UNSCOPED = "UNSCOPED"
 
 
 class InventoryEpistemicStatus(str, Enum):
@@ -39,10 +40,19 @@ class InventoryEpistemicStatus(str, Enum):
     PROVISIONAL = "PROVISIONAL"
     UNCERTAIN = "UNCERTAIN"
     HYPOTHESIS = "HYPOTHESIS"
+    UNASSERTED = "UNASSERTED"
+
+
+class InventoryAssertionScope(str, Enum):
+    """Whether an event is asserted or preserved only as a controlled target."""
+
+    SOURCE_ASSERTED = "SOURCE_ASSERTED"
+    CONTROLLED_TARGET = "CONTROLLED_TARGET"
 
 
 __all__ = [
     "ClaimKind",
+    "InventoryAssertionScope",
     "InventoryEpistemicStatus",
     "InventoryPolarity",
 ]

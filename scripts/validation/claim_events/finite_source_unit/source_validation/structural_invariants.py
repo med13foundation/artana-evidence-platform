@@ -75,11 +75,10 @@ def trusted_structure_violation(
         process_preserved = any(
             bound.argument.role in _PROCESS_ROLES
             and bound.argument.event_role in _PROCESS_EVENT_ROLES
-            and bound.primary_mention.source_end
-            <= candidate.trigger_mention.source_start
             and (
                 bound.argument.role
                 in {ClaimArgumentRole.MEASUREMENT, ClaimArgumentRole.OUTCOME}
+                or not theme_spans
                 or any(theme in bound.argument.exact_span for theme in theme_spans)
             )
             for bound in candidate.bound_arguments

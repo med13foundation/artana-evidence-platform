@@ -23,10 +23,13 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     BoundControlledEventLink,
     ClaimInventoryItem,
     ControlledEventLinkAmbiguity,
+    InventoryAssertionScope,
+    UnlinkedControlledEventReference,
     coalesce_long_sentence_chunks,
     link_controlled_events,
     merge_bound_claim_inventories,
     partition_bound_claim_inventory,
+    unlinked_controlled_target_ids,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
@@ -62,6 +65,7 @@ class NonRelationDisposition(str, Enum):
     CLAIM_KIND_ROUTING = "CLAIM_KIND_ROUTING"
     EXCLUDE_PROCEDURAL_METHOD = "EXCLUDE_PROCEDURAL_METHOD"
     EXCLUDE_NOT_EXPLICIT = "EXCLUDE_NOT_EXPLICIT"
+    CONTROLLED_TARGET_SCOPE = "CONTROLLED_TARGET_SCOPE"
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +110,10 @@ class LLMRelationExtractionAttempt:
     model_attempt_records: tuple[ModelAttemptAuditRecord, ...] = ()
     controlled_event_links: tuple[BoundControlledEventLink, ...] = ()
     controlled_event_link_ambiguities: tuple[ControlledEventLinkAmbiguity, ...] = ()
+    unlinked_controlled_event_references: tuple[
+        UnlinkedControlledEventReference, ...
+    ] = ()
+    unlinked_controlled_target_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,6 +135,10 @@ class LLMClaimInventoryAttempt:
     model_attempt_records: tuple[ModelAttemptAuditRecord, ...]
     controlled_event_links: tuple[BoundControlledEventLink, ...] = ()
     controlled_event_link_ambiguities: tuple[ControlledEventLinkAmbiguity, ...] = ()
+    unlinked_controlled_event_references: tuple[
+        UnlinkedControlledEventReference, ...
+    ] = ()
+    unlinked_controlled_target_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -160,6 +172,18 @@ class _FramedInventoryOutcome:
     unknown_relation_types: frozenset[str]
     raw_agent_outputs: tuple[dict[str, object], ...]
     abstained: bool
+
+
+@dataclass(frozen=True, slots=True)
+class _FramedInventoryBatch:
+    """Aggregated framing results for one source-local inventory batch."""
+
+    lineage: tuple[ClaimExtractionLineage, ...]
+    candidates: tuple[ExtractedRelationCandidate, ...]
+    unknown_relation_types: frozenset[str]
+    raw_agent_outputs: tuple[dict[str, object], ...]
+    controlled_targets: tuple[NonRelationInventoryItem, ...]
+    abstention_count: int
 
 
 async def run_llm_relation_extraction_with_zero_retry(
@@ -245,24 +269,22 @@ async def run_llm_relation_extraction_with_zero_retry(
             inventory_outcomes.append(inventory_outcome)
 
             inventory_claim_count += len(inventory_claims)
-            for inventory_claim in inventory_claims:
-                framing = await _frame_inventory_claim(
-                    inventory_claim=inventory_claim,
-                    framing_output_schema=framing_output_schema,
-                    client=client,
-                    tenant=tenant,
-                    model_id=model_id,
-                    step_runner=step_runner,
-                    execution_namespace=execution_namespace,
-                )
-                raw_agent_outputs.extend(framing.raw_agent_outputs)
-                claim_lineage.append(framing.lineage)
-                if framing.abstained:
-                    framing_abstention_count += 1
-                    continue
-                raw_relation_count += len(framing.candidates)
-                candidates.extend(framing.candidates)
-                unknown_relation_types.update(framing.unknown_relation_types)
+            framing_batch = await _frame_inventory_batch(
+                inventory_claims=inventory_claims,
+                framing_output_schema=framing_output_schema,
+                client=client,
+                tenant=tenant,
+                model_id=model_id,
+                step_runner=step_runner,
+                execution_namespace=execution_namespace,
+            )
+            raw_agent_outputs.extend(framing_batch.raw_agent_outputs)
+            claim_lineage.extend(framing_batch.lineage)
+            framing_abstention_count += framing_batch.abstention_count
+            raw_relation_count += len(framing_batch.candidates)
+            candidates.extend(framing_batch.candidates)
+            unknown_relation_types.update(framing_batch.unknown_relation_types)
+            non_relation_items.extend(framing_batch.controlled_targets)
 
         controlled_events = link_controlled_events(
             tuple(
@@ -270,6 +292,10 @@ async def run_llm_relation_extraction_with_zero_retry(
                 for outcome in inventory_outcomes
                 for claim in outcome.claims
             ),
+        )
+        unlinked_target_ids = unlinked_controlled_target_ids(
+            tuple(claim for outcome in inventory_outcomes for claim in outcome.claims),
+            controlled_events.links,
         )
         candidates, claim_lineage = _protect_nested_event_projections(
             candidates=candidates,
@@ -300,6 +326,8 @@ async def run_llm_relation_extraction_with_zero_retry(
                 not unresolved_missing_claims
                 and unresolved_binding_rejection_count == 0
                 and not controlled_events.ambiguities
+                and not controlled_events.unlinked_references
+                and not unlinked_target_ids
             ),
             inventory_incompleteness=tuple(unresolved_missing_claims),
             inventory_binding_rejections=tuple(inventory_binding_rejections),
@@ -312,10 +340,60 @@ async def run_llm_relation_extraction_with_zero_retry(
             ),
             controlled_event_links=controlled_events.links,
             controlled_event_link_ambiguities=controlled_events.ambiguities,
+            unlinked_controlled_event_references=(
+                controlled_events.unlinked_references
+            ),
+            unlinked_controlled_target_ids=unlinked_target_ids,
         )
     finally:
         if owns_audit_session:
             stop_model_attempt_audit(audit_session)
+
+
+async def _frame_inventory_batch(
+    *,
+    inventory_claims: tuple[BoundClaimInventoryItem, ...],
+    framing_output_schema: type[BaseModel],
+    client: object,
+    tenant: object,
+    model_id: str,
+    step_runner: ModelStepRunner,
+    execution_namespace: str,
+) -> _FramedInventoryBatch:
+    outcomes: list[_FramedInventoryOutcome] = []
+    controlled_targets: list[NonRelationInventoryItem] = []
+    for inventory_claim in inventory_claims:
+        if routed_target := _controlled_target_routing(inventory_claim):
+            controlled_targets.append(routed_target)
+            continue
+        outcomes.append(
+            await _frame_inventory_claim(
+                inventory_claim=inventory_claim,
+                framing_output_schema=framing_output_schema,
+                client=client,
+                tenant=tenant,
+                model_id=model_id,
+                step_runner=step_runner,
+                execution_namespace=execution_namespace,
+            )
+        )
+    completed = tuple(outcome for outcome in outcomes if not outcome.abstained)
+    return _FramedInventoryBatch(
+        lineage=tuple(outcome.lineage for outcome in outcomes),
+        candidates=tuple(
+            candidate for outcome in completed for candidate in outcome.candidates
+        ),
+        unknown_relation_types=frozenset(
+            relation_type
+            for outcome in completed
+            for relation_type in outcome.unknown_relation_types
+        ),
+        raw_agent_outputs=tuple(
+            output for outcome in outcomes for output in outcome.raw_agent_outputs
+        ),
+        controlled_targets=tuple(controlled_targets),
+        abstention_count=sum(outcome.abstained for outcome in outcomes),
+    )
 
 
 def _protect_nested_event_projections(
@@ -471,6 +549,10 @@ async def run_llm_claim_inventory_with_zero_retry(
             )
             raw_outputs += outcome.raw_agent_outputs
         controlled_events = link_controlled_events(claims)
+        unlinked_target_ids = unlinked_controlled_target_ids(
+            claims,
+            controlled_events.links,
+        )
         return LLMClaimInventoryAttempt(
             claims=claims,
             processed_chunk_count=len(extraction_chunks),
@@ -478,6 +560,8 @@ async def run_llm_claim_inventory_with_zero_retry(
                 not unresolved
                 and unresolved_binding_rejection_count == 0
                 and not controlled_events.ambiguities
+                and not controlled_events.unlinked_references
+                and not unlinked_target_ids
             ),
             inventory_binding_rejection_count=len(binding_rejections),
             inventory_recovery_round_count=inventory_recovery_round_count,
@@ -497,6 +581,10 @@ async def run_llm_claim_inventory_with_zero_retry(
             ),
             controlled_event_links=controlled_events.links,
             controlled_event_link_ambiguities=controlled_events.ambiguities,
+            unlinked_controlled_event_references=(
+                controlled_events.unlinked_references
+            ),
+            unlinked_controlled_target_ids=unlinked_target_ids,
         )
     finally:
         if owns_audit_session:
@@ -616,6 +704,21 @@ def _partition_inventory(
         for claim in excluded_claims
     )
     return relation_claims, non_relation_items
+
+
+def _controlled_target_routing(
+    claim: BoundClaimInventoryItem,
+) -> NonRelationInventoryItem | None:
+    if claim.item.assertion_scope is not InventoryAssertionScope.CONTROLLED_TARGET:
+        return None
+    return NonRelationInventoryItem(
+        claim=claim,
+        disposition=NonRelationDisposition.CONTROLLED_TARGET_SCOPE,
+        decision_rationale=(
+            "Preserved as a source-bound controlled target; not independently "
+            "asserted or relation-framed."
+        ),
+    )
 
 
 def _merge_non_relation_items(

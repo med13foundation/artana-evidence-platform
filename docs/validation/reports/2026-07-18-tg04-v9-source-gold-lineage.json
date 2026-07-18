@@ -1,0 +1,156 @@
+{
+  "agent_execution_attempted": false,
+  "artana_output_available_to_reviewers": false,
+  "blindness_contract": {
+    "allowed_inputs": [
+      "frozen V9 source unit",
+      "BioNLP local event annotations",
+      "Artana categorical event schema",
+      "authoritative PubMed metadata"
+    ],
+    "forbidden_inputs": [
+      "Artana V9 extraction output",
+      "Luna V9 output",
+      "V9 benchmark score",
+      "numeric model confidence"
+    ]
+  },
+  "generated_at": "2026-07-18T20:26:38Z",
+  "preselection": {
+    "candidate_count": 4,
+    "parent_repository_commit": "a68cbb32",
+    "selection_rank": "2e832dd6d38b1666a42adf2f70f407ed6fb018f132d3c923a10a61da29c64c81",
+    "selection_rule": "lowest SHA-256 ranked complete negated-result graph after excluding V1 through V8 documents",
+    "selection_seed": "b1498772852d13333a1201ddaa02c55098fdcc183bee01ef9da0915faf0ceafd"
+  },
+  "projection_contract": {
+    "canonical_projection_id": "complete-proliferation-cue__bionlp-expert-nested-restoration",
+    "event_count": 12,
+    "event_count_range": [6, 12],
+    "expert_graph_sha256": "d10955c29c243c95b7e089c10866d453bbf6992e79abd18753b2192b525e832a",
+    "link_count": 6,
+    "link_count_range": [1, 6],
+    "projection_count": 12,
+    "projection_ids": [
+      "complete-proliferation-cue__atomic-supported-targets__atomic-null-targets",
+      "complete-proliferation-cue__atomic-supported-targets__grouped-null-target",
+      "complete-proliferation-cue__grouped-supported-target__atomic-null-targets",
+      "complete-proliferation-cue__grouped-supported-target__grouped-null-target",
+      "proliferative-head-cue__atomic-supported-targets__atomic-null-targets",
+      "proliferative-head-cue__atomic-supported-targets__grouped-null-target",
+      "proliferative-head-cue__grouped-supported-target__atomic-null-targets",
+      "proliferative-head-cue__grouped-supported-target__grouped-null-target",
+      "complete-proliferation-cue__source-valid-direct-atomic-restoration",
+      "proliferative-head-cue__source-valid-direct-atomic-restoration",
+      "complete-proliferation-cue__bionlp-expert-nested-restoration",
+      "proliferative-head-cue__bionlp-expert-nested-restoration"
+    ],
+    "projection_set_sha256": "9163b0d185bdafdc093d158ec0a5b4da0e37d950904d998d822084d04f455915",
+    "representation_rules": [
+      "outer restoration may be represented by grouped nested controllers, source-valid direct atomic events, or the BioNLP E16-E25 one-to-one nested topology",
+      "one controlled target is preserved for proliferation",
+      "all three supported and both null cytokine themes are mandatory",
+      "cytokine expression may be represented as source-equivalent grouped multi-theme events or atomic single-theme events",
+      "controlled targets use CONTROLLED_TARGET, UNSCOPED, and UNASSERTED",
+      "source assertions use SOURCE_ASSERTED with source-stated polarity and epistemic status",
+      "the anaphoric cause which must refer to Exogenous IL-2",
+      "cause and treatment alternatives are event-local and cannot be mixed across partial graph projections",
+      "no controlled target self-references its controller process",
+      "source-valid direct atomic events preserve each cytokine theme, the shared production or expression outcome, and source polarity",
+      "BioNLP shared-trigger nested controllers use a source-validated categorical controlled_event_ref to identify one target sibling",
+      "exactly one representation family may explain all trusted claims"
+    ]
+  },
+  "qualification_scope": {
+    "agent_expert_surrogate_not_human_gold": true,
+    "authorizes_luna_repeat_1_only_after_code_and_adversarial_gates": true,
+    "human_expert_validation_proven": false,
+    "trusted_graph_promotion_authorized": false
+  },
+  "reviewers": [
+    {
+      "decision": "REQUIRE_SOURCE_COMPLETE_NARY_EVENTS",
+      "reviewer": "Heisenberg",
+      "run_id": "019f7681-2cbe-76d1-b53c-0612784218ad"
+    },
+    {
+      "decision": "REQUIRE_GROUPED_CONTROLLERS_AND_ATOMIC_TARGETS",
+      "reviewer": "Copernicus",
+      "run_id": "019f7681-2d45-7ee3-a1e2-8bcd5958d173"
+    },
+    {
+      "decision": "REQUIRE_NONLOSSY_POLARITY_AND_CONTEXT",
+      "reviewer": "Wegener",
+      "run_id": "019f7681-2dda-7c60-810b-7cdf04a41980"
+    },
+    {
+      "decision": "REJECT_SYNTHETIC_ATOMIC_CONTROLLERS",
+      "reviewer": "Curie",
+      "run_id": "019f76a4-8b61-7d51-b38a-013c87a9acf0"
+    },
+    {
+      "decision": "NO_GO_UNTIL_REFERENTS_TARGET_SCOPE_AND_EVENT_LOCAL_ALTERNATIVES_ARE_FIXED",
+      "reviewer": "Bernoulli",
+      "run_id": "019f76b8-65c2-7922-bd14-a747829cb902"
+    },
+    {
+      "decision": "NO_GO_UNTIL_ASSERTION_SCOPE_IS_REQUIRED_AND_ORPHANS_FAIL_CLOSED",
+      "reviewer": "Maxwell",
+      "run_id": "019f76b8-6f36-7d52-a8a0-8b119a9a5207"
+    },
+    {
+      "decision": "NO_GO_UNTIL_GROUPED_TARGETS_ORPHAN_GATES_AND_V9_REPLAY_ARE_COMPLETE",
+      "reviewer": "Carson",
+      "run_id": "019f76d7-048b-70c2-8713-c1e05a369066"
+    },
+    {
+      "decision": "NO_GO_UNTIL_CORPUS_NATIVE_PROJECTIONS_AND_UNMATCHED_TRUST_GATE_ARE_COMPLETE",
+      "reviewer": "Mendel",
+      "run_id": "019f76fc-d757-7231-8a76-b5d5b9535e2a"
+    },
+    {
+      "decision": "NO_GO_UNTIL_REPLAY_RESERVATION_REPAIR_AND_PREFLIGHT_ARE_TAMPER_RESISTANT",
+      "reviewer": "Raman",
+      "run_id": "019f76fc-c734-74a1-8bc5-a751a30a31ff"
+    },
+    {
+      "decision": "NO_GO_UNTIL_TRUE_BIONLP_TOPOLOGY_AND_SINGLE_REPRESENTATION_GATE_ARE_COMPLETE",
+      "reviewer": "Erdos",
+      "run_id": "019f772a-4e83-7752-a3c8-8e187695ced1"
+    },
+    {
+      "decision": "GO_SCIENTIFIC_CONTRACT_SAFE_TO_FREEZE_FOR_ONE_LIVE_DIAGNOSTIC",
+      "reviewer": "Beauvoir",
+      "run_id": "019f7764-5664-7e42-8be2-c569f9da6059"
+    },
+    {
+      "decision": "GO_EXECUTION_INTEGRITY_SAFE_TO_FREEZE_FOR_ONE_LIVE_DIAGNOSTIC",
+      "reviewer": "Russell",
+      "run_id": "019f7764-5ff8-7091-9251-82cb5214fb9d"
+    }
+  ],
+  "schema_version": "tg04_v9_source_gold_lineage.v1",
+  "selected_source": {
+    "case_id": "bionlp-ge-2011-holdout:PMID-8622948",
+    "input_sha256": "640f61f34918baf699cef470efe48a49ee13845b361d039021ef12424d421ffc",
+    "source_end": 1502,
+    "source_sha256": "cac747e9b80090731f6e1e02e5e8ef70fc4254ae357de6ab2cd1835b3c5033ce",
+    "source_start": 1266,
+    "text": "Exogenous IL-2, which restitutes the proliferative response of the anti-CD3- and anti-CD28-treated Rel-/- T cells, restores production of IL-5, TNF-alpha, and IFN-gamma, but not IL-3 and GM-CSF expression to approximately normal levels.",
+    "unit_index": 7,
+    "unit_id": "source-unit-eb96c6e419821d8b930aebe6c1a891e185a0fcddccd3d05efa6ba05ef37601c0"
+  },
+  "source_verification": {
+    "article_title": "Rel-deficient T cells exhibit defects in production of interleukin 3 and granulocyte-macrophage colony-stimulating factor.",
+    "doi": "10.1073/pnas.93.8.3405",
+    "pmcid": "PMC39621",
+    "pmid": "8622948",
+    "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/8622948/",
+    "publication_types": [
+      "Journal Article",
+      "Research Support, Non-U.S. Gov't"
+    ],
+    "pubmed_correction_or_retraction_metadata_present": false,
+    "span_coordinate_system": "whitespace-normalized importer text; raw BioNLP offsets shift where source newlines are normalized"
+  }
+}

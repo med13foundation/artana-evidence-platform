@@ -173,6 +173,49 @@ def test_diagnostics_builders_normalize_candidate_and_review_status() -> None:
     assert nested_ambiguity.as_metadata()["semantic_incomplete_reason_codes"] == [
         "controlled_event_link_ambiguous"
     ]
+    orphan_target = DocumentCandidateExtractionDiagnostics(
+        llm_candidate_status="semantic_incomplete",
+        claim_extraction_routing_status="semantic_incomplete",
+        unlinked_controlled_target_ids=("target-1",),
+    )
+    assert orphan_target.semantic_incomplete_reason_codes == (
+        "controlled_event_target_unlinked",
+    )
+    assert orphan_target.as_metadata()["unlinked_controlled_target_ids"] == [
+        "target-1"
+    ]
+    controlled_target_payload = {
+        "inventory_id": "target-1",
+        "claim": {
+            "event_type": "EXPRESSION",
+            "assertion_scope": "CONTROLLED_TARGET",
+            "polarity": "UNSCOPED",
+            "epistemic_status": "UNASSERTED",
+            "arguments": [],
+        },
+        "disposition": "CONTROLLED_TARGET_SCOPE",
+        "decision_rationale": "Preserved without independent framing.",
+    }
+    unlinked_reference = {
+        "controller_inventory_id": "outer-1",
+        "controller_argument_index": 1,
+        "reference_exact_span": "IL-3 expression",
+    }
+    nested_payload = DocumentCandidateExtractionDiagnostics(
+        llm_candidate_status="semantic_incomplete",
+        claim_extraction_routing_status="semantic_incomplete",
+        inventory_non_relation_items=(controlled_target_payload,),
+        unlinked_controlled_event_references=(unlinked_reference,),
+    ).as_metadata()
+    assert nested_payload["inventory_non_relation_items"] == [
+        controlled_target_payload
+    ]
+    assert nested_payload["unlinked_controlled_event_references"] == [
+        unlinked_reference
+    ]
+    assert nested_payload["semantic_incomplete_reason_codes"] == [
+        "controlled_event_reference_unlinked"
+    ]
 
     assert proposal_review_not_needed() == DocumentProposalReviewDiagnostics(
         llm_review_status="not_needed",

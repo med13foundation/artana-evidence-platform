@@ -35,15 +35,15 @@ class NestedEventMatchResult:
     outer_inventory_ids: tuple[str, ...]
     expert_link_match_count: int
     complete_graph_match_count: int
+    complete_assignment_inventory_ids: tuple[str, ...]
 
     @property
     def completely_recovered_once(self) -> bool:
+        """Require one unique whole-graph assignment, not local span uniqueness."""
+
         return (
             len(self.event_inventory_ids) == self.expected_event_count
-            and all(
-                len(inventory_ids) == 1
-                for _, inventory_ids in self.event_inventory_ids
-            )
+            and all(inventory_ids for _, inventory_ids in self.event_inventory_ids)
             and self.expert_link_match_count == self.expected_link_count
             and self.complete_graph_match_count == 1
         )
@@ -65,6 +65,7 @@ class ProjectionSetMatchResult:
 
     projections: tuple[ProjectionMatchResult, ...]
     fully_recovered_projection_ids: tuple[str, ...]
+    fully_recovered_inventory_ids: tuple[str, ...]
 
 
 def match_nested_event_graph(
@@ -138,9 +139,7 @@ def match_nested_event_graph(
             else tuple(
                 sorted(
                     candidate.inventory_id
-                    for candidate in candidates_by_event[
-                        first_link.controlled_event_id
-                    ]
+                    for candidate in candidates_by_event[first_link.controlled_event_id]
                 ),
             )
         ),
@@ -150,9 +149,7 @@ def match_nested_event_graph(
             else tuple(
                 sorted(
                     candidate.inventory_id
-                    for candidate in candidates_by_event[
-                        first_link.controller_event_id
-                    ]
+                    for candidate in candidates_by_event[first_link.controller_event_id]
                 ),
             )
         ),
@@ -168,6 +165,11 @@ def match_nested_event_graph(
             default=0,
         ),
         complete_graph_match_count=len(complete_assignments),
+        complete_assignment_inventory_ids=(
+            tuple(sorted(claim.inventory_id for claim in complete_assignments[0].values()))
+            if len(complete_assignments) == 1
+            else ()
+        ),
     )
 
 
@@ -237,15 +239,11 @@ def _assignment_has_exact_link_topology(
         for link in links
         if link.controller_inventory_id in assigned_controller_ids
     )
-    return (
-        len(relevant_links) == len(graph.links)
-        and _matched_link_count(
-            assignment=assignment,
-            graph=graph,
-            links=relevant_links,
-        )
-        == len(graph.links)
-    )
+    return len(relevant_links) == len(graph.links) and _matched_link_count(
+        assignment=assignment,
+        graph=graph,
+        links=relevant_links,
+    ) == len(graph.links)
 
 
 def match_projection_set(
@@ -260,12 +258,23 @@ def match_projection_set(
         _match_projection(projection=projection, trusted=trusted, links=links)
         for projection in projection_set.projections
     )
+    recovered = tuple(match for match in matches if match.completely_recovered_once)
+    uniquely_recovered = recovered if len(recovered) == 1 else ()
     return ProjectionSetMatchResult(
         projections=matches,
         fully_recovered_projection_ids=tuple(
-            match.projection_id
-            for match in matches
-            if match.completely_recovered_once
+            match.projection_id for match in recovered
+        ),
+        fully_recovered_inventory_ids=tuple(
+            sorted(
+                {
+                    inventory_id
+                    for projection_match in uniquely_recovered
+                    for inventory_id in (
+                        projection_match.match.complete_assignment_inventory_ids
+                    )
+                }
+            )
         ),
     )
 
@@ -318,9 +327,26 @@ def _direct_argument_match_indices(
     *,
     expected_links: tuple[SealedEventLink, ...],
 ) -> tuple[int, ...] | None:
+    for expected_arguments in (expert.arguments, *expert.argument_alternatives):
+        matched = _argument_set_match_indices(
+            expected_arguments=expected_arguments,
+            candidate=candidate,
+            expected_links=expected_links,
+        )
+        if matched is not None:
+            return matched
+    return None
+
+
+def _argument_set_match_indices(
+    *,
+    expected_arguments: tuple[SealedArgument, ...],
+    candidate: BoundClaimInventoryItem,
+    expected_links: tuple[SealedEventLink, ...],
+) -> tuple[int, ...] | None:
     expected_reference_argument_count = len(expected_links)
     actual_reference_argument_count = len(candidate.bound_arguments) - len(
-        expert.arguments,
+        expected_arguments,
     )
     if (
         actual_reference_argument_count < 0
@@ -337,7 +363,7 @@ def _direct_argument_match_indices(
     ):
         return None
     matched_indices: list[int] = []
-    for expected in expert.arguments:
+    for expected in expected_arguments:
         indices = tuple(
             index
             for index, actual in enumerate(candidate.bound_arguments)
@@ -436,6 +462,7 @@ def _event_semantics_match(
 ) -> bool:
     return (
         candidate.item.claim_kind is expected.claim_kind
+        and candidate.item.assertion_scope is expected.assertion_scope
         and candidate.item.polarity is expected.polarity
         and candidate.item.epistemic_status is expected.epistemic_status
     )
@@ -445,13 +472,24 @@ def _argument_matches(
     expected: SealedArgument,
     actual: BoundClaimArgument,
 ) -> bool:
-    return (
+    direct_match = (
         actual.argument.event_role.value == expected.event_role
         and actual.argument.role.value == expected.participant_type
         and actual.argument.exact_span == expected.exact_span
         and actual.primary_mention.source_start == expected.source_start
         and actual.primary_mention.source_end == expected.source_end
     )
+    if not direct_match:
+        return False
+    expected_referents = {
+        (item.exact_span, item.source_start, item.source_end)
+        for item in expected.referents
+    }
+    actual_referents = {
+        (item.exact_span, item.source_start, item.source_end)
+        for item in actual.referent_mentions
+    }
+    return actual_referents == expected_referents
 
 
 __all__ = [

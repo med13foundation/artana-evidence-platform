@@ -13,6 +13,7 @@ from artana_evidence_api.document_extraction_support.claim_frames.arguments impo
     ClaimArgumentRole,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.event_types import (
+    ClaimEventRole,
     ClaimEventType,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.mentions import (
@@ -23,6 +24,7 @@ from artana_evidence_api.document_extraction_support.claim_frames.mentions impor
 )
 from artana_evidence_api.document_extraction_support.claim_frames.semantics import (
     ClaimKind,
+    InventoryAssertionScope,
     InventoryEpistemicStatus,
     InventoryPolarity,
 )
@@ -95,6 +97,12 @@ class ClaimInventoryArgument(ClaimArgument):
         default_factory=tuple,
         max_length=16,
     )
+    controlled_event_ref: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=64,
+        pattern=r"^[A-Za-z][A-Za-z0-9_-]*$",
+    )
 
     @field_validator("mention_anchors", mode="before")
     @classmethod
@@ -148,6 +156,17 @@ class ClaimInventoryArgument(ClaimArgument):
             )
         return self
 
+    @model_validator(mode="after")
+    def require_semantic_controlled_event_reference(self) -> ClaimInventoryArgument:
+        if self.controlled_event_ref is not None and (
+            self.role is not ClaimArgumentRole.BIOLOGICAL_PROCESS
+            or self.event_role not in {ClaimEventRole.CAUSE, ClaimEventRole.THEME}
+        ):
+            raise ValueError(
+                "controlled_event_ref requires a biological-process CAUSE or THEME"
+            )
+        return self
+
 
 class ClaimInventoryItem(BaseModel):
     """One source-local claim boundary identified by the inventory agent."""
@@ -157,14 +176,20 @@ class ClaimInventoryItem(BaseModel):
     exact_span: str = Field(..., min_length=1, max_length=12000)
     relation_cue_span: str = Field(..., min_length=1, max_length=1000)
     relation_cue_anchor: ClaimMentionAnchor | None = None
+    local_event_id: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=64,
+        pattern=r"^[A-Za-z][A-Za-z0-9_-]*$",
+    )
     arguments: tuple[ClaimInventoryArgument, ...] = Field(
         ...,
-        min_length=2,
         max_length=32,
     )
     source_locator: Literal["normalized_extraction_text"]
     claim_kind: ClaimKind = Field(..., strict=False)
     event_type: ClaimEventType = Field(..., strict=False)
+    assertion_scope: InventoryAssertionScope = Field(..., strict=False)
     polarity: InventoryPolarity = Field(..., strict=False)
     epistemic_status: InventoryEpistemicStatus = Field(..., strict=False)
     inventory_rationale: str = Field(..., min_length=1, max_length=2000)
@@ -187,11 +212,32 @@ class ClaimInventoryItem(BaseModel):
         )
         if len(set(argument_keys)) != len(argument_keys):
             raise ValueError("claim inventory arguments must be role/span unique")
+        controlled_target = (
+            self.assertion_scope is InventoryAssertionScope.CONTROLLED_TARGET
+        )
+        if controlled_target and not self.claim_kind.relation_eligible:
+            raise ValueError(
+                "controlled targets must preserve a scientific finding or hypothesis"
+            )
+        polarity_unscoped = self.polarity is InventoryPolarity.UNSCOPED
+        epistemic_unasserted = (
+            self.epistemic_status is InventoryEpistemicStatus.UNASSERTED
+        )
+        if controlled_target != polarity_unscoped or (
+            controlled_target != epistemic_unasserted
+        ):
+            raise ValueError(
+                "controlled targets require UNSCOPED polarity and UNASSERTED "
+                "epistemic status; source-asserted events require asserted semantics"
+            )
         if (
-            len({argument.exact_span for argument in self.arguments})
+            not controlled_target
+            and len({argument.exact_span for argument in self.arguments})
             < _MIN_ASSERTION_ARGUMENTS
         ):
-            raise ValueError("claim inventory requires at least two distinct arguments")
+            raise ValueError(
+                "source-asserted inventory requires at least two distinct arguments"
+            )
         return self
 
 
@@ -203,6 +249,7 @@ class BoundClaimArgument:
     primary_mention: BoundClaimMention
     mentions: tuple[BoundClaimMention, ...]
     referent_mentions: tuple[BoundClaimMention, ...]
+    controlled_event_ref: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -217,6 +264,7 @@ class BoundClaimInventoryItem:
     source_end: int
     trigger_mention: BoundClaimMention
     bound_arguments: tuple[BoundClaimArgument, ...]
+    batch_index: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -338,6 +386,7 @@ def bind_claim_inventory_items(
             item=item,
             source_sha256=source_sha256,
             source_start=source_start,
+            inventory_batch=items,
         )
         if item_fingerprint in seen_item_fingerprints:
             rejected.append(
@@ -363,6 +412,8 @@ def bind_claim_inventory_items(
                 chunk_index=chunk_index,
                 source_start=source_start,
                 source_start_offset=source_start_offset,
+                batch_index=batch_index,
+                inventory_batch=items,
             )
         except ClaimInventoryBindingError as exc:
             if exc.disposition is None:
@@ -520,6 +571,8 @@ def bind_claim_inventory_item_at_source(
     chunk_index: int,
     source_start: int,
     source_start_offset: int = 0,
+    batch_index: int | None = None,
+    inventory_batch: tuple[ClaimInventoryItem, ...] | None = None,
 ) -> BoundClaimInventoryItem:
     """Create the sole deterministic binding for one source-located inventory item."""
 
@@ -575,6 +628,7 @@ def bind_claim_inventory_item_at_source(
                     source_text=source_text,
                     source_start_offset=source_start_offset,
                 ),
+                controlled_event_ref=argument.controlled_event_ref,
             ),
         )
     return BoundClaimInventoryItem(
@@ -582,6 +636,7 @@ def bind_claim_inventory_item_at_source(
             item=item,
             source_sha256=source_sha256,
             source_start=source_start,
+            inventory_batch=inventory_batch,
         ),
         item=item,
         source_sha256=source_sha256,
@@ -590,6 +645,7 @@ def bind_claim_inventory_item_at_source(
         source_end=source_start + len(item.exact_span),
         trigger_mention=trigger_mention,
         bound_arguments=tuple(bound_arguments),
+        batch_index=batch_index,
     )
 
 
@@ -703,7 +759,10 @@ def _mentions_overlap(
     first: BoundClaimMention,
     second: BoundClaimMention,
 ) -> bool:
-    return first.source_start < second.source_end and second.source_start < first.source_end
+    return (
+        first.source_start < second.source_end
+        and second.source_start < first.source_end
+    )
 
 
 def _require_referent_outside_argument(
@@ -779,6 +838,7 @@ def claim_inventory_identity(
     item: ClaimInventoryItem,
     source_sha256: str,
     source_start: int,
+    inventory_batch: tuple[ClaimInventoryItem, ...] | None = None,
 ) -> str:
     return _canonical_sha256(
         {
@@ -809,6 +869,7 @@ def claim_inventory_identity(
                             if argument.referent_anchors
                             else {}
                         ),
+                        **_controlled_target_identity(argument, inventory_batch),
                     }
                     for argument in item.arguments
                 ),
@@ -816,16 +877,45 @@ def claim_inventory_identity(
                     argument["role"],
                     argument["event_role"],
                     argument["exact_span"],
+                    str(argument.get("controlled_event_identity", "")),
+                    str(argument.get("controlled_event_ref", "")),
                 ),
             ),
             "relation_cue_span": item.relation_cue_span,
             "source_locator": item.source_locator,
             "claim_kind": item.claim_kind.value,
             "event_type": item.event_type.value,
+            **(
+                {"assertion_scope": item.assertion_scope.value}
+                if item.assertion_scope is not InventoryAssertionScope.SOURCE_ASSERTED
+                else {}
+            ),
             "polarity": item.polarity.value,
             "epistemic_status": item.epistemic_status.value,
         },
     )
+
+
+def _controlled_target_identity(
+    argument: ClaimInventoryArgument,
+    inventory_batch: tuple[ClaimInventoryItem, ...] | None,
+) -> dict[str, object]:
+    target_ref = argument.controlled_event_ref
+    if target_ref is None:
+        return {}
+    targets = (
+        ()
+        if inventory_batch is None
+        else tuple(item for item in inventory_batch if item.local_event_id == target_ref)
+    )
+    if len(targets) != 1:
+        return {"controlled_event_ref": target_ref}
+    target = targets[0]
+    return {
+        "controlled_event_identity": _canonical_sha256(
+            target.model_dump(mode="json", exclude={"local_event_id"})
+        )
+    }
 
 
 def claim_inventory_input_sha256(

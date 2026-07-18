@@ -43,6 +43,7 @@ def _item(
             "source_locator": "normalized_extraction_text",
             "claim_kind": "SCIENTIFIC_FINDING",
             "event_type": event_type,
+            "assertion_scope": "SOURCE_ASSERTED",
             "polarity": "SUPPORT",
             "epistemic_status": "ASSERTED",
             "inventory_rationale": "The source explicitly states this event.",
@@ -111,6 +112,100 @@ def test_process_theme_without_explicit_sibling_does_not_invent_event() -> None:
 
     assert result.links == ()
     assert result.ambiguities == ()
+    assert len(result.unlinked_references) == 1
+    unlinked = result.unlinked_references[0]
+    assert unlinked.controller_inventory_id == outer.inventory_id
+    assert unlinked.controller_argument_index == 1
+    assert unlinked.reference_exact_span == "TGF-beta induction of Foxp3"
+
+
+def test_argument_free_controlled_target_links_without_invented_participants() -> None:
+    source = "BCL2 inhibits apoptosis."
+    outer = _item(
+        exact_span=source,
+        cue="inhibits",
+        event_type="NEGATIVE_REGULATION",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "CAUSE", "BCL2"),
+            _argument("BIOLOGICAL_PROCESS", "THEME", "apoptosis"),
+        ],
+    )
+    target = ClaimInventoryItem.model_validate(
+        {
+            "exact_span": "apoptosis",
+            "relation_cue_span": "apoptosis",
+            "arguments": [],
+            "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "event_type": "OTHER_EXPLICIT",
+            "assertion_scope": "CONTROLLED_TARGET",
+            "polarity": "UNSCOPED",
+            "epistemic_status": "UNASSERTED",
+            "inventory_rationale": "The event is asserted only through its controller.",
+        }
+    )
+    bound = bind_claim_inventory(
+        (outer, target),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )
+
+    result = link_controlled_events(bound)
+
+    assert result.ambiguities == ()
+    assert result.unlinked_references == ()
+    assert len(result.links) == 1
+    assert result.links[0].controlled_inventory_id == bound[1].inventory_id
+
+
+def test_each_controller_reference_mention_must_resolve_independently() -> None:
+    source = "BCL2 inhibits apoptosis, not necrosis."
+    outer = _item(
+        exact_span=source,
+        cue="inhibits",
+        event_type="NEGATIVE_REGULATION",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "CAUSE", "BCL2"),
+            {
+                **_argument("BIOLOGICAL_PROCESS", "THEME", "apoptosis"),
+                "referent_anchors": [
+                    {
+                        "mention_span": "necrosis",
+                        "left_context": "apoptosis, not ",
+                        "right_context": ".",
+                    }
+                ],
+            },
+        ],
+    )
+    target = ClaimInventoryItem.model_validate(
+        {
+            "exact_span": "apoptosis",
+            "relation_cue_span": "apoptosis",
+            "arguments": [],
+            "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "event_type": "OTHER_EXPLICIT",
+            "assertion_scope": "CONTROLLED_TARGET",
+            "polarity": "UNSCOPED",
+            "epistemic_status": "UNASSERTED",
+            "inventory_rationale": "The event is asserted only through its controller.",
+        }
+    )
+    bound = bind_claim_inventory(
+        (outer, target),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )
+
+    result = link_controlled_events(bound)
+
+    assert len(result.links) == 1
+    assert tuple(item.reference_exact_span for item in result.unlinked_references) == (
+        "necrosis",
+    )
 
 
 def test_two_matching_sibling_events_fail_closed_as_ambiguous() -> None:
@@ -128,6 +223,46 @@ def test_two_matching_sibling_events_fail_closed_as_ambiguous() -> None:
         specific.inventory_id,
         generic.inventory_id,
     }
+
+
+def test_explicit_batch_reference_disambiguates_shared_trigger_siblings() -> None:
+    outer_payload = _outer_item().model_dump(mode="json")
+    outer_payload["arguments"][1]["controlled_event_ref"] = "inner-specific"
+    outer = ClaimInventoryItem.model_validate(outer_payload)
+    specific_payload = _inner_item().model_dump(mode="json")
+    specific_payload["local_event_id"] = "inner-specific"
+    bound_outer, specific, generic = _bind(
+        outer,
+        ClaimInventoryItem.model_validate(specific_payload),
+        _inner_item(event_type="REGULATION"),
+    )
+
+    result = link_controlled_events((bound_outer, specific, generic))
+
+    assert result.ambiguities == ()
+    assert result.unlinked_references == ()
+    assert len(result.links) == 1
+    assert result.links[0].controlled_inventory_id == specific.inventory_id
+
+
+def test_invalid_explicit_batch_reference_fails_closed_as_unlinked() -> None:
+    outer_payload = _outer_item().model_dump(mode="json")
+    outer_payload["arguments"][1]["controlled_event_ref"] = "missing-target"
+    outer = ClaimInventoryItem.model_validate(outer_payload)
+    bound_outer, specific, generic = _bind(
+        outer,
+        _inner_item(),
+        _inner_item(event_type="REGULATION"),
+    )
+
+    result = link_controlled_events((bound_outer, specific, generic))
+
+    assert result.links == ()
+    assert result.ambiguities == ()
+    assert len(result.unlinked_references) == 1
+    assert result.unlinked_references[0].controller_inventory_id == (
+        bound_outer.inventory_id
+    )
 
 
 def test_link_identity_follows_bound_inner_semantics_without_role_inference() -> None:

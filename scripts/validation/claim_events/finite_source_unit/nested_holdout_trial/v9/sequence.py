@@ -1,4 +1,4 @@
-"""Create-once, sequential authorization for eighth-holdout live repeats."""
+"""Create-once, sequential authorization for ninth-holdout live repeats."""
 
 from __future__ import annotations
 
@@ -9,9 +9,6 @@ from pathlib import Path
 from secrets import token_hex
 from typing import Final
 
-from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.eighth_qualification import (
-    require_replayed_eighth_qualification,
-)
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.repeat_sequence import (
     RepeatAuthorizationValues,
     RepeatReservationRequest,
@@ -23,6 +20,9 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.rep
     require_repository_unchanged,
     reserve_repeat,
 )
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v9.qualification import (
+    require_replayed_ninth_qualification,
+)
 from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
     sha256_json,
 )
@@ -32,15 +32,15 @@ from scripts.validation.claim_frames.provider_receipts import (
     verify_provider_receipts,
 )
 
-_SCHEMA_VERSION: Final = "tg04_nested_event_holdout.v8"
+_SCHEMA_VERSION: Final = "tg04_nested_event_holdout.v9"
 _SELECTION_SEED: Final = (
-    "969619fd2b8faf60d81c34ba9b12c3f100d69f3af56dcda431072dd009156916"
+    "b1498772852d13333a1201ddaa02c55098fdcc183bee01ef9da0915faf0ceafd"
 )
 _PROJECTION_SET_SHA256: Final = (
-    "5c8e13c4eac5087d151c1b4b391b1215555ce401fdbb1c38a95b61853ed6cde6"
+    "9163b0d185bdafdc093d158ec0a5b4da0e37d950904d998d822084d04f455915"
 )
 _UNIT_ID: Final = (
-    "source-unit-def51372591d9c4244a4dac031c801c8781aa4006f6718ddd8bfb77dece566a2"
+    "source-unit-eb96c6e419821d8b930aebe6c1a891e185a0fcddccd3d05efa6ba05ef37601c0"
 )
 _REPEAT_INDICES: Final = frozenset({1, 2, 3})
 _EXPECTED_PROVIDER_CALL_COUNT: Final = 2
@@ -67,14 +67,14 @@ _CRITICAL_GATE_REQUIREMENTS: Final = frozenset(
 )
 
 _DEFINITION: Final = RepeatSequenceDefinition(
-    ordinal="eighth",
+    ordinal="ninth",
     schema_version=_SCHEMA_VERSION,
-    reservation_schema_version="tg04_v8_repeat_reservation.v1",
-    provider_reservation_schema_version="tg04_v8_provider_reservation.v1",
+    reservation_schema_version="tg04_v9_repeat_reservation.v1",
+    provider_reservation_schema_version="tg04_v9_provider_reservation.v1",
     selection_seed=_SELECTION_SEED,
     projection_set_sha256=_PROJECTION_SET_SHA256,
     unit_id=_UNIT_ID,
-    registry_path="artana-evaluation/tg04-v8",
+    registry_path="artana-evaluation/tg04-v9",
     critical_gate_requirements=_CRITICAL_GATE_REQUIREMENTS,
     repeat_indices=_REPEAT_INDICES,
     expected_provider_call_count=_EXPECTED_PROVIDER_CALL_COUNT,
@@ -82,7 +82,7 @@ _DEFINITION: Final = RepeatSequenceDefinition(
 
 
 @dataclass(frozen=True, slots=True)
-class EighthRepeatAuthorization:
+class NinthRepeatAuthorization:
     """One exclusive reservation that must exist before a provider call."""
 
     run_id: str
@@ -113,14 +113,14 @@ class EighthRepeatAuthorization:
         return provider_evidence_unit_id(self, definition=_DEFINITION)
 
 
-def reserve_eighth_repeat(
+def reserve_ninth_repeat(
     *,
     repository_root: Path,
     run_id: str,
     repeat_index: int,
     output: Path,
     previous_report: Path | None,
-) -> EighthRepeatAuthorization:
+) -> NinthRepeatAuthorization:
     """Atomically reserve one repeat and enforce pass-before-next ordering."""
 
     return reserve_repeat(
@@ -137,8 +137,8 @@ def reserve_eighth_repeat(
     )
 
 
-def finalize_eighth_repeat(
-    authorization: EighthRepeatAuthorization,
+def finalize_ninth_repeat(
+    authorization: NinthRepeatAuthorization,
     *,
     report: dict[str, object],
 ) -> None:
@@ -155,7 +155,7 @@ def finalize_eighth_repeat(
 def _runtime() -> RepeatSequenceRuntime:
     return RepeatSequenceRuntime(
         collect_repository_evidence=collect_repository_evidence,
-        replay_qualification=require_replayed_eighth_qualification,
+        replay_qualification=require_replayed_ninth_qualification,
         provider_verifier_factory=OpenAIProviderReceiptVerifier.from_environment,
         verify_provider_receipts=verify_provider_receipts,
         sha256_json=sha256_json,
@@ -167,8 +167,8 @@ def _runtime() -> RepeatSequenceRuntime:
 
 def _authorization_from_values(
     values: RepeatAuthorizationValues,
-) -> EighthRepeatAuthorization:
-    return EighthRepeatAuthorization(
+) -> NinthRepeatAuthorization:
+    return NinthRepeatAuthorization(
         run_id=values.run_id,
         repeat_index=values.repeat_index,
         output=values.output,
@@ -180,7 +180,7 @@ def _authorization_from_values(
 
 
 __all__ = [
-    "EighthRepeatAuthorization",
-    "finalize_eighth_repeat",
-    "reserve_eighth_repeat",
+    "NinthRepeatAuthorization",
+    "finalize_ninth_repeat",
+    "reserve_ninth_repeat",
 ]

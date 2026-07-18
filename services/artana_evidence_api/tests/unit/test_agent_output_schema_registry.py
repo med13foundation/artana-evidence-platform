@@ -483,6 +483,7 @@ def test_inventory_registry_governs_kind_and_independent_semantics() -> None:
     )
     from artana_evidence_api.document_extraction_support.claim_frames import (
         ClaimKind,
+        InventoryAssertionScope,
         InventoryEpistemicStatus,
         InventoryPolarity,
     )
@@ -501,6 +502,7 @@ def test_inventory_registry_governs_kind_and_independent_semantics() -> None:
     )
     expected = {
         "claim_kind": {value.value for value in ClaimKind},
+        "assertion_scope": {value.value for value in InventoryAssertionScope},
         "polarity": {value.value for value in InventoryPolarity},
         "epistemic_status": {value.value for value in InventoryEpistemicStatus},
     }

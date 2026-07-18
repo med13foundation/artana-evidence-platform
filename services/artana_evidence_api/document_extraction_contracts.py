@@ -310,8 +310,11 @@ class DocumentCandidateExtractionDiagnostics:
     model_attempt_records: tuple[dict[str, object], ...] = ()
     inventory_binding_rejections: tuple[dict[str, object], ...] = ()
     inventory_incompleteness: tuple[dict[str, object], ...] = ()
+    inventory_non_relation_items: tuple[dict[str, object], ...] = ()
     controlled_event_links: tuple[dict[str, object], ...] = ()
     controlled_event_link_ambiguities: tuple[dict[str, object], ...] = ()
+    unlinked_controlled_event_references: tuple[dict[str, object], ...] = ()
+    unlinked_controlled_target_ids: tuple[str, ...] = ()
 
     @property
     def agent_extraction_completed(self) -> bool:
@@ -353,6 +356,10 @@ class DocumentCandidateExtractionDiagnostics:
             reasons.append("inventory_incomplete")
         if self.controlled_event_link_ambiguities:
             reasons.append("controlled_event_link_ambiguous")
+        if self.unlinked_controlled_event_references:
+            reasons.append("controlled_event_reference_unlinked")
+        if self.unlinked_controlled_target_ids:
+            reasons.append("controlled_event_target_unlinked")
         return tuple(reasons or ["semantic_incomplete_unspecified"])
 
     def as_metadata(self) -> JSONObject:
@@ -412,14 +419,17 @@ class DocumentCandidateExtractionDiagnostics:
             payload["inventory_incompleteness"] = json_value(
                 self.inventory_incompleteness,
             )
-        if self.controlled_event_links:
-            payload["controlled_event_links"] = json_value(
-                self.controlled_event_links,
+        if self.inventory_non_relation_items:
+            payload["inventory_non_relation_items"] = json_value(
+                self.inventory_non_relation_items,
             )
-        if self.controlled_event_link_ambiguities:
-            payload["controlled_event_link_ambiguities"] = json_value(
-                self.controlled_event_link_ambiguities,
-            )
+        _add_controlled_event_diagnostics(
+            payload,
+            links=self.controlled_event_links,
+            ambiguities=self.controlled_event_link_ambiguities,
+            unlinked_references=self.unlinked_controlled_event_references,
+            unlinked_target_ids=self.unlinked_controlled_target_ids,
+        )
         if self.llm_candidate_error is not None:
             payload["llm_candidate_error"] = self.llm_candidate_error
         return payload
@@ -431,6 +441,26 @@ def _add_semantic_incomplete_reasons(
 ) -> None:
     if reasons:
         payload["semantic_incomplete_reason_codes"] = list(reasons)
+
+
+def _add_controlled_event_diagnostics(
+    payload: JSONObject,
+    *,
+    links: tuple[dict[str, object], ...],
+    ambiguities: tuple[dict[str, object], ...],
+    unlinked_references: tuple[dict[str, object], ...],
+    unlinked_target_ids: tuple[str, ...],
+) -> None:
+    if links:
+        payload["controlled_event_links"] = json_value(links)
+    if ambiguities:
+        payload["controlled_event_link_ambiguities"] = json_value(ambiguities)
+    if unlinked_references:
+        payload["unlinked_controlled_event_references"] = json_value(
+            unlinked_references
+        )
+    if unlinked_target_ids:
+        payload["unlinked_controlled_target_ids"] = list(unlinked_target_ids)
 
 
 __all__ = [

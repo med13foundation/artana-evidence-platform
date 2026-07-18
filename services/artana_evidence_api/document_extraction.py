@@ -335,6 +335,13 @@ def _route_agent_extraction_result(
             ambiguity.as_json()
             for ambiguity in extraction_attempt.controlled_event_link_ambiguities
         ),
+        unlinked_controlled_event_references=tuple(
+            reference.as_json()
+            for reference in extraction_attempt.unlinked_controlled_event_references
+        ),
+        unlinked_controlled_target_ids=(
+            extraction_attempt.unlinked_controlled_target_ids
+        ),
     )
 
 
@@ -644,11 +651,20 @@ async def discover_relation_candidates(  # noqa: PLR0911
     inventory_incompleteness = tuple(
         getattr(llm_candidates, "inventory_incompleteness", ()),
     )
+    inventory_non_relation_items = tuple(
+        getattr(llm_candidates, "inventory_non_relation_items", ()),
+    )
     controlled_event_links = tuple(
         getattr(llm_candidates, "controlled_event_links", ()),
     )
     controlled_event_link_ambiguities = tuple(
         getattr(llm_candidates, "controlled_event_link_ambiguities", ()),
+    )
+    unlinked_controlled_event_references = tuple(
+        getattr(llm_candidates, "unlinked_controlled_event_references", ()),
+    )
+    unlinked_controlled_target_ids = tuple(
+        getattr(llm_candidates, "unlinked_controlled_target_ids", ()),
     )
 
     if routing_status == "semantic_incomplete":
@@ -661,10 +677,15 @@ async def discover_relation_candidates(  # noqa: PLR0911
                 model_attempt_records=model_attempt_records,
                 inventory_binding_rejections=inventory_binding_rejections,
                 inventory_incompleteness=inventory_incompleteness,
+                inventory_non_relation_items=inventory_non_relation_items,
                 controlled_event_links=controlled_event_links,
                 controlled_event_link_ambiguities=(
                     controlled_event_link_ambiguities
                 ),
+                unlinked_controlled_event_references=(
+                    unlinked_controlled_event_references
+                ),
+                unlinked_controlled_target_ids=unlinked_controlled_target_ids,
                 llm_extraction_chunk_count=llm_extraction_chunk_count,
                 llm_extraction_text_char_count=llm_extraction_text_char_count,
             ),
@@ -685,10 +706,15 @@ async def discover_relation_candidates(  # noqa: PLR0911
                 raw_agent_outputs=raw_agent_outputs,
                 model_attempt_records=model_attempt_records,
                 inventory_binding_rejections=inventory_binding_rejections,
+                inventory_non_relation_items=inventory_non_relation_items,
                 controlled_event_links=controlled_event_links,
                 controlled_event_link_ambiguities=(
                     controlled_event_link_ambiguities
                 ),
+                unlinked_controlled_event_references=(
+                    unlinked_controlled_event_references
+                ),
+                unlinked_controlled_target_ids=unlinked_controlled_target_ids,
             ),
         )
 
@@ -711,8 +737,13 @@ async def discover_relation_candidates(  # noqa: PLR0911
             raw_agent_outputs=raw_agent_outputs,
             model_attempt_records=model_attempt_records,
             inventory_binding_rejections=inventory_binding_rejections,
+            inventory_non_relation_items=inventory_non_relation_items,
             controlled_event_links=controlled_event_links,
             controlled_event_link_ambiguities=controlled_event_link_ambiguities,
+            unlinked_controlled_event_references=(
+                unlinked_controlled_event_references
+            ),
+            unlinked_controlled_target_ids=unlinked_controlled_target_ids,
         ),
     )
 

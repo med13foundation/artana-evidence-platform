@@ -26,10 +26,6 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
     fingerprinted_step_key,
 )
 
-from scripts.validation.claim_events.finite_source_unit.binding_repair import (
-    require_minimal_exact_span_repairs,
-    require_source_binding_repair_invariant,
-)
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     CandidateVerification,
     EntailmentDecision,
@@ -37,7 +33,11 @@ from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitExtractionOutput,
     SourceUnitVerificationOutput,
 )
-from scripts.validation.claim_events.finite_source_unit.structural_invariants import (
+from scripts.validation.claim_events.finite_source_unit.source_validation.binding_repair import (
+    require_minimal_exact_span_repairs,
+    require_source_binding_repair_invariant,
+)
+from scripts.validation.claim_events.finite_source_unit.source_validation.structural_invariants import (
     trusted_structure_violation,
 )
 
@@ -48,9 +48,11 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v18"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v17"
-_BINDING_REPAIR_PROMPT_VERSION = "tg04.finite_source_unit.binding_repair.v2"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v20"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v19"
+_BINDING_REPAIR_PROMPT_VERSION = (
+    "tg04.finite_source_unit.source_validation.binding_repair.v2"
+)
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
 Return exactly one eligibility_category:
@@ -259,7 +261,7 @@ async def repair_source_unit_extraction(  # noqa: PLR0913
 
     if not binding_errors:
         raise ValueError("binding repair requires at least one rejection")
-    prompt = _binding_repair_prompt(
+    prompt = canonical_source_unit_binding_repair_prompt(
         unit=unit,
         rejected_output=rejected_output,
         binding_errors=binding_errors,
@@ -391,15 +393,18 @@ Use only the frozen source unit below. Do not use outside knowledge.
 
 {_SCIENTIFIC_EVENT_ELIGIBILITY_POLICY}
 
-Map FINDING, HYPOTHESIS, and NULL_RESULT to EXPLICIT_EVENT and return every
+Map FINDING, HYPOTHESIS, NULL_RESULT, and MIXED_SCIENTIFIC to EXPLICIT_EVENT and return every
 distinct explicit event with a trigger and at least two material typed
-arguments. Map PROCEDURE, MEASUREMENT_ONLY, and NO_EVENT to NO_EVENT with no
+arguments when SOURCE_ASSERTED. A CONTROLLED_TARGET may have fewer, including
+none, when the source names no explicit inner participant; never invent an
+argument to satisfy a count. Map PROCEDURE, MEASUREMENT_ONLY, and NO_EVENT to NO_EVENT with no
 events. Map ABSTAIN to ABSTAIN with no events.
 
 For each event, copy exact_span, relation_cue_span, and every argument span
 verbatim. Use normalized_extraction_text as source_locator. Keep claim_kind,
-event_type, polarity, and epistemic_status independent. Do not invent missing
-participants, normalize surface text, merge events, or return numeric scores.
+event_type, assertion_scope, polarity, and epistemic_status independent. Do not invent missing
+participants, normalize surface text, merge events with different direction,
+polarity, assertion scope, or process cues, or return numeric scores.
 Leave mention_anchors empty when an argument exact_span occurs exactly once in
 its claim. When an argument span appears more than once anywhere in the frozen
 source unit, every intended anchor, including one whose mention_span exactly
@@ -427,11 +432,30 @@ Preserve other outer causes, themes, and context independently. When the
 referenced event is itself explicitly asserted,
 including an event nominalization such as "TGF-beta induction of Foxp3," return
 it as a separate sibling event whose own arguments carry the inner event roles.
+Use SOURCE_ASSERTED for an event that the source independently asserts. Use
+CONTROLLED_TARGET when the source only names the event as the target of an outer
+controller. A CONTROLLED_TARGET must use UNSCOPED polarity and UNASSERTED
+epistemic_status; these values prevent a failed or uncertain outer controller
+from becoming a false standalone assertion about the inner event. The outer
+event alone carries the source's polarity and epistemic force.
 When one coordinated process explicitly contains multiple referenced sibling
-events, return each source-distinct inner event; deterministic source binding
-may link the outer process to each sibling.
+events with the same scope, either return each source-distinct inner event or one grouped inner event
+with every explicit theme. Never drop a member or group events with different
+direction, polarity, assertion scope, or process cues. Deterministic source
+binding may link the outer process to each atomic sibling or the complete group.
+The source may instead support source-valid direct atomic outer events sharing one
+controller cue: preserve each gene as THEME and the shared production or
+expression span as OUTCOME. In that atomic form do not invent a controlled
+target; do not mix atomic and nested fragments in one representation.
 When the referenced process is anaphoric, preserve its complete explicit
 antecedent in referent_anchors so source binding can link the sibling events.
+When multiple controlled siblings share one process trigger and source spans
+cannot uniquely identify the intended target, give that target a unique
+local_event_id and set controlled_event_ref on the BIOLOGICAL_PROCESS CAUSE or
+THEME argument to the same identifier. Use it only for an explicit event-to-event
+reference; deterministic binding still requires the referenced target's trigger
+and every core participant inside the process span. Never use this identifier as a
+score, ordering preference, or substitute for source evidence.
 Do not duplicate an inner participant on the outer event unless the source
 independently assigns it an outer role. Deterministic source binding links outer
 process spans or agent-declared referent spans to source-distinct sibling events
@@ -555,7 +579,7 @@ Use only the frozen source unit.
 {_SCIENTIFIC_EVENT_ELIGIBILITY_POLICY}
 
 First return your own eligibility_category, without using extractor reasoning.
-For FINDING, HYPOTHESIS, or NULL_RESULT, return CANDIDATES_COMPLETE when supplied
+For FINDING, HYPOTHESIS, NULL_RESULT, or MIXED_SCIENTIFIC, return CANDIDATES_COMPLETE when supplied
 candidates cover every scientific event or MISSING_EVENT otherwise. For
 PROCEDURE, MEASUREMENT_ONLY, or NO_EVENT, return NO_EVENT_CONFIRMED because those
 categories are not scientific events. Map ABSTAIN to ABSTAIN. Review the unit
@@ -568,8 +592,16 @@ participants and their inner roles; the outer event preserves the process's
 source-explicit role plus its other cause, theme, and context. Do not require inner participants to be duplicated
 on the outer event unless the source independently assigns them an outer role.
 When one coordinated process explicitly contains multiple source-distinct inner
-events, require every sibling rather than merging them.
-Return MISSING_EVENT when the inner event or the outer event is absent. A directional causal candidate is
+events with the same scope, accept either all atomic siblings or one grouped event that preserves
+every explicit theme. Also accept complete source-valid direct atomic outer
+events that preserve each gene theme, the shared process outcome, and source
+polarity. In that direct form, no separate inner event is required. In a nested
+form, every outer event must reference its corresponding inner event; use
+controlled_event_ref to resolve shared-trigger siblings. Reject partial
+mixtures, missing members, or grouping across different
+direction, polarity, assertion scope, or process cues.
+Return MISSING_EVENT when the inner event or the outer event is absent from a
+nested pair. A directional causal candidate is
 complete only when its exact_span contains every coordinated clause needed to
 justify the direction; a neutral cue such as "affects" is insufficient when the
 directional language lies outside that span.
@@ -589,6 +621,13 @@ condition that would falsify your decision. Do not repair candidates, import
 outside mechanistic or causal claims, compare against benchmark labels, or
 return numeric scores. Standard biomedical entity-class knowledge is allowed
 only for categorical argument typing.
+For CONTROLLED_TARGET, ENTAILED means the source explicitly names the event as
+the target of a source-explicit outer controller. UNSCOPED and UNASSERTED are
+structural non-assertion categories, not claims that the source literally uses
+those words. Reject a CONTROLLED_TARGET that is not linked by source meaning to
+an outer controller, and reject SOURCE_ASSERTED when the event exists only as a
+controlled target. CANDIDATES_COMPLETE requires both the source-asserted outer
+event and every material controlled target.
 Do not return source-unit identifiers, candidate identifiers, or input hashes.
 The audited orchestrator binds transport identity outside scientific output.
 
@@ -666,7 +705,7 @@ prompt_version: {_VERIFICATION_PROMPT_VERSION}
 """
 
 
-def _binding_repair_prompt(
+def canonical_source_unit_binding_repair_prompt(
     *,
     unit: FrozenSourceUnit,
     rejected_output: SourceUnitExtractionOutput,
@@ -703,6 +742,21 @@ prompt_version: {_BINDING_REPAIR_PROMPT_VERSION}
 """
 
 
+def _binding_repair_prompt(
+    *,
+    unit: FrozenSourceUnit,
+    rejected_output: SourceUnitExtractionOutput,
+    binding_errors: tuple[ClaimInventoryBindingRejection, ...],
+) -> str:
+    """Compatibility wrapper for existing focused prompt tests."""
+
+    return canonical_source_unit_binding_repair_prompt(
+        unit=unit,
+        rejected_output=rejected_output,
+        binding_errors=binding_errors,
+    )
+
+
 def _blinded_candidate(candidate: BoundClaimInventoryItem) -> dict[str, object]:
     """Remove extractor reasoning and mention choices from verifier input."""
 
@@ -713,6 +767,8 @@ def _blinded_candidate(candidate: BoundClaimInventoryItem) -> dict[str, object]:
         "source_locator": item.source_locator,
         "claim_kind": item.claim_kind.value,
         "event_type": item.event_type.value,
+        "local_event_id": item.local_event_id,
+        "assertion_scope": item.assertion_scope.value,
         "polarity": item.polarity.value,
         "epistemic_status": item.epistemic_status.value,
         "arguments": [
@@ -720,6 +776,7 @@ def _blinded_candidate(candidate: BoundClaimInventoryItem) -> dict[str, object]:
                 "role": argument.role.value,
                 "event_role": argument.event_role.value,
                 "exact_span": argument.exact_span,
+                "controlled_event_ref": argument.controlled_event_ref,
             }
             for argument in item.arguments
         ],
@@ -740,6 +797,7 @@ __all__ = [
     "as_model_client",
     "bind_source_unit_extraction",
     "bind_source_unit_verification",
+    "canonical_source_unit_binding_repair_prompt",
     "canonical_source_unit_extraction_prompt",
     "canonical_source_unit_verification_prompt",
     "extract_source_unit",

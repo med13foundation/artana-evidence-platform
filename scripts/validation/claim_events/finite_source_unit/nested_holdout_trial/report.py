@@ -6,6 +6,9 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+from scripts.validation.claim_events.finite_source_unit.contracts import (
+    ProjectionEligibilityDecision,
+)
 from scripts.validation.claim_events.finite_source_unit.discovery.identity_evidence import (
     audit_identity_mismatch_count,
     count_model_identity_fields,
@@ -19,9 +22,6 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.mat
 )
 from scripts.validation.claim_events.finite_source_unit.runner import (
     receipt_expectations_for_finite_source_records,
-)
-from scripts.validation.claim_events.finite_source_unit.contracts import (
-    ProjectionEligibilityDecision,
 )
 from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
     model_json,
@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
         SingleUnitAgentRunEvidence,
     )
+
 
 def build_nested_holdout_report(  # noqa: PLR0913
     *,
@@ -120,6 +121,12 @@ def build_nested_holdout_report(  # noqa: PLR0913
         verification_decision_count=len(agent_run.verified),
         entailed_candidate_count=len(agent_run.entailed),
         trusted_candidate_count=len(agent_run.trusted),
+        unmatched_trusted_candidate_count=len(
+            {
+                candidate.inventory_id for candidate in agent_run.trusted
+            }
+            - set(projection_match.fully_recovered_inventory_ids)
+        ),
         review_only_candidate_count=sum(
             candidate.verification.projection_eligibility
             is ProjectionEligibilityDecision.REVIEW_ONLY
@@ -149,6 +156,10 @@ def build_nested_holdout_report(  # noqa: PLR0913
         controlled_event_link_ambiguity_count=len(
             agent_run.controlled_event_link_ambiguities
         ),
+        unlinked_controlled_event_reference_count=len(
+            agent_run.unlinked_controlled_event_references
+        ),
+        unlinked_controlled_target_count=len(agent_run.unlinked_controlled_target_ids),
         invalid_agent_output_count=invalid_count,
         unidentified_provider_attempt_count=unidentified_count,
         extraction_provider_response_id_count=len(extraction_ids),
@@ -228,6 +239,13 @@ def build_nested_holdout_report(  # noqa: PLR0913
             ambiguity.as_json()
             for ambiguity in agent_run.controlled_event_link_ambiguities
         ],
+        "unlinked_controlled_event_references": [
+            reference.as_json()
+            for reference in agent_run.unlinked_controlled_event_references
+        ],
+        "unlinked_controlled_target_ids": list(
+            agent_run.unlinked_controlled_target_ids
+        ),
         "sealed_expert_graph": selection.expert_graph.as_json(),
         "sealed_projection_set": selection.projection_set.as_json(),
         "deterministic_projection_match": asdict(projection_match),
@@ -248,6 +266,7 @@ def build_nested_holdout_report(  # noqa: PLR0913
             "sealed_expert_graph_was_hidden_from_agents": True,
             "sealed_projection_set_was_hidden_from_agents": True,
             "additional_source_valid_claims_are_allowed": True,
+            "unmatched_source_valid_claims_must_remain_review_only": True,
             "all_additional_claims_must_be_entailed": True,
             "entailed_unresolved_claims_may_remain_review_only": True,
             "rejected_additional_claims_are_allowed": False,

@@ -49,6 +49,7 @@ def _inventory_item(
             "source_locator": "normalized_extraction_text",
             "claim_kind": claim_kind,
             "event_type": "OTHER_EXPLICIT",
+            "assertion_scope": "SOURCE_ASSERTED",
             "polarity": polarity,
             "epistemic_status": epistemic_status,
             "inventory_rationale": "The source contains one explicit event.",
@@ -61,6 +62,139 @@ def test_mention_anchor_requires_verbatim_context() -> None:
         ClaimMentionAnchor.model_validate(
             {"mention_span": "WT1", "left_context": "", "right_context": ""},
         )
+
+
+def test_controlled_target_requires_nonassertive_semantics() -> None:
+    text = "IL-2 restored the proliferative response."
+    asserted = _inventory_item(
+        text=text,
+        cue="restored",
+        first_argument={
+            "role": "GENE_OR_PROTEIN",
+            "event_role": "CAUSE",
+            "exact_span": "IL-2",
+            "role_rationale": "IL-2 is the stated controller.",
+        },
+        second_span="proliferative response",
+    )
+    payload = asserted.model_dump(mode="json")
+    payload.update(
+        {
+            "event_type": "PROLIFERATION",
+            "assertion_scope": "CONTROLLED_TARGET",
+            "polarity": "UNSCOPED",
+            "epistemic_status": "UNASSERTED",
+        }
+    )
+
+    target = ClaimInventoryItem.model_validate(payload)
+
+    assert target.event_type.value == "PROLIFERATION"
+    assert target.assertion_scope.value == "CONTROLLED_TARGET"
+
+
+@pytest.mark.parametrize(
+    ("assertion_scope", "polarity", "epistemic_status"),
+    [
+        ("CONTROLLED_TARGET", "SUPPORT", "ASSERTED"),
+        ("CONTROLLED_TARGET", "UNSCOPED", "ASSERTED"),
+        ("CONTROLLED_TARGET", "SUPPORT", "UNASSERTED"),
+        ("SOURCE_ASSERTED", "UNSCOPED", "UNASSERTED"),
+        ("SOURCE_ASSERTED", "UNSCOPED", "ASSERTED"),
+        ("SOURCE_ASSERTED", "SUPPORT", "UNASSERTED"),
+    ],
+)
+def test_assertion_scope_rejects_semantic_category_conflicts(
+    assertion_scope: str,
+    polarity: str,
+    epistemic_status: str,
+) -> None:
+    item = _inventory_item(
+        text="IL-2 restored proliferation.",
+        cue="restored",
+        first_argument={
+            "role": "GENE_OR_PROTEIN",
+            "event_role": "CAUSE",
+            "exact_span": "IL-2",
+            "role_rationale": "IL-2 is the stated controller.",
+        },
+        second_span="proliferation",
+    )
+    payload = item.model_dump(mode="json")
+    payload.update(
+        {
+            "assertion_scope": assertion_scope,
+            "polarity": polarity,
+            "epistemic_status": epistemic_status,
+        }
+    )
+
+    with pytest.raises(ValidationError, match="controlled targets require"):
+        ClaimInventoryItem.model_validate(payload)
+
+
+def test_assertion_scope_is_required() -> None:
+    item = _inventory_item(
+        text="IL-2 restored proliferation.",
+        cue="restored",
+        first_argument={
+            "role": "GENE_OR_PROTEIN",
+            "event_role": "CAUSE",
+            "exact_span": "IL-2",
+            "role_rationale": "IL-2 is the stated controller.",
+        },
+        second_span="proliferation",
+    )
+    payload = item.model_dump(mode="json")
+    del payload["assertion_scope"]
+
+    with pytest.raises(ValidationError, match="Field required"):
+        ClaimInventoryItem.model_validate(payload)
+
+
+def test_controlled_target_may_be_argument_free() -> None:
+    target = ClaimInventoryItem.model_validate(
+        {
+            "exact_span": "apoptosis",
+            "relation_cue_span": "apoptosis",
+            "arguments": [],
+            "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "event_type": "OTHER_EXPLICIT",
+            "assertion_scope": "CONTROLLED_TARGET",
+            "polarity": "UNSCOPED",
+            "epistemic_status": "UNASSERTED",
+            "inventory_rationale": "The controller names this target event.",
+        }
+    )
+
+    assert target.arguments == ()
+
+
+def test_non_scientific_item_cannot_be_a_controlled_target() -> None:
+    item = _inventory_item(
+        text="IL-2 was measured during proliferation.",
+        cue="measured",
+        first_argument={
+            "role": "GENE_OR_PROTEIN",
+            "event_role": "THEME",
+            "exact_span": "IL-2",
+            "role_rationale": "IL-2 is the measured participant.",
+        },
+        second_span="proliferation",
+        claim_kind="MEASUREMENT_ONLY",
+    )
+    payload = item.model_dump(mode="json")
+    payload.update(
+        {
+            "assertion_scope": "CONTROLLED_TARGET",
+            "polarity": "UNSCOPED",
+            "epistemic_status": "UNASSERTED",
+        }
+    )
+
+    with pytest.raises(ValidationError, match="scientific finding or hypothesis"):
+        ClaimInventoryItem.model_validate(payload)
 
 
 def test_repeated_argument_without_anchor_fails_closed() -> None:

@@ -3,7 +3,7 @@
   "debt_manifest": [],
   "debt_numeric_field_count": 0,
   "origin_governed_numeric_field_count": 3,
-  "registered_category_field_count": 116,
+  "registered_category_field_count": 118,
   "registered_numeric_field_count": 3,
   "registered_schema_count": 20,
   "registered_schemas": [
@@ -338,8 +338,18 @@
             "DECREASE",
             "ASSOCIATION",
             "TREATMENT_RESPONSE",
+            "PROLIFERATION",
             "NO_EFFECT",
             "OTHER_EXPLICIT"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.claims[].assertion_scope",
+          "values": [
+            "SOURCE_ASSERTED",
+            "CONTROLLED_TARGET"
           ]
         },
         {
@@ -349,7 +359,8 @@
           "values": [
             "SUPPORT",
             "REFUTE",
-            "NULL_RESULT"
+            "NULL_RESULT",
+            "UNSCOPED"
           ]
         },
         {
@@ -360,7 +371,8 @@
             "ASSERTED",
             "PROVISIONAL",
             "UNCERTAIN",
-            "HYPOTHESIS"
+            "HYPOTHESIS",
+            "UNASSERTED"
           ]
         }
       ],
@@ -369,13 +381,13 @@
         "document_extraction_support/llm_extraction/claim_inventory.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_inventory.v21"
+        "document_extraction.claim_inventory.v25"
       ],
       "schema_id": "document_extraction.claim_inventory.v3",
       "schema_names": [
         "LLMClaimInventoryResult"
       ],
-      "shape_hash": "582029e8aacc68fdb0cd742401779c2f71f87594164af35aa634dcdc8df7efdd"
+      "shape_hash": "bacffd33f8de22ec431e9fe0761f085f0826f0583e18f703522595ed38842776"
     },
     {
       "categorical_fields": [
@@ -469,8 +481,18 @@
             "DECREASE",
             "ASSOCIATION",
             "TREATMENT_RESPONSE",
+            "PROLIFERATION",
             "NO_EFFECT",
             "OTHER_EXPLICIT"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.missing_claims[].assertion_scope",
+          "values": [
+            "SOURCE_ASSERTED",
+            "CONTROLLED_TARGET"
           ]
         },
         {
@@ -480,7 +502,8 @@
           "values": [
             "SUPPORT",
             "REFUTE",
-            "NULL_RESULT"
+            "NULL_RESULT",
+            "UNSCOPED"
           ]
         },
         {
@@ -491,7 +514,8 @@
             "ASSERTED",
             "PROVISIONAL",
             "UNCERTAIN",
-            "HYPOTHESIS"
+            "HYPOTHESIS",
+            "UNASSERTED"
           ]
         }
       ],
@@ -500,13 +524,13 @@
         "document_extraction_support/llm_extraction/claim_inventory.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_inventory_completeness.v21"
+        "document_extraction.claim_inventory_completeness.v25"
       ],
       "schema_id": "document_extraction.claim_inventory_completeness.v3",
       "schema_names": [
         "ClaimInventoryCompletenessReview"
       ],
-      "shape_hash": "bb5999c5796de8b610a0a958da187e7eed6828bba160cb0f1fc28cff76ab567e"
+      "shape_hash": "08dc23a5480e7c5119094cfc141711347e420838896ed21909d64b21d22db261"
     },
     {
       "categorical_fields": [
@@ -527,7 +551,7 @@
         "document_extraction_support/llm_extraction/claim_inventory.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_inventory_recovery.v11"
+        "document_extraction.claim_inventory_recovery.v12"
       ],
       "schema_id": "document_extraction.claim_inventory_recovery.v4",
       "schema_names": [

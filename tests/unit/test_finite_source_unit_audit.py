@@ -20,10 +20,6 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 from pydantic import ValidationError
 
 from scripts.run_procedure_source_unit_audit import procedure_report_exit_code
-from scripts.validation.claim_events.finite_source_unit.binding_repair import (
-    require_minimal_exact_span_repairs,
-    require_source_binding_repair_invariant,
-)
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitCoverageDecision,
     SourceUnitDecision,
@@ -60,6 +56,10 @@ from scripts.validation.claim_events.finite_source_unit.single_unit_execution im
 )
 from scripts.validation.claim_events.finite_source_unit.source_units import (
     enumerate_source_units,
+)
+from scripts.validation.claim_events.finite_source_unit.source_validation.binding_repair import (
+    require_minimal_exact_span_repairs,
+    require_source_binding_repair_invariant,
 )
 from scripts.validation.claim_events.fixture import load_fixture
 
@@ -183,6 +183,7 @@ def _event_item(
             "source_locator": "normalized_extraction_text",
             "claim_kind": "SCIENTIFIC_FINDING",
             "event_type": "NEGATIVE_REGULATION",
+            "assertion_scope": "SOURCE_ASSERTED",
             "polarity": "SUPPORT",
             "epistemic_status": "ASSERTED",
             "inventory_rationale": "The source states an inhibition event.",
@@ -525,6 +526,13 @@ def test_binding_repair_invariant_rejects_scientific_mutation() -> None:
             "events": (ClaimInventoryItem.model_validate(argument_mutation_payload),),
         },
     )
+    event_id_mutation_payload = repaired_event.model_dump(mode="json")
+    event_id_mutation_payload["local_event_id"] = "renamed-event"
+    event_id_mutation = original.model_copy(
+        update={
+            "events": (ClaimInventoryItem.model_validate(event_id_mutation_payload),),
+        },
+    )
     added_event = original.model_copy(
         update={"events": (repaired_event, repaired_event)},
     )
@@ -535,6 +543,7 @@ def test_binding_repair_invariant_rejects_scientific_mutation() -> None:
     for invalid_repair in (
         semantic_mutation,
         argument_mutation,
+        event_id_mutation,
         added_event,
         changed_category,
     ):
@@ -595,6 +604,7 @@ def test_missing_exact_span_repair_requires_minimal_verbatim_envelope() -> None:
             "source_locator": "normalized_extraction_text",
             "claim_kind": "SCIENTIFIC_FINDING",
             "event_type": "POSITIVE_REGULATION",
+            "assertion_scope": "SOURCE_ASSERTED",
             "polarity": "NULL_RESULT",
             "epistemic_status": "ASSERTED",
             "inventory_rationale": "The source reports a failed induction result.",
@@ -726,6 +736,75 @@ def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> 
 
 
 @pytest.mark.parametrize(
+    ("source", "payload"),
+    [
+        (
+            "BCL2 inhibits apoptosis.",
+            {
+                "exact_span": "apoptosis",
+                "relation_cue_span": "apoptosis",
+                "arguments": [],
+                "event_type": "OTHER_EXPLICIT",
+            },
+        ),
+        (
+            "IL-2 restores IL-5 production.",
+            {
+                "exact_span": "IL-5 production",
+                "relation_cue_span": "production",
+                "arguments": [
+                    {
+                        "role": "GENE_OR_PROTEIN",
+                        "event_role": "THEME",
+                        "exact_span": "IL-5",
+                        "role_rationale": "IL-5 is the expression theme.",
+                    }
+                ],
+                "event_type": "EXPRESSION",
+            },
+        ),
+    ],
+)
+def test_verifier_covers_zero_and_one_argument_controlled_targets(
+    source: str,
+    payload: dict[str, object],
+) -> None:
+    item = ClaimInventoryItem.model_validate(
+        {
+            **payload,
+            "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "assertion_scope": "CONTROLLED_TARGET",
+            "polarity": "UNSCOPED",
+            "epistemic_status": "UNASSERTED",
+            "inventory_rationale": "The event is asserted only through its controller.",
+        }
+    )
+    unit = enumerate_source_units(case_id="controlled-target", source_text=source)[0]
+    extraction = bind_source_unit_extraction(
+        SourceUnitExtractionOutput(
+            eligibility_category=SourceUnitEligibilityCategory.FINDING,
+            decision=SourceUnitDecision.EXPLICIT_EVENT,
+            events=(item,),
+            reasoning="One controlled target event.",
+        ),
+        unit=unit,
+    )
+
+    verified = bind_source_unit_verification(
+        _eligible_verification_for(item),
+        unit=unit,
+        candidates=extraction.accepted,
+    )
+
+    assert len(verified) == 1
+    assert len(verified[0].verification.argument_semantic_decisions) == len(
+        item.arguments
+    )
+    assert verified[0].verification.trusted_projection_eligible is True
+
+
+@pytest.mark.parametrize(
     ("source", "timeframe_span"),
     [
         (
@@ -786,6 +865,7 @@ def test_eligible_contextual_event_requires_source_bound_timeframe(
             "source_locator": "normalized_extraction_text",
             "claim_kind": "SCIENTIFIC_FINDING",
             "event_type": "INCREASE",
+            "assertion_scope": "SOURCE_ASSERTED",
             "polarity": "SUPPORT",
             "epistemic_status": "ASSERTED",
             "inventory_rationale": "The source reports a contextual increase.",
@@ -894,6 +974,7 @@ def test_eligible_elliptical_null_requires_inherited_process() -> None:
             "source_locator": "normalized_extraction_text",
             "claim_kind": "SCIENTIFIC_FINDING",
             "event_type": "INCREASE",
+            "assertion_scope": "SOURCE_ASSERTED",
             "polarity": "NULL_RESULT",
             "epistemic_status": "ASSERTED",
             "inventory_rationale": "The contrast states a population-specific null.",
@@ -973,6 +1054,60 @@ def test_eligible_elliptical_null_requires_inherited_process() -> None:
                 unit=unit,
                 candidates=complete_extraction.accepted,
             ),
+        )
+        == 1
+    )
+
+
+def test_eligible_null_accepts_source_bound_process_after_null_cue() -> None:
+    source = "IL-2 restored IL-5 but not IL-3 expression."
+    unit = enumerate_source_units(case_id="post-cue-null-process", source_text=source)[
+        0
+    ]
+    null_result = ClaimInventoryItem.model_validate(
+        {
+            "exact_span": source,
+            "relation_cue_span": "not",
+            "arguments": [
+                {
+                    "role": "GENE_OR_PROTEIN",
+                    "event_role": "THEME",
+                    "exact_span": "IL-3",
+                    "role_rationale": "IL-3 is the tested gene product.",
+                },
+                {
+                    "role": "BIOLOGICAL_PROCESS",
+                    "event_role": "THEME",
+                    "exact_span": "IL-3 expression",
+                    "role_rationale": "The local tested process follows the null cue.",
+                },
+            ],
+            "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "event_type": "POSITIVE_REGULATION",
+            "assertion_scope": "SOURCE_ASSERTED",
+            "polarity": "NULL_RESULT",
+            "epistemic_status": "ASSERTED",
+            "inventory_rationale": "The source states a local null restoration.",
+        },
+    )
+    extraction = bind_source_unit_extraction(
+        SourceUnitExtractionOutput(
+            eligibility_category=SourceUnitEligibilityCategory.NULL_RESULT,
+            decision=SourceUnitDecision.EXPLICIT_EVENT,
+            events=(null_result,),
+            reasoning="One source-explicit null event.",
+        ),
+        unit=unit,
+    )
+
+    assert (
+        len(
+            bind_source_unit_verification(
+                _eligible_verification_for(null_result),
+                unit=unit,
+                candidates=extraction.accepted,
+            )
         )
         == 1
     )

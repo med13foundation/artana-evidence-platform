@@ -21,6 +21,7 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     InventoryPolarity,
     bind_claim_inventory,
     link_controlled_events,
+    unlinked_controlled_target_ids,
 )
 
 from scripts.run_eighth_nested_event_holdout_trial import (
@@ -86,6 +87,13 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sel
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.third_selection import (
     select_third_nested_event_holdout,
 )
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v9.projection import (
+    ninth_projection_set,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v9.selection import (
+    ninth_unit_identity,
+    select_ninth_nested_event_holdout,
+)
 from scripts.validation.claim_events.finite_source_unit.service import (
     _binding_repair_prompt,
     _extraction_prompt,
@@ -116,6 +124,13 @@ _POPULATION_CONTRAST_SOURCE = (
     "treatment in resting primary CD4 T cells, but not in activated T cells (53)."
 )
 _POPULATION_CONTRAST_OFFSET = 3398
+_V9_SOURCE = (
+    "Exogenous IL-2, which restitutes the proliferative response of the "
+    "anti-CD3- and anti-CD28-treated Rel-/- T cells, restores production of "
+    "IL-5, TNF-alpha, and IFN-gamma, but not IL-3 and GM-CSF expression to "
+    "approximately normal levels."
+)
+_V9_SOURCE_OFFSET = 1266
 
 
 def _argument(role: str, event_role: str, exact_span: str) -> dict[str, object]:
@@ -142,11 +157,105 @@ def _item(
             "source_locator": "normalized_extraction_text",
             "claim_kind": "SCIENTIFIC_FINDING",
             "event_type": event_type,
+            "assertion_scope": "SOURCE_ASSERTED",
             "polarity": "SUPPORT",
             "epistemic_status": "ASSERTED",
             "inventory_rationale": "The source explicitly states this event.",
         },
     )
+
+
+def _v9_projection_inventory(
+    *,
+    projection_index: int = 0,
+    omitted_argument_span: str | None = None,
+) -> tuple[BoundClaimInventoryItem, ...]:
+    projection = ninth_projection_set().projections[projection_index]
+    semantics = {item.event_id: item for item in projection.event_semantics}
+    links_by_controller = {
+        event.event_id: tuple(
+            link
+            for link in projection.graph.links
+            if link.controller_event_id == event.event_id
+        )
+        for event in projection.graph.events
+    }
+    items: list[ClaimInventoryItem] = []
+    for event in projection.graph.events:
+        arguments = [
+            _sealed_argument_payload(argument)
+            for argument in event.arguments
+            if argument.exact_span != omitted_argument_span
+        ]
+        reference_identities: set[tuple[str, str, int, int]] = set()
+        for link in links_by_controller[event.event_id]:
+            reference = link.controller_argument
+            assert reference is not None
+            identity = (
+                link.event_role,
+                reference.exact_span,
+                reference.source_start,
+                reference.source_end,
+            )
+            if identity in reference_identities:
+                continue
+            reference_identities.add(identity)
+            reference_payload: dict[str, object] = {
+                "role": reference.participant_type,
+                "event_role": link.event_role,
+                "exact_span": reference.exact_span,
+                "role_rationale": "The source names this controlled event.",
+            }
+            if projection.projection_id.endswith("__bionlp-expert-nested-restoration"):
+                reference_payload["controlled_event_ref"] = link.controlled_event_id
+            arguments.append(reference_payload)
+        event_semantics = semantics[event.event_id]
+        payload: dict[str, object] = {
+                    "exact_span": _V9_SOURCE,
+                    "relation_cue_span": event.trigger.exact_span,
+                    "arguments": arguments,
+                    "source_locator": "normalized_extraction_text",
+                    "claim_kind": event_semantics.claim_kind.value,
+                    "event_type": event.event_type,
+                    "assertion_scope": event_semantics.assertion_scope.value,
+                    "polarity": event_semantics.polarity.value,
+                    "epistemic_status": event_semantics.epistemic_status.value,
+                    "inventory_rationale": "Synthetic exact conformance fixture.",
+                }
+        if projection.projection_id.endswith("__bionlp-expert-nested-restoration"):
+            payload["local_event_id"] = event.event_id
+        items.append(ClaimInventoryItem.model_validate(payload))
+    return bind_claim_inventory(
+        tuple(items),
+        source_text=_V9_SOURCE,
+        source_sha256=hashlib.sha256(_V9_SOURCE.encode()).hexdigest(),
+        chunk_index=0,
+        source_start_offset=_V9_SOURCE_OFFSET,
+    )
+
+
+def _sealed_argument_payload(argument: SealedArgument) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "role": argument.participant_type,
+        "event_role": argument.event_role,
+        "exact_span": argument.exact_span,
+        "role_rationale": "The sealed source assigns this role.",
+    }
+    if argument.referents:
+        payload["referent_anchors"] = [
+            _v9_referent_anchor(referent) for referent in argument.referents
+        ]
+    return payload
+
+
+def _v9_referent_anchor(referent: SealedReferenceArgument) -> dict[str, str]:
+    local_start = referent.source_start - _V9_SOURCE_OFFSET
+    local_end = referent.source_end - _V9_SOURCE_OFFSET
+    return {
+        "mention_span": referent.exact_span,
+        "left_context": _V9_SOURCE[max(0, local_start - 12) : local_start],
+        "right_context": _V9_SOURCE[local_end : local_end + 12],
+    }
 
 
 def _trusted_inventory(*, wrong_outer_cause: bool = False):
@@ -251,6 +360,7 @@ def _null_result_inventory(*, split_events: bool = True):
                 "source_locator": "normalized_extraction_text",
                 "claim_kind": "SCIENTIFIC_FINDING",
                 "event_type": "REGULATION",
+                "assertion_scope": "SOURCE_ASSERTED",
                 "polarity": "NULL_RESULT",
                 "epistemic_status": "ASSERTED",
                 "inventory_rationale": "The source reports a null regulation result.",
@@ -465,6 +575,7 @@ def _population_contrast_inventory(
                 "source_locator": "normalized_extraction_text",
                 "claim_kind": "SCIENTIFIC_FINDING",
                 "event_type": "POSITIVE_REGULATION",
+                "assertion_scope": "SOURCE_ASSERTED",
                 "polarity": polarity,
                 "epistemic_status": "ASSERTED",
                 "inventory_rationale": "The population-specific outcome is explicit.",
@@ -506,6 +617,7 @@ def _population_contrast_inventory(
             "source_locator": "normalized_extraction_text",
             "claim_kind": "SCIENTIFIC_FINDING",
             "event_type": "EXPRESSION",
+            "assertion_scope": "SOURCE_ASSERTED",
             "polarity": "SUPPORT",
             "epistemic_status": "ASSERTED",
             "inventory_rationale": "A3G expression is explicit in resting cells.",
@@ -570,6 +682,7 @@ def _observational_population_contrast_inventory() -> tuple[
                 "source_locator": "normalized_extraction_text",
                 "claim_kind": "SCIENTIFIC_FINDING",
                 "event_type": "INCREASE",
+                "assertion_scope": "SOURCE_ASSERTED",
                 "polarity": polarity,
                 "epistemic_status": "ASSERTED",
                 "inventory_rationale": "The source reports a contextual change.",
@@ -709,6 +822,7 @@ def _baseline_gate() -> NestedHoldoutGateInputs:
         verification_decision_count=2,
         entailed_candidate_count=2,
         trusted_candidate_count=2,
+        unmatched_trusted_candidate_count=0,
         review_only_candidate_count=0,
         rejected_candidate_count=0,
         acceptable_projection_count=1,
@@ -723,6 +837,8 @@ def _baseline_gate() -> NestedHoldoutGateInputs:
         weak_review_attempt_count=1,
         controlled_event_link_count=1,
         controlled_event_link_ambiguity_count=0,
+        unlinked_controlled_event_reference_count=0,
+        unlinked_controlled_target_count=0,
         invalid_agent_output_count=0,
         unidentified_provider_attempt_count=0,
         extraction_provider_response_id_count=1,
@@ -830,6 +946,53 @@ def test_projection_matcher_rejects_unexpected_links_from_matched_events() -> No
         expert_graph=_null_result_graph(split_events=True),
         trusted=trusted,
         links=(unexpected,),
+    )
+
+    assert result.completely_recovered_once is False
+
+
+def test_surplus_argument_referent_cannot_receive_nested_graph_credit() -> None:
+    inner_payload = _item(
+        exact_span="ZEB blocks the activity of c-Myb",
+        cue="blocks",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "CAUSE", "ZEB"),
+            _argument("GENE_OR_PROTEIN", "THEME", "c-Myb"),
+        ],
+    ).model_dump(mode="json")
+    inner_payload["arguments"][0]["referent_anchors"] = [
+        {
+            "mention_span": "Ets",
+            "left_context": "c-Myb and ",
+            "right_context": " individually",
+        }
+    ]
+    inner = ClaimInventoryItem.model_validate(inner_payload)
+    outer = _item(
+        exact_span=_SOURCE,
+        cue="synergize to resist",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "CAUSE", "c-Myb"),
+            _argument(
+                "BIOLOGICAL_PROCESS",
+                "THEME",
+                "ZEB blocks the activity of c-Myb",
+            ),
+        ],
+    )
+    trusted = bind_claim_inventory(
+        (inner, outer),
+        source_text=_SOURCE,
+        source_sha256=hashlib.sha256(_SOURCE.encode()).hexdigest(),
+        chunk_index=6,
+        source_start_offset=_SOURCE_OFFSET,
+    )
+    links = link_controlled_events(trusted).links
+
+    result = match_nested_event_graph(
+        expert_graph=_sealed_graph(),
+        trusted=trusted,
+        links=links,
     )
 
     assert result.completely_recovered_once is False
@@ -1153,9 +1316,10 @@ def test_projection_matcher_uses_reference_source_identity_for_atomic_siblings()
     )
 
     assert result.completely_recovered_once is True
-    assert dict(result.event_inventory_ids)["OUTER-IL5"] != dict(
-        result.event_inventory_ids
-    )["OUTER-TNF"]
+    assert (
+        dict(result.event_inventory_ids)["OUTER-IL5"]
+        != dict(result.event_inventory_ids)["OUTER-TNF"]
+    )
 
 
 def test_projection_set_never_combines_partial_matches_across_alternatives() -> None:
@@ -1439,6 +1603,8 @@ def test_gate_fails_closed_on_each_nested_identity_boundary() -> None:
         {"expected_eligibility_category": SourceUnitEligibilityCategory.HYPOTHESIS},
         {"acceptable_projection_count": 0},
         {"fully_recovered_projection_count": 0},
+        {"fully_recovered_projection_count": 2},
+        {"unmatched_trusted_candidate_count": 1},
         {"observed_binding_rejection_count": 1},
         {"schema_retry_count": 2},
         {"reported_schema_retry_count": 1},
@@ -1447,6 +1613,8 @@ def test_gate_fails_closed_on_each_nested_identity_boundary() -> None:
         {"weak_review_attempt_count": 2},
         {"controlled_event_link_count": 0},
         {"controlled_event_link_ambiguity_count": 1},
+        {"unlinked_controlled_event_reference_count": 1},
+        {"unlinked_controlled_target_count": 1},
         {"provider_receipt_gate_passed": False},
         {"attempt_model_id_mismatch_count": 1},
     )
@@ -1749,6 +1917,520 @@ def test_eighth_selection_freezes_complete_agent_expert_gold_before_luna() -> No
         assert all(hidden_value not in prompt for prompt in agent_inputs)
 
 
+def test_ninth_selection_freezes_source_complete_projection_family_before_luna() -> (
+    None
+):
+    corpus = os.getenv("ARTANA_TG04_BIONLP_CORPUS_ROOT")
+    if corpus is None:
+        pytest.skip("set ARTANA_TG04_BIONLP_CORPUS_ROOT for corpus-integrity test")
+
+    selection = select_ninth_nested_event_holdout(
+        corpus_root=Path(corpus),
+        archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+    )
+
+    assert selection.trial_generation == 9
+    assert selection.selection_seed == (
+        "b1498772852d13333a1201ddaa02c55098fdcc183bee01ef9da0915faf0ceafd"
+    )
+    assert selection.case_id == "bionlp-ge-2011-holdout:PMID-8622948"
+    assert selection.unit.index == 7
+    assert selection.candidate_unit_count == 4
+    assert "PMC-2806624-04-RESULTS-03" in selection.excluded_document_ids
+    assert selection.expert_graph_sha256 == (
+        "d10955c29c243c95b7e089c10866d453bbf6992e79abd18753b2192b525e832a"
+    )
+    assert selection.projection_set_sha256 == (
+        "9163b0d185bdafdc093d158ec0a5b4da0e37d950904d998d822084d04f455915"
+    )
+    assert selection.expected_eligibility_category is (
+        SourceUnitEligibilityCategory.MIXED_SCIENTIFIC
+    )
+    assert len(selection.projection_set.projections) == 12
+    assert sorted(
+        (len(projection.graph.events), len(projection.graph.links))
+        for projection in selection.projection_set.projections
+    ) == [
+        (6, 3),
+        (6, 3),
+        (7, 1),
+        (7, 1),
+        (7, 4),
+        (7, 4),
+        (8, 5),
+        (8, 5),
+        (9, 6),
+        (9, 6),
+        (12, 6),
+        (12, 6),
+    ]
+    assert all(
+        all(link.controller_argument is not None for link in projection.graph.links)
+        for projection in selection.projection_set.projections
+    )
+    canonical = selection.projection_set.canonical_projection
+    corpus_directory = Path(corpus)
+    a1_lines = set(
+        (corpus_directory / "PMID-8622948.a1")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    )
+    a2_lines = set(
+        (corpus_directory / "PMID-8622948.a2")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    )
+    assert {
+        "T25\tProtein 1277 1281\tIL-2",
+        "T27\tProtein 1405 1409\tIL-5",
+        "T28\tProtein 1411 1420\tTNF-alpha",
+        "T29\tProtein 1426 1435\tIFN-gamma",
+        "T30\tProtein 1445 1449\tIL-3",
+        "T31\tProtein 1454 1460\tGM-CSF",
+    } <= a1_lines
+    assert {
+        "T45\tPositive_regulation 1382 1390\trestores",
+        "T46\tGene_expression 1391 1401\tproduction",
+        "T47\tGene_expression 1461 1471\texpression",
+        "E16\tPositive_regulation:T45 Theme:E23 Cause:T25",
+        "E17\tPositive_regulation:T45 Theme:E21 Cause:T25",
+        "E18\tPositive_regulation:T45 Theme:E25 Cause:T25",
+        "E19\tPositive_regulation:T45 Theme:E22 Cause:T25",
+        "E20\tPositive_regulation:T45 Theme:E24 Cause:T25",
+        "E21\tGene_expression:T46 Theme:T28",
+        "E22\tGene_expression:T46 Theme:T27",
+        "E23\tGene_expression:T46 Theme:T29",
+        "E24\tGene_expression:T47 Theme:T31",
+        "E25\tGene_expression:T47 Theme:T30",
+        "M1\tNegation E18",
+        "M2\tNegation E20",
+    } <= a2_lines
+    semantics = {
+        item.event_id: (
+            item.assertion_scope.value,
+            item.polarity.value,
+            item.epistemic_status.value,
+        )
+        for item in canonical.event_semantics
+    }
+    assert semantics["V9-BIONLP-E18"] == (
+        "SOURCE_ASSERTED",
+        "NULL_RESULT",
+        "ASSERTED",
+    )
+    assert semantics["V9-BIONLP-E20"] == (
+        "SOURCE_ASSERTED",
+        "NULL_RESULT",
+        "ASSERTED",
+    )
+    controlled_target_ids = {
+        "V9-PROLIFERATIVE-RESPONSE",
+        "V9-BIONLP-E21",
+        "V9-BIONLP-E22",
+        "V9-BIONLP-E23",
+        "V9-BIONLP-E24",
+        "V9-BIONLP-E25",
+    }
+    assert all(
+        semantics[event_id] == ("CONTROLLED_TARGET", "UNSCOPED", "UNASSERTED")
+        for event_id in controlled_target_ids
+    )
+    assert all(
+        semantics[event_id] == ("SOURCE_ASSERTED", "SUPPORT", "ASSERTED")
+        for event_id in semantics.keys()
+        - controlled_target_ids
+        - {"V9-BIONLP-E18", "V9-BIONLP-E20"}
+    )
+    event_ids = {event.event_id for event in canonical.graph.events}
+    assert event_ids == {
+        "V9-PROLIFERATION-RESTORATION",
+        "V9-PROLIFERATIVE-RESPONSE",
+        "V9-BIONLP-E16",
+        "V9-BIONLP-E17",
+        "V9-BIONLP-E18",
+        "V9-BIONLP-E19",
+        "V9-BIONLP-E20",
+        "V9-BIONLP-E21",
+        "V9-BIONLP-E22",
+        "V9-BIONLP-E23",
+        "V9-BIONLP-E24",
+        "V9-BIONLP-E25",
+    }
+    proliferation = next(
+        event
+        for event in canonical.graph.events
+        if event.event_id == "V9-PROLIFERATIVE-RESPONSE"
+    )
+    assert proliferation.event_type == "PROLIFERATION"
+    assert all(
+        argument.exact_span != "the proliferative response of the anti-CD3- and "
+        "anti-CD28-treated Rel-/- T cells"
+        for argument in proliferation.arguments
+    )
+    relative_controller = next(
+        event
+        for event in canonical.graph.events
+        if event.event_id == "V9-PROLIFERATION-RESTORATION"
+    )
+    which = next(
+        argument
+        for argument in relative_controller.arguments
+        if argument.exact_span == "which"
+    )
+    assert tuple(referent.exact_span for referent in which.referents) == (
+        "Exogenous IL-2",
+    )
+    assert all(event.argument_alternatives for event in canonical.graph.events)
+    agent_inputs = (
+        _extraction_prompt(selection.unit),
+        _verification_prompt(unit=selection.unit, candidates=()),
+    )
+    for hidden_value in (
+        selection.expert_graph_sha256,
+        selection.projection_set_sha256,
+        *(
+            projection.projection_id
+            for projection in selection.projection_set.projections
+        ),
+    ):
+        assert all(hidden_value not in prompt for prompt in agent_inputs)
+
+
+def test_ninth_projection_matcher_accepts_exact_graph_and_rejects_partial_graph() -> (
+    None
+):
+    projection_set = ninth_projection_set()
+    trusted = _v9_projection_inventory()
+    links = link_controlled_events(trusted)
+
+    complete = match_projection_set(
+        projection_set=projection_set,
+        trusted=trusted,
+        links=links.links,
+    )
+
+    assert links.ambiguities == ()
+    assert links.unlinked_references == ()
+    assert len(links.links) == 6
+    assert complete.fully_recovered_projection_ids == (
+        "complete-proliferation-cue__atomic-supported-targets__atomic-null-targets",
+    )
+
+    partial_trusted = tuple(
+        item for item in trusted if item.item.arguments[0].exact_span != "GM-CSF"
+    )
+    partial_links = link_controlled_events(partial_trusted)
+    partial = match_projection_set(
+        projection_set=projection_set,
+        trusted=partial_trusted,
+        links=partial_links.links,
+    )
+
+    assert partial.fully_recovered_projection_ids == ()
+    assert len(partial_links.links) == 5
+
+
+def test_ninth_projection_matcher_accepts_grouped_events_but_not_missing_theme() -> (
+    None
+):
+    projection_set = ninth_projection_set()
+    trusted = _v9_projection_inventory(projection_index=3)
+    links = link_controlled_events(trusted)
+
+    complete = match_projection_set(
+        projection_set=projection_set,
+        trusted=trusted,
+        links=links.links,
+    )
+
+    assert links.ambiguities == ()
+    assert links.unlinked_references == ()
+    assert len(links.links) == 3
+    assert complete.fully_recovered_projection_ids == (
+        "complete-proliferation-cue__grouped-supported-target__grouped-null-target",
+    )
+
+    incomplete_trusted = _v9_projection_inventory(
+        projection_index=3,
+        omitted_argument_span="IFN-gamma",
+    )
+    incomplete_links = link_controlled_events(incomplete_trusted)
+    incomplete = match_projection_set(
+        projection_set=projection_set,
+        trusted=incomplete_trusted,
+        links=incomplete_links.links,
+    )
+
+    assert incomplete.fully_recovered_projection_ids == ()
+
+
+@pytest.mark.parametrize("projection_index", range(12))
+def test_ninth_projection_matcher_accepts_each_complete_representation_only(
+    projection_index: int,
+) -> None:
+    projection_set = ninth_projection_set()
+    projection = projection_set.projections[projection_index]
+    trusted = _v9_projection_inventory(projection_index=projection_index)
+    links = link_controlled_events(trusted)
+
+    complete = match_projection_set(
+        projection_set=projection_set,
+        trusted=trusted,
+        links=links.links,
+    )
+
+    assert links.ambiguities == ()
+    assert links.unlinked_references == ()
+    assert unlinked_controlled_target_ids(trusted, links.links) == ()
+    assert complete.fully_recovered_projection_ids == (projection.projection_id,)
+    assert len(links.links) == len(projection.graph.links)
+
+    for cytokine in ("IL-5", "TNF-alpha", "IFN-gamma", "IL-3", "GM-CSF"):
+        incomplete_trusted = _v9_projection_inventory(
+            projection_index=projection_index,
+            omitted_argument_span=cytokine,
+        )
+        incomplete_links = link_controlled_events(incomplete_trusted)
+        incomplete = match_projection_set(
+            projection_set=projection_set,
+            trusted=incomplete_trusted,
+            links=incomplete_links.links,
+        )
+        assert incomplete.fully_recovered_projection_ids == ()
+
+
+def test_ninth_bionlp_projection_uses_explicit_shared_trigger_references() -> None:
+    projection_set = ninth_projection_set()
+    projection = projection_set.projections[10]
+    trusted = _v9_projection_inventory(projection_index=10)
+
+    links = link_controlled_events(trusted)
+    match = match_projection_set(
+        projection_set=projection_set,
+        trusted=trusted,
+        links=links.links,
+    )
+
+    expected_links = {
+        (
+            link.controlled_event_id,
+            link.controller_event_id,
+            link.controlled_event_id,
+        )
+        for link in projection.graph.links
+    }
+    observed_links = {
+        (
+            next(
+                argument.controlled_event_ref
+                for argument in controller.bound_arguments
+                if argument.controlled_event_ref is not None
+                and argument.argument.event_role.value == link.controller_event_role.value
+            ),
+            next(
+                event.event_id
+                for event, candidate in zip(
+                    projection.graph.events,
+                    trusted,
+                    strict=True,
+                )
+                if candidate.inventory_id == link.controller_inventory_id
+            ),
+            next(
+                event.event_id
+                for event, candidate in zip(
+                    projection.graph.events,
+                    trusted,
+                    strict=True,
+                )
+                if candidate.inventory_id == link.controlled_inventory_id
+            ),
+        )
+        for link in links.links
+        for controller in trusted
+        if controller.inventory_id == link.controller_inventory_id
+    }
+    assert links.ambiguities == ()
+    assert links.unlinked_references == ()
+    assert len(links.links) == 6
+    assert observed_links == expected_links
+    assert match.fully_recovered_projection_ids == (projection.projection_id,)
+
+
+def test_ninth_mixed_complete_representations_fail_unique_recovery() -> None:
+    projection_set = ninth_projection_set()
+    nested = _v9_projection_inventory(projection_index=0)
+    direct = _v9_projection_inventory(projection_index=8)
+    trusted_by_id = {
+        candidate.inventory_id: candidate for candidate in (*nested, *direct)
+    }
+    trusted = tuple(trusted_by_id.values())
+    links = link_controlled_events(trusted)
+
+    match = match_projection_set(
+        projection_set=projection_set,
+        trusted=trusted,
+        links=links.links,
+    )
+
+    assert set(match.fully_recovered_projection_ids) == {
+        projection_set.projections[0].projection_id,
+        projection_set.projections[8].projection_id,
+    }
+    assert match.fully_recovered_inventory_ids == ()
+    gate = replace(
+        _baseline_gate(),
+        extracted_candidate_count=len(trusted),
+        verification_decision_count=len(trusted),
+        entailed_candidate_count=len(trusted),
+        trusted_candidate_count=len(trusted),
+        unmatched_trusted_candidate_count=len(trusted),
+        controlled_event_link_count=len(links.links),
+        hidden_expert_event_count=len(projection_set.canonical_projection.graph.events),
+        hidden_expert_link_count=len(projection_set.canonical_projection.graph.links),
+        acceptable_projection_count=len(projection_set.projections),
+        fully_recovered_projection_count=len(match.fully_recovered_projection_ids),
+        minimum_acceptable_projection_link_count=min(
+            len(projection.graph.links) for projection in projection_set.projections
+        ),
+    )
+    requirements = nested_holdout_gate_requirements(gate)
+    assert requirements["single_representation_family_recovered"] is False
+    assert requirements["unmatched_trusted_candidate_zero"] is False
+
+
+def test_ninth_wrong_extra_link_is_not_credited_by_local_event_shape() -> None:
+    projection_set = ninth_projection_set()
+    canonical = _v9_projection_inventory(projection_index=10)
+    e16 = next(item.item for item in canonical if item.item.local_event_id == "V9-BIONLP-E16")
+    wrong_payload = e16.model_dump(mode="json")
+    wrong_payload["local_event_id"] = "wrong-e16-link"
+    wrong_arguments = wrong_payload["arguments"]
+    assert isinstance(wrong_arguments, list)
+    controlled_argument = next(
+        argument
+        for argument in wrong_arguments
+        if isinstance(argument, dict)
+        and argument.get("controlled_event_ref") == "V9-BIONLP-E23"
+    )
+    assert isinstance(controlled_argument, dict)
+    controlled_argument["controlled_event_ref"] = "V9-BIONLP-E21"
+    wrong = ClaimInventoryItem.model_validate(wrong_payload)
+    trusted = bind_claim_inventory(
+        (*tuple(item.item for item in canonical), wrong),
+        source_text=_V9_SOURCE,
+        source_sha256=hashlib.sha256(_V9_SOURCE.encode()).hexdigest(),
+        chunk_index=0,
+        source_start_offset=_V9_SOURCE_OFFSET,
+    )
+    links = link_controlled_events(trusted)
+
+    match = match_projection_set(
+        projection_set=projection_set,
+        trusted=trusted,
+        links=links.links,
+    )
+
+    wrong_inventory_id = trusted[-1].inventory_id
+    assert links.ambiguities == ()
+    assert links.unlinked_references == ()
+    assert len(links.links) == 7
+    assert match.fully_recovered_projection_ids == (
+        projection_set.projections[10].projection_id,
+    )
+    assert wrong_inventory_id not in match.fully_recovered_inventory_ids
+    unmatched_count = len(
+        {candidate.inventory_id for candidate in trusted}
+        - set(match.fully_recovered_inventory_ids)
+    )
+    assert unmatched_count == 1
+    gate = replace(
+        _baseline_gate(),
+        extracted_candidate_count=len(trusted),
+        verification_decision_count=len(trusted),
+        entailed_candidate_count=len(trusted),
+        trusted_candidate_count=len(trusted),
+        unmatched_trusted_candidate_count=unmatched_count,
+        controlled_event_link_count=len(links.links),
+        hidden_expert_event_count=len(projection_set.canonical_projection.graph.events),
+        hidden_expert_link_count=len(projection_set.canonical_projection.graph.links),
+        acceptable_projection_count=len(projection_set.projections),
+        fully_recovered_projection_count=len(match.fully_recovered_projection_ids),
+        minimum_acceptable_projection_link_count=min(
+            len(projection.graph.links) for projection in projection_set.projections
+        ),
+    )
+    assert nested_holdout_gate_requirements(gate)[
+        "unmatched_trusted_candidate_zero"
+    ] is False
+
+
+def test_ninth_projection_does_not_trust_a_contradictory_unmatched_extra() -> None:
+    projection_set = ninth_projection_set()
+    trusted = _v9_projection_inventory()
+    contradictory = ClaimInventoryItem.model_validate(
+        {
+            "exact_span": _V9_SOURCE,
+            "relation_cue_span": "restores",
+            "arguments": [
+                _argument("GENE_OR_PROTEIN", "CAUSE", "IL-2"),
+                _argument("GENE_OR_PROTEIN", "THEME", "IL-3"),
+                _argument(
+                    "COMPARATOR",
+                    "MEASURE",
+                    "approximately normal levels",
+                ),
+            ],
+            "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "event_type": "POSITIVE_REGULATION",
+            "assertion_scope": "SOURCE_ASSERTED",
+            "polarity": "SUPPORT",
+            "epistemic_status": "ASSERTED",
+            "inventory_rationale": (
+                "Adversarially reverses the source's explicit null result."
+            ),
+        }
+    )
+    (bound_contradictory,) = bind_claim_inventory(
+        (contradictory,),
+        source_text=_V9_SOURCE,
+        source_sha256=hashlib.sha256(_V9_SOURCE.encode()).hexdigest(),
+        chunk_index=0,
+        source_start_offset=_V9_SOURCE_OFFSET,
+    )
+    all_trusted = (*trusted, bound_contradictory)
+    links = link_controlled_events(all_trusted)
+
+    match = match_projection_set(
+        projection_set=projection_set,
+        trusted=all_trusted,
+        links=links.links,
+    )
+
+    assert match.fully_recovered_projection_ids
+    assert bound_contradictory.inventory_id not in (match.fully_recovered_inventory_ids)
+    gate = replace(
+        _baseline_gate(),
+        extracted_candidate_count=len(all_trusted),
+        verification_decision_count=len(all_trusted),
+        entailed_candidate_count=len(all_trusted),
+        trusted_candidate_count=len(all_trusted),
+        unmatched_trusted_candidate_count=1,
+        controlled_event_link_count=len(links.links),
+        hidden_expert_event_count=len(projection_set.canonical_projection.graph.events),
+        hidden_expert_link_count=len(projection_set.canonical_projection.graph.links),
+        acceptable_projection_count=len(projection_set.projections),
+        fully_recovered_projection_count=len(match.fully_recovered_projection_ids),
+        minimum_acceptable_projection_link_count=min(
+            len(projection.graph.links) for projection in projection_set.projections
+        ),
+    )
+    assert not nested_holdout_gate_requirements(gate)[
+        "unmatched_trusted_candidate_zero"
+    ]
+
+
 def test_eighth_lineage_freezes_blinded_reviews_and_lowest_rank_in_ci() -> None:
     repository_root = Path(__file__).resolve().parents[2]
     lineage_path = (
@@ -1834,6 +2516,65 @@ def test_eighth_lineage_freezes_blinded_reviews_and_lowest_rank_in_ci() -> None:
     assert all(value not in prompt for value in hidden_values for prompt in prompts)
     assert lineage["source_gold_adjudication"]["decision"] == "COMPLETE"
     assert lineage["qualification_scope"]["human_expert_validation_proven"] is False
+    assert lineage["qualification_scope"]["trusted_graph_promotion_authorized"] is False
+
+
+def test_ninth_lineage_freezes_source_gold_before_agent_execution() -> None:
+    repository_root = Path(__file__).resolve().parents[2]
+    lineage_path = (
+        repository_root
+        / "docs/validation/reports/2026-07-18-tg04-v9-source-gold-lineage.json"
+    )
+    lineage = json.loads(lineage_path.read_text(encoding="utf-8"))
+
+    assert lineage["schema_version"] == "tg04_v9_source_gold_lineage.v1"
+    assert lineage["agent_execution_attempted"] is False
+    assert lineage["artana_output_available_to_reviewers"] is False
+    assert lineage["selected_source"] == {
+        **lineage["selected_source"],
+        **ninth_unit_identity(),
+    }
+    assert lineage["projection_contract"]["projection_count"] == 12
+    assert lineage["projection_contract"]["event_count"] == 12
+    assert lineage["projection_contract"]["event_count_range"] == [6, 12]
+    assert lineage["projection_contract"]["link_count"] == 6
+    assert lineage["projection_contract"]["link_count_range"] == [1, 6]
+    assert lineage["projection_contract"]["expert_graph_sha256"] == (
+        "d10955c29c243c95b7e089c10866d453bbf6992e79abd18753b2192b525e832a"
+    )
+    assert lineage["projection_contract"]["projection_set_sha256"] == (
+        "9163b0d185bdafdc093d158ec0a5b4da0e37d950904d998d822084d04f455915"
+    )
+    projection_set = ninth_projection_set()
+    assert lineage["projection_contract"]["canonical_projection_id"] == (
+        projection_set.canonical_projection_id
+    )
+    assert lineage["projection_contract"]["projection_ids"] == [
+        projection.projection_id for projection in projection_set.projections
+    ]
+    assert (
+        hashlib.sha256(
+            json.dumps(
+                projection_set.as_json(),
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=True,
+            ).encode()
+        ).hexdigest()
+        == lineage["projection_contract"]["projection_set_sha256"]
+    )
+    assert len(lineage["reviewers"]) == 12
+    assert [item["decision"] for item in lineage["reviewers"][-2:]] == [
+        "GO_SCIENTIFIC_CONTRACT_SAFE_TO_FREEZE_FOR_ONE_LIVE_DIAGNOSTIC",
+        "GO_EXECUTION_INTEGRITY_SAFE_TO_FREEZE_FOR_ONE_LIVE_DIAGNOSTIC",
+    ]
+    assert lineage["source_verification"]["pmid"] == "8622948"
+    assert (
+        lineage["source_verification"][
+            "pubmed_correction_or_retraction_metadata_present"
+        ]
+        is False
+    )
     assert lineage["qualification_scope"]["trusted_graph_promotion_authorized"] is False
 
 

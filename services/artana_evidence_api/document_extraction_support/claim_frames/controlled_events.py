@@ -19,6 +19,9 @@ from artana_evidence_api.document_extraction_support.claim_frames.inventory impo
 from artana_evidence_api.document_extraction_support.claim_frames.mentions import (
     BoundClaimMention,
 )
+from artana_evidence_api.document_extraction_support.claim_frames.semantics import (
+    InventoryAssertionScope,
+)
 
 _CONTROL_EVENT_TYPES = frozenset(
     {
@@ -97,11 +100,34 @@ class ControlledEventLinkAmbiguity:
 
 
 @dataclass(frozen=True, slots=True)
+class UnlinkedControlledEventReference:
+    """One controller process argument with no bound target or ambiguity."""
+
+    controller_inventory_id: str
+    controller_argument_index: int
+    controller_event_role: ClaimEventRole
+    reference_exact_span: str
+    reference_source_start: int
+    reference_source_end: int
+
+    def as_json(self) -> dict[str, object]:
+        return {
+            "controller_inventory_id": self.controller_inventory_id,
+            "controller_argument_index": self.controller_argument_index,
+            "controller_event_role": self.controller_event_role.value,
+            "reference_exact_span": self.reference_exact_span,
+            "reference_source_start": self.reference_source_start,
+            "reference_source_end": self.reference_source_end,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class ControlledEventLinkResult:
     """Unique links and unresolved ambiguities for one bound inventory."""
 
     links: tuple[BoundControlledEventLink, ...]
     ambiguities: tuple[ControlledEventLinkAmbiguity, ...]
+    unlinked_references: tuple[UnlinkedControlledEventReference, ...]
 
 
 def link_controlled_events(
@@ -111,6 +137,7 @@ def link_controlled_events(
 
     links: list[BoundControlledEventLink] = []
     ambiguities: list[ControlledEventLinkAmbiguity] = []
+    inventory_by_local_event_id = _unique_local_event_ids(inventory)
     for controller in inventory:
         if controller.item.event_type not in _CONTROL_EVENT_TYPES:
             continue
@@ -121,15 +148,19 @@ def link_controlled_events(
                 and semantic_argument.event_role in _EVENT_REFERENCE_ROLES
             ):
                 continue
-            for reference_mention in (*argument.mentions, *argument.referent_mentions):
-                candidates = tuple(
-                    candidate
-                    for candidate in inventory
-                    if _is_controlled_event_candidate(
-                        controller=controller,
-                        candidate=candidate,
-                        reference_mention=reference_mention,
-                    )
+            explicit_target_ref = argument.controlled_event_ref
+            reference_mentions = (
+                (argument.primary_mention,)
+                if explicit_target_ref is not None
+                else (*argument.mentions, *argument.referent_mentions)
+            )
+            for reference_mention in reference_mentions:
+                candidates = _controlled_event_candidates(
+                    inventory=inventory,
+                    inventory_by_local_event_id=inventory_by_local_event_id,
+                    controller=controller,
+                    reference_mention=reference_mention,
+                    explicit_target_ref=explicit_target_ref,
                 )
                 competing = _competing_candidate_ids(candidates)
                 if competing:
@@ -154,19 +185,144 @@ def link_controlled_events(
                     )
                     for candidate in candidates
                 )
-    return ControlledEventLinkResult(
-        links=tuple(sorted(links, key=lambda item: item.link_id)),
-        ambiguities=tuple(
-            sorted(
-                ambiguities,
-                key=lambda item: (
-                    item.controller_inventory_id,
-                    item.controller_argument_index,
-                    item.reference_source_start,
-                ),
+    sealed_links = tuple(sorted(links, key=lambda item: item.link_id))
+    sealed_ambiguities = tuple(
+        sorted(
+            ambiguities,
+            key=lambda item: (
+                item.controller_inventory_id,
+                item.controller_argument_index,
+                item.reference_source_start,
             ),
+        )
+    )
+    return ControlledEventLinkResult(
+        links=sealed_links,
+        ambiguities=sealed_ambiguities,
+        unlinked_references=_unlinked_controller_references(
+            inventory=inventory,
+            links=sealed_links,
+            ambiguities=sealed_ambiguities,
         ),
     )
+
+
+def _controlled_event_candidates(
+    *,
+    inventory: tuple[BoundClaimInventoryItem, ...],
+    inventory_by_local_event_id: dict[str, BoundClaimInventoryItem],
+    controller: BoundClaimInventoryItem,
+    reference_mention: BoundClaimMention,
+    explicit_target_ref: str | None,
+) -> tuple[BoundClaimInventoryItem, ...]:
+    candidates = (
+        inventory
+        if explicit_target_ref is None
+        else tuple(
+            candidate
+            for candidate in (inventory_by_local_event_id.get(explicit_target_ref),)
+            if candidate is not None
+        )
+    )
+    return tuple(
+        candidate
+        for candidate in candidates
+        if _is_controlled_event_candidate(
+            controller=controller,
+            candidate=candidate,
+            reference_mention=reference_mention,
+        )
+    )
+
+
+def _unique_local_event_ids(
+    inventory: tuple[BoundClaimInventoryItem, ...],
+) -> dict[str, BoundClaimInventoryItem]:
+    grouped: dict[str, list[BoundClaimInventoryItem]] = {}
+    for claim in inventory:
+        if claim.item.local_event_id is not None:
+            grouped.setdefault(claim.item.local_event_id, []).append(claim)
+    return {
+        local_event_id: claims[0]
+        for local_event_id, claims in grouped.items()
+        if len(claims) == 1
+    }
+def _unlinked_controller_references(
+    *,
+    inventory: tuple[BoundClaimInventoryItem, ...],
+    links: tuple[BoundControlledEventLink, ...],
+    ambiguities: tuple[ControlledEventLinkAmbiguity, ...],
+) -> tuple[UnlinkedControlledEventReference, ...]:
+    resolved_mentions = {
+        (
+            link.controller_inventory_id,
+            link.controller_argument_index,
+            link.reference_source_start,
+            link.reference_source_end,
+        )
+        for link in links
+    } | {
+        (
+            item.controller_inventory_id,
+            item.controller_argument_index,
+            item.reference_source_start,
+            item.reference_source_end,
+        )
+        for item in ambiguities
+    }
+    unlinked: list[UnlinkedControlledEventReference] = []
+    for controller in inventory:
+        if controller.item.event_type not in _CONTROL_EVENT_TYPES:
+            continue
+        for index, argument in enumerate(controller.bound_arguments):
+            semantic = argument.argument
+            if semantic.role is not ClaimArgumentRole.BIOLOGICAL_PROCESS or (
+                semantic.event_role not in _EVENT_REFERENCE_ROLES
+            ):
+                continue
+            reference_mentions = (
+                (argument.primary_mention,)
+                if argument.controlled_event_ref is not None
+                else (*argument.mentions, *argument.referent_mentions)
+            )
+            references = {
+                (mention.source_start, mention.source_end): mention
+                for mention in reference_mentions
+            }
+            for (source_start, source_end), mention in sorted(references.items()):
+                if (
+                    controller.inventory_id,
+                    index,
+                    source_start,
+                    source_end,
+                ) in resolved_mentions:
+                    continue
+                unlinked.append(
+                    UnlinkedControlledEventReference(
+                        controller_inventory_id=controller.inventory_id,
+                        controller_argument_index=index,
+                        controller_event_role=semantic.event_role,
+                        reference_exact_span=mention.exact_span,
+                        reference_source_start=source_start,
+                        reference_source_end=source_end,
+                    )
+                )
+    return tuple(unlinked)
+
+
+def unlinked_controlled_target_ids(
+    inventory: tuple[BoundClaimInventoryItem, ...],
+    links: tuple[BoundControlledEventLink, ...],
+) -> tuple[str, ...]:
+    """Return controlled targets that lack any deterministic incoming link."""
+
+    target_ids = {
+        claim.inventory_id
+        for claim in inventory
+        if claim.item.assertion_scope is InventoryAssertionScope.CONTROLLED_TARGET
+    }
+    linked_ids = {link.controlled_inventory_id for link in links}
+    return tuple(sorted(target_ids - linked_ids))
 
 
 def _is_controlled_event_candidate(
@@ -187,7 +343,11 @@ def _is_controlled_event_candidate(
         for argument in candidate.bound_arguments
         if argument.argument.event_role not in _NON_CORE_EVENT_ROLES
     )
-    return bool(core_arguments) and all(
+    if not core_arguments:
+        return (
+            candidate.item.assertion_scope is InventoryAssertionScope.CONTROLLED_TARGET
+        )
+    return all(
         any(
             _mention_is_contained(mention, reference_mention)
             for mention in argument.mentions
@@ -207,19 +367,13 @@ def _mention_is_contained(
         return False
     relative_start = mention.source_start - container.source_start
     relative_end = mention.source_end - container.source_start
-    left_boundary = (
-        relative_start == 0
-        or not (
-            container.exact_span[relative_start - 1].isalnum()
-            and mention.exact_span[0].isalnum()
-        )
+    left_boundary = relative_start == 0 or not (
+        container.exact_span[relative_start - 1].isalnum()
+        and mention.exact_span[0].isalnum()
     )
-    right_boundary = (
-        relative_end == len(container.exact_span)
-        or not (
-            container.exact_span[relative_end].isalnum()
-            and mention.exact_span[-1].isalnum()
-        )
+    right_boundary = relative_end == len(container.exact_span) or not (
+        container.exact_span[relative_end].isalnum()
+        and mention.exact_span[-1].isalnum()
     )
     return left_boundary and right_boundary
 
@@ -292,5 +446,7 @@ __all__ = [
     "BoundControlledEventLink",
     "ControlledEventLinkAmbiguity",
     "ControlledEventLinkResult",
+    "UnlinkedControlledEventReference",
     "link_controlled_events",
+    "unlinked_controlled_target_ids",
 ]

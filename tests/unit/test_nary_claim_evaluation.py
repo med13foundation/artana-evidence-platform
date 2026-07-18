@@ -171,6 +171,7 @@ def _prediction(case: _Case, *, correct: bool) -> dict[str, object]:
             "exact_span": case.source_text,
             "relation_cue_span": event.trigger_span,
             "event_type": event.event_type if correct else "OTHER_EXPLICIT",
+            "assertion_scope": "SOURCE_ASSERTED",
             "polarity": event.polarity,
             "epistemic_status": event.epistemic_status,
             "arguments": [
@@ -298,6 +299,7 @@ def _report(
                     "relation_cue_span",
                     "claim_kind",
                     "event_type",
+                    "assertion_scope",
                     "polarity",
                     "epistemic_status",
                     "source_locator",
@@ -796,6 +798,7 @@ def _semantic_invalid_inventory_payload() -> dict[str, object]:
             "exact_span": "TP53 increased expression.",
             "relation_cue_span": "increased",
             "event_type": "INCREASE",
+            "assertion_scope": "SOURCE_ASSERTED",
             "polarity": "SUPPORT",
             "epistemic_status": "ASSERTED",
             "arguments": [
@@ -1365,6 +1368,7 @@ def test_evaluator_rejects_prediction_substitution_after_provider_execution() ->
                 "relation_cue_span",
                 "claim_kind",
                 "event_type",
+                "assertion_scope",
                 "polarity",
                 "epistemic_status",
                 "source_locator",

@@ -157,7 +157,6 @@ class CandidateVerification(BaseModel):
     argument_semantic_decisions: tuple[CandidateArgumentSemanticVerification, ...] = (
         Field(
             ...,
-            min_length=2,
             max_length=32,
         )
     )

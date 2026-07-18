@@ -6,7 +6,7 @@ import asyncio
 import hashlib
 from contextlib import suppress
 from pathlib import Path
-from typing import TYPE_CHECKING, Final
+from typing import Final, Protocol
 from uuid import uuid4
 
 from scripts.validation.claim_events.bionlp_import import TG04_BIONLP_ARCHIVE_SHA256
@@ -32,6 +32,9 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sel
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.third_selection import (
     select_third_nested_event_holdout,
 )
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v9.selection import (
+    select_ninth_nested_event_holdout,
+)
 from scripts.validation.claim_events.finite_source_unit.service import as_model_client
 from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
     execute_source_unit_agents,
@@ -40,14 +43,40 @@ from scripts.validation.claim_events.finite_source_unit.single_unit_execution im
 from scripts.validation.claim_events.runner import build_tg04_runtime
 from scripts.validation.claim_frames.evidence import collect_repository_evidence
 
-if TYPE_CHECKING:
-    from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.eighth_sequence import (
-        EighthRepeatAuthorization,
-    )
-
 _REPO_ROOT: Final = Path(__file__).resolve().parents[5]
 _MODEL_ID: Final = "openai:gpt-5.6-luna"
 _BINDING_REPAIR_MIN_TRIAL_GENERATION: Final = 3
+
+
+class RepeatAuthorization(Protocol):
+    """Execution-facing subset of a sealed repeat reservation."""
+
+    @property
+    def run_id(self) -> str: ...
+
+    @property
+    def repeat_index(self) -> int: ...
+
+    @property
+    def token(self) -> str: ...
+
+    @property
+    def repository_evidence(self) -> dict[str, object]: ...
+
+    def require_active(self) -> None: ...
+
+    def provider_evidence_unit_id(self) -> str: ...
+
+
+class SelectionFactory(Protocol):
+    """Select one frozen corpus unit without receiving agent output."""
+
+    def __call__(
+        self,
+        *,
+        corpus_root: Path,
+        archive_sha256: str,
+    ) -> NestedHoldoutSelection: ...
 
 
 def run_nested_event_holdout_trial(
@@ -135,15 +164,62 @@ def run_eighth_nested_event_holdout_trial(
     archive: Path,
     run_id: str,
     repeat_index: int,
-    authorization: EighthRepeatAuthorization,
+    authorization: RepeatAuthorization,
 ) -> dict[str, object]:
     """Run the source-derived, agent-expert-adjudicated v8 holdout."""
 
     if authorization.run_id != run_id or authorization.repeat_index != repeat_index:
         raise RuntimeError("eighth holdout authorization does not match the request")
+    return _run_authorized_trial(
+        archive=archive,
+        run_id=run_id,
+        repeat_index=repeat_index,
+        authorization=authorization,
+        selection_factory=select_eighth_nested_event_holdout,
+    )
+
+
+def run_ninth_nested_event_holdout_trial(
+    *,
+    archive: Path,
+    run_id: str,
+    repeat_index: int,
+    authorization: RepeatAuthorization,
+) -> dict[str, object]:
+    """Run the source-complete, representation-invariant V9 holdout."""
+
+    if authorization.run_id != run_id or authorization.repeat_index != repeat_index:
+        raise RuntimeError("ninth holdout authorization does not match the request")
+    return _run_authorized_trial(
+        archive=archive,
+        run_id=run_id,
+        repeat_index=repeat_index,
+        authorization=authorization,
+        selection_factory=select_ninth_nested_event_holdout,
+    )
+
+
+def preflight_ninth_nested_event_holdout_trial(*, archive: Path) -> None:
+    """Verify the sealed archive and V9 selection before consuming a reservation."""
+
+    with verified_corpus_root(archive) as corpus_root:
+        select_ninth_nested_event_holdout(
+            corpus_root=corpus_root,
+            archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+        )
+
+
+def _run_authorized_trial(
+    *,
+    archive: Path,
+    run_id: str,
+    repeat_index: int,
+    authorization: RepeatAuthorization,
+    selection_factory: SelectionFactory,
+) -> dict[str, object]:
     authorization.require_active()
     with verified_corpus_root(archive) as corpus_root:
-        selection = select_eighth_nested_event_holdout(
+        selection = selection_factory(
             corpus_root=corpus_root,
             archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
         )
@@ -169,7 +245,7 @@ def _run_selected_trial(
     selection: NestedHoldoutSelection,
     run_id: str,
     repeat_index: int,
-    authorization: EighthRepeatAuthorization | None = None,
+    authorization: RepeatAuthorization | None = None,
 ) -> dict[str, object]:
     repository_evidence = collect_repository_evidence(_REPO_ROOT)
     if repository_evidence["clean"] is not True:
@@ -178,7 +254,7 @@ def _run_selected_trial(
         authorization is not None
         and repository_evidence != authorization.repository_evidence
     ):
-        raise RuntimeError("repository differs from eighth holdout reservation")
+        raise RuntimeError("repository differs from sealed holdout reservation")
     return asyncio.run(
         _run_trial(
             selection=selection,
@@ -236,9 +312,11 @@ async def _run_trial(
 
 
 __all__ = [
+    "preflight_ninth_nested_event_holdout_trial",
     "run_eighth_nested_event_holdout_trial",
     "run_fourth_nested_event_holdout_trial",
     "run_nested_event_holdout_trial",
+    "run_ninth_nested_event_holdout_trial",
     "run_second_nested_event_holdout_trial",
     "run_third_nested_event_holdout_trial",
 ]
