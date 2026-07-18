@@ -26,6 +26,9 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
     fingerprinted_step_key,
 )
 
+from scripts.validation.claim_events.finite_source_unit.binding_repair import (
+    require_source_binding_repair_invariant,
+)
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     CandidateVerification,
     EntailmentDecision,
@@ -271,6 +274,19 @@ async def repair_source_unit_extraction(  # noqa: PLR0913
             replay_policy="fork_on_drift",
         )
 
+    def validate_repair(output: SourceUnitExtractionOutput) -> SourceUnitExtractionResult:
+        result = bind_source_unit_extraction(output, unit=unit)
+        if result.rejected:
+            raise StructuredModelSemanticError(
+                "binding repair left unresolved source-binding rejections",
+            )
+        require_source_binding_repair_invariant(
+            original=rejected_output,
+            repaired=output,
+            binding_errors=binding_errors,
+        )
+        return result
+
     return await run_audited_structured_step(
         invoke_model=invoke,
         model_id=model_id,
@@ -285,10 +301,7 @@ async def repair_source_unit_extraction(  # noqa: PLR0913
             input_sha256=unit.input_sha256,
             semantic_unit_id=unit.unit_id,
         ),
-        validate_semantics=lambda output: bind_source_unit_extraction(
-            output,
-            unit=unit,
-        ),
+        validate_semantics=validate_repair,
     )
 
 async def verify_source_unit_candidates(  # noqa: PLR0913
@@ -549,13 +562,13 @@ def _binding_repair_prompt(
     return f"""You are repairing one source-binding failure in a sealed biomedical event inventory.
 
 Use only the frozen source unit. Return the complete corrected extraction output,
-including every valid event from the previous output. Preserve the scientific
-meaning, event boundaries, event types, direction, polarity, epistemic status,
-argument roles, and source-explicit referents. Correct only fields that fail the
-reported strict schema or verbatim source binding. Copy every span and anchor
-context exactly. Leave mention_anchors empty when an argument exact_span occurs
-exactly once inside its claim. Never invent an event, delete a valid sibling to
-avoid an error, use outside knowledge, or return numeric scores.
+including every event from the previous output in the same order. Change only
+left_context or right_context on an existing mention anchor. Preserve every
+event and argument count, exact_span, relation_cue_span, anchor mention_span,
+referent mention_span, categorical field, role, rationale, and source-explicit
+referent exactly. Copy corrected anchor context verbatim from the source. Never
+invent or delete an event, change scientific meaning, use outside knowledge, or
+return numeric scores. Deterministic validation rejects every other mutation.
 
 prompt_version: {_BINDING_REPAIR_PROMPT_VERSION}
 

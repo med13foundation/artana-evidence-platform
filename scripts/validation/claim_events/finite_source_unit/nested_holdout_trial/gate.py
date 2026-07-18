@@ -40,6 +40,10 @@ class NestedHoldoutGateInputs:
     observed_binding_rejection_count: int
     binding_rejection_count: int
     schema_retry_count: int
+    reported_schema_retry_count: int
+    primary_extraction_attempt_count: int
+    schema_retry_attempt_count: int
+    weak_review_attempt_count: int
     controlled_event_link_count: int
     controlled_event_link_ambiguity_count: int
     invalid_agent_output_count: int
@@ -92,14 +96,22 @@ def nested_holdout_gate_requirements(
         "sealed_event_link_recovered_once": inputs.expert_link_match_count == 1,
         "complete_sealed_graph_recovered_once": inputs.complete_graph_match_count == 1,
         "binding_repair_accounted": (
-            inputs.observed_binding_rejection_count == 0
-            and inputs.schema_retry_count == 0
+            (
+                inputs.observed_binding_rejection_count == 0
+                and inputs.schema_retry_count == 0
+            )
+            or (
+                inputs.observed_binding_rejection_count > 0
+                and inputs.schema_retry_count == 1
+            )
         )
-        or (
-            inputs.observed_binding_rejection_count > 0
-            and inputs.schema_retry_count == 1
-        ),
+        and inputs.reported_schema_retry_count == inputs.schema_retry_count,
         "schema_retry_bounded": 0 <= inputs.schema_retry_count <= _MAX_SCHEMA_RETRY_COUNT,
+        "audit_attempt_topology_exact": (
+            inputs.primary_extraction_attempt_count == 1
+            and inputs.schema_retry_attempt_count == inputs.schema_retry_count
+            and inputs.weak_review_attempt_count == 1
+        ),
         "binding_rejection_zero": inputs.binding_rejection_count == 0,
         "controlled_event_link_count_exact": inputs.controlled_event_link_count == 1,
         "controlled_event_link_ambiguity_zero": (
@@ -109,7 +121,7 @@ def nested_holdout_gate_requirements(
         "provider_lineage_complete": (
             inputs.unidentified_provider_attempt_count == 0
             and inputs.extraction_provider_response_id_count
-            == 1 + inputs.schema_retry_count
+            == inputs.primary_extraction_attempt_count + inputs.schema_retry_count
             and inputs.verification_provider_response_id_count == 1
             and inputs.distinct_provider_response_id_count
             == expected_provider_call_count

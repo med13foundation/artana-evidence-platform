@@ -22,7 +22,6 @@ from scripts.validation.claim_events.finite_source_unit.runner import (
 )
 from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
     model_json,
-    provider_response_ids,
     sha256_json,
 )
 from scripts.validation.claim_frames.provider_receipts import (
@@ -57,8 +56,25 @@ def build_nested_holdout_report(  # noqa: PLR0913
         expectations,
         OpenAIProviderReceiptVerifier.from_environment(),
     )
-    extraction_ids = provider_response_ids(agent_run.records, "primary")
-    verification_ids = provider_response_ids(agent_run.records, "weak_review")
+    primary_records = tuple(
+        record for record in agent_run.records if record.attempt_role == "primary"
+    )
+    repair_records = tuple(
+        record for record in agent_run.records if record.attempt_role == "schema_retry"
+    )
+    verification_records = tuple(
+        record for record in agent_run.records if record.attempt_role == "weak_review"
+    )
+    extraction_ids = {
+        record.provider_response_id
+        for record in (*primary_records, *repair_records)
+        if record.provider_response_id is not None
+    }
+    verification_ids = {
+        record.provider_response_id
+        for record in verification_records
+        if record.provider_response_id is not None
+    }
     agent_outputs = {
         "extraction": model_json(agent_run.extraction),
         "verification": model_json(agent_run.verification),
@@ -106,7 +122,11 @@ def build_nested_holdout_report(  # noqa: PLR0913
         complete_graph_match_count=event_match.complete_graph_match_count,
         observed_binding_rejection_count=len(agent_run.observed_binding_rejections),
         binding_rejection_count=agent_run.binding_rejection_count,
-        schema_retry_count=agent_run.schema_retry_count,
+        schema_retry_count=len(repair_records),
+        reported_schema_retry_count=agent_run.schema_retry_count,
+        primary_extraction_attempt_count=len(primary_records),
+        schema_retry_attempt_count=len(repair_records),
+        weak_review_attempt_count=len(verification_records),
         controlled_event_link_count=len(agent_run.controlled_event_links),
         controlled_event_link_ambiguity_count=len(
             agent_run.controlled_event_link_ambiguities

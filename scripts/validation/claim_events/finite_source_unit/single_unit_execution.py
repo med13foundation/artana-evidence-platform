@@ -110,6 +110,9 @@ async def execute_source_unit_agents(  # noqa: PLR0913
         extraction_output = extraction.value.output
         current_extraction = extraction.value
         observed_binding_rejections = current_extraction.rejected
+        unresolved_binding_rejections = current_extraction.rejected
+        extracted_candidate_count = len(current_extraction.accepted)
+        binding_rejection_count = len(current_extraction.rejected)
         if current_extraction.rejected and allow_binding_repair:
             schema_retry_count = 1
             repair = await repair_source_unit_extraction(
@@ -123,11 +126,11 @@ async def execute_source_unit_agents(  # noqa: PLR0913
             )
             current_extraction = repair.value
             extraction_output = current_extraction.output
+            unresolved_binding_rejections = current_extraction.rejected
             observed_binding_rejections = (
                 *observed_binding_rejections,
                 *current_extraction.rejected,
             )
-        unresolved_binding_rejections = current_extraction.rejected
         extracted_candidate_count = len(current_extraction.accepted)
         binding_rejection_count = len(unresolved_binding_rejections)
         if allow_binding_repair:

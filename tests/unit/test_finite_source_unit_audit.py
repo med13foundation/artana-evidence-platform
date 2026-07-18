@@ -20,6 +20,9 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 from pydantic import ValidationError
 
 from scripts.run_procedure_source_unit_audit import procedure_report_exit_code
+from scripts.validation.claim_events.finite_source_unit.binding_repair import (
+    require_source_binding_repair_invariant,
+)
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitCoverageDecision,
     SourceUnitDecision,
@@ -127,7 +130,7 @@ class _BindingRepairSequenceClient:
             output: object = SourceUnitExtractionOutput(
                 eligibility_category=SourceUnitEligibilityCategory.FINDING,
                 decision=SourceUnitDecision.EXPLICIT_EVENT,
-                events=(_event_item(exact_span="IL-4 inhibited missing protein."),),
+                events=(_binding_repair_event(theme_right_context="."),),
                 reasoning="The initial item contains one binding error.",
             )
         elif self.calls == 2:
@@ -135,15 +138,15 @@ class _BindingRepairSequenceClient:
                 eligibility_category=SourceUnitEligibilityCategory.FINDING,
                 decision=SourceUnitDecision.EXPLICIT_EVENT,
                 events=(
-                    _event_item(
-                        exact_span=(
-                            "IL-4 inhibited FOXP3 expression."
+                    _binding_repair_event(
+                        theme_right_context=(
+                            " expression."
                             if self.repair_succeeds
-                            else "IL-4 inhibited another missing protein."
+                            else " missing-context"
                         ),
                     ),
                 ),
-                reasoning="The corrected complete item copies the source.",
+                reasoning="The corrected anchor context copies the source.",
             )
         else:
             output = SourceUnitVerificationOutput.model_validate(
@@ -151,7 +154,11 @@ class _BindingRepairSequenceClient:
                     "eligibility_category": "FINDING",
                     "coverage_decision": "CANDIDATES_COMPLETE",
                     "coverage_reasoning": "The corrected event covers the source.",
-                    "decisions": [_candidate_verification_payload()],
+                    "decisions": [
+                        _candidate_verification_payload(
+                            evidence_spans=[_BINDING_REPAIR_SOURCE],
+                        ),
+                    ],
                 },
             )
         return SimpleNamespace(
@@ -194,6 +201,28 @@ def _event_item(
             ],
         },
     )
+
+
+_BINDING_REPAIR_SOURCE = (
+    "FOXP3 was measured, and IL-4 inhibited FOXP3 expression."
+)
+
+
+def _binding_repair_event(*, theme_right_context: str) -> ClaimInventoryItem:
+    item = _event_item(exact_span=_BINDING_REPAIR_SOURCE)
+    payload = item.model_dump(mode="json")
+    arguments = payload["arguments"]
+    assert isinstance(arguments, list)
+    theme = arguments[1]
+    assert isinstance(theme, dict)
+    theme["mention_anchors"] = [
+        {
+            "mention_span": "FOXP3",
+            "left_context": "inhibited ",
+            "right_context": theme_right_context,
+        },
+    ]
+    return ClaimInventoryItem.model_validate(payload)
 
 
 def _candidate_verification_payload(
@@ -354,7 +383,7 @@ def test_item_binding_preserves_valid_candidate_and_rejected_sibling() -> None:
 async def test_agent_binding_repair_is_bounded_audited_and_fail_closed() -> None:
     unit = enumerate_source_units(
         case_id="binding-repair",
-        source_text="IL-4 inhibited FOXP3 expression.",
+        source_text=_BINDING_REPAIR_SOURCE,
     )[0]
     client = _BindingRepairSequenceClient()
 
@@ -385,7 +414,7 @@ async def test_agent_binding_repair_is_bounded_audited_and_fail_closed() -> None
 async def test_agent_binding_repair_stops_after_one_unresolved_attempt() -> None:
     unit = enumerate_source_units(
         case_id="binding-repair-fail-closed",
-        source_text="IL-4 inhibited FOXP3 expression.",
+        source_text=_BINDING_REPAIR_SOURCE,
     )[0]
     client = _BindingRepairSequenceClient(repair_succeeds=False)
 
@@ -399,9 +428,9 @@ async def test_agent_binding_repair_stops_after_one_unresolved_attempt() -> None
     )
 
     assert client.calls == 2
-    assert result.error_type == "RuntimeError"
+    assert result.error_type == "StructuredModelSemanticError"
     assert result.schema_retry_count == 1
-    assert len(result.observed_binding_rejections) == 2
+    assert len(result.observed_binding_rejections) == 1
     assert len(result.unresolved_binding_rejections) == 1
     assert result.binding_rejection_count == 1
     assert result.verified == ()
@@ -410,6 +439,93 @@ async def test_agent_binding_repair_stops_after_one_unresolved_attempt() -> None
         "primary",
         "schema_retry",
     ]
+    assert result.records[-1].validation_outcome == "semantic_invalid"
+
+
+def test_binding_repair_invariant_rejects_scientific_mutation() -> None:
+    unit = enumerate_source_units(
+        case_id="binding-repair-invariant",
+        source_text=_BINDING_REPAIR_SOURCE,
+    )[0]
+    original = SourceUnitExtractionOutput(
+        eligibility_category=SourceUnitEligibilityCategory.FINDING,
+        decision=SourceUnitDecision.EXPLICIT_EVENT,
+        events=(_binding_repair_event(theme_right_context="."),),
+        reasoning="One event with invalid anchor context.",
+    )
+    binding = bind_source_unit_extraction(original, unit=unit)
+    assert len(binding.rejected) == 1
+    repaired_event = _binding_repair_event(theme_right_context=" expression.")
+    repaired = original.model_copy(update={"events": (repaired_event,)})
+
+    require_source_binding_repair_invariant(
+        original=original,
+        repaired=repaired,
+        binding_errors=binding.rejected,
+    )
+
+    mutated_payload = repaired_event.model_dump(mode="json")
+    mutated_payload["event_type"] = "REGULATION"
+    semantic_mutation = original.model_copy(
+        update={"events": (ClaimInventoryItem.model_validate(mutated_payload),)},
+    )
+    argument_mutation_payload = repaired_event.model_dump(mode="json")
+    mutated_arguments = argument_mutation_payload["arguments"]
+    assert isinstance(mutated_arguments, list)
+    mutated_cause = mutated_arguments[0]
+    assert isinstance(mutated_cause, dict)
+    mutated_cause["event_role"] = "THEME"
+    argument_mutation = original.model_copy(
+        update={
+            "events": (
+                ClaimInventoryItem.model_validate(argument_mutation_payload),
+            ),
+        },
+    )
+    added_event = original.model_copy(
+        update={"events": (repaired_event, repaired_event)},
+    )
+    changed_category = original.model_copy(
+        update={"eligibility_category": SourceUnitEligibilityCategory.HYPOTHESIS},
+    )
+
+    for invalid_repair in (
+        semantic_mutation,
+        argument_mutation,
+        added_event,
+        changed_category,
+    ):
+        with pytest.raises(StructuredModelSemanticError):
+            require_source_binding_repair_invariant(
+                original=original,
+                repaired=invalid_repair,
+                binding_errors=binding.rejected,
+            )
+
+    accepted_sibling = _event_item()
+    original_with_sibling = original.model_copy(
+        update={"events": (*original.events, accepted_sibling)},
+    )
+    changed_sibling_payload = accepted_sibling.model_dump(mode="json")
+    changed_sibling_payload["polarity"] = "REFUTE"
+    changed_sibling = ClaimInventoryItem.model_validate(changed_sibling_payload)
+    repaired_with_changed_sibling = repaired.model_copy(
+        update={"events": (*repaired.events, changed_sibling)},
+    )
+    repaired_with_deleted_sibling = repaired.model_copy(
+        update={"events": repaired.events},
+    )
+
+    for invalid_repair in (
+        repaired_with_changed_sibling,
+        repaired_with_deleted_sibling,
+    ):
+        with pytest.raises(StructuredModelSemanticError):
+            require_source_binding_repair_invariant(
+                original=original_with_sibling,
+                repaired=invalid_repair,
+                binding_errors=binding.rejected,
+            )
 
 
 def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> None:
