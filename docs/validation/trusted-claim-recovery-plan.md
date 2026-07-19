@@ -12,8 +12,10 @@ separate effect direction, claim outcome, epistemic force, and controlled-target
 scope before spending a fresh hidden unit. V13 now passes that exact exposed
 semantic-axis case, but the same response mis-types the named regulator as
 `OTHER_ENTITY`; the full visible scientific canary remains failed. A frozen
-agent-correction and source-only falsification pass is next. Graph persistence
-remains paused.
+agent correction successfully retyped that regulator, then failed schema because
+its controlled-event references had invalid ownership and self-reference. The
+reviewer was skipped. Controlled-event topology clarification and adversarial
+tests are next, on a different visible case. Graph persistence remains paused.
 
 Baseline commit: `884ede20340d7fce7b28994f1bed617b222d2213`
 
