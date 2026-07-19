@@ -203,10 +203,18 @@ def test_durable_namespace_is_fixed_and_parent_creation_is_fsynced(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    assert canary.ARTIFACT_DIR.is_absolute()
-    assert str(canary.ARTIFACT_DIR).startswith(
-        "/Users/alvaro/.codex/artana-evidence-experiments/"
+    expected_key = hashlib.sha256(
+        (
+            f"{canary.CONTRACT_VERSION}|{canary.MODEL_ID}|"
+            f"{canary.SOURCE_SHA256}|{canary.INPUT_SHA256}"
+        ).encode()
+    ).hexdigest()
+    assert expected_key == canary.RESERVATION_KEY
+    expected_directory = (
+        Path("/Users/alvaro/.codex/artana-evidence-experiments/tg04")
+        / f"v13-visible-anaphoric-{expected_key}"
     )
+    assert expected_directory == canary.ARTIFACT_DIR
     fsynced: list[Path] = []
     monkeypatch.setattr(canary, "fsync_directory", fsynced.append)
     target = tmp_path / "first" / "second"
