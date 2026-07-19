@@ -39,6 +39,7 @@ from artana_evidence_api.document_extraction_support.claim_frames.controlled_eve
 from artana_evidence_api.document_extraction_support.claim_frames.event_types import (
     ClaimEventRole,
     ClaimEventType,
+    effect_direction_for_event_type,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.inventory import (
     CLAIM_INVENTORY_SOURCE_LOCATOR,
@@ -81,6 +82,8 @@ from artana_evidence_api.document_extraction_support.claim_frames.promotion_poli
 from artana_evidence_api.document_extraction_support.claim_frames.semantics import (
     ClaimKind,
     InventoryAssertionScope,
+    InventoryClaimOutcome,
+    InventoryEffectDirection,
     InventoryEpistemicStatus,
     InventoryPolarity,
 )
@@ -124,6 +127,8 @@ __all__ = [
     "EpistemicStatus",
     "InventoryCompletenessDecision",
     "InventoryAssertionScope",
+    "InventoryClaimOutcome",
+    "InventoryEffectDirection",
     "InventoryEpistemicStatus",
     "InventoryPolarity",
     "MeasurementFieldRole",
@@ -148,6 +153,7 @@ __all__ = [
     "claim_frame_semantic_fingerprint",
     "coalesce_long_sentence_chunks",
     "derive_claim_local_source_region",
+    "effect_direction_for_event_type",
     "is_positive_projection_eligible",
     "link_controlled_events",
     "unlinked_controlled_target_ids",

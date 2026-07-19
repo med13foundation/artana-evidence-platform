@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from enum import Enum
 
+from artana_evidence_api.document_extraction_support.claim_frames.semantics import (
+    InventoryEffectDirection,
+)
+
 
 class ClaimEventType(str, Enum):
     """Source-explicit event category preserved before graph framing."""
@@ -43,4 +47,18 @@ class ClaimEventRole(str, Enum):
     MEASURE = "MEASURE"
 
 
-__all__ = ["ClaimEventRole", "ClaimEventType"]
+def effect_direction_for_event_type(
+    event_type: ClaimEventType,
+) -> InventoryEffectDirection:
+    """Project one categorical event type onto its orthogonal direction axis."""
+
+    if event_type in {ClaimEventType.POSITIVE_REGULATION, ClaimEventType.INCREASE}:
+        return InventoryEffectDirection.POSITIVE
+    if event_type in {ClaimEventType.NEGATIVE_REGULATION, ClaimEventType.DECREASE}:
+        return InventoryEffectDirection.NEGATIVE
+    if event_type is ClaimEventType.NO_EFFECT:
+        return InventoryEffectDirection.NOT_APPLICABLE
+    return InventoryEffectDirection.UNDIRECTED
+
+
+__all__ = ["ClaimEventRole", "ClaimEventType", "effect_direction_for_event_type"]

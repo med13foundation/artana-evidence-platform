@@ -25,12 +25,31 @@ class ClaimKind(str, Enum):
 
 
 class InventoryPolarity(str, Enum):
-    """Direction or outcome of a source-local scientific claim."""
+    """Legacy wire values for a source-local claim outcome."""
 
     SUPPORT = "SUPPORT"
     REFUTE = "REFUTE"
     NULL_RESULT = "NULL_RESULT"
     UNSCOPED = "UNSCOPED"
+
+
+class InventoryClaimOutcome(str, Enum):
+    """Whether a source supports, refutes, or nullifies an asserted event."""
+
+    SUPPORT = "SUPPORT"
+    REFUTE = "REFUTE"
+    NULL_RESULT = "NULL_RESULT"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
+    UNRESOLVED = "UNRESOLVED"
+
+
+class InventoryEffectDirection(str, Enum):
+    """Direction encoded by an agent-authored event type."""
+
+    POSITIVE = "POSITIVE"
+    NEGATIVE = "NEGATIVE"
+    UNDIRECTED = "UNDIRECTED"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
 
 
 class InventoryEpistemicStatus(str, Enum):
@@ -53,6 +72,8 @@ class InventoryAssertionScope(str, Enum):
 __all__ = [
     "ClaimKind",
     "InventoryAssertionScope",
+    "InventoryClaimOutcome",
+    "InventoryEffectDirection",
     "InventoryEpistemicStatus",
     "InventoryPolarity",
 ]

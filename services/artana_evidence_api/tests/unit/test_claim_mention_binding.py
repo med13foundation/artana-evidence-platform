@@ -91,6 +91,43 @@ def test_controlled_target_requires_nonassertive_semantics() -> None:
 
     assert target.event_type.value == "PROLIFERATION"
     assert target.assertion_scope.value == "CONTROLLED_TARGET"
+    assert target.claim_outcome.value == "NOT_APPLICABLE"
+
+
+@pytest.mark.parametrize(
+    ("event_type", "expected_direction"),
+    [
+        ("POSITIVE_REGULATION", "POSITIVE"),
+        ("INCREASE", "POSITIVE"),
+        ("NEGATIVE_REGULATION", "NEGATIVE"),
+        ("DECREASE", "NEGATIVE"),
+        ("REGULATION", "UNDIRECTED"),
+        ("ASSOCIATION", "UNDIRECTED"),
+        ("NO_EFFECT", "NOT_APPLICABLE"),
+    ],
+)
+def test_event_type_owns_effect_direction(
+    event_type: str,
+    expected_direction: str,
+) -> None:
+    item = _inventory_item(
+        text="IL-2 regulates proliferation.",
+        cue="regulates",
+        first_argument={
+            "role": "GENE_OR_PROTEIN",
+            "event_role": "CAUSE",
+            "exact_span": "IL-2",
+            "role_rationale": "IL-2 is the stated controller.",
+        },
+        second_span="proliferation",
+    )
+    payload = item.model_dump(mode="json")
+    payload["event_type"] = event_type
+
+    classified = ClaimInventoryItem.model_validate(payload)
+
+    assert classified.effect_direction.value == expected_direction
+    assert classified.claim_outcome.value == "SUPPORT"
 
 
 @pytest.mark.parametrize(

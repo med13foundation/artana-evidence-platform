@@ -15,6 +15,7 @@ from artana_evidence_api.document_extraction_support.claim_frames.arguments impo
 from artana_evidence_api.document_extraction_support.claim_frames.event_types import (
     ClaimEventRole,
     ClaimEventType,
+    effect_direction_for_event_type,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.mentions import (
     BoundClaimMention,
@@ -25,6 +26,8 @@ from artana_evidence_api.document_extraction_support.claim_frames.mentions impor
 from artana_evidence_api.document_extraction_support.claim_frames.semantics import (
     ClaimKind,
     InventoryAssertionScope,
+    InventoryClaimOutcome,
+    InventoryEffectDirection,
     InventoryEpistemicStatus,
     InventoryPolarity,
 )
@@ -193,6 +196,20 @@ class ClaimInventoryItem(BaseModel):
     polarity: InventoryPolarity = Field(..., strict=False)
     epistemic_status: InventoryEpistemicStatus = Field(..., strict=False)
     inventory_rationale: str = Field(..., min_length=1, max_length=2000)
+
+    @property
+    def claim_outcome(self) -> InventoryClaimOutcome:
+        """Return the outcome axis without exposing legacy wire terminology."""
+
+        if self.polarity is InventoryPolarity.UNSCOPED:
+            return InventoryClaimOutcome.NOT_APPLICABLE
+        return InventoryClaimOutcome(self.polarity.value)
+
+    @property
+    def effect_direction(self) -> InventoryEffectDirection:
+        """Return direction encoded by the agent-authored event type."""
+
+        return effect_direction_for_event_type(self.event_type)
 
     @field_validator("arguments", mode="before")
     @classmethod
