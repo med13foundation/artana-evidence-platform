@@ -483,6 +483,14 @@ def test_v11_report_replays_complete_joint_direct_family(
     assert "source_event_recall" not in metrics
 
 
+def test_v11_complete_report_replays_after_json_round_trip(
+    replayable_report: dict[str, object],
+) -> None:
+    serialized = json.dumps(replayable_report, sort_keys=True, ensure_ascii=True)
+
+    require_replayed_v11_qualification(json.loads(serialized))
+
+
 def test_v11_context_match_rejects_flattened_uncrossed_factors() -> None:
     _, normalized, _ = _outputs()
     payload = normalized.model_dump(mode="json")
@@ -708,6 +716,14 @@ def test_terminal_replay_rejects_replayed_provider_attempt(
 
     with pytest.raises(RuntimeError, match="terminal attempt prefix is invalid"):
         require_replayed_v11_qualification(report)
+
+
+def test_terminal_replay_accepts_fresh_failure_before_provider_response(
+    replayable_report: dict[str, object],
+) -> None:
+    report = _call_one_invocation_failure(replayable_report)
+
+    require_replayed_v11_qualification(report)
 
 
 def test_terminal_replay_rejects_unbound_local_failure_category(
@@ -963,6 +979,89 @@ def _between_stage_terminal_failure(
     del receipt_items[1:]
     receipts["expected_count"] = 1
     receipts["verified_count"] = 1
+    inputs = v11_replay._gate_inputs(gate_inputs)  # noqa: SLF001
+    requirements = v11_replay.v11_gate_requirements(inputs)
+    decision = v11_replay.v11_gate_decision(inputs, requirements)
+    report["gate"] = {
+        "passed": False,
+        "decision": decision.value,
+        "requirements": requirements,
+    }
+    report["deterministic_metrics"] = deterministic_metrics(inputs)
+    report.pop("report_sha256")
+    report["report_sha256"] = sha256_json(report)
+    return report
+
+
+def _call_one_invocation_failure(
+    complete: dict[str, object],
+) -> dict[str, object]:
+    report = _call_two_terminal_failure(complete)
+    attempts = report["attempts"]
+    outputs = report["agent_outputs"]
+    raw_outputs = report["raw_agent_outputs"]
+    gate_inputs = report["gate_inputs"]
+    receipts = report["provider_receipts"]
+    assert isinstance(attempts, list)
+    assert isinstance(attempts[0], dict)
+    assert isinstance(outputs, dict)
+    assert isinstance(raw_outputs, dict)
+    assert isinstance(gate_inputs, dict)
+    assert isinstance(receipts, dict)
+    del attempts[1:]
+    attempts[0].update(
+        {
+            "validation_outcome": "invocation_failed",
+            "error_type": "ModelPermanentError",
+            "replayed": None,
+            "provider_response_id": None,
+            "provider_execution_response_id": None,
+            "raw_model_payload": None,
+            "payload_sha256": None,
+            "provider_output_sha256": None,
+        }
+    )
+    outputs.update(
+        {
+            "original_extraction": None,
+            "normalized_extraction": None,
+            "normalized_review": None,
+            "error_type": "ModelPermanentError",
+            "failed_stage": "primary",
+        }
+    )
+    raw_outputs.update(
+        {
+            "original_extraction": None,
+            "normalized_extraction": None,
+            "normalized_review": None,
+        }
+    )
+    gate_inputs.update(
+        {
+            "extraction_category": None,
+            "original_raw_payload_preserved": False,
+            "original_event_count": 0,
+            "primary_attempt_count": 1,
+            "normalization_attempt_count": 0,
+            "invalid_agent_output_count": 1,
+            "unidentified_provider_attempt_count": 1,
+            "distinct_provider_response_id_count": 0,
+            "verified_provider_receipt_count": 0,
+            "provider_receipt_gate_passed": False,
+        }
+    )
+    receipt_items = receipts["receipts"]
+    assert isinstance(receipt_items, list)
+    receipt_items.clear()
+    receipts.update(
+        {
+            "status": "not_verified",
+            "expected_count": 0,
+            "verified_count": 0,
+        }
+    )
+    report["original_binding_rejections"] = []
     inputs = v11_replay._gate_inputs(gate_inputs)  # noqa: SLF001
     requirements = v11_replay.v11_gate_requirements(inputs)
     decision = v11_replay.v11_gate_decision(inputs, requirements)

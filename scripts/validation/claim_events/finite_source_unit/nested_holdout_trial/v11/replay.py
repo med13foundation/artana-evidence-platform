@@ -256,15 +256,19 @@ def _require_derived_artifacts(
         link.as_json() for link in normalized.controlled_event_links
     ]:
         raise RuntimeError("V11 controlled-event link artifact changed")
-    if report.get("sealed_expert_graph") != (
+    if canonical_json_sha256(
+        report.get("sealed_expert_graph")
+    ) != canonical_json_sha256(
         eleventh_projection_set().canonical_projection.graph.as_json()
     ):
         raise RuntimeError("V11 sealed expert graph changed")
     if report.get("deterministic_metrics") != deterministic_metrics(inputs):
         raise RuntimeError("V11 deterministic metrics changed")
-    if report.get("sealed_context_dimensions") != [
-        dimension.as_json() for dimension in V11_CONTEXT_DIMENSIONS
-    ]:
+    if canonical_json_sha256(
+        report.get("sealed_context_dimensions")
+    ) != canonical_json_sha256(
+        [dimension.as_json() for dimension in V11_CONTEXT_DIMENSIONS]
+    ):
         raise RuntimeError("V11 sealed context dimensions changed")
 
 
@@ -466,10 +470,14 @@ def _require_terminal_failure_replay(
         != ([] if original is None else [item.as_json() for item in original.rejected])
         or report.get("normalized_candidates") != expected_rows
         or report.get("controlled_event_links") != expected_links
-        or report.get("sealed_expert_graph")
-        != eleventh_projection_set().canonical_projection.graph.as_json()
-        or report.get("sealed_context_dimensions")
-        != [dimension.as_json() for dimension in V11_CONTEXT_DIMENSIONS]
+        or canonical_json_sha256(report.get("sealed_expert_graph"))
+        != canonical_json_sha256(
+            eleventh_projection_set().canonical_projection.graph.as_json()
+        )
+        or canonical_json_sha256(report.get("sealed_context_dimensions"))
+        != canonical_json_sha256(
+            [dimension.as_json() for dimension in V11_CONTEXT_DIMENSIONS]
+        )
         or canonical_json_sha256(report.get("deterministic_projection_match"))
         != canonical_json_sha256(asdict(projection_match))
     ):

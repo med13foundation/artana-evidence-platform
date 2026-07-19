@@ -156,7 +156,7 @@ def _require_one_attempt(  # noqa: PLR0913
         or attempt.get("source_sha256") != source_sha256
         or attempt.get("input_sha256") != input_sha256
         or attempt.get("evidence_unit_sha256") != contract.evidence_unit_sha256
-        or attempt.get("replayed") is not False
+        or not _freshness_state_matches(attempt, outcome=outcome)
         or not isinstance(attempt.get("step_key"), str)
         or not isinstance(attempt.get("prompt_sha256"), str)
         or not isinstance(attempt.get("output_schema_identity"), str)
@@ -192,6 +192,18 @@ def _require_one_attempt(  # noqa: PLR0913
     if response_id is not None and not isinstance(response_id, str):
         raise TypeError(f"{contract.label} response identity must be a string")
     return response_id
+
+
+def _freshness_state_matches(attempt: dict[str, object], *, outcome: object) -> bool:
+    """Distinguish a fresh response from a failure before any response existed."""
+
+    if (
+        outcome == "invocation_failed"
+        and attempt.get("provider_response_id") is None
+        and attempt.get("raw_model_payload") is None
+    ):
+        return attempt.get("replayed") is None
+    return attempt.get("replayed") is False
 
 
 def _require_receipt_bindings(
