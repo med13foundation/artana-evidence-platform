@@ -32,6 +32,26 @@ The executable policy generates the extraction prompt internally and records
 the v2 contract identity in the run evidence, every attempt record, and every
 stage key. It does not accept a prepared-prompt override.
 
+## Frozen Runner And Durable Reservation
+
+The one-shot runner remains outside the Artana product surface at
+`/private/tmp/artana-tg04/run_v13_visible_anaphoric_canary.py`, but its exact
+bytes are frozen here before any provider call:
+
+- runner SHA-256:
+  `bfff71195d65a49ca7dbbe117942b50ab4c000dda2ddd5eed7cf0f3e511c1096`;
+- durable reservation key:
+  `5d1925788702d15ded427cc8ec674242c876475377d28fc4b412ae43bd6e79bd`;
+- durable create-once artifact directory:
+  `/Users/alvaro/.codex/artana-evidence-experiments/tg04/v13-visible-anaphoric-5d1925788702d15ded427cc8ec674242c876475377d28fc4b412ae43bd6e79bd`.
+
+Preflight hashes the runner bytes against this committed value before runtime
+construction. The reservation key is derived from the contract version, model,
+source hash, and input hash. A reservation or result survives temporary-file
+cleanup and blocks every later invocation of this exact experiment. Runtime
+configuration is checked before reservation without making a provider call;
+after reservation, any runner exception seals a create-once negative report.
+
 ## Frozen Synthetic Source
 
 > EGF activated ERK, and the MEK1-null genotype reduced that activation.
@@ -110,6 +130,14 @@ Gate A contains no expected scientific answer. All requirements must be true:
   hashes, execution-contract identity, and role-specific provider receipts are
   preserved and reverified.
 
+The runner also deterministically re-derives every role's invocation-bound
+prompt hash, contract-bound step key, schema identity, model identity, source
+and input hashes, semantic-unit identity, evidence-unit hash, and kernel run
+identity. Replayed, retry-marked, malformed, unidentified, or partially bound
+attempts fail Gate A. Receipt-expectation construction is total: malformed
+attempt evidence yields `STOP_WORKFLOW_INVALID`, never a favorable result or an
+unsealed rerun opportunity.
+
 Gate A answers only whether the sealed contract operated correctly. It does not
 award scientific-quality credit and does not require a particular family,
 event count, category, entailment result, or favorable reviewer decision.
@@ -131,6 +159,13 @@ above. It also requires:
 - family validity `VALID`;
 - every material-axis decision `PRESERVED` or `COMPATIBLE_REFINEMENT`; and
 - both normalized candidates `ENTAILED`.
+
+The exact canary additionally requires `NONE` normalization abstention, exactly
+two exhaustive event mappings, no context dimensions, exact inner and outer
+event spans, review eligibility `FINDING`, and cue alignment `EXACT`. Reviewer
+abstention, surface-only equivalence, a material cue mismatch, or any extra
+context dimension therefore fails Gate B even if another review field is
+favorable.
 
 The source-only agent supplies those categorical judgments, exact source
 evidence, reasoning, and falsification conditions. It supplies no numeric score.
