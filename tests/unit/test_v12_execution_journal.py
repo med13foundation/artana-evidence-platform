@@ -18,6 +18,9 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 
 import scripts.run_twelfth_nested_event_holdout_trial as v12_cli
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v12 import (
+    journal as v12_journal,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v12 import (
     runner as v12_runner,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v12 import (
@@ -90,6 +93,59 @@ def test_v12_journal_reconstructs_complete_agent_evidence(tmp_path: Path) -> Non
         record.as_json() for record in observed.records
     ]
     assert recovered.error_type is None
+
+
+def test_v12_journal_restores_historical_records_without_contract_version(
+    tmp_path: Path,
+) -> None:
+    selection = _selection()
+    authorization = _authorization(tmp_path)
+    identity = v12_journal_identity(
+        authorization=authorization,
+        audit_evidence_unit_id="provider-execution-1",
+        unit_id=selection.unit.unit_id,
+    )
+    path = tmp_path / "historical-repeat-1.journal.jsonl"
+    journal = V12ExecutionJournal.create(path=path, identity=identity)
+    _execute(journal=journal, audit_evidence_unit_id="provider-execution-1")
+
+    entries = [json.loads(line) for line in path.read_text().splitlines()]
+    previous_sha256: str | None = None
+    historical_entries: list[dict[str, object]] = []
+    for entry in entries:
+        unsigned = {key: value for key, value in entry.items() if key != "entry_sha256"}
+        unsigned["previous_entry_sha256"] = previous_sha256
+        evidence = unsigned.get("evidence")
+        if isinstance(evidence, dict):
+            evidence.pop("execution_contract_version", None)
+            records = evidence.get("records")
+            if isinstance(records, list):
+                for record in records:
+                    if isinstance(record, dict):
+                        record.pop("execution_contract_version", None)
+        record = unsigned.get("record")
+        if isinstance(record, dict):
+            record.pop("execution_contract_version", None)
+        signed = v12_journal._signed_entry(unsigned)
+        previous_sha256 = cast("str", signed["entry_sha256"])
+        historical_entries.append(signed)
+    path.write_text(
+        "\n".join(
+            json.dumps(entry, sort_keys=True, separators=(",", ":"))
+            for entry in historical_entries
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    recovered = V12ExecutionJournal.open_existing(
+        path=path,
+        identity=identity,
+    ).latest_evidence(unit=selection.unit)
+
+    assert recovered.execution_contract_version is None
+    assert len(recovered.records) == 3
+    assert all(record.execution_contract_version is None for record in recovered.records)
 
 
 def test_v12_journal_rejects_hash_chain_tampering(tmp_path: Path) -> None:

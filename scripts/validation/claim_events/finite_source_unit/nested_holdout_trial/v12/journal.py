@@ -222,6 +222,7 @@ def _evidence_json(evidence: ThreeCallAgentRunEvidence) -> dict[str, object]:
         "review_raw_output": evidence.review_raw_output,
         "records": [asdict(record) for record in evidence.records],
         "error_type": evidence.error_type,
+        "execution_contract_version": evidence.execution_contract_version,
         "failed_stage": evidence.failed_stage,
     }
 
@@ -264,6 +265,7 @@ def _empty_interrupted_payload() -> dict[str, object]:
         "review_raw_output": None,
         "records": [],
         "error_type": "SourceUnitExecutionInterrupted",
+        "execution_contract_version": None,
         "failed_stage": "primary",
     }
 
@@ -376,6 +378,9 @@ def _evidence_from_json(
     )
     records = _records(payload)
     error_type = _optional_string(payload, "error_type")
+    execution_contract_version = _optional_string(
+        payload, "execution_contract_version"
+    )
     failed_stage = _optional_stage(payload.get("failed_stage"))
     if error_type is None and review_output is None:
         error_type = "SourceUnitExecutionInterrupted"
@@ -398,6 +403,7 @@ def _evidence_from_json(
         review_raw_output=review_raw,
         records=records,
         error_type=error_type,
+        execution_contract_version=execution_contract_version,
         failed_stage=failed_stage,
     )
 
@@ -443,6 +449,9 @@ def _record(value: object) -> ModelAttemptAuditRecord:
             _string(value, "validation_outcome"),
         ),
         error_type=_optional_string(value, "error_type"),
+        execution_contract_version=_optional_string(
+            value, "execution_contract_version"
+        ),
     )
 
 

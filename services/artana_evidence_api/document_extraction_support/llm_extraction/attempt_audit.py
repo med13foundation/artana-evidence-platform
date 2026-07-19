@@ -108,6 +108,7 @@ class ModelAttemptAuditRecord:
     payload_sha256: str | None
     validation_outcome: ModelAttemptValidationOutcome
     error_type: str | None
+    execution_contract_version: str | None = None
 
     @property
     def raw_model_payload(self) -> dict[str, object] | None:
@@ -144,6 +145,7 @@ class ModelAttemptAuditRecord:
                 "payload_sha256": self.payload_sha256,
                 "validation_outcome": self.validation_outcome,
                 "error_type": self.error_type,
+                "execution_contract_version": self.execution_contract_version,
             },
         )
 
@@ -154,6 +156,7 @@ class ModelAttemptAuditSession:
 
     records: list[ModelAttemptAuditRecord] = field(default_factory=list)
     evidence_unit_sha256: str | None = None
+    execution_contract_version: str | None = None
     record_observer: Callable[[ModelAttemptAuditRecord], None] | None = field(
         default=None,
         repr=False,
@@ -173,16 +176,25 @@ _MODEL_ATTEMPT_AUDIT_SESSION: ContextVar[ModelAttemptAuditSession | None] = Cont
 def start_model_attempt_audit(
     *,
     evidence_unit_id: str | None = None,
+    execution_contract_version: str | None = None,
     record_observer: Callable[[ModelAttemptAuditRecord], None] | None = None,
 ) -> ModelAttemptAuditSession:
     """Start an audit scope inherited by child asyncio tasks."""
 
     if evidence_unit_id is not None and not evidence_unit_id.strip():
         raise ValueError("evidence_unit_id must be nonempty when provided")
+    if execution_contract_version is not None and (
+        not execution_contract_version.strip()
+        or execution_contract_version.strip() != execution_contract_version
+    ):
+        raise ValueError(
+            "execution_contract_version must be a nonempty trimmed value"
+        )
     session = ModelAttemptAuditSession(
         evidence_unit_sha256=(
             _sha256_text(evidence_unit_id) if evidence_unit_id is not None else None
         ),
+        execution_contract_version=execution_contract_version,
         record_observer=record_observer,
     )
     session.context_token = _MODEL_ATTEMPT_AUDIT_SESSION.set(session)
@@ -321,6 +333,7 @@ def _build_model_attempt_record(
         model_result,
         "response_id",
     )
+    audit_session = current_model_attempt_audit()
     return ModelAttemptAuditRecord(
         invocation_id=invocation_id,
         attempt_role=audit_context.attempt_role,
@@ -354,6 +367,11 @@ def _build_model_attempt_record(
         ),
         validation_outcome=validation_outcome,
         error_type=error_type,
+        execution_contract_version=(
+            audit_session.execution_contract_version
+            if audit_session is not None
+            else None
+        ),
     )
 
 

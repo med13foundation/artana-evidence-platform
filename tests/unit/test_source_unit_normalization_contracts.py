@@ -229,6 +229,28 @@ def _nested_original() -> SourceUnitExtractionOutput:
     )
 
 
+def _make_expression_target_source_asserted(payload: dict[str, object]) -> None:
+    events = payload["events"]
+    assert isinstance(events, list)
+    target = events[1]
+    assert isinstance(target, dict)
+    target.update(
+        {
+            "arguments": [
+                _argument(exact_span="Fas ligand"),
+                _argument(
+                    role="BIOLOGICAL_PROCESS",
+                    event_role="EFFECT",
+                    exact_span="expression",
+                ),
+            ],
+            "assertion_scope": "SOURCE_ASSERTED",
+            "polarity": "SUPPORT",
+            "epistemic_status": "ASSERTED",
+        }
+    )
+
+
 def test_direct_normalization_is_categorical_and_mapped() -> None:
     output = SourceUnitNormalizationOutput.model_validate(
         {
@@ -352,25 +374,7 @@ def test_v13_rejects_missing_reference_target() -> None:
 
 def test_v13_accepts_reference_to_source_asserted_scientific_event() -> None:
     payload = _nested_normalization_payload()
-    events = payload["events"]
-    assert isinstance(events, list)
-    target = events[1]
-    assert isinstance(target, dict)
-    target.update(
-        {
-            "arguments": [
-                _argument(exact_span="Fas ligand"),
-                _argument(
-                    role="BIOLOGICAL_PROCESS",
-                    event_role="EFFECT",
-                    exact_span="expression",
-                ),
-            ],
-            "assertion_scope": "SOURCE_ASSERTED",
-            "polarity": "SUPPORT",
-            "epistemic_status": "ASSERTED",
-        }
-    )
+    _make_expression_target_source_asserted(payload)
 
     output = SourceUnitNormalizationOutputV13.model_validate(payload)
 
@@ -383,6 +387,78 @@ def test_v13_accepts_reference_to_source_asserted_scientific_event() -> None:
     original = bind_source_unit_extraction(_nested_original(), unit=unit)
     result = bind_source_unit_normalization(output, unit=unit, original=original)
     assert len(result.controlled_event_links) == 2
+
+
+def test_v13_nested_family_allows_only_source_asserted_referenced_events() -> None:
+    payload = _nested_normalization_payload()
+    _make_expression_target_source_asserted(payload)
+    events = payload["events"]
+    mappings = payload["mappings"]
+    assert isinstance(events, list)
+    assert isinstance(mappings, list)
+    outer_arguments = events[0]["arguments"]
+    assert isinstance(outer_arguments, list)
+    del outer_arguments[2]
+    del events[2]
+    del mappings[2]
+
+    output = SourceUnitNormalizationOutputV13.model_validate(payload)
+
+    assert output.family.value == "NESTED"
+    assert all(event.assertion_scope.value == "SOURCE_ASSERTED" for event in output.events)
+
+
+def test_v13_direct_rejects_valid_reference_topology() -> None:
+    payload = _nested_normalization_payload()
+    payload["family"] = "DIRECT"
+
+    with pytest.raises(ValidationError, match="DIRECT cannot contain"):
+        SourceUnitNormalizationOutputV13.model_validate(payload)
+
+
+def test_v13_nested_rejects_reference_free_source_asserted_events() -> None:
+    payload = _nested_normalization_payload()
+    _make_expression_target_source_asserted(payload)
+    events = payload["events"]
+    mappings = payload["mappings"]
+    assert isinstance(events, list)
+    assert isinstance(mappings, list)
+    outer_arguments = events[0]["arguments"]
+    assert isinstance(outer_arguments, list)
+    outer_arguments[1]["controlled_event_ref"] = None
+    del outer_arguments[2]
+    del events[2]
+    del mappings[2]
+
+    with pytest.raises(ValidationError, match="explicit event-to-event reference"):
+        SourceUnitNormalizationOutputV13.model_validate(payload)
+
+
+def test_v13_nested_rejects_reference_free_controlled_targets() -> None:
+    payload = _nested_normalization_payload()
+    events = payload["events"]
+    assert isinstance(events, list)
+    outer_arguments = events[0]["arguments"]
+    assert isinstance(outer_arguments, list)
+    outer_arguments[1]["controlled_event_ref"] = None
+    outer_arguments[2]["controlled_event_ref"] = None
+
+    with pytest.raises(ValidationError, match="explicit event-to-event reference"):
+        SourceUnitNormalizationOutputV13.model_validate(payload)
+
+
+def test_v13_abstain_rejects_smuggled_events() -> None:
+    payload = _nested_normalization_payload()
+    payload.update(
+        {
+            "eligibility_category": "ABSTAIN",
+            "family": "ABSTAIN",
+            "abstention_reason": "UNRESOLVED_SCOPE",
+        }
+    )
+
+    with pytest.raises(ValidationError, match="ABSTAIN cannot contain"):
+        SourceUnitNormalizationOutputV13.model_validate(payload)
 
 
 def test_v13_rejects_orphan_controlled_target() -> None:

@@ -94,7 +94,7 @@ def require_v13_v4_schema_custody() -> None:
 
 
 V13_EXECUTION_POLICY: Final = V13ExecutionPolicy(
-    contract_version="tg04.finite_source_unit.v13_execution.v1",
+    contract_version="tg04.finite_source_unit.v13_execution.v2",
     extraction_prompt_policy=V13_PROMPT_POLICY,
     normalization_prompt_builder=v13_normalization_prompt,
     normalization_prompt_version=V13_NORMALIZATION_PROMPT_VERSION,
@@ -130,6 +130,7 @@ async def execute_v13_source_unit_agents(  # noqa: PLR0913
         normalization_output_schema=policy.normalization_output_schema,
         review_prompt_builder=policy.review_prompt_builder,
         review_prompt_version=policy.review_prompt_version,
+        execution_contract_version=policy.contract_version,
         audit_evidence_unit_id=audit_evidence_unit_id,
         evidence_observer=evidence_observer,
         attempt_observer=attempt_observer,

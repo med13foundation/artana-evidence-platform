@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, Protocol
 
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    fingerprinted_step_key,
     start_model_attempt_audit,
     stop_model_attempt_audit,
 )
@@ -92,6 +93,7 @@ class ThreeCallAgentRunEvidence:
     review_raw_output: dict[str, object] | None
     records: tuple[ModelAttemptAuditRecord, ...]
     error_type: str | None
+    execution_contract_version: str | None
     failed_stage: (
         Literal["primary", "structure_normalization", "normalized_review"] | None
     )
@@ -125,14 +127,32 @@ async def execute_three_source_unit_agents(  # noqa: PLR0913, PLR0915
     ),
     review_prompt_builder: NormalizedReviewPromptBuilder,
     review_prompt_version: str,
+    execution_contract_version: str | None = None,
     audit_evidence_unit_id: str | None = None,
     evidence_observer: ThreeCallEvidenceObserver | None = None,
     attempt_observer: ModelAttemptObserver | None = None,
 ) -> ThreeCallAgentRunEvidence:
     """Run exactly three stages; stop on first failure and never retry."""
 
+    if execution_contract_version is not None and (
+        not execution_contract_version.strip()
+        or execution_contract_version.strip() != execution_contract_version
+    ):
+        raise ValueError(
+            "execution_contract_version must be a nonempty trimmed value"
+        )
+    contract_bound_namespace = (
+        execution_namespace
+        if execution_contract_version is None
+        else fingerprinted_step_key(
+            "execution-contract",
+            execution_namespace,
+            execution_contract_version,
+        )
+    )
     audit = start_model_attempt_audit(
         evidence_unit_id=audit_evidence_unit_id or unit.unit_id,
+        execution_contract_version=execution_contract_version,
         record_observer=attempt_observer,
     )
     original_output: SourceUnitExtractionOutput | None = None
@@ -156,7 +176,7 @@ async def execute_three_source_unit_agents(  # noqa: PLR0913, PLR0915
             client=client,
             tenant=tenant,
             model_id=model_id,
-            execution_namespace=execution_namespace,
+            execution_namespace=contract_bound_namespace,
             unit=unit,
             prompt_policy=extraction_prompt_policy,
             prepared_prompt=prepared_extraction_prompt,
@@ -178,6 +198,7 @@ async def execute_three_source_unit_agents(  # noqa: PLR0913, PLR0915
                 review_raw=review_raw,
                 records=tuple(audit.records),
                 error_type=None,
+                execution_contract_version=execution_contract_version,
                 failed_stage=None,
             ),
         )
@@ -194,7 +215,7 @@ async def execute_three_source_unit_agents(  # noqa: PLR0913, PLR0915
             client=client,
             tenant=tenant,
             model_id=model_id,
-            execution_namespace=execution_namespace,
+            execution_namespace=contract_bound_namespace,
             unit=unit,
             original=original_result,
             original_raw_output=original_raw,
@@ -219,6 +240,7 @@ async def execute_three_source_unit_agents(  # noqa: PLR0913, PLR0915
                 review_raw=review_raw,
                 records=tuple(audit.records),
                 error_type=None,
+                execution_contract_version=execution_contract_version,
                 failed_stage=None,
             ),
         )
@@ -236,7 +258,7 @@ async def execute_three_source_unit_agents(  # noqa: PLR0913, PLR0915
             client=client,
             tenant=tenant,
             model_id=model_id,
-            execution_namespace=execution_namespace,
+            execution_namespace=contract_bound_namespace,
             unit=unit,
             original=original_result,
             normalized=normalized_result,
@@ -262,6 +284,7 @@ async def execute_three_source_unit_agents(  # noqa: PLR0913, PLR0915
                 review_raw=review_raw,
                 records=tuple(audit.records),
                 error_type=None,
+                execution_contract_version=execution_contract_version,
                 failed_stage=None,
             ),
         )
@@ -285,6 +308,7 @@ async def execute_three_source_unit_agents(  # noqa: PLR0913, PLR0915
                     review_raw=review_raw,
                     records=tuple(audit.records),
                     error_type=error_type,
+                    execution_contract_version=execution_contract_version,
                     failed_stage=failed_stage,
                 ),
             )
@@ -302,6 +326,7 @@ async def execute_three_source_unit_agents(  # noqa: PLR0913, PLR0915
         review_raw=review_raw,
         records=tuple(audit.records),
         error_type=error_type,
+        execution_contract_version=execution_contract_version,
         failed_stage=failed_stage,
     )
 
@@ -319,6 +344,7 @@ def _agent_run_evidence(  # noqa: PLR0913
     review_raw: dict[str, object] | None,
     records: tuple[ModelAttemptAuditRecord, ...],
     error_type: str | None,
+    execution_contract_version: str | None,
     failed_stage: (
         Literal["primary", "structure_normalization", "normalized_review"] | None
     ),
@@ -335,6 +361,7 @@ def _agent_run_evidence(  # noqa: PLR0913
         review_raw_output=review_raw,
         records=records,
         error_type=error_type,
+        execution_contract_version=execution_contract_version,
         failed_stage=failed_stage,
     )
 

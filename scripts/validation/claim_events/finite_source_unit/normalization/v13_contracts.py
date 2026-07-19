@@ -9,6 +9,10 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
 )
 from pydantic import Field, model_validator
 
+from scripts.validation.claim_events.finite_source_unit.normalization.contracts import (
+    NormalizationAbstentionReason,
+    NormalizationFamily,
+)
 from scripts.validation.claim_events.finite_source_unit.normalization.v12_contracts import (
     SourceUnitNormalizationOutputV12,
     V12NormalizedClaimInventoryItem,
@@ -77,6 +81,48 @@ class SourceUnitNormalizationOutputV13(SourceUnitNormalizationOutputV12):
         default=(),
         max_length=16,
     )
+
+    @model_validator(mode="after")
+    def require_family_consistency(self) -> SourceUnitNormalizationOutputV13:
+        """Define nested structure by references, independently of event scope."""
+
+        if self.family is NormalizationFamily.ABSTAIN:
+            if self.events or self.mappings or self.context_dimensions:
+                raise ValueError(
+                    "ABSTAIN cannot contain normalized events, mappings, or "
+                    "context dimensions"
+                )
+            if self.abstention_reason is NormalizationAbstentionReason.NONE:
+                raise ValueError("ABSTAIN requires a categorical reason")
+            return self
+        if self.abstention_reason is not NormalizationAbstentionReason.NONE:
+            raise ValueError(
+                "selected normalization family requires NONE abstention reason"
+            )
+        if not self.events or len(self.mappings) != len(self.events):
+            raise ValueError(
+                "selected family requires one mapping per normalized event"
+            )
+        if tuple(
+            mapping.normalized_event_position for mapping in self.mappings
+        ) != tuple(range(len(self.events))):
+            raise ValueError("normalized-event mappings must be ordered and exhaustive")
+        has_reference = any(
+            argument.controlled_event_ref
+            for event in self.events
+            for argument in event.arguments
+        )
+        has_controlled_target = any(
+            event.assertion_scope is InventoryAssertionScope.CONTROLLED_TARGET
+            for event in self.events
+        )
+        if self.family is NormalizationFamily.DIRECT and (
+            has_reference or has_controlled_target
+        ):
+            raise ValueError("DIRECT cannot contain controlled-event structure")
+        if self.family is NormalizationFamily.NESTED and not has_reference:
+            raise ValueError("NESTED requires an explicit event-to-event reference")
+        return self
 
     @model_validator(mode="after")
     def require_controlled_event_topology(self) -> SourceUnitNormalizationOutputV13:

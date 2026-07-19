@@ -35,6 +35,7 @@ from scripts.validation.claim_events.finite_source_unit.normalization.contracts 
     SourceUnitNormalizedReviewOutput,
 )
 from scripts.validation.claim_events.finite_source_unit.normalization.execution import (
+    ThreeCallAgentRunEvidence,
     execute_three_source_unit_agents,
 )
 from scripts.validation.claim_events.finite_source_unit.normalization.review import (
@@ -176,11 +177,13 @@ class _ThreeCallClient:
         self.bad_mapping = bad_mapping
         self.calls: list[type[object]] = []
         self.prompts: list[str] = []
+        self.step_keys: list[str] = []
 
     async def step(self, **kwargs: object) -> object:
         schema = cast("type[object]", kwargs["output_schema"])
         self.calls.append(schema)
         self.prompts.append(cast("str", kwargs["prompt"]))
+        self.step_keys.append(cast("str", kwargs["step_key"]))
         if schema is SourceUnitExtractionOutput:
             output: object = _extraction()
         elif schema in {
@@ -294,6 +297,12 @@ async def test_v13_execution_binds_prompt_schema_and_reviewer_versions() -> None
         SourceUnitNormalizedReviewOutput,
     ]
     assert result.error_type is None
+    assert result.execution_contract_version == (
+        "tg04.finite_source_unit.v13_execution.v2"
+    )
+    assert {
+        record.execution_contract_version for record in result.records
+    } == {"tg04.finite_source_unit.v13_execution.v2"}
     assert isinstance(result.normalized_extraction, SourceUnitNormalizationOutputV13)
     assert client.prompts[0].endswith(
         V13_EXECUTION_POLICY.extraction_prompt_policy.extraction_prompt(unit)
@@ -301,6 +310,7 @@ async def test_v13_execution_binds_prompt_schema_and_reviewer_versions() -> None
     assert "structure_normalization.v5" in client.prompts[1]
     assert "normalized_review.v5" in client.prompts[2]
     contract = V13_EXECUTION_POLICY.as_json()
+    assert contract["contract_version"] == "tg04.finite_source_unit.v13_execution.v2"
     assert contract["normalization_output_schema"] == (
         "scripts.validation.claim_events.finite_source_unit.normalization."
         "v13_contracts.SourceUnitNormalizationOutputV13"
@@ -308,6 +318,56 @@ async def test_v13_execution_binds_prompt_schema_and_reviewer_versions() -> None
     assert contract["normalization_output_schema_sha256"] == (
         "43418016713a4b848069e1a82babd0ab0706a5502889d14209ec371512456e0f"
     )
+
+
+@pytest.mark.asyncio
+async def test_execution_contract_version_changes_every_stage_identity() -> None:
+    unit = enumerate_source_units(case_id="contract-version-custody", source_text=_SOURCE)[
+        0
+    ]
+    first_client = _ThreeCallClient()
+    second_client = _ThreeCallClient()
+
+    async def execute(
+        client: _ThreeCallClient,
+        contract_version: str,
+    ) -> ThreeCallAgentRunEvidence:
+        return await execute_three_source_unit_agents(
+            client=cast("FiniteSourceUnitModelClient", client),
+            tenant=object(),
+            model_id="openai:gpt-5.6-luna",
+            execution_namespace="contract-version-custody-test",
+            unit=unit,
+            extraction_prompt_policy=V11_EXTRACTION_PROMPT_POLICY,
+            normalization_prompt_builder=v11_normalization_prompt,
+            normalization_prompt_version=V11_NORMALIZATION_PROMPT_VERSION,
+            review_prompt_builder=v11_normalized_review_prompt,
+            review_prompt_version=V11_NORMALIZED_REVIEW_PROMPT_VERSION,
+            execution_contract_version=contract_version,
+        )
+
+    first = await execute(first_client, "test.contract.v1")
+    second = await execute(second_client, "test.contract.v2")
+
+    assert len(first_client.step_keys) == len(second_client.step_keys) == 3
+    assert all(
+        first_key != second_key
+        for first_key, second_key in zip(
+            first_client.step_keys,
+            second_client.step_keys,
+            strict=True,
+        )
+    )
+    assert first_client.step_keys == [record.step_key for record in first.records]
+    assert second_client.step_keys == [record.step_key for record in second.records]
+    assert first.execution_contract_version == "test.contract.v1"
+    assert second.execution_contract_version == "test.contract.v2"
+    assert {record.execution_contract_version for record in first.records} == {
+        "test.contract.v1"
+    }
+    assert {record.execution_contract_version for record in second.records} == {
+        "test.contract.v2"
+    }
 
 
 def test_v13_v4_schema_custody_fails_closed_when_issued_schema_is_unavailable() -> None:
@@ -393,6 +453,7 @@ async def test_three_call_path_stops_after_semantically_invalid_normalization() 
         normalization_prompt_version=V11_NORMALIZATION_PROMPT_VERSION,
         review_prompt_builder=v11_normalized_review_prompt,
         review_prompt_version=V11_NORMALIZED_REVIEW_PROMPT_VERSION,
+        execution_contract_version="test.contract.semantic-failure.v1",
     )
 
     assert client.calls == [SourceUnitExtractionOutput, SourceUnitNormalizationOutput]
@@ -404,6 +465,10 @@ async def test_three_call_path_stops_after_semantically_invalid_normalization() 
         "semantic_invalid",
     ]
     assert result.failed_stage == "structure_normalization"
+    assert result.execution_contract_version == "test.contract.semantic-failure.v1"
+    assert {
+        record.execution_contract_version for record in result.records
+    } == {"test.contract.semantic-failure.v1"}
 
 
 @pytest.mark.asyncio

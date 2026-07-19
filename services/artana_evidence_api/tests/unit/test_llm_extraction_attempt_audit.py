@@ -225,9 +225,12 @@ async def test_kernel_schema_failure_remains_provider_bound_for_retry(
     assert record.replayed is replayed
 
 
-def test_semantic_unit_id_is_serialized_for_claim_framing_attempts() -> None:
+def test_skipped_attempt_serializes_semantic_unit_and_execution_contract() -> None:
     semantic_unit_id = "inventory-unit-1"
-    session = start_model_attempt_audit()
+    execution_contract_version = "test.claim-framing.v2"
+    session = start_model_attempt_audit(
+        execution_contract_version=execution_contract_version
+    )
     try:
         record = record_skipped_model_attempt(
             model_id="openai/gpt-audit-test",
@@ -248,11 +251,20 @@ def test_semantic_unit_id_is_serialized_for_claim_framing_attempts() -> None:
 
     assert record.semantic_unit_id == semantic_unit_id
     assert record.as_json()["semantic_unit_id"] == semantic_unit_id
+    assert record.execution_contract_version == execution_contract_version
+    assert (
+        record.as_json()["execution_contract_version"]
+        == execution_contract_version
+    )
     manifest = model_attempt_audit_manifest(
         document_id="document-framing",
         records=session.records,
     )
     assert manifest["attempts"][0]["semantic_unit_id"] == semantic_unit_id
+    assert (
+        manifest["attempts"][0]["execution_contract_version"]
+        == execution_contract_version
+    )
 
 
 def test_openai_response_id_accepts_only_direct_or_exact_litellm_envelope() -> None:
