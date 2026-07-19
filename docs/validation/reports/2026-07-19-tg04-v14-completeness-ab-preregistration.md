@@ -1,4 +1,4 @@
-# TG-04 V14 Completeness A/B Preregistration
+# TG-04 V14 Completeness A/C Preregistration
 
 ## Decision
 
@@ -17,13 +17,14 @@ while every agent checks the same proposed inventory. An independent agent that
 sees only the complete frozen source may identify a source-explicit event omitted
 by that proposal path.
 
-The changed variable is one source-only whole-unit completeness inventory. The
-first three calls and their outputs are shared by both arms:
+The changed variable is one independently verified source-only whole-unit
+inventory. Keep three immutable representations:
 
 ```text
 A: extraction -> normalization -> source-only proposal review
-B: the exact A result -> independent source-only completeness inventory
+C: independent source-only completeness inventory
    -> independent source-only inventory verification
+A_PLUS_C: deterministic metric-only union; never a trusted output
 ```
 
 The completeness agent receives neither A's events nor any extraction,
@@ -78,17 +79,38 @@ those as eligible events. Therefore:
 
 - a returned item is not an invention merely because it lacks a fixture event;
 - fixture matching alone cannot establish whole-source completeness;
-- only the two localization participant obligations may receive gold-backed
+- only the two localization participant obligations may receive frozen-reference
   recovery credit in this run;
 - additional exact-span source-supported items remain visible, non-lossy, and
   review-only; and
 - unsupported additions, contradictions, or unresolved items are failures or
   abstentions, never trusted facts.
 
-The paired scorer accepts split or coordinated representations. It evaluates
-whether both `RelA` and `NF-kappaB1` remain bound to the source-explicit nuclear
-localization under the suppressive statement; it does not require the model to
-copy the fixture's event cardinality.
+The primary metric is `localization-obligation recovery`, not whole-source
+completeness. The frozen scoring obligations are:
+
+- `suppressed-nuclear-localization-rela`: RCC-S is the source-explicit cause of
+  negative regulation controlling localization of RelA to the nuclear
+  destination.
+- `suppressed-nuclear-localization-nfkb1`: RCC-S is the source-explicit cause of
+  negative regulation controlling localization of NF-kappaB1 to the nuclear
+  destination.
+
+A standalone asserted positive `LOCALIZATION`, a cytoplasmic destination,
+positive regulation, missing participant, missing nuclear destination, or an
+unlinked controlled target does not cover either obligation. The matcher accepts
+faithful split or coordinated controlled-event representations; repeated RelA
+cannot cover the NF-kappaB1 obligation, and duplicate events cannot increase
+coverage.
+
+Two additional frozen clauses are non-scoring completeness diagnostics:
+
+- RCC-S did not alter cytoplasmic levels of RelA and NF-kappaB1; and
+- RCC-S inhibited activation of RelA/NF-kappaB1 binding complexes.
+
+Omitting either diagnostic prevents a `whole_source_complete` conclusion even
+when the localization-obligation metric improves. A source-entailed C-only item
+for either clause remains `REVIEW_ONLY_DISCOVERY` in this visible run.
 
 ## Frozen Contracts
 
@@ -100,7 +122,7 @@ copy the fixture's event cardinality.
 - completeness verification prompt:
   `tg04.finite_source_unit.whole_source_inventory_verification.v1`
 - completeness verification schema: `SourceUnitVerificationOutput`
-- deterministic metric: `tg04.completeness_ab.v1`
+- deterministic metric: `tg04.localization_obligation_recovery.v1`
 - network tools: none
 - browsing: none
 - retrieval: none
@@ -139,6 +161,11 @@ Exactly five Luna calls are permitted:
 4. V14 source-only whole-unit completeness inventory; and
 5. V14 source-only ordered verification of every completeness item.
 
+Calls one through three must be durably persisted and their exact provider
+outputs retrieved and verified before call four is authorized. A partial,
+invalid, replayed, duplicated, transformed-only, or unverified A execution
+leaves the call-four and call-five counters at zero.
+
 The run stops after the first invalid response, transport failure, fallback,
 retry attempt, unverified receipt, source-binding mismatch, schema mismatch, or
 provider-lineage mismatch. A stopped run receives no scientific credit. No call
@@ -149,11 +176,14 @@ may be repeated to improve the answer.
 Agents produce categorical evidence. Code calculates all counts and decisions.
 The result records:
 
-- A gold-backed obligation coverage;
-- B gold-backed obligation coverage;
-- B-only source-bound and entailed inventory count;
-- B-only review-only or abstaining inventory count;
-- B-only contradicted or insufficient inventory count;
+- A localization-obligation coverage;
+- C localization-obligation coverage;
+- A-plus-C localization-obligation coverage;
+- C-only recovered localization obligations;
+- C-only source-bound and entailed inventory count;
+- C-only review-only or abstaining inventory count;
+- C-only contradicted or insufficient inventory count;
+- non-scoring diagnostic-clause coverage;
 - unsupported or unbound inventory count;
 - preserved A-correct obligation count;
 - regressed A-correct obligation count;
@@ -164,12 +194,12 @@ The result records:
 
 A scientific improvement requires all of the following:
 
-1. B covers at least one frozen gold-backed localization obligation that A does
+1. C covers at least one frozen localization obligation that A does
    not cover.
-2. B preserves every gold-backed obligation already covered by A.
-3. B adds zero source-unbound, source-contradicted, insufficient, or unresolved
+2. A remains byte-for-byte immutable; C cannot overwrite, repair, or delete it.
+3. C adds zero source-unbound, source-contradicted, insufficient, or unresolved
    events.
-4. Every B item has exact evidence spans in the frozen source.
+4. Every C item has exact evidence spans in the frozen source.
 5. Direction, claim outcome, epistemic status, participants, roles, context,
    and controlled-event topology do not regress.
 6. All five provider receipts verify against the committed model, prompt,
@@ -177,12 +207,16 @@ A scientific improvement requires all of the following:
 7. Fallback, retry, deterministic semantic repair, hidden-source access, and
    graph writes remain zero.
 
-If A already covers both gold-backed obligations and B remains source-faithful,
+If A already covers both localization obligations and C remains source-faithful,
 the outcome is `NO_PAIRED_IMPROVEMENT`, not failure and not evidence that the
-completeness role is useful. If B proposes a plausible non-gold source claim,
+completeness role is useful. If C proposes a plausible non-gold source claim,
 the independent verifier must first mark it `ENTAILED`. Even then the outcome is
-`REVIEW_ONLY_DISCOVERY`; it is preserved but does not satisfy the gold-backed
+`REVIEW_ONLY_DISCOVERY`; it is preserved but does not satisfy the frozen-reference
 improvement hypothesis in this run.
+
+`COMPLETE_INVENTORY` is an untrusted agent assertion. It never changes a metric
+or decision by itself. C and A_PLUS_C remain experimental evidence and are never
+silently merged into A, production output, or the trusted graph.
 
 ## Stop And Continue Rules
 
