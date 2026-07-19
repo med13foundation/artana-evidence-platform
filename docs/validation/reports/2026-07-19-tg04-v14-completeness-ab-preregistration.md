@@ -23,11 +23,17 @@ first three calls and their outputs are shared by both arms:
 ```text
 A: extraction -> normalization -> source-only proposal review
 B: the exact A result -> independent source-only completeness inventory
+   -> independent source-only inventory verification
 ```
 
 The completeness agent receives neither A's events nor any extraction,
 normalization, review, benchmark, or reference rationale. It receives only the
 frozen source, the categorical prompt, and its output schema.
+
+The inventory verifier receives the frozen source and the completeness items in
+source order. It receives no A output, benchmark, reference obligation, or
+completeness-agent reasoning. It may categorize each item but cannot discover,
+delete, merge, split, repair, or rewrite an event.
 
 ## Frozen Source
 
@@ -91,6 +97,9 @@ copy the fixture's event cardinality.
 - experiment contract: `tg04.finite_source_unit.completeness_ab.v1`
 - completeness prompt: `tg04.finite_source_unit.whole_source_inventory.v1`
 - completeness schema: `SourceUnitCompletenessInventoryOutputV1`
+- completeness verification prompt:
+  `tg04.finite_source_unit.whole_source_inventory_verification.v1`
+- completeness verification schema: `SourceUnitVerificationOutput`
 - deterministic metric: `tg04.completeness_ab.v1`
 - network tools: none
 - browsing: none
@@ -122,12 +131,13 @@ the invocation identity.
 
 ## Call Budget
 
-Exactly four Luna calls are permitted:
+Exactly five Luna calls are permitted:
 
 1. V13-v3 extraction;
 2. V13-v3 normalization;
 3. V13-v3 source-only proposal review; and
-4. V14 source-only whole-unit completeness inventory.
+4. V14 source-only whole-unit completeness inventory; and
+5. V14 source-only ordered verification of every completeness item.
 
 The run stops after the first invalid response, transport failure, fallback,
 retry attempt, unverified receipt, source-binding mismatch, schema mismatch, or
@@ -141,7 +151,9 @@ The result records:
 
 - A gold-backed obligation coverage;
 - B gold-backed obligation coverage;
-- B-only source-bound inventory count;
+- B-only source-bound and entailed inventory count;
+- B-only review-only or abstaining inventory count;
+- B-only contradicted or insufficient inventory count;
 - unsupported or unbound inventory count;
 - preserved A-correct obligation count;
 - regressed A-correct obligation count;
@@ -155,11 +167,12 @@ A scientific improvement requires all of the following:
 1. B covers at least one frozen gold-backed localization obligation that A does
    not cover.
 2. B preserves every gold-backed obligation already covered by A.
-3. B adds zero source-unbound or source-contradicted events.
+3. B adds zero source-unbound, source-contradicted, insufficient, or unresolved
+   events.
 4. Every B item has exact evidence spans in the frozen source.
 5. Direction, claim outcome, epistemic status, participants, roles, context,
    and controlled-event topology do not regress.
-6. All four provider receipts verify against the committed model, prompt,
+6. All five provider receipts verify against the committed model, prompt,
    schema, source, output, and audit identities.
 7. Fallback, retry, deterministic semantic repair, hidden-source access, and
    graph writes remain zero.
@@ -167,7 +180,8 @@ A scientific improvement requires all of the following:
 If A already covers both gold-backed obligations and B remains source-faithful,
 the outcome is `NO_PAIRED_IMPROVEMENT`, not failure and not evidence that the
 completeness role is useful. If B proposes a plausible non-gold source claim,
-the outcome is `REVIEW_ONLY_DISCOVERY`; it is preserved but does not satisfy the
+the independent verifier must first mark it `ENTAILED`. Even then the outcome is
+`REVIEW_ONLY_DISCOVERY`; it is preserved but does not satisfy the gold-backed
 improvement hypothesis in this run.
 
 ## Stop And Continue Rules
