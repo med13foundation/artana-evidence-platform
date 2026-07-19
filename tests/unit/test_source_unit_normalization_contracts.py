@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import copy
+import hashlib
+import json
+from pathlib import Path
+
 import pytest
 from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
     output_schema_json_sha256,
@@ -29,10 +34,18 @@ from scripts.validation.claim_events.finite_source_unit.normalization.v12_contra
 from scripts.validation.claim_events.finite_source_unit.normalization.v13_contracts import (
     SourceUnitNormalizationOutputV13,
 )
+from scripts.validation.claim_events.finite_source_unit.normalization.v14_contracts import (
+    SourceUnitNormalizationProposalV14,
+)
+from scripts.validation.claim_events.finite_source_unit.normalization.v14_service import (
+    bind_source_unit_normalization_v14,
+    derive_v14_mapping_operations,
+)
 from scripts.validation.claim_events.finite_source_unit.service import (
     bind_source_unit_extraction,
 )
 from scripts.validation.claim_events.finite_source_unit.source_units import (
+    FrozenSourceUnit,
     enumerate_source_units,
 )
 
@@ -105,6 +118,15 @@ def _mapping(position: int = 0) -> dict[str, object]:
         "reasoning": "The output makes the same null predicate explicit.",
         "falsification_condition": "A changed participant would falsify this map.",
     }
+
+
+def _without_agent_operations(payload: dict[str, object]) -> dict[str, object]:
+    mappings = payload["mappings"]
+    assert isinstance(mappings, list)
+    for mapping in mappings:
+        assert isinstance(mapping, dict)
+        mapping.pop("operation", None)
+    return payload
 
 
 def _controlled_target(
@@ -405,7 +427,9 @@ def test_v13_nested_family_allows_only_source_asserted_referenced_events() -> No
     output = SourceUnitNormalizationOutputV13.model_validate(payload)
 
     assert output.family.value == "NESTED"
-    assert all(event.assertion_scope.value == "SOURCE_ASSERTED" for event in output.events)
+    assert all(
+        event.assertion_scope.value == "SOURCE_ASSERTED" for event in output.events
+    )
 
 
 def test_v13_direct_rejects_valid_reference_topology() -> None:
@@ -639,4 +663,351 @@ def test_review_rejects_unsupported_decisive_axis_without_evidence() -> None:
                 "reasoning": "The review claims preservation without evidence.",
                 "falsification_condition": "Evidence would be required.",
             }
+        )
+
+
+def _v14_direct_payload() -> dict[str, object]:
+    return _without_agent_operations(
+        {
+            "eligibility_category": "NULL_RESULT",
+            "family": "DIRECT",
+            "abstention_reason": "NONE",
+            "events": [_event()],
+            "mappings": [_mapping()],
+            "context_dimensions": [],
+            "reasoning": "The source-explicit null event remains complete.",
+            "falsification_condition": "A changed participant would falsify it.",
+        }
+    )
+
+
+def _bound_direct_original(*, preserve_local_id: bool) -> tuple[object, object]:
+    source = "IL-4 does not affect Foxp3 expression."
+    unit = enumerate_source_units(case_id="v14-direct", source_text=source)[0]
+    event = _event()
+    if not preserve_local_id:
+        event["local_event_id"] = None
+    original = bind_source_unit_extraction(
+        SourceUnitExtractionOutput.model_validate(
+            {
+                "eligibility_category": "NULL_RESULT",
+                "decision": "EXPLICIT_EVENT",
+                "events": [event],
+                "reasoning": "The source explicitly reports one null event.",
+            }
+        ),
+        unit=unit,
+    )
+    return unit, original
+
+
+def test_v14_provider_schema_has_no_agent_operation_field() -> None:
+    mapping_schema = SourceUnitNormalizationProposalV14.model_json_schema()["$defs"][
+        "V14SourceEventMapping"
+    ]
+
+    assert "operation" not in mapping_schema["properties"]
+    payload = _v14_direct_payload()
+    mappings = payload["mappings"]
+    assert isinstance(mappings, list)
+    assert isinstance(mappings[0], dict)
+    mappings[0]["operation"] = "UNCHANGED"
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        SourceUnitNormalizationProposalV14.model_validate(payload)
+
+
+def test_v14_derives_exact_one_to_one_as_unchanged() -> None:
+    unit, original = _bound_direct_original(preserve_local_id=True)
+    output = SourceUnitNormalizationProposalV14.model_validate(_v14_direct_payload())
+
+    operations = derive_v14_mapping_operations(
+        proposal=output,
+        unit=unit,
+        original=original,
+    )
+
+    assert [operation.value for operation in operations] == ["UNCHANGED"]
+
+
+def test_v14_derives_changed_one_to_one_as_reframe_and_binds_raw_output() -> None:
+    unit, original = _bound_direct_original(preserve_local_id=False)
+    output = SourceUnitNormalizationProposalV14.model_validate(_v14_direct_payload())
+
+    result = bind_source_unit_normalization_v14(
+        output,
+        unit=unit,
+        original=original,
+    )
+
+    assert result.proposal is output
+    assert [operation.value for operation in result.derived_operations] == ["REFRAME"]
+    result.require_canonical_envelope(unit=unit, original=original)
+
+
+def test_v14_regression_accepts_reframed_payload_old_label_rejected() -> None:
+    unit, original = _bound_direct_original(preserve_local_id=False)
+    output = SourceUnitNormalizationProposalV14.model_validate(_v14_direct_payload())
+    old_payload = output.model_dump(mode="json")
+    mappings = old_payload["mappings"]
+    assert isinstance(mappings, list)
+    assert isinstance(mappings[0], dict)
+    mappings[0]["operation"] = "UNCHANGED"
+    old_output = SourceUnitNormalizationOutputV13.model_validate(old_payload)
+
+    with pytest.raises(
+        StructuredModelSemanticError,
+        match="UNCHANGED mapping altered the source event",
+    ):
+        bind_source_unit_normalization(old_output, unit=unit, original=original)
+
+    result = bind_source_unit_normalization_v14(
+        output,
+        unit=unit,
+        original=original,
+    )
+    assert [operation.value for operation in result.derived_operations] == ["REFRAME"]
+
+
+def test_v14_real_stopped_payload_replays_without_scientific_rewrite() -> None:
+    fixture_path = (
+        Path(__file__).parents[1]
+        / "fixtures"
+        / "tg04_v14_deterministic_mapping_regression.json"
+    )
+    fixture_bytes = fixture_path.read_bytes()
+    assert hashlib.sha256(fixture_bytes).hexdigest() == (
+        "4d6c2b57d180fa36304baa5ee0660ba96027d46186d5a7f0d31a30249075b2ae"
+    )
+    fixture = json.loads(fixture_bytes)
+    unit = FrozenSourceUnit(
+        unit_id=(
+            "source-unit-5ef1f16712fdc52972162a846d08993bf655b5d7e62d7f0d87599637b0de2f4e"
+        ),
+        index=6,
+        source_start=947,
+        source_end=1123,
+        text=fixture["source_text"],
+        source_sha256=(
+            "a3373f43f94b696ad2ac9830707eae96aa17e6e2e0bc4185f87d768169ca2272"
+        ),
+    )
+    original = bind_source_unit_extraction(
+        SourceUnitExtractionOutput.model_validate(fixture["original_output"]),
+        unit=unit,
+    )
+    historical_payload = fixture["historical_normalization_output"]
+    historical_output = SourceUnitNormalizationOutputV13.model_validate(
+        historical_payload
+    )
+    with pytest.raises(
+        StructuredModelSemanticError,
+        match="UNCHANGED mapping altered the source event",
+    ):
+        bind_source_unit_normalization(
+            historical_output,
+            unit=unit,
+            original=original,
+        )
+
+    v14_payload = copy.deepcopy(historical_payload)
+    mappings = v14_payload["mappings"]
+    assert isinstance(mappings, list)
+    historical_mappings = historical_payload["mappings"]
+    assert isinstance(historical_mappings, list)
+    for mapping in mappings:
+        assert isinstance(mapping, dict)
+        mapping.pop("operation")
+    output = SourceUnitNormalizationProposalV14.model_validate(v14_payload)
+    assert output.model_dump(mode="json") == v14_payload
+    assert output.model_dump(mode="json")["events"] == historical_payload["events"]
+    operations = derive_v14_mapping_operations(
+        proposal=output,
+        unit=unit,
+        original=original,
+    )
+    assert [operation.value for operation in operations] == [
+        "REFRAME",
+        "REFRAME",
+        "REFRAME",
+        "REFRAME",
+        "REFRAME",
+    ]
+    for historical_mapping, current_mapping in zip(
+        historical_mappings,
+        output.model_dump(mode="json")["mappings"],
+        strict=True,
+    ):
+        assert isinstance(historical_mapping, dict)
+        assert {
+            key: value
+            for key, value in historical_mapping.items()
+            if key != "operation"
+        } == current_mapping
+    with pytest.raises(
+        StructuredModelSemanticError,
+        match="unresolved source-binding rejections",
+    ):
+        bind_source_unit_normalization_v14(
+            output,
+            unit=unit,
+            original=original,
+        )
+
+
+def test_v14_derives_split_from_one_to_many_topology() -> None:
+    unit = enumerate_source_units(
+        case_id="v14-split",
+        source_text=_NESTED_SOURCE,
+    )[0]
+    original = bind_source_unit_extraction(_nested_original(), unit=unit)
+    output = SourceUnitNormalizationProposalV14.model_validate(
+        _without_agent_operations(_nested_normalization_payload())
+    )
+
+    result = bind_source_unit_normalization_v14(
+        output,
+        unit=unit,
+        original=original,
+    )
+
+    assert [operation.value for operation in result.derived_operations] == [
+        "SPLIT",
+        "SPLIT",
+        "SPLIT",
+    ]
+
+
+def _two_event_original() -> tuple[object, object, list[dict[str, object]]]:
+    source = (
+        "IL-4 does not affect Foxp3 expression. IL-4 does not affect GATA3 expression."
+    )
+    unit = enumerate_source_units(case_id="v14-two-event", source_text=source)[0]
+    first = _event(local_event_id="foxp3-null")
+    second = copy.deepcopy(first)
+    second["exact_span"] = "IL-4 does not affect GATA3 expression."
+    second["local_event_id"] = "gata3-null"
+    second["inventory_rationale"] = (
+        "The source explicitly reports the GATA3 null event."
+    )
+    arguments = second["arguments"]
+    assert isinstance(arguments, list)
+    theme = arguments[0]
+    assert isinstance(theme, dict)
+    theme["exact_span"] = "GATA3"
+    theme["role_rationale"] = "The source names GATA3 as the event theme."
+    original = bind_source_unit_extraction(
+        SourceUnitExtractionOutput.model_validate(
+            {
+                "eligibility_category": "NULL_RESULT",
+                "decision": "EXPLICIT_EVENT",
+                "events": [first, second],
+                "reasoning": "The source explicitly reports two null events.",
+            }
+        ),
+        unit=unit,
+    )
+    return unit, original, [first, second]
+
+
+def _v14_mapping(
+    *,
+    normalized_position: int,
+    source_positions: list[int],
+) -> dict[str, object]:
+    return {
+        "normalized_event_position": normalized_position,
+        "source_event_positions": source_positions,
+        "reasoning": "The mapping preserves the declared source events.",
+        "falsification_condition": "A different source position would falsify it.",
+    }
+
+
+def test_v14_derives_merge_from_many_to_one_topology() -> None:
+    unit, original, events = _two_event_original()
+    output = SourceUnitNormalizationProposalV14.model_validate(
+        {
+            "eligibility_category": "NULL_RESULT",
+            "family": "DIRECT",
+            "abstention_reason": "NONE",
+            "events": [events[0]],
+            "mappings": [_v14_mapping(normalized_position=0, source_positions=[0, 1])],
+            "context_dimensions": [],
+            "reasoning": "One representation covers both source events.",
+            "falsification_condition": "Distinct meaning would forbid the merge.",
+        }
+    )
+
+    operations = derive_v14_mapping_operations(
+        proposal=output,
+        unit=unit,
+        original=original,
+    )
+
+    assert [operation.value for operation in operations] == ["MERGE"]
+
+
+def test_v14_rejects_ambiguous_many_to_many_topology() -> None:
+    unit, original, events = _two_event_original()
+    output = SourceUnitNormalizationProposalV14.model_validate(
+        {
+            "eligibility_category": "NULL_RESULT",
+            "family": "DIRECT",
+            "abstention_reason": "NONE",
+            "events": events,
+            "mappings": [
+                _v14_mapping(normalized_position=0, source_positions=[0, 1]),
+                _v14_mapping(normalized_position=1, source_positions=[0, 1]),
+            ],
+            "context_dimensions": [],
+            "reasoning": "The mapping is intentionally ambiguous.",
+            "falsification_condition": "Unique cardinality would resolve it.",
+        }
+    )
+
+    with pytest.raises(
+        StructuredModelSemanticError,
+        match="many-to-many normalization mapping is ambiguous",
+    ):
+        derive_v14_mapping_operations(
+            proposal=output,
+            unit=unit,
+            original=original,
+        )
+
+
+@pytest.mark.parametrize(
+    ("source_positions", "message"),
+    [
+        ([2], "unknown event"),
+        ([0], "cover every source event"),
+    ],
+)
+def test_v14_rejects_unknown_or_incomplete_source_mapping(
+    source_positions: list[int],
+    message: str,
+) -> None:
+    unit, original, events = _two_event_original()
+    output = SourceUnitNormalizationProposalV14.model_validate(
+        {
+            "eligibility_category": "NULL_RESULT",
+            "family": "DIRECT",
+            "abstention_reason": "NONE",
+            "events": [events[0]],
+            "mappings": [
+                _v14_mapping(
+                    normalized_position=0,
+                    source_positions=source_positions,
+                )
+            ],
+            "context_dimensions": [],
+            "reasoning": "The mapping is intentionally invalid.",
+            "falsification_condition": "Complete known positions would resolve it.",
+        }
+    )
+
+    with pytest.raises(StructuredModelSemanticError, match=message):
+        derive_v14_mapping_operations(
+            proposal=output,
+            unit=unit,
+            original=original,
         )

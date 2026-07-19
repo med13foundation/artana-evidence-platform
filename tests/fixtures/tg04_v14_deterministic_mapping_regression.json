@@ -1,0 +1,551 @@
+{
+  "source_text": "RCC-S did not alter the cytoplasmic levels of RelA and NF-kappaB1 but did suppress their nuclear localization and inhibited the activation of RelA/NF-kappaB1 binding complexes.",
+  "original_output": {
+    "decision": "EXPLICIT_EVENT",
+    "eligibility_category": "MIXED_SCIENTIFIC",
+    "events": [
+      {
+        "arguments": [
+          {
+            "controlled_event_ref": null,
+            "event_role": "CAUSE",
+            "exact_span": "RCC-S",
+            "mention_anchors": [
+              {
+                "left_context": "",
+                "mention_span": "RCC-S",
+                "right_context": " did not alter the cytoplasmic levels of RelA and NF-kappaB1"
+              }
+            ],
+            "referent_anchors": [],
+            "role": "INTERVENTION",
+            "role_rationale": "RCC-S is the experimental intervention described as producing the reported outcome."
+          },
+          {
+            "controlled_event_ref": null,
+            "event_role": "THEME",
+            "exact_span": "cytoplasmic levels of RelA and NF-kappaB1",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "MEASUREMENT",
+            "role_rationale": "This is the measured outcome whose level was not altered."
+          },
+          {
+            "controlled_event_ref": null,
+            "event_role": "CONTEXT",
+            "exact_span": "cytoplasmic",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "ANATOMY",
+            "role_rationale": "The adjective specifies the cellular compartment of the measured levels."
+          },
+          {
+            "controlled_event_ref": null,
+            "event_role": "THEME",
+            "exact_span": "RelA and NF-kappaB1",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "GENE_OR_PROTEIN",
+            "role_rationale": "These are the named proteins whose cytoplasmic levels were assessed."
+          }
+        ],
+        "assertion_scope": "SOURCE_ASSERTED",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "ASSERTED",
+        "event_type": "NO_EFFECT",
+        "exact_span": "RCC-S did not alter the cytoplasmic levels of RelA and NF-kappaB1",
+        "inventory_rationale": "The source explicitly reports that RCC-S did not alter the cytoplasmic levels of the named proteins.",
+        "local_event_id": null,
+        "polarity": "NULL_RESULT",
+        "relation_cue_anchor": {
+          "left_context": "RCC-S ",
+          "mention_span": "did not alter",
+          "right_context": " the cytoplasmic levels of RelA and NF-kappaB1"
+        },
+        "relation_cue_span": "did not alter",
+        "source_locator": "normalized_extraction_text"
+      },
+      {
+        "arguments": [
+          {
+            "controlled_event_ref": null,
+            "event_role": "CAUSE",
+            "exact_span": "RCC-S",
+            "mention_anchors": [
+              {
+                "left_context": "NF-kappaB1 but did suppress their nuclear localization and inhibited the activation of RelA/NF-kappaB1 binding complexes. ",
+                "mention_span": "RCC-S",
+                "right_context": " did suppress their nuclear localization"
+              }
+            ],
+            "referent_anchors": [],
+            "role": "INTERVENTION",
+            "role_rationale": "RCC-S is the stated suppressing intervention."
+          },
+          {
+            "controlled_event_ref": "localization_target_1",
+            "event_role": "THEME",
+            "exact_span": "their nuclear localization",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "BIOLOGICAL_PROCESS",
+            "role_rationale": "The localization process is the immediate theme of the suppression and is represented as a controlled target."
+          }
+        ],
+        "assertion_scope": "SOURCE_ASSERTED",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "ASSERTED",
+        "event_type": "NEGATIVE_REGULATION",
+        "exact_span": "RCC-S did suppress their nuclear localization",
+        "inventory_rationale": "The source asserts that RCC-S suppressed nuclear localization.",
+        "local_event_id": null,
+        "polarity": "SUPPORT",
+        "relation_cue_anchor": {
+          "left_context": "RCC-S ",
+          "mention_span": "did suppress",
+          "right_context": " their nuclear localization"
+        },
+        "relation_cue_span": "did suppress",
+        "source_locator": "normalized_extraction_text"
+      },
+      {
+        "arguments": [
+          {
+            "controlled_event_ref": null,
+            "event_role": "THEME",
+            "exact_span": "their",
+            "mention_anchors": [],
+            "referent_anchors": [
+              {
+                "left_context": "the cytoplasmic levels of ",
+                "mention_span": "RelA and NF-kappaB1",
+                "right_context": " but did suppress their nuclear localization"
+              }
+            ],
+            "role": "GENE_OR_PROTEIN",
+            "role_rationale": "The pronoun refers to the explicitly antecedent proteins RelA and NF-kappaB1."
+          },
+          {
+            "controlled_event_ref": null,
+            "event_role": "TOLOC",
+            "exact_span": "nuclear",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "ANATOMY",
+            "role_rationale": "Nuclear is the explicitly stated destination compartment of the localization."
+          }
+        ],
+        "assertion_scope": "CONTROLLED_TARGET",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "UNASSERTED",
+        "event_type": "LOCALIZATION",
+        "exact_span": "their nuclear localization",
+        "inventory_rationale": "Localization is named only as the biological process targeted by RCC-S suppression.",
+        "local_event_id": "localization_target_1",
+        "polarity": "UNSCOPED",
+        "relation_cue_anchor": {
+          "left_context": "their nuclear ",
+          "mention_span": "localization",
+          "right_context": " and inhibited the activation of RelA/NF-kappaB1 binding complexes"
+        },
+        "relation_cue_span": "localization",
+        "source_locator": "normalized_extraction_text"
+      },
+      {
+        "arguments": [
+          {
+            "controlled_event_ref": null,
+            "event_role": "CAUSE",
+            "exact_span": "RCC-S",
+            "mention_anchors": [
+              {
+                "left_context": "did suppress their nuclear localization and inhibited the activation of RelA/NF-kappaB1 binding complexes. ",
+                "mention_span": "RCC-S",
+                "right_context": " inhibited the activation of RelA/NF-kappaB1 binding complexes"
+              }
+            ],
+            "referent_anchors": [],
+            "role": "INTERVENTION",
+            "role_rationale": "RCC-S is the stated inhibitor."
+          },
+          {
+            "controlled_event_ref": "activation_target_1",
+            "event_role": "THEME",
+            "exact_span": "the activation of RelA/NF-kappaB1 binding complexes",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "BIOLOGICAL_PROCESS",
+            "role_rationale": "The activation process is the immediate theme of the inhibition and is represented as a controlled target."
+          }
+        ],
+        "assertion_scope": "SOURCE_ASSERTED",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "ASSERTED",
+        "event_type": "NEGATIVE_REGULATION",
+        "exact_span": "RCC-S inhibited the activation of RelA/NF-kappaB1 binding complexes",
+        "inventory_rationale": "The source explicitly asserts inhibition of activation of the named binding complexes.",
+        "local_event_id": null,
+        "polarity": "SUPPORT",
+        "relation_cue_anchor": {
+          "left_context": "their nuclear localization and ",
+          "mention_span": "inhibited",
+          "right_context": " the activation of RelA/NF-kappaB1 binding complexes"
+        },
+        "relation_cue_span": "inhibited",
+        "source_locator": "normalized_extraction_text"
+      },
+      {
+        "arguments": [
+          {
+            "controlled_event_ref": null,
+            "event_role": "THEME",
+            "exact_span": "RelA/NF-kappaB1 binding complexes",
+            "mention_anchors": [],
+            "referent_anchors": [],
+            "role": "OTHER_ENTITY",
+            "role_rationale": "These named complexes are the explicit theme of the activation process."
+          }
+        ],
+        "assertion_scope": "CONTROLLED_TARGET",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "UNASSERTED",
+        "event_type": "OTHER_EXPLICIT",
+        "exact_span": "the activation of RelA/NF-kappaB1 binding complexes",
+        "inventory_rationale": "Activation is preserved as a controlled target because the source names it only within the inhibition relation.",
+        "local_event_id": "activation_target_1",
+        "polarity": "UNSCOPED",
+        "relation_cue_anchor": {
+          "left_context": "the ",
+          "mention_span": "activation",
+          "right_context": " of RelA/NF-kappaB1 binding complexes"
+        },
+        "relation_cue_span": "activation",
+        "source_locator": "normalized_extraction_text"
+      }
+    ],
+    "reasoning": "The unit contains one explicit null result and two asserted inhibitory relationships, so it is MIXED_SCIENTIFIC. The suppressed nuclear localization and inhibited activation are decomposed into outer NEGATIVE_REGULATION events with controlled biological-process targets. The cytoplasmic-level statement is represented as NO_EFFECT with NULL_RESULT polarity."
+  },
+  "historical_normalization_output": {
+    "abstention_reason": "NONE",
+    "context_dimensions": [],
+    "eligibility_category": "MIXED_SCIENTIFIC",
+    "events": [
+      {
+        "arguments": [
+          {
+            "controlled_event_ref": null,
+            "event_role": "CAUSE",
+            "exact_span": "RCC-S",
+            "mention_anchors": [
+              {
+                "left_context": "",
+                "mention_span": "RCC-S",
+                "right_context": " did not alter the cytoplasmic levels of RelA and NF-kappaB1"
+              }
+            ],
+            "referent_anchors": [],
+            "role": "INTERVENTION",
+            "role_rationale": "RCC-S is the intervention explicitly described in the source as having no effect on the cytoplasmic levels."
+          },
+          {
+            "controlled_event_ref": null,
+            "event_role": "THEME",
+            "exact_span": "cytoplasmic levels of RelA and NF-kappaB1",
+            "mention_anchors": [
+              {
+                "left_context": "did not alter the ",
+                "mention_span": "cytoplasmic levels of RelA and NF-kappaB1",
+                "right_context": ""
+              }
+            ],
+            "referent_anchors": [],
+            "role": "MEASUREMENT",
+            "role_rationale": "This is the explicitly measured level reported as unchanged."
+          },
+          {
+            "controlled_event_ref": null,
+            "event_role": "CONTEXT",
+            "exact_span": "cytoplasmic",
+            "mention_anchors": [
+              {
+                "left_context": "the ",
+                "mention_span": "cytoplasmic",
+                "right_context": " levels of RelA and NF-kappaB1"
+              }
+            ],
+            "referent_anchors": [],
+            "role": "ANATOMY",
+            "role_rationale": "The source explicitly identifies the cytoplasmic compartment of the measured levels."
+          },
+          {
+            "controlled_event_ref": null,
+            "event_role": "THEME",
+            "exact_span": "RelA and NF-kappaB1",
+            "mention_anchors": [
+              {
+                "left_context": "cytoplasmic levels of ",
+                "mention_span": "RelA and NF-kappaB1",
+                "right_context": " but did suppress their nuclear localization"
+              }
+            ],
+            "referent_anchors": [],
+            "role": "GENE_OR_PROTEIN",
+            "role_rationale": "RelA and NF-kappaB1 are source-named gene products whose levels were measured."
+          }
+        ],
+        "assertion_scope": "SOURCE_ASSERTED",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "ASSERTED",
+        "event_type": "NO_EFFECT",
+        "exact_span": "RCC-S did not alter the cytoplasmic levels of RelA and NF-kappaB1",
+        "inventory_rationale": "The source explicitly states that RCC-S did not alter the cytoplasmic levels of RelA and NF-kappaB1.",
+        "local_event_id": "no-effect-1",
+        "polarity": "NULL_RESULT",
+        "relation_cue_anchor": {
+          "left_context": "RCC-S ",
+          "mention_span": "did not alter",
+          "right_context": " the cytoplasmic levels of RelA and NF-kappaB1"
+        },
+        "relation_cue_span": "did not alter",
+        "source_locator": "normalized_extraction_text"
+      },
+      {
+        "arguments": [
+          {
+            "controlled_event_ref": null,
+            "event_role": "CAUSE",
+            "exact_span": "RCC-S",
+            "mention_anchors": [
+              {
+                "left_context": "NF-kappaB1 but ",
+                "mention_span": "RCC-S",
+                "right_context": " did suppress their nuclear localization"
+              }
+            ],
+            "referent_anchors": [],
+            "role": "INTERVENTION",
+            "role_rationale": "RCC-S is the explicitly named intervention associated with suppression of nuclear localization."
+          },
+          {
+            "controlled_event_ref": "localization-target-1",
+            "event_role": "THEME",
+            "exact_span": "their nuclear localization",
+            "mention_anchors": [
+              {
+                "left_context": "RCC-S did suppress ",
+                "mention_span": "their nuclear localization",
+                "right_context": " and inhibited the activation of RelA/NF-kappaB1 binding complexes"
+              }
+            ],
+            "referent_anchors": [],
+            "role": "BIOLOGICAL_PROCESS",
+            "role_rationale": "The nuclear-localization process is explicitly presented as the process suppressed by RCC-S."
+          }
+        ],
+        "assertion_scope": "SOURCE_ASSERTED",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "ASSERTED",
+        "event_type": "NEGATIVE_REGULATION",
+        "exact_span": "did suppress their nuclear localization",
+        "inventory_rationale": "The source asserts that RCC-S suppressed nuclear localization; the target process is separately represented as a controlled target.",
+        "local_event_id": "negative-regulation-1",
+        "polarity": "SUPPORT",
+        "relation_cue_anchor": {
+          "left_context": "RCC-S ",
+          "mention_span": "did suppress",
+          "right_context": " their nuclear localization"
+        },
+        "relation_cue_span": "did suppress",
+        "source_locator": "normalized_extraction_text"
+      },
+      {
+        "arguments": [
+          {
+            "controlled_event_ref": null,
+            "event_role": "THEME",
+            "exact_span": "their",
+            "mention_anchors": [
+              {
+                "left_context": "did suppress ",
+                "mention_span": "their",
+                "right_context": " nuclear localization"
+              }
+            ],
+            "referent_anchors": [
+              {
+                "left_context": "cytoplasmic levels of ",
+                "mention_span": "RelA and NF-kappaB1",
+                "right_context": " but did suppress their nuclear localization"
+              }
+            ],
+            "role": "GENE_OR_PROTEIN",
+            "role_rationale": "The pronoun refers to the explicitly named RelA and NF-kappaB1 in the preceding coordinated phrase."
+          },
+          {
+            "controlled_event_ref": null,
+            "event_role": "TOLOC",
+            "exact_span": "nuclear",
+            "mention_anchors": [
+              {
+                "left_context": "their ",
+                "mention_span": "nuclear",
+                "right_context": " localization"
+              }
+            ],
+            "referent_anchors": [],
+            "role": "ANATOMY",
+            "role_rationale": "Nuclear is the source-explicit destination compartment of the localization."
+          }
+        ],
+        "assertion_scope": "CONTROLLED_TARGET",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "UNASSERTED",
+        "event_type": "LOCALIZATION",
+        "exact_span": "their nuclear localization",
+        "inventory_rationale": "The localization process is represented as a controlled target because the source presents it within the asserted suppression relation.",
+        "local_event_id": "localization-target-1",
+        "polarity": "UNSCOPED",
+        "relation_cue_anchor": {
+          "left_context": "their nuclear ",
+          "mention_span": "localization",
+          "right_context": " and inhibited the activation of RelA/NF-kappaB1 binding complexes"
+        },
+        "relation_cue_span": "localization",
+        "source_locator": "normalized_extraction_text"
+      },
+      {
+        "arguments": [
+          {
+            "controlled_event_ref": null,
+            "event_role": "CAUSE",
+            "exact_span": "RCC-S",
+            "mention_anchors": [
+              {
+                "left_context": "did suppress their nuclear localization and inhibited the activation of RelA/NF-kappaB1 binding complexes. ",
+                "mention_span": "RCC-S",
+                "right_context": " did inhibit the activation of RelA/NF-kappaB1 binding complexes"
+              }
+            ],
+            "referent_anchors": [],
+            "role": "INTERVENTION",
+            "role_rationale": "RCC-S is the explicitly named intervention associated with inhibition of activation."
+          },
+          {
+            "controlled_event_ref": "activation-target-1",
+            "event_role": "THEME",
+            "exact_span": "the activation of RelA/NF-kappaB1 binding complexes",
+            "mention_anchors": [
+              {
+                "left_context": "inhibited ",
+                "mention_span": "the activation of RelA/NF-kappaB1 binding complexes",
+                "right_context": ""
+              }
+            ],
+            "referent_anchors": [],
+            "role": "BIOLOGICAL_PROCESS",
+            "role_rationale": "The activation process is explicitly identified as the process inhibited by RCC-S."
+          }
+        ],
+        "assertion_scope": "SOURCE_ASSERTED",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "ASSERTED",
+        "event_type": "NEGATIVE_REGULATION",
+        "exact_span": "inhibited the activation of RelA/NF-kappaB1 binding complexes",
+        "inventory_rationale": "The source explicitly states that RCC-S inhibited activation of RelA/NF-kappaB1 binding complexes; the activation process is separately represented as a controlled target.",
+        "local_event_id": "negative-regulation-2",
+        "polarity": "SUPPORT",
+        "relation_cue_anchor": {
+          "left_context": "their nuclear localization and ",
+          "mention_span": "inhibited",
+          "right_context": " the activation of RelA/NF-kappaB1 binding complexes"
+        },
+        "relation_cue_span": "inhibited",
+        "source_locator": "normalized_extraction_text"
+      },
+      {
+        "arguments": [
+          {
+            "controlled_event_ref": null,
+            "event_role": "THEME",
+            "exact_span": "RelA/NF-kappaB1 binding complexes",
+            "mention_anchors": [
+              {
+                "left_context": "the activation of ",
+                "mention_span": "RelA/NF-kappaB1 binding complexes",
+                "right_context": ""
+              }
+            ],
+            "referent_anchors": [],
+            "role": "OTHER_ENTITY",
+            "role_rationale": "The source explicitly names the binding complexes as the theme of the activation process; the phrase denotes complexes rather than an individual gene or protein."
+          }
+        ],
+        "assertion_scope": "CONTROLLED_TARGET",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "epistemic_status": "UNASSERTED",
+        "event_type": "OTHER_EXPLICIT",
+        "exact_span": "the activation of RelA/NF-kappaB1 binding complexes",
+        "inventory_rationale": "Activation is preserved as a separately represented controlled process because it occurs within the asserted inhibition relation.",
+        "local_event_id": "activation-target-1",
+        "polarity": "UNSCOPED",
+        "relation_cue_anchor": {
+          "left_context": "the ",
+          "mention_span": "activation",
+          "right_context": " of RelA/NF-kappaB1 binding complexes"
+        },
+        "relation_cue_span": "activation",
+        "source_locator": "normalized_extraction_text"
+      }
+    ],
+    "falsification_condition": "The normalization would be invalid if either inhibitory relation were not source-asserted, if either controlled process were not independently identifiable from its source span, or if the cytoplasmic-level statement were not a null result.",
+    "family": "NESTED",
+    "mappings": [
+      {
+        "falsification_condition": "This mapping would be false if the source did not assert that RCC-S left the cytoplasmic levels of RelA and NF-kappaB1 unaltered.",
+        "normalized_event_position": 0,
+        "operation": "REFRAME",
+        "reasoning": "The no-effect finding is preserved with a required authored local_event_id.",
+        "source_event_positions": [
+          0
+        ]
+      },
+      {
+        "falsification_condition": "This mapping would be false if RCC-S did not suppress the source-described nuclear localization.",
+        "normalized_event_position": 1,
+        "operation": "REFRAME",
+        "reasoning": "The asserted negative-regulation event is preserved, with its source-verbatim clause span corrected to the substring that occurs in the source and linked to the localization target.",
+        "source_event_positions": [
+          1
+        ]
+      },
+      {
+        "falsification_condition": "This mapping would be false if the source did not describe localization to the nuclear compartment.",
+        "normalized_event_position": 2,
+        "operation": "UNCHANGED",
+        "reasoning": "The controlled localization target preserves the original event type, participants, roles, scope, polarity, and source-verbatim span.",
+        "source_event_positions": [
+          2
+        ]
+      },
+      {
+        "falsification_condition": "This mapping would be false if the source did not assert inhibition of activation of the binding complexes.",
+        "normalized_event_position": 3,
+        "operation": "REFRAME",
+        "reasoning": "The asserted negative-regulation event is preserved, with its source-verbatim clause span corrected to the substring that occurs in the source and linked to the activation target.",
+        "source_event_positions": [
+          3
+        ]
+      },
+      {
+        "falsification_condition": "This mapping would be false if the source did not explicitly describe activation of RelA/NF-kappaB1 binding complexes.",
+        "normalized_event_position": 4,
+        "operation": "UNCHANGED",
+        "reasoning": "The controlled activation target preserves the original event type, theme, scope, polarity, and source-verbatim span.",
+        "source_event_positions": [
+          4
+        ]
+      }
+    ],
+    "reasoning": "The source contains one asserted null result and two asserted inhibitory findings. The two inhibitory findings explicitly target separately represented biological processes, so NESTED is required. The source-named RelA and NF-kappaB1 are typed as gene products, while the explicitly named binding complexes remain OTHER_ENTITY. No mutually exclusive experimental factor levels are stated."
+  }
+}
