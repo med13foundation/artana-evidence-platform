@@ -11,6 +11,7 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v13
     V13_EXTRACTION_PROMPT_VERSION,
     v13_normalization_prompt,
     v13_normalization_prompt_v4,
+    v13_normalization_prompt_v6,
     v13_source_unit_extraction_prompt,
 )
 from scripts.validation.claim_events.finite_source_unit.service import (
@@ -133,3 +134,36 @@ def test_v13_correction_prompt_authorizes_agent_reframe_not_deterministic_repair
     )
     assert "structure_normalization.v4" in historical_prompt
     assert "CONTROLLED-EVENT REFERENCE OWNERSHIP" not in historical_prompt
+
+
+def test_v13_v6_requires_explicit_multi_level_context_without_changing_v5() -> None:
+    unit = enumerate_source_units(
+        case_id="v13-visible-neutral",
+        source_text=_NEUTRAL_SOURCE,
+    )[0]
+    original_output = SourceUnitExtractionOutput.model_validate(
+        {
+            "eligibility_category": "NO_EVENT",
+            "decision": "NO_EVENT",
+            "events": [],
+            "reasoning": "Visible fixture for prompt construction.",
+        }
+    )
+    original = bind_source_unit_extraction(original_output, unit=unit)
+
+    historical_prompt = v13_normalization_prompt(unit=unit, original=original)
+    prompt = v13_normalization_prompt_v6(unit=unit, original=original)
+
+    assert hashlib.sha256(historical_prompt.encode("utf-8")).hexdigest() == (
+        "dd0cfe1c09646a41e2c14496c7f1417f19a0860d7725903c754f2f09193d002a"
+    )
+    assert "structure_normalization.v5" in historical_prompt
+    assert "V13 CONTEXT-DIMENSION ELIGIBILITY" not in historical_prompt
+    assert "structure_normalization.v6" in prompt
+    assert "at least two distinct, mutually exclusive levels" in prompt
+    assert "A single causal participant is not a multi-level comparison" in prompt
+    assert "Never invent, translate, repair, duplicate, or paraphrase" in prompt
+    assert "Never infer an unstated untreated" in prompt
+    assert "Repeated-measures dose or time series" in prompt
+    assert "Do not invent an abstract factor label" in prompt
+    assert "Populate crossed_dimension_ids only when the source explicitly" in prompt

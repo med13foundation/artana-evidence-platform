@@ -120,6 +120,25 @@ class SourceUnitExtractionResult:
     output: SourceUnitExtractionOutput
     accepted: tuple[BoundClaimInventoryItem, ...]
     rejected: tuple[ClaimInventoryBindingRejection, ...]
+    envelope_sha256: str
+
+    def require_canonical_envelope(self, *, unit: FrozenSourceUnit) -> None:
+        """Replay source binding so copied accepted/rejected fields fail closed."""
+
+        try:
+            type(self.output).model_validate(
+                self.output.model_dump(mode="python", warnings=False),
+                strict=True,
+            )
+        except ValueError as exc:
+            raise StructuredModelSemanticError(
+                "extraction result contains unvalidated categorical values"
+            ) from exc
+        expected = bind_source_unit_extraction(self.output, unit=unit)
+        if self != expected:
+            raise StructuredModelSemanticError(
+                "extraction result does not match its canonical source envelope"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,7 +167,37 @@ def bind_source_unit_extraction(
         output=output,
         accepted=binding.accepted,
         rejected=binding.rejected,
+        envelope_sha256=_canonical_extraction_envelope_sha256(
+            output=output,
+            unit=unit,
+        ),
     )
+
+
+def _canonical_extraction_envelope_sha256(
+    *,
+    output: SourceUnitExtractionOutput,
+    unit: FrozenSourceUnit,
+) -> str:
+    payload = {
+        "unit": {
+            "unit_id": unit.unit_id,
+            "index": unit.index,
+            "source_start": unit.source_start,
+            "source_end": unit.source_end,
+            "source_sha256": unit.source_sha256,
+            "input_sha256": unit.input_sha256,
+        },
+        "output": output.model_dump(mode="json"),
+    }
+    return hashlib.sha256(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode()
+    ).hexdigest()
 
 
 def bind_source_unit_verification(

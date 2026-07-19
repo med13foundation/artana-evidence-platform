@@ -55,6 +55,34 @@ class SourceUnitNormalizationResult:
     output: SourceUnitNormalizationOutput
     accepted: tuple[BoundClaimInventoryItem, ...]
     controlled_event_links: tuple[BoundControlledEventLink, ...]
+    envelope_sha256: str
+
+    def require_canonical_envelope(
+        self,
+        *,
+        unit: FrozenSourceUnit,
+        original: SourceUnitExtractionResult,
+    ) -> None:
+        """Reject copied or mutated result fields before downstream review."""
+
+        try:
+            type(self.output).model_validate(
+                self.output.model_dump(mode="python", warnings=False),
+                strict=True,
+            )
+        except ValueError as exc:
+            raise StructuredModelSemanticError(
+                "normalization result contains unvalidated categorical values"
+            ) from exc
+        expected = bind_source_unit_normalization(
+            self.output,
+            unit=unit,
+            original=original,
+        )
+        if self != expected:
+            raise StructuredModelSemanticError(
+                "normalization result does not match its canonical source envelope"
+            )
 
 
 def canonical_json_sha256(value: object) -> str:
@@ -78,6 +106,7 @@ def bind_source_unit_normalization(
 ) -> SourceUnitNormalizationResult:
     """Reject incomplete mappings, source drift, and mixed graph families."""
 
+    original.require_canonical_envelope(unit=unit)
     if output.eligibility_category is not original.output.eligibility_category:
         raise StructuredModelSemanticError(
             "normalization cannot change the source eligibility category"
@@ -88,6 +117,11 @@ def bind_source_unit_normalization(
             output=output,
             accepted=(),
             controlled_event_links=(),
+            envelope_sha256=_normalization_envelope_sha256(
+                output=output,
+                unit=unit,
+                original=original,
+            ),
         )
     if source_event_count == 0:
         raise StructuredModelSemanticError(
@@ -119,6 +153,36 @@ def bind_source_unit_normalization(
         output=output,
         accepted=binding.accepted,
         controlled_event_links=link_result.links,
+        envelope_sha256=_normalization_envelope_sha256(
+            output=output,
+            unit=unit,
+            original=original,
+        ),
+    )
+
+
+def _normalization_envelope_sha256(
+    *,
+    output: SourceUnitNormalizationOutput,
+    unit: FrozenSourceUnit,
+    original: SourceUnitExtractionResult,
+) -> str:
+    """Bind normalization meaning to the exact source and original extraction."""
+
+    return canonical_json_sha256(
+        {
+            "unit": {
+                "unit_id": unit.unit_id,
+                "index": unit.index,
+                "source_start": unit.source_start,
+                "source_end": unit.source_end,
+                "source_sha256": unit.source_sha256,
+                "input_sha256": unit.input_sha256,
+            },
+            "original_output": original.output.model_dump(mode="json"),
+            "original_envelope_sha256": original.envelope_sha256,
+            "normalization_output": output.model_dump(mode="json"),
+        }
     )
 
 

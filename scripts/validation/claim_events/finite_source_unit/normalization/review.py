@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING, Protocol, cast
 
 from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
     kernel_run_id_for_invocation,
@@ -23,6 +24,9 @@ from scripts.validation.claim_events.finite_source_unit.contracts import (
     EntailmentDecision,
 )
 from scripts.validation.claim_events.finite_source_unit.normalization.contracts import (
+    CueAlignmentDecision,
+    FamilyValidityDecision,
+    InventoryCoverageDecision,
     MaterialAxisDecision,
     NormalizationFamily,
     SourceUnitNormalizedReviewOutput,
@@ -42,14 +46,196 @@ if TYPE_CHECKING:
     )
 
 
+class LocalReviewDisposition(StrEnum):
+    """Deterministic local-consistency result without qualification authority."""
+
+    PASS = "PASS"
+    FAIL = "FAIL"
+    ABSTAIN = "ABSTAIN"
+
+
+class _ContextDimensionReviewLike(Protocol):
+    decision: object
+
+
 @dataclass(frozen=True, slots=True)
 class SourceUnitNormalizedReviewResult:
-    """Validated review plus deterministic categorical failure counts."""
+    """Validated categorical review with deterministically derived diagnostics."""
 
     output: SourceUnitNormalizedReviewOutput
-    scientific_loss_count: int
-    unsupported_addition_count: int
-    unresolved_axis_count: int
+    output_sha256: str
+    source_unit_input_sha256: str
+    normalization_envelope_sha256: str
+
+    def __post_init__(self) -> None:
+        try:
+            type(self.output).model_validate(
+                self.output.model_dump(mode="python", warnings=False),
+                strict=True,
+            )
+        except ValueError as exc:
+            raise ValueError(
+                "review result contains unvalidated categorical values"
+            ) from exc
+        if self.output_sha256 != canonical_json_sha256(
+            self.output.model_dump(mode="json")
+        ):
+            raise ValueError("review result does not match its categorical output")
+
+    @property
+    def scientific_loss_count(self) -> int:
+        loss_decisions = {
+            MaterialAxisDecision.MATERIAL_LOSS,
+            MaterialAxisDecision.CONTRADICTION,
+        }
+        return sum(
+            axis.decision in loss_decisions for axis in self.output.axis_reviews
+        )
+
+    @property
+    def unsupported_addition_count(self) -> int:
+        return sum(
+            axis.decision is MaterialAxisDecision.MATERIAL_ADDITION
+            for axis in self.output.axis_reviews
+        )
+
+    @property
+    def unresolved_axis_count(self) -> int:
+        return sum(
+            axis.decision
+            in {
+                MaterialAxisDecision.ABSTAIN,
+                MaterialAxisDecision.NOT_APPLICABLE,
+            }
+            for axis in self.output.axis_reviews
+        )
+
+    @property
+    def unsupported_context_dimension_count(self) -> int:
+        return sum(
+            getattr(review.decision, "value", review.decision) == "UNSUPPORTED"
+            for review in _context_dimension_reviews(self.output)
+        )
+
+    @property
+    def unresolved_context_dimension_count(self) -> int:
+        return sum(
+            getattr(review.decision, "value", review.decision) == "ABSTAIN"
+            for review in _context_dimension_reviews(self.output)
+        )
+
+    @property
+    def provisional_context_dimension_count(self) -> int:
+        return sum(
+            getattr(review.decision, "value", review.decision) == "SUPPORTED"
+            for review in _context_dimension_reviews(self.output)
+        )
+
+    @property
+    def unsupported_candidate_count(self) -> int:
+        return sum(
+            review.source_entailment is EntailmentDecision.CONTRADICTED
+            for review in self.output.candidate_reviews
+        )
+
+    @property
+    def unresolved_candidate_count(self) -> int:
+        return sum(
+            review.source_entailment
+            in {EntailmentDecision.INSUFFICIENT, EntailmentDecision.ABSTAIN}
+            for review in self.output.candidate_reviews
+        )
+
+    @property
+    def missing_inventory_count(self) -> int:
+        return int(
+            self.output.inventory_coverage
+            in {
+                InventoryCoverageDecision.MISSING_EVENT,
+                InventoryCoverageDecision.MISSING_AND_EXTRA,
+            }
+        )
+
+    @property
+    def extra_inventory_count(self) -> int:
+        return int(
+            self.output.inventory_coverage
+            in {
+                InventoryCoverageDecision.EXTRA_EVENT,
+                InventoryCoverageDecision.MISSING_AND_EXTRA,
+            }
+        )
+
+    @property
+    def unresolved_inventory_count(self) -> int:
+        return int(
+            self.output.inventory_coverage is InventoryCoverageDecision.ABSTAIN
+        )
+
+    @property
+    def invalid_family_count(self) -> int:
+        return int(self.output.family_validity is FamilyValidityDecision.INVALID)
+
+    @property
+    def unresolved_family_count(self) -> int:
+        return int(self.output.family_validity is FamilyValidityDecision.ABSTAIN)
+
+    @property
+    def cue_mismatch_count(self) -> int:
+        return int(
+            self.output.cue_alignment is CueAlignmentDecision.MATERIAL_MISMATCH
+        )
+
+    @property
+    def unresolved_cue_count(self) -> int:
+        return int(self.output.cue_alignment is CueAlignmentDecision.ABSTAIN)
+
+    @property
+    def local_review_disposition(self) -> LocalReviewDisposition:
+        """Consume every failure counter with fail-before-abstain precedence."""
+
+        if any(
+            (
+                self.scientific_loss_count,
+                self.unsupported_addition_count,
+                self.unsupported_context_dimension_count,
+                self.unsupported_candidate_count,
+                self.missing_inventory_count,
+                self.extra_inventory_count,
+                self.invalid_family_count,
+                self.cue_mismatch_count,
+            )
+        ):
+            return LocalReviewDisposition.FAIL
+        if any(
+            (
+                self.unresolved_axis_count,
+                self.unresolved_context_dimension_count,
+                self.unresolved_candidate_count,
+                self.unresolved_inventory_count,
+                self.unresolved_family_count,
+                self.unresolved_cue_count,
+                self.provisional_context_dimension_count,
+            )
+        ):
+            return LocalReviewDisposition.ABSTAIN
+        return LocalReviewDisposition.PASS
+
+
+class NormalizedReviewBinder(Protocol):
+    """Bind one versioned source-only review contract."""
+
+    __module__: str
+    __qualname__: str
+
+    def __call__(
+        self,
+        output: SourceUnitNormalizedReviewOutput,
+        *,
+        unit: FrozenSourceUnit,
+        original: SourceUnitExtractionResult,
+        normalized: SourceUnitNormalizationResult,
+    ) -> SourceUnitNormalizedReviewResult: ...
 
 
 def bind_source_unit_normalized_review(
@@ -61,6 +247,7 @@ def bind_source_unit_normalized_review(
 ) -> SourceUnitNormalizedReviewResult:
     """Require complete review coverage and verbatim source evidence."""
 
+    normalized.require_canonical_envelope(unit=unit, original=original)
     if output.eligibility_category is not original.output.eligibility_category:
         raise StructuredModelSemanticError(
             "normalized review changed the source eligibility category"
@@ -102,30 +289,22 @@ def bind_source_unit_normalized_review(
                 "axis review evidence must be verbatim in the source unit"
             )
 
-    loss_decisions = {
-        MaterialAxisDecision.MATERIAL_LOSS,
-        MaterialAxisDecision.CONTRADICTION,
-    }
-    scientific_loss_count = sum(
-        axis.decision in loss_decisions for axis in output.axis_reviews
-    )
-    unsupported_addition_count = sum(
-        axis.decision is MaterialAxisDecision.MATERIAL_ADDITION
-        for axis in output.axis_reviews
-    )
-    unresolved_axis_count = sum(
-        axis.decision
-        in {
-            MaterialAxisDecision.ABSTAIN,
-            MaterialAxisDecision.NOT_APPLICABLE,
-        }
-        for axis in output.axis_reviews
-    )
     return SourceUnitNormalizedReviewResult(
         output=output,
-        scientific_loss_count=scientific_loss_count,
-        unsupported_addition_count=unsupported_addition_count,
-        unresolved_axis_count=unresolved_axis_count,
+        output_sha256=canonical_json_sha256(output.model_dump(mode="json")),
+        source_unit_input_sha256=unit.input_sha256,
+        normalization_envelope_sha256=normalized.envelope_sha256,
+    )
+
+
+def _context_dimension_reviews(
+    output: SourceUnitNormalizedReviewOutput,
+) -> tuple[_ContextDimensionReviewLike, ...]:
+    reviews = getattr(output, "context_dimension_reviews", ())
+    return (
+        cast("tuple[_ContextDimensionReviewLike, ...]", reviews)
+        if isinstance(reviews, tuple)
+        else ()
     )
 
 
@@ -142,6 +321,10 @@ async def review_source_unit_normalization(  # noqa: PLR0913
     normalized_raw_output: dict[str, object],
     prompt: str,
     prompt_version: str,
+    output_schema: type[SourceUnitNormalizedReviewOutput] = (
+        SourceUnitNormalizedReviewOutput
+    ),
+    review_binder: NormalizedReviewBinder = bind_source_unit_normalized_review,
 ) -> AuditedStructuredStepResult[
     SourceUnitNormalizedReviewOutput,
     SourceUnitNormalizedReviewResult,
@@ -165,7 +348,7 @@ async def review_source_unit_normalization(  # noqa: PLR0913
             tenant=tenant,
             model=model_id,
             prompt=provider_prompt,
-            output_schema=SourceUnitNormalizedReviewOutput,
+            output_schema=output_schema,
             step_key=step_key,
             replay_policy="fork_on_drift",
         )
@@ -174,7 +357,7 @@ async def review_source_unit_normalization(  # noqa: PLR0913
         invoke_model=invoke,
         model_id=model_id,
         prompt=prompt,
-        output_schema=SourceUnitNormalizedReviewOutput,
+        output_schema=output_schema,
         step_key=step_key,
         audit_context=ModelAttemptAuditContext(
             attempt_role="normalized_review",
@@ -184,7 +367,7 @@ async def review_source_unit_normalization(  # noqa: PLR0913
             input_sha256=unit.input_sha256,
             semantic_unit_id=unit.unit_id,
         ),
-        validate_semantics=lambda output: bind_source_unit_normalized_review(
+        validate_semantics=lambda output: review_binder(
             output,
             unit=unit,
             original=original,
@@ -194,6 +377,8 @@ async def review_source_unit_normalization(  # noqa: PLR0913
 
 
 __all__ = [
+    "NormalizedReviewBinder",
+    "LocalReviewDisposition",
     "SourceUnitNormalizedReviewResult",
     "bind_source_unit_normalized_review",
     "review_source_unit_normalization",
