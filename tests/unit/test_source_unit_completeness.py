@@ -1418,6 +1418,9 @@ async def test_five_call_experiment_enforces_roles_receipts_and_checkpoints(
     )
 
     assert len(client.calls) == 5
+    assert {call["model"] for call in client.calls} == {
+        "openai/gpt-5.6-luna"
+    }
     assert tuple(record.attempt_role for record in evidence.records) == EXPECTED_ROLES
     assert evidence.receipts.expected_count == 5
     assert evidence.receipts.verified_count == 5

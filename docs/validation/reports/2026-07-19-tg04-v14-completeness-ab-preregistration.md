@@ -126,7 +126,7 @@ is counted only as diagnostic coverage; unrelated C-only discoveries remain
 - completeness verification schema: `SourceUnitVerificationOutput`
 - deterministic metric: `tg04.localization_obligation_recovery.v1`
 - issued implementation manifest:
-  `578f344078d0de5fbd694321d630a749907f646da0bb87ec14ae4475927689ce`
+  `00d12f4647f6dfc127e6a1b6650ca45443ae964e240783d20b47eae7bb2cf481`
 - network tools: none
 - browsing: none
 - retrieval: none

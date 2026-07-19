@@ -123,6 +123,7 @@ if TYPE_CHECKING:
 EXPERIMENT_CONTRACT_VERSION: Final = "tg04.finite_source_unit.completeness_ab.v1"
 METRIC_VERSION: Final = "tg04.localization_obligation_recovery.v1"
 EXPERIMENT_MODEL_ID: Final = "openai:gpt-5.6-luna"
+EXPERIMENT_EXECUTION_MODEL_ID: Final = "openai/gpt-5.6-luna"
 EXPERIMENT_SOURCE_SHA256: Final = (
     "a3373f43f94b696ad2ac9830707eae96aa17e6e2e0bc4185f87d768169ca2272"
 )
@@ -139,7 +140,7 @@ EXPERIMENT_UNIT_INDEX: Final = 6
 EXPERIMENT_UNIT_SOURCE_START: Final = 947
 EXPERIMENT_UNIT_SOURCE_END: Final = 1123
 EXPECTED_COMPLETENESS_MANIFEST_SHA256: Final = (
-    "578f344078d0de5fbd694321d630a749907f646da0bb87ec14ae4475927689ce"
+    "00d12f4647f6dfc127e6a1b6650ca45443ae964e240783d20b47eae7bb2cf481"
 )
 EXPECTED_ROLES: Final = (
     "primary",
@@ -284,6 +285,7 @@ class CompletenessExperimentPolicy:
             "contract_version": self.contract_version,
             "metric_version": self.metric_version,
             "model_id": self.model_id,
+            "execution_model_id": EXPERIMENT_EXECUTION_MODEL_ID,
             "source_sha256": self.source_sha256,
             "source_text_sha256": self.source_text_sha256,
             "unit_input_sha256": self.unit_input_sha256,
@@ -322,6 +324,9 @@ class CompletenessExperimentPolicy:
                 "comparison_runtime": comparison_runtime_fingerprints(),
                 "issued_receipt_verifier": callable_source_fingerprint(
                     _ISSUED_RECEIPT_VERIFIER
+                ),
+                "execution_model_resolver": callable_source_fingerprint(
+                    _execution_model_id
                 ),
                 "a_normalization_binder": callable_source_fingerprint(
                     bind_source_unit_normalization
@@ -577,10 +582,11 @@ async def _execute_completeness_experiment(  # noqa: PLR0913
 ) -> CompletenessExperimentEvidence:
     """Execute against an already-reserved create-once journal."""
 
+    execution_model_id = _execution_model_id(model_id)
     a_evidence = await execute_v13_v3_source_unit_agents(
         client=client,
         tenant=tenant,
-        model_id=model_id,
+        model_id=execution_model_id,
         execution_namespace=execution_namespace,
         unit=unit,
         audit_evidence_unit_id=unit.unit_id,
@@ -648,7 +654,7 @@ async def _execute_completeness_experiment(  # noqa: PLR0913
         c_call = await inventory_source_unit_completeness(
             client=client,
             tenant=tenant,
-            model_id=model_id,
+            model_id=execution_model_id,
             execution_namespace=contract_namespace,
             unit=unit,
         )
@@ -685,7 +691,7 @@ async def _execute_completeness_experiment(  # noqa: PLR0913
         verification_call = await verify_completeness_inventory(
             client=client,
             tenant=tenant,
-            model_id=model_id,
+            model_id=execution_model_id,
             execution_namespace=contract_namespace,
             unit=unit,
             candidates=c_call.value.accepted,
@@ -810,6 +816,14 @@ def _verify_attempt_receipts(
 
 
 _ISSUED_RECEIPT_VERIFIER: Final = _verify_attempt_receipts
+
+
+def _execution_model_id(report_model_id: str) -> str:
+    if report_model_id != EXPERIMENT_MODEL_ID:
+        raise CompletenessExperimentGateError(
+            "experiment report model does not match the issued model"
+        )
+    return EXPERIMENT_EXECUTION_MODEL_ID
 
 
 def _require_exact_receipts(
@@ -978,6 +992,7 @@ __all__ = [
     "CompletenessExperimentPolicy",
     "EXPECTED_ROLES",
     "EXPECTED_COMPLETENESS_MANIFEST_SHA256",
+    "EXPERIMENT_EXECUTION_MODEL_ID",
     "EXPERIMENT_CONTRACT_VERSION",
     "EXPERIMENT_MODEL_ID",
     "EXPERIMENT_SOURCE_SHA256",
