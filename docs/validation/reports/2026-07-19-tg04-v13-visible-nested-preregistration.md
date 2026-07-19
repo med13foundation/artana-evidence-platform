@@ -13,7 +13,7 @@ only the complete eight-case V13 visible matrix.
 ## Frozen Repository And Contract
 
 - branch: `alvaro/tg04-representation-invariant-contract`;
-- code-under-test commit: `63469b7c`;
+- code-under-test commit: `f98d1497bf72826948e9a4a0ffce0fca04229015`;
 - model: `openai:gpt-5.6-luna`;
 - execution contract: `tg04.finite_source_unit.v13_execution.v2`;
 - execution contract SHA-256:
@@ -34,23 +34,30 @@ stage key. It does not accept a prepared-prompt override.
 
 ## Frozen Runner And Durable Reservation
 
-The one-shot runner remains outside the Artana product surface at
-`/private/tmp/artana-tg04/run_v13_visible_anaphoric_canary.py`, but its exact
-bytes are frozen here before any provider call:
+The one-shot runner is an experiment artifact, not an Artana production path.
+Its committed location and exact bytes are frozen before any provider call:
+
+- runner path:
+  `scripts/validation/claim_events/finite_source_unit/nested_holdout_trial/v13/visible_anaphoric_canary.py`;
 
 - runner SHA-256:
-  `bfff71195d65a49ca7dbbe117942b50ab4c000dda2ddd5eed7cf0f3e511c1096`;
+  `7634b72649fff0804f14ba6ec7f37e15eb02da4570cfca897bc5935941836e93`;
 - durable reservation key:
   `5d1925788702d15ded427cc8ec674242c876475377d28fc4b412ae43bd6e79bd`;
 - durable create-once artifact directory:
   `/Users/alvaro/.codex/artana-evidence-experiments/tg04/v13-visible-anaphoric-5d1925788702d15ded427cc8ec674242c876475377d28fc4b412ae43bd6e79bd`.
 
-Preflight hashes the runner bytes against this committed value before runtime
-construction. The reservation key is derived from the contract version, model,
-source hash, and input hash. A reservation or result survives temporary-file
-cleanup and blocks every later invocation of this exact experiment. Runtime
-configuration is checked before reservation without making a provider call;
-after reservation, any runner exception seals a create-once negative report.
+The preregistration commit must be the direct child of the full code commit
+above, and their diff must contain only this document. Preflight executes only
+the committed runner path and hashes its bytes against this value before
+runtime construction. The reservation key is derived from the contract
+version, model, source hash, and input hash. The absolute reservation namespace
+is fixed rather than derived from `HOME`. Reservation and result directory
+entries are fsynced, survive temporary-file cleanup, and block every later
+invocation of this exact experiment. Runtime configuration is checked before
+reservation without making a provider call. After reservation, ordinary
+errors, cancellation, keyboard interruption, and system exit all seal a
+create-once negative report before returning or propagating.
 
 ## Frozen Synthetic Source
 
