@@ -232,7 +232,8 @@ result.
 
 ## Non-Negotiable Rules
 
-These rules apply to every PR in this plan.
+These rules apply to every scientific change set in this plan, whether it is
+still local, pushed as a backup, or published in a PR.
 
 1. **Agent-first semantics:** biomedical extraction and semantic verification
    are performed by agents. Deterministic fallback may support triage but may
@@ -260,13 +261,13 @@ These rules apply to every PR in this plan.
    namespace-specific authoritative record or computed identifier.
 9. **Fail closed:** missing source, locator, verifier, authoritative entity,
    qualifier, polarity, or required service response blocks projection.
-10. **No threshold weakening:** a PR may improve a metric or strengthen a safety
+10. **No threshold weakening:** a change may improve a metric or strengthen a safety
     invariant. It may not lower a threshold to manufacture green status.
 11. **No circular validation:** fixture labels, local dictionaries, and the
     implementation under test cannot independently validate one another.
 12. **No infrastructure-only loop:** no new harness work may start unless it is
     required to measure a product field introduced by the same or immediately
-    preceding PR.
+    preceding scientific commit.
 13. **Provider-authenticated live evidence:** a strict semantic run receives
     merge credit only when every executed OpenAI response can be retrieved by
     its provider response ID and its canonical provider-output hash matches the
@@ -306,12 +307,20 @@ TG-01 -> TG-02 -> TG-03 -> TG-04
                               |-> TG-06 -|-> TG-07 -> TG-08
 ```
 
-TG-05 and TG-06 may run in parallel after TG-04. The other PRs are ordered
-because they change a shared contract or depend on evidence produced earlier.
+TG-05 and TG-06 may run in parallel after TG-04. Scientific commits are ordered
+when they change a shared contract or depend on evidence produced earlier. PR
+publication and review may proceed asynchronously.
 
-## Standard PR Loop
+## Local Scientific Commit Loop
 
-Every PR follows this loop and records each result in its evidence report.
+The executable loop is defined in
+`docs/validation/scientific-reliability-local-commit-loop.md`. Scientific work
+advances on `alvaro/tg04-local-scientific-loop`; a PR is an asynchronous
+publication checkpoint and is not permission to begin the next locally gated
+step.
+
+Every scientific cycle follows this checklist and records each result in its
+evidence report.
 
 - [ ] Freeze the parent commit, input cases, prompts, model identifier, and
       baseline artifact hashes before implementation.
@@ -336,7 +345,12 @@ Every PR follows this loop and records each result in its evidence report.
 - [ ] Run `git diff --check` and `make service-checks` without skipping hooks.
 - [ ] Publish a deterministic before/after report under
       `docs/validation/reports/` and link raw immutable artifacts.
-- [ ] Merge only when the PR-specific gate and the global merge gate pass.
+- [ ] Commit and push the validated scientific checkpoint without waiting for a
+      PR.
+- [ ] Publish a PR snapshot only at an adversarially reviewed or result-bearing
+      checkpoint.
+- [ ] Merge the publication snapshot only when the PR-specific gate and the
+      global merge gate pass.
 
 ## Global Merge Gate
 
