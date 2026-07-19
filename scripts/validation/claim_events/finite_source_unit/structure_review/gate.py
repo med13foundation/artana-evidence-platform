@@ -26,7 +26,7 @@ class StructureReplayGateInputs:
     verification_decision_count: int
     entailed_candidate_count: int
     trusted_projection_count: int
-    structure_blocker_count: int
+    lossy_structure_count: int
     invalid_argument_type_count: int
     model_transport_identity_field_count: int
     audit_identity_mismatch_count: int
@@ -61,7 +61,7 @@ def structure_replay_gate_requirements(
             and inputs.entailed_candidate_count == inputs.candidate_count
         ),
         "known_candidates_not_trusted": inputs.trusted_projection_count == 0,
-        "lossy_structure_detected": inputs.structure_blocker_count >= 1,
+        "lossy_structure_detected": inputs.lossy_structure_count >= 1,
         "invalid_argument_type_detected": inputs.invalid_argument_type_count >= 1,
         "model_transport_identity_absent": (
             inputs.model_transport_identity_field_count == 0

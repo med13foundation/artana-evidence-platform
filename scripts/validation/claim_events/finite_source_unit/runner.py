@@ -21,6 +21,7 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 )
 
 from scripts.validation.claim_events.finite_source_unit.contracts import (
+    EntailmentDecision,
     SourceUnitCoverageDecision,
     SourceUnitEligibilityCategory,
     SourceUnitExtractionOutput,
@@ -92,6 +93,16 @@ class _CaseResult:
     entailed_count: int
     binding_rejection_count: int
     review_only_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class _VerifiedCandidatePartition:
+    """Keep source entailment distinct from projection eligibility."""
+
+    decisions: tuple[dict[str, object], ...]
+    source_entailed_claims: tuple[BoundClaimInventoryItem, ...]
+    trusted_projection_claims: tuple[BoundClaimInventoryItem, ...]
+    non_trusted_decisions: tuple[dict[str, object], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -269,7 +280,8 @@ async def _execute_case(
     units = enumerate_source_units(case_id=case.case_id, source_text=normalized_text)
     audit = start_model_attempt_audit(evidence_unit_id=case.case_id)
     unit_evidence: list[dict[str, object]] = []
-    entailed_claims: list[BoundClaimInventoryItem] = []
+    source_entailed_claims: list[BoundClaimInventoryItem] = []
+    trusted_projection_claims: list[BoundClaimInventoryItem] = []
     review_only: list[dict[str, object]] = []
     binding_rejection_count = 0
     executable = True
@@ -335,17 +347,18 @@ async def _execute_case(
                 unit_evidence.append(unit_record)
                 continue
             coverage_confirmed = coverage_confirmed and unit_coverage_confirmed
-            decisions, accepted, rejected = _partition_verified_candidates(
+            partition = _partition_verified_candidates(
                 verification.value,
             )
-            entailed_claims.extend(accepted)
-            review_only.extend(rejected)
-            unit_record["verification_decisions"] = decisions
+            source_entailed_claims.extend(partition.source_entailed_claims)
+            trusted_projection_claims.extend(partition.trusted_projection_claims)
+            review_only.extend(partition.non_trusted_decisions)
+            unit_record["verification_decisions"] = list(partition.decisions)
             unit_evidence.append(unit_record)
     finally:
         stop_model_attempt_audit(audit)
 
-    events = nary_events_from_bound_inventory(tuple(entailed_claims))
+    events = nary_events_from_bound_inventory(tuple(trusted_projection_claims))
     return _CaseResult(
         prediction={
             "case_id": case.case_id,
@@ -363,7 +376,7 @@ async def _execute_case(
         records=tuple(audit.records),
         executable=executable,
         coverage_confirmed=coverage_confirmed,
-        entailed_count=len(entailed_claims),
+        entailed_count=len(source_entailed_claims),
         binding_rejection_count=binding_rejection_count,
         review_only_count=len(review_only),
     )
@@ -466,25 +479,29 @@ def _record_eligibility_review(
 
 def _partition_verified_candidates(
     candidates: tuple[VerifiedEventCandidate, ...],
-) -> tuple[
-    list[dict[str, object]],
-    tuple[BoundClaimInventoryItem, ...],
-    list[dict[str, object]],
-]:
+) -> _VerifiedCandidatePartition:
     decisions: list[dict[str, object]] = []
-    accepted: list[BoundClaimInventoryItem] = []
-    rejected: list[dict[str, object]] = []
+    source_entailed: list[BoundClaimInventoryItem] = []
+    trusted: list[BoundClaimInventoryItem] = []
+    non_trusted: list[dict[str, object]] = []
     for candidate in candidates:
         serialized = {
             "candidate_id": candidate.claim.inventory_id,
             **candidate.verification.model_dump(mode="json"),
         }
         decisions.append(serialized)
+        if candidate.verification.decision is EntailmentDecision.ENTAILED:
+            source_entailed.append(candidate.claim)
         if candidate.verification.trusted_projection_eligible:
-            accepted.append(candidate.claim)
+            trusted.append(candidate.claim)
         else:
-            rejected.append(serialized)
-    return decisions, tuple(accepted), rejected
+            non_trusted.append(serialized)
+    return _VerifiedCandidatePartition(
+        decisions=tuple(decisions),
+        source_entailed_claims=tuple(source_entailed),
+        trusted_projection_claims=tuple(trusted),
+        non_trusted_decisions=tuple(non_trusted),
+    )
 
 
 def eligibility_categories_agree(

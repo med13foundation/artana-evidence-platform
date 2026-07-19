@@ -43,6 +43,7 @@ from scripts.validation.claim_events.finite_source_unit.procedure_runner import 
 from scripts.validation.claim_events.finite_source_unit.runner import (
     RestartGateInputs,
     _execute_case,
+    _partition_verified_candidates,
     _select_panel,
     eligibility_categories_agree,
     restart_gate_requirements,
@@ -50,6 +51,7 @@ from scripts.validation.claim_events.finite_source_unit.runner import (
 )
 from scripts.validation.claim_events.finite_source_unit.service import (
     FiniteSourceUnitModelClient,
+    VerifiedEventCandidate,
     _extraction_prompt,
     _verification_prompt,
     bind_source_unit_extraction,
@@ -1210,6 +1212,81 @@ def test_projection_eligibility_fails_closed_on_structure_and_argument_types() -
                 "decisions": [bad_eligible],
             },
         )
+
+
+@pytest.mark.parametrize(
+    ("structure_decision", "direction_encoding", "projection_eligibility"),
+    [
+        ("LOSSY", "CONFLICT", "REVIEW_ONLY"),
+        ("INVALID", "SOURCE_ONLY", "REVIEW_ONLY"),
+        ("INVALID", "ABSTAIN", "ABSTAIN"),
+        ("ABSTAIN", "CONFLICT", "ABSTAIN"),
+    ],
+)
+def test_non_reject_routes_reject_invalid_structure_or_direction(
+    structure_decision: str,
+    direction_encoding: str,
+    projection_eligibility: str,
+) -> None:
+    payload = _candidate_verification_payload()
+    payload["structure_decision"] = structure_decision
+    payload["direction_encoding"] = direction_encoding
+    payload["projection_eligibility"] = projection_eligibility
+
+    with pytest.raises(ValidationError, match="invalid trust signals require REJECT"):
+        SourceUnitVerificationOutput.model_validate(
+            {
+                "eligibility_category": "FINDING",
+                "coverage_decision": "CANDIDATES_COMPLETE",
+                "coverage_reasoning": "The candidate has conflicting trust signals.",
+                "decisions": [payload],
+            },
+        )
+
+
+def test_candidate_partition_preserves_entailment_separately_from_trust() -> None:
+    source = "IL-4 inhibited FOXP3 expression."
+    unit = enumerate_source_units(case_id="case-1", source_text=source)[0]
+    extraction = bind_source_unit_extraction(
+        SourceUnitExtractionOutput(
+            eligibility_category=SourceUnitEligibilityCategory.FINDING,
+            decision=SourceUnitDecision.EXPLICIT_EVENT,
+            events=(_event_item(),),
+            reasoning="One explicit event.",
+        ),
+        unit=unit,
+    )
+    trusted = SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "The candidate is complete.",
+            "decisions": [_candidate_verification_payload()],
+        },
+    ).decisions[0]
+    lossy_payload = _candidate_verification_payload()
+    lossy_payload["structure_decision"] = "LOSSY"
+    lossy_payload["projection_eligibility"] = "REVIEW_ONLY"
+    lossy = SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "The candidate is entailed but lossy.",
+            "decisions": [lossy_payload],
+        },
+    ).decisions[0]
+    claim = extraction.accepted[0]
+
+    partition = _partition_verified_candidates(
+        (
+            VerifiedEventCandidate(claim=claim, verification=trusted),
+            VerifiedEventCandidate(claim=claim, verification=lossy),
+        ),
+    )
+
+    assert len(partition.source_entailed_claims) == 2
+    assert partition.trusted_projection_claims == (claim,)
+    assert len(partition.non_trusted_decisions) == 1
 
 
 def test_argument_type_reviews_are_bound_to_candidate_order() -> None:
