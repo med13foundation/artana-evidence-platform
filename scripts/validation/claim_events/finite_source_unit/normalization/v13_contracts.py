@@ -126,11 +126,11 @@ class SourceUnitNormalizationOutputV13(SourceUnitNormalizationOutputV12):
 
     @model_validator(mode="after")
     def require_controlled_event_topology(self) -> SourceUnitNormalizationOutputV13:
-        _require_controlled_event_topology(self.events)
+        require_controlled_event_topology(self.events)
         return self
 
 
-def _require_controlled_event_topology(
+def require_controlled_event_topology(
     events: tuple[V13NormalizedClaimInventoryItem, ...],
 ) -> None:
     """Reject impossible identities without deciding scientific meaning."""
@@ -177,4 +177,5 @@ __all__ = [
     "SourceUnitNormalizationOutputV13",
     "V13ClaimInventoryArgument",
     "V13NormalizedClaimInventoryItem",
+    "require_controlled_event_topology",
 ]

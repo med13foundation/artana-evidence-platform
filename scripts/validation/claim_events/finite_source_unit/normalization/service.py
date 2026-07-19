@@ -6,7 +6,7 @@ import hashlib
 import json
 from collections import Counter
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 from artana_evidence_api.document_extraction_support.claim_frames import (
     BoundClaimInventoryItem,
@@ -38,7 +38,23 @@ from scripts.validation.claim_events.finite_source_unit.normalization.contracts 
 _MIN_MERGED_SOURCE_EVENTS = 2
 _MIN_SPLIT_NORMALIZED_EVENTS = 2
 
+
+class _ContextEvent(Protocol):
+    @property
+    def local_event_id(self) -> str | None: ...
+
+
+class ContextBearingOutput(Protocol):
+    @property
+    def events(self) -> tuple[_ContextEvent, ...]: ...
+
+    @property
+    def context_dimensions(self) -> tuple[ContextDimension, ...]: ...
+
 if TYPE_CHECKING:
+    from scripts.validation.claim_events.finite_source_unit.normalization.context_dimensions import (
+        ContextDimension,
+    )
     from scripts.validation.claim_events.finite_source_unit.service import (
         FiniteSourceUnitModelClient,
         SourceUnitExtractionResult,
@@ -129,7 +145,7 @@ def bind_source_unit_normalization(
         )
 
     _require_complete_mapping(output=output, original=original)
-    _require_context_dimensions(output=output, source_text=unit.text)
+    require_context_dimensions(output=output, source_text=unit.text)
 
     binding = bind_claim_inventory_items(
         output.events,
@@ -274,9 +290,9 @@ def _require_mapping_operation_semantics(
                 )
 
 
-def _require_context_dimensions(
+def require_context_dimensions(
     *,
-    output: SourceUnitNormalizationOutput,
+    output: ContextBearingOutput,
     source_text: str,
 ) -> None:
     dimensions = output.context_dimensions
@@ -376,8 +392,10 @@ async def normalize_source_unit_extraction(  # noqa: PLR0913
 
 
 __all__ = [
+    "ContextBearingOutput",
     "SourceUnitNormalizationResult",
     "bind_source_unit_normalization",
     "canonical_json_sha256",
     "normalize_source_unit_extraction",
+    "require_context_dimensions",
 ]
