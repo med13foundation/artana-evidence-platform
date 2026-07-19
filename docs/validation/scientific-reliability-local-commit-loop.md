@@ -71,6 +71,7 @@ GitHub review state does not block the scientific lane. These conditions do:
 - the worktree is not clean at a live-call boundary;
 - no committed preregistration names the exact source, model, prompt, schema,
   call budget, scorer, and stop rules;
+- no create-once durable journal has reserved the experiment before call one;
 - focused tests, service checks, or adversarial review have an unresolved
   failure relevant to the experiment;
 - agent fallback, deterministic semantic repair, or unverified provider output
@@ -123,13 +124,14 @@ The local experiment commits remain the canonical custody lineage.
 
 ## Current Cycle
 
-The next scientific cycle compares one different visible source under two
-frozen representations:
+The current scientific cycle compares one visible source under two frozen
+representations:
 
 ```text
 A: extraction -> normalization -> source-only proposal review
-B: extraction -> normalization -> source-only proposal review
-   -> independent whole-source completeness inventory
+C: independent whole-source completeness inventory
+   -> independent source-only inventory verification
+A_PLUS_C: deterministic metric-only union; never trusted output
 ```
 
 The completeness agent sees the frozen source, not extractor or normalizer
@@ -138,12 +140,21 @@ and eligible context factors with exact spans and falsification conditions.
 Deterministic code compares that inventory with the proposed representation; it
 does not make biomedical judgments.
 
-The comparison succeeds only when B finds a real omission that A misses while
+The comparison succeeds only when C finds a real omission that A misses while
 adding zero invented events, preserving every already-correct event, producing
 verified provider receipts, and keeping disagreement at `FAIL` or `ABSTAIN`
 rather than converting it into trusted knowledge. Otherwise record
 `STOP_AND_RECALIBRATE` and reconsider the task or model before another live
 case.
+
+Current checkpoint: C4 remediation. Provider-free tests now require exact
+projection eligibility and event topology, both frozen diagnostic clauses,
+zero unverified context dimensions, explicit A/C conflict detection, exact
+receipt-to-audit identity, an issued source/model/implementation manifest, and
+a hash-chained fsynced journal that refuses reruns and preserves terminal
+failures. No V14 provider call has occurred. C5 remains unauthorized until the
+fresh adversarial review and updated full service gate pass on a committed clean
+worktree.
 
 ## Commit Naming
 

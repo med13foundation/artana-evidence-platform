@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import cast
 
 import pytest
@@ -12,10 +13,45 @@ from artana_evidence_api.document_extraction_support.llm_extraction.invocation_b
 )
 
 from scripts.validation.claim_frames.provider_receipts import (
+    OPENAI_PROVIDER_RECEIPT_BASE_URL,
     OpenAIProviderReceiptVerifier,
     ProviderReceiptExpectation,
     canonical_provider_output_sha256,
 )
+
+
+def test_environment_verifier_pins_the_canonical_openai_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import openai
+
+    observed: dict[str, object] = {}
+
+    def fake_openai(**kwargs: object) -> SimpleNamespace:
+        observed.update(kwargs)
+        return SimpleNamespace(responses=SimpleNamespace())
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
+    monkeypatch.setattr(openai, "OpenAI", fake_openai)
+
+    verifier = OpenAIProviderReceiptVerifier.from_environment()
+
+    assert verifier is not None
+    assert observed == {
+        "api_key": "test-key",
+        "base_url": OPENAI_PROVIDER_RECEIPT_BASE_URL,
+    }
+
+
+def test_environment_verifier_rejects_noncanonical_endpoint_override(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://synthetic.invalid/v1")
+
+    with pytest.raises(ValueError, match="canonical OpenAI endpoint"):
+        OpenAIProviderReceiptVerifier.from_environment()
 
 
 @dataclass(frozen=True, slots=True)

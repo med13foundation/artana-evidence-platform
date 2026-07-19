@@ -108,13 +108,15 @@ Two additional frozen clauses are non-scoring completeness diagnostics:
 - RCC-S did not alter cytoplasmic levels of RelA and NF-kappaB1; and
 - RCC-S inhibited activation of RelA/NF-kappaB1 binding complexes.
 
-Omitting either diagnostic prevents a `whole_source_complete` conclusion even
-when the localization-obligation metric improves. A source-entailed C-only item
-for either clause remains `REVIEW_ONLY_DISCOVERY` in this visible run.
+Omitting either diagnostic prevents a `whole_source_complete` conclusion and
+forces `STOP_AND_RECALIBRATE` even when the localization-obligation metric
+improves. A source-entailed item that exactly satisfies either frozen diagnostic
+is counted only as diagnostic coverage; unrelated C-only discoveries remain
+`REVIEW_ONLY_DISCOVERY`.
 
 ## Frozen Contracts
 
-- model: `openai/gpt-5.6-luna`
+- model: `openai:gpt-5.6-luna`
 - A execution policy: `tg04.finite_source_unit.v13_execution.v3`
 - experiment contract: `tg04.finite_source_unit.completeness_ab.v1`
 - completeness prompt: `tg04.finite_source_unit.whole_source_inventory.v1`
@@ -123,6 +125,8 @@ for either clause remains `REVIEW_ONLY_DISCOVERY` in this visible run.
   `tg04.finite_source_unit.whole_source_inventory_verification.v1`
 - completeness verification schema: `SourceUnitVerificationOutput`
 - deterministic metric: `tg04.localization_obligation_recovery.v1`
+- issued implementation manifest:
+  `578f344078d0de5fbd694321d630a749907f646da0bb87ec14ae4475927689ce`
 - network tools: none
 - browsing: none
 - retrieval: none
@@ -145,11 +149,13 @@ status, assertion scope, trigger, typed participants, event roles, and explicit
 controlled-event references where needed. It returns no confidence, score,
 probability, rank, or trust decision.
 
-The exact provider prompt and generated JSON-schema hashes must be committed and
-recorded in the execution manifest before the live call. Provider-free tests
-must prove that prompt construction exposes only the frozen source and that
-changing any source, prompt, schema, model, role, or execution policy changes
-the invocation identity.
+The exact completeness prompt hash, generated JSON-schema hashes, source and
+model identities, and callable fingerprints for prompt builders, binders,
+verification, and comparison are committed in the issued implementation
+manifest before the live call. Provider-free tests prove that prompt
+construction exposes only the frozen source and that changing any source,
+prompt, schema, model, role, obligation, diagnostic, or execution policy fails
+the issued boundary.
 
 ## Call Budget
 
@@ -170,6 +176,19 @@ The run stops after the first invalid response, transport failure, fallback,
 retry attempt, unverified receipt, source-binding mismatch, schema mismatch, or
 provider-lineage mismatch. A stopped run receives no scientific credit. No call
 may be repeated to improve the answer.
+
+Before call one, the runner must exclusively create a new experiment journal.
+The append-only JSONL journal is hash chained, file- and directory-fsynced, and
+read back after every stage. It stores complete A raw outputs and audit records,
+C inventory and verification raw outputs and records, exact receipts, the final
+deterministic comparison, and terminal failures. An existing or sealed journal
+refuses a rerun.
+
+The journal proves local ordering and integrity, not external authenticity by
+itself. A scientific result exists only when the experiment runner has retrieved
+all five provider responses, verified their exact invocation and output custody,
+and then sealed the terminal record through the fixed journal state machine.
+Reading a JSONL journal alone never qualifies scientific improvement.
 
 ## Deterministic Measures
 

@@ -49,6 +49,8 @@ ModelAttemptRole = Literal[
     "proposal_review",
     "structure_normalization",
     "normalized_review",
+    "whole_source_completeness",
+    "whole_source_completeness_verification",
 ]
 ModelAttemptPassRole = Literal[
     "claim_inventory",
@@ -60,6 +62,8 @@ ModelAttemptPassRole = Literal[
     "proposal_review",
     "structure_normalization",
     "normalized_review",
+    "whole_source_completeness",
+    "whole_source_completeness_verification",
 ]
 ModelAttemptValidationOutcome = Literal[
     "accepted",
@@ -187,9 +191,7 @@ def start_model_attempt_audit(
         not execution_contract_version.strip()
         or execution_contract_version.strip() != execution_contract_version
     ):
-        raise ValueError(
-            "execution_contract_version must be a nonempty trimmed value"
-        )
+        raise ValueError("execution_contract_version must be a nonempty trimmed value")
     session = ModelAttemptAuditSession(
         evidence_unit_sha256=(
             _sha256_text(evidence_unit_id) if evidence_unit_id is not None else None

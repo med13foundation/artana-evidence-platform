@@ -103,6 +103,8 @@ ARTANA_EVIDENCE_API_TEST_PATHS := \
 	 tests/unit/test_finite_source_unit_audit.py \
 	 tests/unit/test_nary_claim_evaluation.py \
 	 tests/unit/test_nary_claim_runner.py \
+	 tests/unit/test_source_unit_completeness.py \
+	 tests/unit/test_source_unit_completeness_journal.py \
 	 tests/unit/test_run_evidence_selection_expert_study_gate.py \
 	 tests/unit/test_run_evidence_selection_review_calibration_gate.py \
 	 tests/unit/test_agent_output_boundary_validator.py

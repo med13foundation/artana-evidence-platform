@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable
 from dataclasses import dataclass
-from types import FunctionType
+from types import FunctionType, ModuleType
 from typing import TYPE_CHECKING, Protocol, cast
 
 from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
@@ -260,7 +260,9 @@ def register_issued_execution_policy(
         ),
         verification_prompt=cast(
             "VerificationPromptBuilder",
-            _freeze_issued_function(policy.extraction_prompt_policy.verification_prompt),
+            _freeze_issued_function(
+                policy.extraction_prompt_policy.verification_prompt
+            ),
         ),
     )
     return IssuedExecutionSnapshot(
@@ -315,6 +317,30 @@ def _callable_source_fingerprint(
                 "keyword_defaults": _captured_callable_value(keyword_defaults),
             }
         ),
+    }
+
+
+def callable_source_fingerprint(
+    value: Callable[..., object],
+) -> dict[str, object]:
+    """Return the stable implementation identity of an experiment callable."""
+
+    return _callable_source_fingerprint(value)
+
+
+def module_runtime_fingerprints(module: ModuleType) -> dict[str, object]:
+    """Fingerprint every function and class currently owned by one module."""
+
+    owned_callables = {
+        name: value
+        for name, value in vars(module).items()
+        if callable(value)
+        and getattr(value, "__module__", None) == module.__name__
+        and (inspect.isfunction(value) or inspect.isclass(value))
+    }
+    return {
+        name: _callable_source_fingerprint(value)
+        for name, value in sorted(owned_callables.items())
     }
 
 
@@ -403,9 +429,11 @@ __all__ = [
     "IssuedExecutionSnapshot",
     "NormalizationPromptBuilder",
     "NormalizedReviewPromptBuilder",
+    "callable_source_fingerprint",
     "execution_components_manifest_sha256",
     "expected_issued_manifest",
     "is_issued_component_manifest",
+    "module_runtime_fingerprints",
     "issued_execution_policy_manifest_sha256",
     "register_issued_execution_policy",
     "require_issued_execution_authority",

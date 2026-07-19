@@ -18,6 +18,7 @@ JsonObject = dict[str, object]
 REPORT_MODEL_ID: Final = "openai:gpt-5.6-luna"
 EXECUTION_MODEL_ID: Final = "openai/gpt-5.6-luna"
 PROVIDER_MODEL_ID: Final = "gpt-5.6-luna"
+OPENAI_PROVIDER_RECEIPT_BASE_URL: Final = "https://api.openai.com/v1"
 _PROVIDER_MODEL_BY_ID: Final = {
     REPORT_MODEL_ID: PROVIDER_MODEL_ID,
     EXECUTION_MODEL_ID: PROVIDER_MODEL_ID,
@@ -295,10 +296,20 @@ class OpenAIProviderReceiptVerifier:
         ).strip()
         if not api_key:
             return None
+        configured_base_url = os.getenv("OPENAI_BASE_URL", "").strip()
+        if configured_base_url and configured_base_url.rstrip("/") != (
+            OPENAI_PROVIDER_RECEIPT_BASE_URL.rstrip("/")
+        ):
+            raise ValueError(
+                "provider receipt verification requires the canonical OpenAI endpoint"
+            )
 
         from openai import OpenAI
 
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(
+            api_key=api_key,
+            base_url=OPENAI_PROVIDER_RECEIPT_BASE_URL,
+        )
 
         def _retrieve(response_id: str) -> _ProviderResponse:
             return cast(
@@ -1004,6 +1015,7 @@ def _aggregate_receipt_status(
 __all__ = [
     "EXECUTION_MODEL_ID",
     "OpenAIProviderReceiptVerifier",
+    "OPENAI_PROVIDER_RECEIPT_BASE_URL",
     "OutputSchemaVerificationSource",
     "ProviderOutputVerificationSource",
     "PROVIDER_MODEL_ID",

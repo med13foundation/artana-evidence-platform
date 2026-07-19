@@ -2,22 +2,38 @@
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 from dataclasses import replace
+from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
 
 import pytest
 from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimArgumentRole,
+    ClaimEventRole,
     ClaimEventType,
+    InventoryPolarity,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
+    output_schema_json_sha256,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
     StructuredModelSemanticError,
 )
 from pydantic import ValidationError
 
+from scripts.validation.claim_events.finite_source_unit.completeness import (
+    comparison as comparison_module,
+)
+from scripts.validation.claim_events.finite_source_unit.completeness import (
+    experiment as experiment_module,
+)
 from scripts.validation.claim_events.finite_source_unit.completeness.comparison import (
+    ArgumentObligation,
     ControlledEventObligation,
+    DiagnosticClauseObligation,
     PairedCompletenessDecision,
     VerifiedCompletenessArm,
     compare_completeness_arms,
@@ -30,6 +46,13 @@ from scripts.validation.claim_events.finite_source_unit.completeness.experiment 
     CompletenessExperimentGateError,
     CompletenessExperimentPolicy,
     execute_completeness_experiment,
+    issue_completeness_experiment_policy,
+)
+from scripts.validation.claim_events.finite_source_unit.completeness.journal import (
+    CompletenessExperimentJournal,
+    CompletenessJournalAlreadyExistsError,
+    canonical_payload_sha256,
+    read_completeness_journal,
 )
 from scripts.validation.claim_events.finite_source_unit.completeness.prompts import (
     COMPLETENESS_PROMPT_VERSION,
@@ -54,7 +77,6 @@ from scripts.validation.claim_events.finite_source_unit.normalization.review imp
 )
 from scripts.validation.claim_events.finite_source_unit.normalization.service import (
     bind_source_unit_normalization,
-    canonical_json_sha256,
 )
 from scripts.validation.claim_events.finite_source_unit.normalization.v13_contracts import (
     SourceUnitNormalizationOutputV13,
@@ -69,7 +91,9 @@ from scripts.validation.claim_events.finite_source_unit.service import (
 )
 from scripts.validation.claim_events.finite_source_unit.source_units import (
     FrozenSourceUnit,
-    enumerate_source_units,
+)
+from scripts.validation.claim_frames.provider_receipts import (
+    canonical_provider_model_id,
 )
 
 _SOURCE = (
@@ -80,7 +104,18 @@ _SOURCE = (
 
 
 def _unit() -> FrozenSourceUnit:
-    return enumerate_source_units(case_id="v14-visible-rcc", source_text=_SOURCE)[0]
+    return FrozenSourceUnit(
+        unit_id=(
+            "source-unit-5ef1f16712fdc52972162a846d08993bf655b5d7e62d7f0d87599637b0de2f4e"
+        ),
+        index=6,
+        source_start=947,
+        source_end=1123,
+        text=_SOURCE,
+        source_sha256=(
+            "a3373f43f94b696ad2ac9830707eae96aa17e6e2e0bc4185f87d768169ca2272"
+        ),
+    )
 
 
 def _argument(
@@ -107,6 +142,7 @@ def _localization_target(
     participants: tuple[str, ...] = ("RelA", "NF-kappaB1"),
     destination: str = "nuclear",
     assertion_scope: str = "CONTROLLED_TARGET",
+    extra_arguments: tuple[dict[str, object], ...] = (),
 ) -> dict[str, object]:
     return {
         "exact_span": (
@@ -121,6 +157,7 @@ def _localization_target(
                 for participant in participants
             ],
             _argument("OTHER_ENTITY", "TOLOC", destination),
+            *extra_arguments,
         ],
         "source_locator": "normalized_extraction_text",
         "claim_kind": "SCIENTIFIC_FINDING",
@@ -139,6 +176,8 @@ def _suppression_controller(
     *,
     target_id: str = "nuclear-localization",
     event_type: str = "NEGATIVE_REGULATION",
+    polarity: str = "SUPPORT",
+    controlled_event_role: str = "THEME",
 ) -> dict[str, object]:
     process = "RelA and NF-kappaB1 but did suppress their nuclear localization"
     return {
@@ -148,7 +187,7 @@ def _suppression_controller(
             _argument("OTHER_ENTITY", "CAUSE", "RCC-S"),
             _argument(
                 "BIOLOGICAL_PROCESS",
-                "THEME",
+                controlled_event_role,
                 process,
                 controlled_event_ref=target_id,
             ),
@@ -157,7 +196,7 @@ def _suppression_controller(
         "claim_kind": "SCIENTIFIC_FINDING",
         "event_type": event_type,
         "assertion_scope": "SOURCE_ASSERTED",
-        "polarity": "SUPPORT",
+        "polarity": polarity,
         "epistemic_status": "ASSERTED",
         "local_event_id": "suppression",
         "inventory_rationale": "RCC-S suppresses the named process.",
@@ -174,7 +213,13 @@ def _completeness_output(
             "eligibility_category": "MIXED_SCIENTIFIC",
             "decision": "COMPLETE_INVENTORY",
             "events": events
-            or [_suppression_controller(), _localization_target()],
+            or [
+                _suppression_controller(),
+                _localization_target(),
+                _a_event(),
+                _inhibition_controller(),
+                _binding_target(),
+            ],
             "context_dimensions": [],
             "evidence_spans": [_SOURCE],
             "reasoning": reasoning,
@@ -201,6 +246,51 @@ def _a_event() -> dict[str, object]:
         "epistemic_status": "ASSERTED",
         "local_event_id": "cytoplasmic-null",
         "inventory_rationale": "The source explicitly reports no alteration.",
+    }
+
+
+def _binding_target() -> dict[str, object]:
+    process = "activation of RelA/NF-kappaB1 binding complexes"
+    return {
+        "exact_span": process,
+        "relation_cue_span": "binding",
+        "arguments": [
+            _argument("GENE_OR_PROTEIN", "THEME", "RelA"),
+            _argument("GENE_OR_PROTEIN", "THEME", "NF-kappaB1"),
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "BINDING",
+        "assertion_scope": "CONTROLLED_TARGET",
+        "polarity": "UNSCOPED",
+        "epistemic_status": "UNASSERTED",
+        "local_event_id": "binding-activation-target",
+        "inventory_rationale": "The source names binding-complex activation.",
+    }
+
+
+def _inhibition_controller() -> dict[str, object]:
+    process = "activation of RelA/NF-kappaB1 binding complexes"
+    return {
+        "exact_span": _SOURCE,
+        "relation_cue_span": "inhibited",
+        "arguments": [
+            _argument("OTHER_ENTITY", "CAUSE", "RCC-S"),
+            _argument(
+                "BIOLOGICAL_PROCESS",
+                "THEME",
+                process,
+                controlled_event_ref="binding-activation-target",
+            ),
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "NEGATIVE_REGULATION",
+        "assertion_scope": "SOURCE_ASSERTED",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "local_event_id": "binding-activation-inhibition",
+        "inventory_rationale": "The source explicitly reports inhibition.",
     }
 
 
@@ -283,6 +373,8 @@ def _verification(
     completeness: object,
     *,
     contradicted_position: int | None = None,
+    direction_encoding: str = "STRUCTURED",
+    projection_eligibility: str = "ELIGIBLE",
 ) -> tuple[SourceUnitVerificationOutput, tuple[object, ...]]:
     accepted = completeness.accepted
     decisions: list[dict[str, object]] = []
@@ -292,7 +384,9 @@ def _verification(
             {
                 "decision": "CONTRADICTED" if contradicted else "ENTAILED",
                 "structure_decision": "INVALID" if contradicted else "COMPLETE",
-                "direction_encoding": "CONFLICT" if contradicted else "STRUCTURED",
+                "direction_encoding": (
+                    "CONFLICT" if contradicted else direction_encoding
+                ),
                 "event_type_decision": "INVALID" if contradicted else "VALID",
                 "argument_semantic_decisions": [
                     {
@@ -302,7 +396,9 @@ def _verification(
                     }
                     for _ in candidate.item.arguments
                 ],
-                "projection_eligibility": "REJECT" if contradicted else "ELIGIBLE",
+                "projection_eligibility": (
+                    "REJECT" if contradicted else projection_eligibility
+                ),
                 "evidence_spans": [candidate.item.exact_span],
                 "reasoning": "The source directly supports this event.",
                 "falsification_condition": "A changed source event would falsify it.",
@@ -332,14 +428,165 @@ def _obligations() -> tuple[ControlledEventObligation, ...]:
             obligation_id=f"suppressed-nuclear-localization-{participant.casefold()}",
             target_event_type=ClaimEventType.LOCALIZATION,
             target_participant_span=participant,
+            target_allowed_participant_spans=("RelA", "NF-kappaB1"),
             target_cue_span="localization",
             target_destination_span="nuclear",
             controller_event_type=ClaimEventType.NEGATIVE_REGULATION,
             controller_cause_span="RCC-S",
-            controller_cue_fragment="suppress",
+            controller_cue_span="suppress",
         )
         for participant in ("RelA", "NF-kappaB1")
     )
+
+
+def _diagnostics() -> tuple[DiagnosticClauseObligation, ...]:
+    return (
+        DiagnosticClauseObligation(
+            obligation_id="cytoplasmic-null-result",
+            event_type=ClaimEventType.NO_EFFECT,
+            cue_span="did not alter",
+            polarity=InventoryPolarity.NULL_RESULT,
+            exact_arguments=(
+                ArgumentObligation(
+                    ClaimArgumentRole.OTHER_ENTITY,
+                    ClaimEventRole.CAUSE,
+                    "RCC-S",
+                ),
+                ArgumentObligation(
+                    ClaimArgumentRole.OUTCOME,
+                    ClaimEventRole.EFFECT,
+                    "cytoplasmic levels",
+                ),
+            ),
+        ),
+        DiagnosticClauseObligation(
+            obligation_id="binding-activation-inhibited",
+            event_type=ClaimEventType.NEGATIVE_REGULATION,
+            cue_span="inhibited",
+            polarity=InventoryPolarity.SUPPORT,
+            exact_arguments=(
+                ArgumentObligation(
+                    ClaimArgumentRole.OTHER_ENTITY,
+                    ClaimEventRole.CAUSE,
+                    "RCC-S",
+                ),
+                ArgumentObligation(
+                    ClaimArgumentRole.BIOLOGICAL_PROCESS,
+                    ClaimEventRole.THEME,
+                    "activation of RelA/NF-kappaB1 binding complexes",
+                    controlled_event_ref=True,
+                ),
+            ),
+            controlled_target_event_type=ClaimEventType.BINDING,
+            controlled_target_cue_span="binding",
+            controlled_target_exact_arguments=(
+                ArgumentObligation(
+                    ClaimArgumentRole.GENE_OR_PROTEIN,
+                    ClaimEventRole.THEME,
+                    "RelA",
+                ),
+                ArgumentObligation(
+                    ClaimArgumentRole.GENE_OR_PROTEIN,
+                    ClaimEventRole.THEME,
+                    "NF-kappaB1",
+                ),
+            ),
+        ),
+    )
+
+
+def _policy() -> CompletenessExperimentPolicy:
+    return issue_completeness_experiment_policy(
+        unit=_unit(),
+        model_id="openai:gpt-5.6-luna",
+    )
+
+
+def _journal_path(tmp_path: Path, name: str) -> Path:
+    return tmp_path / f"{name}.jsonl"
+
+
+def test_policy_factory_rejects_post_hoc_obligations_model_and_source() -> None:
+    with pytest.raises(ValueError, match="issued set"):
+        replace(_policy(), obligations=(_obligations()[0],))
+    with pytest.raises(ValueError, match="model"):
+        issue_completeness_experiment_policy(
+            unit=_unit(),
+            model_id="openai:gpt-5.6-sol",
+        )
+
+
+def test_policy_detects_runtime_scientific_qualifier_replacement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        comparison_module,
+        "_is_complete_entailed",
+        lambda item: True,
+    )
+
+    with pytest.raises(ValueError, match="implementation changed"):
+        issue_completeness_experiment_policy(
+            unit=_unit(),
+            model_id="openai:gpt-5.6-luna",
+        )
+
+
+def test_policy_detects_issued_receipt_verifier_replacement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        experiment_module,
+        "_ISSUED_RECEIPT_VERIFIER",
+        lambda *, records, model_id: _ExactReceiptGroup(records),
+    )
+
+    with pytest.raises(ValueError, match="implementation changed"):
+        issue_completeness_experiment_policy(
+            unit=_unit(),
+            model_id="openai:gpt-5.6-luna",
+        )
+    with pytest.raises(ValueError, match="text"):
+        issue_completeness_experiment_policy(
+            unit=replace(_unit(), text=f"{_SOURCE} altered"),
+            model_id="openai:gpt-5.6-luna",
+        )
+    with pytest.raises(ValueError, match="location"):
+        issue_completeness_experiment_policy(
+            unit=replace(_unit(), index=999),
+            model_id="openai:gpt-5.6-luna",
+        )
+
+
+def test_live_boundary_does_not_accept_trust_object_injection() -> None:
+    parameters = inspect.signature(execute_completeness_experiment).parameters
+
+    assert "journal_path" in parameters
+    assert "journal" not in parameters
+    assert "receipt_gate" not in parameters
+
+
+@pytest.mark.asyncio
+async def test_existing_wrong_reservation_refuses_execution(tmp_path: Path) -> None:
+    journal_path = _journal_path(tmp_path, "wrong-reservation")
+    CompletenessExperimentJournal.reserve(
+        path=journal_path,
+        reservation={"policy_manifest_sha256": "wrong", "unit_id": "wrong"},
+    )
+    client = _FiveCallClient()
+
+    with pytest.raises(CompletenessJournalAlreadyExistsError):
+        await execute_completeness_experiment(
+            client=cast("FiniteSourceUnitModelClient", client),
+            tenant=object(),
+            model_id="openai:gpt-5.6-luna",
+            execution_namespace="v14-wrong-reservation",
+            unit=_unit(),
+            policy=_policy(),
+            journal_path=journal_path,
+        )
+
+    assert client.calls == []
 
 
 def _c_arm(completeness: object) -> VerifiedCompletenessArm:
@@ -355,8 +602,8 @@ def test_completeness_contract_and_binder_accept_source_faithful_topology() -> N
     output = _completeness_output()
     result = bind_source_unit_completeness(output, unit=_unit())
 
-    assert len(result.accepted) == 2
-    assert len(result.controlled_event_links) == 1
+    assert len(result.accepted) == 5
+    assert len(result.controlled_event_links) == 2
     result.require_canonical_envelope(unit=_unit())
 
 
@@ -492,6 +739,7 @@ def test_suppression_aware_obligations_recover_both_participants() -> None:
         a_review=a_review,
         c_arm=_c_arm(completeness),
         obligations=_obligations(),
+        diagnostics=_diagnostics(),
     )
 
     assert result.decision is PairedCompletenessDecision.SCIENTIFIC_IMPROVEMENT
@@ -502,6 +750,101 @@ def test_suppression_aware_obligations_recover_both_participants() -> None:
     )
     assert result.a_plus_c_covered_obligations == result.c_covered_obligations
     assert result.regressed_obligations == ()
+    assert result.covered_diagnostics == (
+        "binding-activation-inhibited",
+        "cytoplasmic-null-result",
+    )
+    assert result.metric_improved is True
+    assert result.whole_source_complete is True
+    assert result.ready_for_confirmatory_run is True
+
+
+def test_narrow_metric_gain_without_diagnostics_is_not_scientific_progress() -> None:
+    a_normalization, a_review = _a_results()
+    completeness = bind_source_unit_completeness(
+        _completeness_output(
+            events=[
+                _suppression_controller(),
+                _localization_target(),
+                _a_event(),
+            ]
+        ),
+        unit=_unit(),
+    )
+
+    result = compare_completeness_arms(
+        a_normalization=a_normalization,
+        a_review=a_review,
+        c_arm=_c_arm(completeness),
+        obligations=_obligations(),
+        diagnostics=_diagnostics(),
+    )
+
+    assert result.metric_improved is True
+    assert result.decision is PairedCompletenessDecision.STOP_AND_RECALIBRATE
+    assert result.missing_diagnostics == ("binding-activation-inhibited",)
+    assert result.whole_source_complete is False
+    assert result.ready_for_confirmatory_run is False
+
+
+def test_semantically_polluted_diagnostic_does_not_count_as_preserved() -> None:
+    a_normalization, a_review = _a_results()
+    polluted_null = _a_event()
+    cast("list[dict[str, object]]", polluted_null["arguments"]).append(
+        _argument("OTHER_ENTITY", "THEME", "but")
+    )
+    completeness = bind_source_unit_completeness(
+        _completeness_output(
+            events=[
+                _suppression_controller(),
+                _localization_target(),
+                polluted_null,
+                _inhibition_controller(),
+                _binding_target(),
+            ]
+        ),
+        unit=_unit(),
+    )
+
+    result = compare_completeness_arms(
+        a_normalization=a_normalization,
+        a_review=a_review,
+        c_arm=_c_arm(completeness),
+        obligations=_obligations(),
+        diagnostics=_diagnostics(),
+    )
+
+    assert result.missing_diagnostics == ("cytoplasmic-null-result",)
+    assert result.decision is PairedCompletenessDecision.STOP_AND_RECALIBRATE
+
+
+def test_unverified_context_dimensions_fail_closed() -> None:
+    payload = _completeness_output().model_dump(mode="json")
+    payload["context_dimensions"] = [
+        {
+            "dimension_id": "invented-factor",
+            "dimension_type": "OTHER_EXPLICIT",
+            "operator": "ALTERNATIVE_LEVELS",
+            "factor_span": "RelA and NF-kappaB1",
+            "level_spans": ["RelA", "NF-kappaB1"],
+            "applies_to_local_event_ids": ["suppression"],
+            "crossed_dimension_ids": [],
+            "reasoning": "A source-bound but scientifically unverified factor.",
+            "falsification_condition": "Independent verification would reject it.",
+        }
+    ]
+    completeness = bind_source_unit_completeness(
+        SourceUnitCompletenessInventoryOutputV1.model_validate(payload),
+        unit=_unit(),
+    )
+    output, verified = _verification(completeness)
+
+    with pytest.raises(ValueError, match="does not verify context"):
+        VerifiedCompletenessArm(
+            completeness=completeness,
+            verification_output=output,
+            verified_events=verified,
+        )
 
 
 @pytest.mark.parametrize(
@@ -509,7 +852,10 @@ def test_suppression_aware_obligations_recover_both_participants() -> None:
     [
         (_localization_target(assertion_scope="SOURCE_ASSERTED"), None),
         (_localization_target(destination="cytoplasmic"), _suppression_controller()),
-        (_localization_target(), _suppression_controller(event_type="POSITIVE_REGULATION")),
+        (
+            _localization_target(),
+            _suppression_controller(event_type="POSITIVE_REGULATION"),
+        ),
     ],
 )
 def test_incompatible_localization_cannot_earn_suppression_credit(
@@ -528,6 +874,7 @@ def test_incompatible_localization_cannot_earn_suppression_credit(
         a_review=a_review,
         c_arm=_c_arm(completeness),
         obligations=_obligations(),
+        diagnostics=_diagnostics(),
     )
 
     assert result.decision is not PairedCompletenessDecision.SCIENTIFIC_IMPROVEMENT
@@ -554,11 +901,10 @@ def test_rela_only_target_cannot_cover_nfkb1_obligation() -> None:
         a_review=a_review,
         c_arm=_c_arm(completeness),
         obligations=_obligations(),
+        diagnostics=_diagnostics(),
     )
 
-    assert result.c_covered_obligations == (
-        "suppressed-nuclear-localization-rela",
-    )
+    assert result.c_covered_obligations == ("suppressed-nuclear-localization-rela",)
 
 
 def test_contradicted_c_item_forces_recalibration() -> None:
@@ -581,10 +927,130 @@ def test_contradicted_c_item_forces_recalibration() -> None:
             verified_events=verification,
         ),
         obligations=_obligations(),
+        diagnostics=_diagnostics(),
     )
 
     assert result.decision is PairedCompletenessDecision.STOP_AND_RECALIBRATE
     assert result.c_rejected_or_unresolved_event_count == 1
+
+
+@pytest.mark.parametrize(
+    ("direction_encoding", "projection_eligibility"),
+    [
+        ("SOURCE_ONLY", "REVIEW_ONLY"),
+        ("CONFLICT", "REJECT"),
+    ],
+)
+def test_non_projectable_verification_cannot_earn_scientific_credit(
+    direction_encoding: str,
+    projection_eligibility: str,
+) -> None:
+    a_normalization, a_review = _a_results()
+    completeness = bind_source_unit_completeness(
+        _completeness_output(),
+        unit=_unit(),
+    )
+    output, verified = _verification(
+        completeness,
+        direction_encoding=direction_encoding,
+        projection_eligibility=projection_eligibility,
+    )
+
+    result = compare_completeness_arms(
+        a_normalization=a_normalization,
+        a_review=a_review,
+        c_arm=VerifiedCompletenessArm(
+            completeness=completeness,
+            verification_output=output,
+            verified_events=verified,
+        ),
+        obligations=_obligations(),
+        diagnostics=_diagnostics(),
+    )
+
+    assert result.decision is PairedCompletenessDecision.STOP_AND_RECALIBRATE
+    assert result.c_covered_obligations == ()
+    assert result.c_rejected_or_unresolved_event_count == 5
+
+
+@pytest.mark.parametrize(
+    "controller",
+    [
+        _suppression_controller(polarity="REFUTE"),
+        _suppression_controller(controlled_event_role="CAUSE"),
+    ],
+)
+def test_wrong_controller_semantics_cannot_earn_scientific_credit(
+    controller: dict[str, object],
+) -> None:
+    a_normalization, a_review = _a_results()
+    completeness = bind_source_unit_completeness(
+        _completeness_output(events=[controller, _localization_target()]),
+        unit=_unit(),
+    )
+
+    result = compare_completeness_arms(
+        a_normalization=a_normalization,
+        a_review=a_review,
+        c_arm=_c_arm(completeness),
+        obligations=_obligations(),
+        diagnostics=_diagnostics(),
+    )
+
+    assert result.decision is not PairedCompletenessDecision.SCIENTIFIC_IMPROVEMENT
+    assert result.c_covered_obligations == ()
+
+
+def test_semantically_polluted_target_cannot_earn_scientific_credit() -> None:
+    a_normalization, a_review = _a_results()
+    polluted = _localization_target(
+        extra_arguments=(_argument("OTHER_ENTITY", "THEME", "but"),),
+    )
+    completeness = bind_source_unit_completeness(
+        _completeness_output(events=[_suppression_controller(), polluted]),
+        unit=_unit(),
+    )
+
+    result = compare_completeness_arms(
+        a_normalization=a_normalization,
+        a_review=a_review,
+        c_arm=_c_arm(completeness),
+        obligations=_obligations(),
+        diagnostics=_diagnostics(),
+    )
+
+    assert result.decision is not PairedCompletenessDecision.SCIENTIFIC_IMPROVEMENT
+    assert result.c_covered_obligations == ()
+
+
+def test_whole_sentence_cues_cannot_satisfy_exact_scientific_obligations() -> None:
+    a_normalization, a_review = _a_results()
+    events = [
+        _suppression_controller(),
+        _localization_target(),
+        _a_event(),
+        _inhibition_controller(),
+        _binding_target(),
+    ]
+    for event in (events[0], events[2], events[3]):
+        event["relation_cue_span"] = _SOURCE
+    completeness = bind_source_unit_completeness(
+        _completeness_output(events=events),
+        unit=_unit(),
+    )
+
+    result = compare_completeness_arms(
+        a_normalization=a_normalization,
+        a_review=a_review,
+        c_arm=_c_arm(completeness),
+        obligations=_obligations(),
+        diagnostics=_diagnostics(),
+    )
+
+    assert result.decision is PairedCompletenessDecision.STOP_AND_RECALIBRATE
+    assert result.c_covered_obligations == ()
+    assert result.covered_diagnostics == ()
+    assert result.ready_for_confirmatory_run is False
 
 
 def test_reasoning_local_ids_and_event_order_do_not_change_coverage() -> None:
@@ -595,7 +1061,13 @@ def test_reasoning_local_ids_and_event_order_do_not_change_coverage() -> None:
     renamed_controller["local_event_id"] = "renamed-controller"
     reordered = bind_source_unit_completeness(
         _completeness_output(
-            events=[renamed_target, renamed_controller],
+            events=[
+                renamed_target,
+                renamed_controller,
+                _a_event(),
+                _inhibition_controller(),
+                _binding_target(),
+            ],
             reasoning="A different self-declared completeness rationale.",
         ),
         unit=_unit(),
@@ -605,16 +1077,116 @@ def test_reasoning_local_ids_and_event_order_do_not_change_coverage() -> None:
         a_review=a_review,
         c_arm=_c_arm(baseline),
         obligations=_obligations(),
+        diagnostics=_diagnostics(),
     )
     reordered_result = compare_completeness_arms(
         a_normalization=a_normalization,
         a_review=a_review,
         c_arm=_c_arm(reordered),
         obligations=_obligations(),
+        diagnostics=_diagnostics(),
     )
 
-    assert reordered_result.c_covered_obligations == baseline_result.c_covered_obligations
+    assert (
+        reordered_result.c_covered_obligations == baseline_result.c_covered_obligations
+    )
     assert reordered_result.decision is baseline_result.decision
+
+
+def test_argument_order_does_not_create_a_false_discovery() -> None:
+    a_normalization, a_review = _a_results()
+    target = _localization_target()
+    target["arguments"] = list(reversed(cast("list[object]", target["arguments"])))
+    controller = _suppression_controller()
+    controller["arguments"] = list(
+        reversed(cast("list[object]", controller["arguments"]))
+    )
+    completeness = bind_source_unit_completeness(
+        _completeness_output(
+            events=[
+                target,
+                controller,
+                _a_event(),
+                _inhibition_controller(),
+                _binding_target(),
+            ]
+        ),
+        unit=_unit(),
+    )
+
+    result = compare_completeness_arms(
+        a_normalization=a_normalization,
+        a_review=a_review,
+        c_arm=_c_arm(completeness),
+        obligations=_obligations(),
+        diagnostics=_diagnostics(),
+    )
+
+    assert result.decision is PairedCompletenessDecision.SCIENTIFIC_IMPROVEMENT
+    assert result.c_only_review_event_count == 0
+
+
+def test_a_c_epistemic_conflict_forces_recalibration() -> None:
+    a_normalization, a_review = _a_results()
+    conflicting_null = _a_event()
+    conflicting_null["epistemic_status"] = "PROVISIONAL"
+    completeness = bind_source_unit_completeness(
+        _completeness_output(
+            events=[
+                _suppression_controller(),
+                _localization_target(),
+                conflicting_null,
+                _inhibition_controller(),
+                _binding_target(),
+            ]
+        ),
+        unit=_unit(),
+    )
+
+    result = compare_completeness_arms(
+        a_normalization=a_normalization,
+        a_review=a_review,
+        c_arm=_c_arm(completeness),
+        obligations=_obligations(),
+        diagnostics=_diagnostics(),
+    )
+
+    assert result.a_c_conflict_count == 1
+    assert result.decision is PairedCompletenessDecision.STOP_AND_RECALIBRATE
+
+
+def test_a_c_polarity_conflict_ignores_evidence_span_length() -> None:
+    a_normalization, a_review = _a_results()
+    conflicting_null = _a_event()
+    conflicting_null["exact_span"] = (
+        "RCC-S did not alter the cytoplasmic levels of RelA and NF-kappaB1"
+    )
+    conflicting_null["polarity"] = "REFUTE"
+    conflicting_null["local_event_id"] = "conflicting-cytoplasmic-null"
+    completeness = bind_source_unit_completeness(
+        _completeness_output(
+            events=[
+                _suppression_controller(),
+                _localization_target(),
+                _a_event(),
+                conflicting_null,
+                _inhibition_controller(),
+                _binding_target(),
+            ]
+        ),
+        unit=_unit(),
+    )
+
+    result = compare_completeness_arms(
+        a_normalization=a_normalization,
+        a_review=a_review,
+        c_arm=_c_arm(completeness),
+        obligations=_obligations(),
+        diagnostics=_diagnostics(),
+    )
+
+    assert result.a_c_conflict_count == 1
+    assert result.decision is PairedCompletenessDecision.STOP_AND_RECALIBRATE
 
 
 def test_cannot_substitute_verification_from_another_inventory() -> None:
@@ -635,14 +1207,52 @@ def test_cannot_substitute_verification_from_another_inventory() -> None:
 class _ExactReceipt:
     provider_output_hash_matched = True
     provider_output_verification_source = "exact_provider_output"
+    status = "verified_live"
+    failure = "none"
+    error_type = None
+    provider_status = "completed"
+    response_completed_verified = True
+    incomplete_details_absent = True
+    standalone_context_verified = True
+    input_topology_verified = True
+    invocation_topology_supported = True
+    invocation_topology_verified = True
 
-    def __init__(self, response_id: str) -> None:
-        self.response_id = response_id
+    def __init__(self, record: object) -> None:
+        self.response_id = record.provider_response_id
+        self.expected_model_id = canonical_provider_model_id(record.model_id)
+        self.retrieved_model_id = self.expected_model_id
+        self.expected_output_sha256 = record.provider_output_sha256
+        self.retrieved_output_sha256 = self.expected_output_sha256
+        self.expected_payload_sha256 = record.payload_sha256
+        self.retrieved_payload_sha256 = self.expected_payload_sha256
+        self.expected_prompt_sha256 = record.prompt_sha256
+        self.retrieved_prompt_sha256 = self.expected_prompt_sha256
+        self.expected_invocation_id = record.invocation_id
+        self.retrieved_invocation_id = self.expected_invocation_id
+        self.expected_kernel_run_id = record.kernel_run_id
+        self.retrieved_kernel_run_id = self.expected_kernel_run_id
+        self.expected_source_sha256 = record.source_sha256
+        self.retrieved_source_sha256 = self.expected_source_sha256
+        self.expected_input_sha256 = record.input_sha256
+        self.retrieved_input_sha256 = self.expected_input_sha256
+        self.expected_evidence_unit_sha256 = record.evidence_unit_sha256
+        self.retrieved_evidence_unit_sha256 = self.expected_evidence_unit_sha256
+        self.expected_output_schema_sha256 = output_schema_json_sha256(
+            {
+                "primary": SourceUnitExtractionOutput,
+                "structure_normalization": SourceUnitNormalizationOutputV13,
+                "normalized_review": SourceUnitNormalizedReviewOutputV13V6,
+                "whole_source_completeness": SourceUnitCompletenessInventoryOutputV1,
+                "whole_source_completeness_verification": SourceUnitVerificationOutput,
+            }[record.attempt_role]
+        )
+        self.retrieved_output_schema_sha256 = self.expected_output_schema_sha256
 
     def as_json(self) -> dict[str, object]:
         return {
             "response_id": self.response_id,
-            "provider_output_hash_matched": True,
+            "provider_output_hash_matched": self.provider_output_hash_matched,
             "provider_output_verification_source": "exact_provider_output",
         }
 
@@ -673,9 +1283,7 @@ class _ExactReceiptGroup:
         self.expected_count = len(records)
         self.verified_count = len(records)
         self.receipts = tuple(
-            (_ExactReceipt if exact else _TransformedReceipt)(
-                record.provider_response_id
-            )
+            (_ExactReceipt if exact else _TransformedReceipt)(record)
             for record in records
         )
 
@@ -692,9 +1300,46 @@ class _ExactReceiptGroup:
         }
 
 
+async def _execute_provider_free(
+    *,
+    client: FiniteSourceUnitModelClient,
+    tenant: object,
+    model_id: str,
+    execution_namespace: str,
+    unit: FrozenSourceUnit,
+    policy: CompletenessExperimentPolicy,
+    journal_path: Path,
+    receipt_verifier: object | None = None,
+) -> object:
+    verifier = receipt_verifier or (
+        lambda *, records, model_id: _ExactReceiptGroup(records)
+    )
+    return await experiment_module._execute_completeness_experiment_with_receipt_verifier(
+        client=client,
+        tenant=tenant,
+        model_id=model_id,
+        execution_namespace=execution_namespace,
+        unit=unit,
+        policy=policy,
+        journal_path=journal_path,
+        receipt_verifier=verifier,
+    )
+
+
 class _FiveCallClient:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        replayed: bool = False,
+        invalid_verification: bool = False,
+        cancel_verification: bool = False,
+        interrupt_verification: type[BaseException] | None = None,
+    ) -> None:
         self.calls: list[dict[str, object]] = []
+        self.replayed = replayed
+        self.invalid_verification = invalid_verification
+        self.cancel_verification = cancel_verification
+        self.interrupt_verification = interrupt_verification
         self.completeness = bind_source_unit_completeness(
             _completeness_output(),
             unit=_unit(),
@@ -722,12 +1367,18 @@ class _FiveCallClient:
             output = self.completeness.output
         else:
             assert schema is SourceUnitVerificationOutput
-            output = _verification(self.completeness)[0]
+            if self.cancel_verification:
+                raise asyncio.CancelledError
+            if self.interrupt_verification is not None:
+                raise self.interrupt_verification
+            output = (
+                {} if self.invalid_verification else _verification(self.completeness)[0]
+            )
         return SimpleNamespace(
             output=output,
             run_id=kwargs["run_id"],
             seq=len(self.calls),
-            replayed=False,
+            replayed=self.replayed,
             response_id=f"resp_v14_{len(self.calls)}",
             response_output_items=(),
         )
@@ -750,26 +1401,20 @@ class _InvalidAClient:
 
 
 @pytest.mark.asyncio
-async def test_five_call_experiment_enforces_roles_receipts_and_checkpoints() -> None:
+async def test_five_call_experiment_enforces_roles_receipts_and_checkpoints(
+    tmp_path: Path,
+) -> None:
     client = _FiveCallClient()
-    checkpoints: list[str] = []
+    journal_path = _journal_path(tmp_path, "complete")
 
-    def receipt_gate(records: tuple[object, ...]) -> object:
-        return _ExactReceiptGroup(records)
-
-    def checkpoint_sink(stage: str, payload: dict[str, object]) -> str:
-        checkpoints.append(stage)
-        return canonical_json_sha256(payload)
-
-    evidence = await execute_completeness_experiment(
+    evidence = await _execute_provider_free(
         client=cast("FiniteSourceUnitModelClient", client),
         tenant=object(),
         model_id="openai:gpt-5.6-luna",
         execution_namespace="v14-five-call-provider-free",
         unit=_unit(),
-        policy=CompletenessExperimentPolicy(obligations=_obligations()),
-        receipt_gate=receipt_gate,
-        checkpoint_sink=checkpoint_sink,
+        policy=_policy(),
+        journal_path=journal_path,
     )
 
     assert len(client.calls) == 5
@@ -779,33 +1424,54 @@ async def test_five_call_experiment_enforces_roles_receipts_and_checkpoints() ->
     assert evidence.comparison.decision is (
         PairedCompletenessDecision.SCIENTIFIC_IMPROVEMENT
     )
-    assert checkpoints == [
+    changed_counts = replace(
+        evidence,
+        comparison=replace(
+            evidence.comparison,
+            c_only_review_event_count=(
+                evidence.comparison.c_only_review_event_count + 1
+            ),
+        ),
+    )
+    assert changed_counts.evidence_sha256 != evidence.evidence_sha256
+    entries = read_completeness_journal(journal_path)
+    assert [entry.stage for entry in entries] == [
+        "RESERVED",
         "A_VERIFIED",
+        "C_INVENTORY_CALL_AUTHORIZED",
         "C_INVENTORY_VERIFIED",
+        "C_VERIFICATION_CALL_AUTHORIZED",
+        "C_VERIFICATION_VERIFIED",
         "EXPERIMENT_COMPLETE",
     ]
+    assert entries[-1].record_type == "terminal_success"
+    assert canonical_payload_sha256(
+        cast("dict[str, object]", entries[-1].payload["comparison"]),
+    ) == canonical_payload_sha256(evidence.comparison.as_json())
 
 
 @pytest.mark.asyncio
-async def test_failed_a_never_authorizes_completeness_call() -> None:
+async def test_failed_a_never_authorizes_completeness_call(
+    tmp_path: Path,
+) -> None:
     client = _InvalidAClient()
     receipt_calls = 0
 
-    def receipt_gate(records: tuple[object, ...]) -> object:
+    def receipt_gate(*, records: tuple[object, ...], model_id: str) -> object:
         nonlocal receipt_calls
         receipt_calls += 1
         return _ExactReceiptGroup(records)
 
     with pytest.raises(CompletenessExperimentGateError, match="A failed"):
-        await execute_completeness_experiment(
+        await _execute_provider_free(
             client=cast("FiniteSourceUnitModelClient", client),
             tenant=object(),
             model_id="openai:gpt-5.6-luna",
             execution_namespace="v14-failed-a",
             unit=_unit(),
-            policy=CompletenessExperimentPolicy(obligations=_obligations()),
-            receipt_gate=receipt_gate,
-            checkpoint_sink=lambda _stage, payload: canonical_json_sha256(payload),
+            policy=_policy(),
+            journal_path=_journal_path(tmp_path, "failed-a"),
+            receipt_verifier=receipt_gate,
         )
 
     assert client.calls == 1
@@ -813,64 +1479,175 @@ async def test_failed_a_never_authorizes_completeness_call() -> None:
 
 
 @pytest.mark.asyncio
-async def test_transformed_a_receipt_stops_before_completeness_call() -> None:
+async def test_transformed_a_receipt_stops_before_completeness_call(
+    tmp_path: Path,
+) -> None:
     client = _FiveCallClient()
 
-    with pytest.raises(CompletenessExperimentGateError, match="exact output"):
-        await execute_completeness_experiment(
+    def receipt_gate(*, records: tuple[object, ...], model_id: str) -> object:
+        return _ExactReceiptGroup(records, exact=False)
+
+    with pytest.raises(CompletenessExperimentGateError, match="receipt"):
+        await _execute_provider_free(
             client=cast("FiniteSourceUnitModelClient", client),
             tenant=object(),
             model_id="openai:gpt-5.6-luna",
             execution_namespace="v14-transformed-a",
             unit=_unit(),
-            policy=CompletenessExperimentPolicy(obligations=_obligations()),
-            receipt_gate=lambda records: _ExactReceiptGroup(records, exact=False),
-            checkpoint_sink=lambda _stage, payload: canonical_json_sha256(payload),
+            policy=_policy(),
+            journal_path=_journal_path(tmp_path, "transformed-a"),
+            receipt_verifier=receipt_gate,
         )
 
     assert len(client.calls) == 3
 
 
 @pytest.mark.asyncio
-async def test_unacknowledged_a_checkpoint_stops_before_completeness_call() -> None:
-    client = _FiveCallClient()
-
-    with pytest.raises(CompletenessExperimentGateError, match="durably acknowledged"):
-        await execute_completeness_experiment(
-            client=cast("FiniteSourceUnitModelClient", client),
-            tenant=object(),
-            model_id="openai:gpt-5.6-luna",
-            execution_namespace="v14-undurable-a",
-            unit=_unit(),
-            policy=CompletenessExperimentPolicy(obligations=_obligations()),
-            receipt_gate=lambda records: _ExactReceiptGroup(records),
-            checkpoint_sink=lambda _stage, _payload: "0" * 64,
-        )
-
-    assert len(client.calls) == 3
-
-
-@pytest.mark.asyncio
-async def test_failed_completeness_receipt_stops_before_verification_call() -> None:
+async def test_failed_completeness_receipt_stops_before_verification_call(
+    tmp_path: Path,
+) -> None:
     client = _FiveCallClient()
     receipt_call = 0
 
-    def receipt_gate(records: tuple[object, ...]) -> object:
+    def receipt_gate(*, records: tuple[object, ...], model_id: str) -> object:
         nonlocal receipt_call
         receipt_call += 1
         return _ExactReceiptGroup(records, exact=receipt_call == 1)
 
-    with pytest.raises(CompletenessExperimentGateError, match="exact output"):
-        await execute_completeness_experiment(
+    with pytest.raises(CompletenessExperimentGateError, match="receipt"):
+        await _execute_provider_free(
             client=cast("FiniteSourceUnitModelClient", client),
             tenant=object(),
             model_id="openai:gpt-5.6-luna",
             execution_namespace="v14-failed-c-receipt",
             unit=_unit(),
-            policy=CompletenessExperimentPolicy(obligations=_obligations()),
-            receipt_gate=receipt_gate,
-            checkpoint_sink=lambda _stage, payload: canonical_json_sha256(payload),
+            policy=_policy(),
+            journal_path=_journal_path(tmp_path, "failed-c-receipt"),
+            receipt_verifier=receipt_gate,
         )
 
     assert len(client.calls) == 4
     assert receipt_call == 2
+
+
+@pytest.mark.asyncio
+async def test_failed_fifth_call_is_preserved_before_terminal_stop(
+    tmp_path: Path,
+) -> None:
+    client = _FiveCallClient(invalid_verification=True)
+    journal_path = _journal_path(tmp_path, "failed-fifth-call")
+
+    with pytest.raises(ValidationError):
+        await _execute_provider_free(
+            client=cast("FiniteSourceUnitModelClient", client),
+            tenant=object(),
+            model_id="openai:gpt-5.6-luna",
+            execution_namespace="v14-failed-fifth-call",
+            unit=_unit(),
+            policy=_policy(),
+            journal_path=journal_path,
+        )
+
+    assert len(client.calls) == 5
+    entries = read_completeness_journal(journal_path)
+    assert entries[-2].stage == "C_EXECUTION_FAILED"
+    failed_records = entries[-2].payload["records"]
+    assert isinstance(failed_records, list)
+    assert failed_records[-1]["attempt_role"] == (
+        "whole_source_completeness_verification"
+    )
+    assert failed_records[-1]["validation_outcome"] == "schema_invalid"
+    assert entries[-1].record_type == "terminal_failure"
+
+
+@pytest.mark.asyncio
+async def test_fifth_call_cancellation_is_durably_terminal(
+    tmp_path: Path,
+) -> None:
+    client = _FiveCallClient(cancel_verification=True)
+    journal_path = _journal_path(tmp_path, "cancelled-fifth-call")
+
+    with pytest.raises(asyncio.CancelledError):
+        await _execute_provider_free(
+            client=cast("FiniteSourceUnitModelClient", client),
+            tenant=object(),
+            model_id="openai:gpt-5.6-luna",
+            execution_namespace="v14-cancelled-fifth-call",
+            unit=_unit(),
+            policy=_policy(),
+            journal_path=journal_path,
+        )
+
+    entries = read_completeness_journal(journal_path)
+    assert "C_VERIFICATION_CALL_AUTHORIZED" in {entry.stage for entry in entries}
+    assert entries[-2].stage == "C_EXECUTION_FAILED"
+    assert entries[-1].record_type == "terminal_failure"
+
+
+@pytest.mark.parametrize("interrupt", [KeyboardInterrupt, SystemExit])
+@pytest.mark.asyncio
+async def test_process_interrupt_during_fifth_call_is_durably_terminal(
+    interrupt: type[BaseException],
+    tmp_path: Path,
+) -> None:
+    client = _FiveCallClient(interrupt_verification=interrupt)
+    journal_path = _journal_path(tmp_path, interrupt.__name__.casefold())
+
+    with pytest.raises(interrupt):
+        await _execute_provider_free(
+            client=cast("FiniteSourceUnitModelClient", client),
+            tenant=object(),
+            model_id="openai:gpt-5.6-luna",
+            execution_namespace=f"v14-{interrupt.__name__.casefold()}",
+            unit=_unit(),
+            policy=_policy(),
+            journal_path=journal_path,
+        )
+
+    entries = read_completeness_journal(journal_path)
+    assert entries[-2].stage == "C_EXECUTION_FAILED"
+    assert entries[-1].record_type == "terminal_failure"
+
+
+@pytest.mark.asyncio
+async def test_unrelated_exact_receipt_cannot_replace_audited_attempt(
+    tmp_path: Path,
+) -> None:
+    client = _FiveCallClient()
+
+    def unrelated_receipt_gate(*, records: tuple[object, ...], model_id: str) -> object:
+        group = _ExactReceiptGroup(records)
+        group.receipts[0].response_id = "resp_unrelated"
+        return group
+
+    with pytest.raises(CompletenessExperimentGateError, match="identity"):
+        await _execute_provider_free(
+            client=cast("FiniteSourceUnitModelClient", client),
+            tenant=object(),
+            model_id="openai:gpt-5.6-luna",
+            execution_namespace="v14-unrelated-receipt",
+            unit=_unit(),
+            policy=_policy(),
+            journal_path=_journal_path(tmp_path, "unrelated-receipt"),
+            receipt_verifier=unrelated_receipt_gate,
+        )
+
+    assert len(client.calls) == 3
+
+
+@pytest.mark.asyncio
+async def test_replayed_attempts_cannot_qualify(tmp_path: Path) -> None:
+    client = _FiveCallClient(replayed=True)
+
+    with pytest.raises(CompletenessExperimentGateError, match="identity"):
+        await _execute_provider_free(
+            client=cast("FiniteSourceUnitModelClient", client),
+            tenant=object(),
+            model_id="openai:gpt-5.6-luna",
+            execution_namespace="v14-replayed",
+            unit=_unit(),
+            policy=_policy(),
+            journal_path=_journal_path(tmp_path, "replayed"),
+        )
+
+    assert len(client.calls) == 3
