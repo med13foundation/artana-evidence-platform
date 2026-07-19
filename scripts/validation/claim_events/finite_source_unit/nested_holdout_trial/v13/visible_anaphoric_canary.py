@@ -162,6 +162,17 @@ class GateAContext:
     audit_evidence_unit_id: str
 
 
+@dataclass(frozen=True, slots=True)
+class RepositoryFreezeEvidence:
+    head: str
+    parent: str
+    changed_paths: str
+    code_commit: str
+    runner_path: Path
+    expected_runner_sha256: str
+    observed_runner_sha256: str
+
+
 def sha256_json(value: object) -> str:
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
@@ -176,8 +187,30 @@ def fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
+def ensure_durable_directory(path: Path) -> None:
+    missing: list[Path] = []
+    cursor = path
+    while not cursor.exists():
+        missing.append(cursor)
+        cursor = cursor.parent
+    for directory in reversed(missing):
+        directory.mkdir()
+        fsync_directory(directory.parent)
+
+
 def command(*parts: str) -> str:
     return subprocess.check_output(parts, cwd=REPO, text=True).strip()
+
+
+def require_frozen_repository(evidence: RepositoryFreezeEvidence) -> None:
+    if evidence.parent != evidence.code_commit:
+        raise RuntimeError("V13 preregistration must directly follow its code commit")
+    if evidence.changed_paths != PREREG_DOC.relative_to(REPO).as_posix():
+        raise RuntimeError("code changed after the frozen V13 code checkpoint")
+    if evidence.runner_path != (REPO / RUNNER_REPO_PATH).resolve():
+        raise RuntimeError("V13 canary must execute its committed runner path")
+    if evidence.observed_runner_sha256 != evidence.expected_runner_sha256:
+        raise RuntimeError("committed V13 runner differs from its frozen hash")
 
 
 def preflight() -> tuple[FrozenSourceUnit, dict[str, object]]:
@@ -191,19 +224,23 @@ def preflight() -> tuple[FrozenSourceUnit, dict[str, object]]:
     if code_commit_match is None:
         raise RuntimeError("V13 preregistration lacks the full code commit")
     code_commit = code_commit_match.group(1)
-    if command("git", "rev-parse", "HEAD^") != code_commit:
-        raise RuntimeError("V13 preregistration must directly follow its code commit")
+    parent = command("git", "rev-parse", "HEAD^")
     changed = command("git", "diff", "--name-only", code_commit, "HEAD")
-    if changed != PREREG_DOC.relative_to(REPO).as_posix():
-        raise RuntimeError("code changed after the frozen V13 code checkpoint")
     runner_sha_match = RUNNER_SHA_PATTERN.search(preregistration)
     if runner_sha_match is None:
         raise RuntimeError("V13 preregistration lacks the external runner SHA-256")
     runner_sha256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-    if runner_sha256 != runner_sha_match.group(1):
-        raise RuntimeError("committed V13 runner differs from its frozen hash")
-    if Path(__file__).resolve() != (REPO / RUNNER_REPO_PATH).resolve():
-        raise RuntimeError("V13 canary must execute its committed runner path")
+    require_frozen_repository(
+        RepositoryFreezeEvidence(
+            head=head,
+            parent=parent,
+            changed_paths=changed,
+            code_commit=code_commit,
+            runner_path=Path(__file__).resolve(),
+            expected_runner_sha256=runner_sha_match.group(1),
+            observed_runner_sha256=runner_sha256,
+        )
+    )
     (unit,) = enumerate_source_units(case_id=CASE_ID, source_text=SOURCE)
     policy_json = V13_EXECUTION_POLICY.as_json()
     prompt = V13_EXECUTION_POLICY.extraction_prompt_policy.extraction_prompt(unit)
@@ -239,7 +276,7 @@ def preflight() -> tuple[FrozenSourceUnit, dict[str, object]]:
             raise RuntimeError(
                 f"V13 preregistration mismatch for {key}: {observed[key]!r}"
             )
-    ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_durable_directory(ARTIFACT_DIR)
     return unit, observed
 
 

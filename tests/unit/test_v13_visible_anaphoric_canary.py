@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
@@ -155,14 +156,80 @@ def test_malformed_receipt_expectation_is_total() -> None:
     assert "provider_response_id" in error
 
 
+def test_repository_freeze_rejects_every_mutable_boundary() -> None:
+    runner_path = (canary.REPO / canary.RUNNER_REPO_PATH).resolve()
+    changed_path = canary.PREREG_DOC.relative_to(canary.REPO).as_posix()
+    evidence = canary.RepositoryFreezeEvidence(
+        head="head",
+        parent="code",
+        changed_paths=changed_path,
+        code_commit="code",
+        runner_path=runner_path,
+        expected_runner_sha256="a" * 64,
+        observed_runner_sha256="a" * 64,
+    )
+    canary.require_frozen_repository(evidence)
+
+    attacks = (
+        replace(evidence, parent="other"),
+        replace(evidence, changed_paths=f"{changed_path}\nother.py"),
+        replace(evidence, runner_path=runner_path.parent / "other.py"),
+        replace(evidence, observed_runner_sha256="b" * 64),
+    )
+    for attack in attacks:
+        with pytest.raises(RuntimeError):
+            canary.require_frozen_repository(attack)
+
+
+def test_preflight_refuses_existing_result_or_reservation(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "result.json"
+    journal = tmp_path / "journal.jsonl"
+    monkeypatch.setattr(canary, "OUTPUT", output)
+    monkeypatch.setattr(canary, "JOURNAL", journal)
+
+    output.write_text("used", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="already has"):
+        canary.preflight()
+    output.unlink()
+    journal.write_text("reserved", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="already has"):
+        canary.preflight()
+
+
+def test_durable_namespace_is_fixed_and_parent_creation_is_fsynced(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    assert canary.ARTIFACT_DIR.is_absolute()
+    assert str(canary.ARTIFACT_DIR).startswith(
+        "/Users/alvaro/.codex/artana-evidence-experiments/"
+    )
+    fsynced: list[Path] = []
+    monkeypatch.setattr(canary, "fsync_directory", fsynced.append)
+    target = tmp_path / "first" / "second"
+
+    canary.ensure_durable_directory(target)
+
+    assert target.is_dir()
+    assert fsynced == [tmp_path, tmp_path / "first"]
+
+
 class _Closer:
     async def close(self) -> None:
         return None
 
 
-def test_cancellation_seals_terminal_report(
+@pytest.mark.parametrize(
+    "terminal_error",
+    [asyncio.CancelledError, KeyboardInterrupt, SystemExit],
+)
+def test_terminal_base_errors_seal_terminal_report(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    terminal_error: type[BaseException],
 ) -> None:
     output = tmp_path / "result.json"
     journal = tmp_path / "journal.jsonl"
@@ -182,7 +249,7 @@ def test_cancellation_seals_terminal_report(
     monkeypatch.setattr(canary, "as_model_client", lambda client: client)
 
     async def cancel(**_kwargs: object) -> object:
-        raise asyncio.CancelledError
+        raise terminal_error
 
     monkeypatch.setattr(canary, "execute_v13_source_unit_agents", cancel)
 
@@ -190,7 +257,7 @@ def test_cancellation_seals_terminal_report(
         case_id=canary.CASE_ID,
         source_text=canary.SOURCE,
     )
-    with pytest.raises(asyncio.CancelledError):
+    with pytest.raises(terminal_error):
         asyncio.run(
             canary.execute(
                 unit,
