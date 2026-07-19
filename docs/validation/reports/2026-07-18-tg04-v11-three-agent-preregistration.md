@@ -180,6 +180,9 @@ one call is not an accepted remediation.
   checks: green.
 - Residual risks recorded: this is one narrow null-result unit, all three roles
   use Luna, and an operational crash after provider activity remains fail-closed.
-- Live V11 provider call made: no.
-- Scientific result available: no.
+- Live V11 provider sequence made: yes; two provider responses were verified
+  before Call 2 failed deterministic semantic binding.
+- Scientific result available: finalized negative diagnostic. Meaning was
+  materially preserved, but workflow qualification failed because normalized
+  context dimensions referenced an event whose `local_event_id` was absent.
 - Persistence authorized: no.
