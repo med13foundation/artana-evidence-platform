@@ -6,8 +6,18 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
+    kernel_run_id_for_invocation,
+)
 from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
+    AuditedStructuredStepResult,
     StructuredModelSemanticError,
+    run_audited_structured_step,
+)
+from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    ModelAttemptAuditContext,
+    ModelStepResult,
+    fingerprinted_step_key,
 )
 
 from scripts.validation.claim_events.finite_source_unit.normalization.contracts import (
@@ -22,12 +32,13 @@ from scripts.validation.claim_events.finite_source_unit.normalization.service im
 from scripts.validation.claim_events.finite_source_unit.normalization.v13_contracts import (
     SourceUnitNormalizationOutputV13,
 )
+from scripts.validation.claim_events.finite_source_unit.normalization.v14_contracts import (
+    SourceUnitNormalizationProposalV14,
+)
 
 if TYPE_CHECKING:
-    from scripts.validation.claim_events.finite_source_unit.normalization.v14_contracts import (
-        SourceUnitNormalizationProposalV14,
-    )
     from scripts.validation.claim_events.finite_source_unit.service import (
+        FiniteSourceUnitModelClient,
         SourceUnitExtractionResult,
     )
     from scripts.validation.claim_events.finite_source_unit.source_units import (
@@ -82,6 +93,7 @@ def bind_source_unit_normalization_v14(
 ) -> V14NormalizationEnvelope:
     """Derive procedural labels and bind the unchanged scientific proposal."""
 
+    _require_literal_mention_anchors(proposal)
     operations = derive_v14_mapping_operations(
         proposal=proposal,
         unit=unit,
@@ -118,6 +130,23 @@ def bind_source_unit_normalization_v14(
             }
         ),
     )
+
+
+def _require_literal_mention_anchors(
+    proposal: SourceUnitNormalizationProposalV14,
+) -> None:
+    """Keep V14 occurrence anchors distinct from semantic referent anchors."""
+
+    for event in proposal.events:
+        for argument in event.arguments:
+            if any(
+                anchor.mention_span != argument.exact_span
+                for anchor in argument.mention_anchors
+            ):
+                raise StructuredModelSemanticError(
+                    "V14 mention anchors must repeat the argument exact_span; "
+                    "aliases and anaphora require referent anchors"
+                )
 
 
 def derive_v14_mapping_operations(
@@ -173,9 +202,70 @@ def derive_v14_mapping_operations(
     return tuple(operations)
 
 
+async def normalize_source_unit_proposal_v14(  # noqa: PLR0913
+    *,
+    client: FiniteSourceUnitModelClient,
+    tenant: object,
+    model_id: str,
+    execution_namespace: str,
+    unit: FrozenSourceUnit,
+    original: SourceUnitExtractionResult,
+    original_raw_output: dict[str, object],
+    prompt: str,
+    prompt_version: str,
+) -> AuditedStructuredStepResult[
+    SourceUnitNormalizationProposalV14,
+    V14NormalizationEnvelope,
+]:
+    """Run one V14 proposal call and bind deterministic mapping custody."""
+
+    original_raw_sha256 = canonical_json_sha256(original_raw_output)
+    step_key = fingerprinted_step_key(
+        prompt_version,
+        model_id,
+        unit.input_sha256,
+        original_raw_sha256,
+        V14_MAPPING_DERIVATION_VERSION,
+        execution_namespace,
+    )
+
+    async def invoke(invocation_id: str, provider_prompt: str) -> ModelStepResult:
+        return await client.step(
+            run_id=kernel_run_id_for_invocation(invocation_id),
+            tenant=tenant,
+            model=model_id,
+            prompt=provider_prompt,
+            output_schema=SourceUnitNormalizationProposalV14,
+            step_key=step_key,
+            replay_policy="fork_on_drift",
+        )
+
+    return await run_audited_structured_step(
+        invoke_model=invoke,
+        model_id=model_id,
+        prompt=prompt,
+        output_schema=SourceUnitNormalizationProposalV14,
+        step_key=step_key,
+        audit_context=ModelAttemptAuditContext(
+            attempt_role="structure_normalization",
+            pass_role="structure_normalization",  # noqa: S106 - audit role
+            retry_context=None,
+            source_sha256=unit.source_sha256,
+            input_sha256=unit.input_sha256,
+            semantic_unit_id=unit.unit_id,
+        ),
+        validate_semantics=lambda proposal: bind_source_unit_normalization_v14(
+            proposal,
+            unit=unit,
+            original=original,
+        ),
+    )
+
+
 __all__ = [
     "V14_MAPPING_DERIVATION_VERSION",
     "V14NormalizationEnvelope",
     "bind_source_unit_normalization_v14",
     "derive_v14_mapping_operations",
+    "normalize_source_unit_proposal_v14",
 ]
