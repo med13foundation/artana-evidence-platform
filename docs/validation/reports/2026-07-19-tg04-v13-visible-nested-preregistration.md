@@ -13,7 +13,7 @@ only the complete eight-case V13 visible matrix.
 ## Frozen Repository And Contract
 
 - branch: `alvaro/tg04-representation-invariant-contract`;
-- code-under-test commit: `ffc5079715c93ae4d4fe448c9f620401a61baabb`;
+- code-under-test commit: `aa070603d6621d20c10b1d414ae568d28b614487`;
 - model: `openai:gpt-5.6-luna`;
 - execution contract: `tg04.finite_source_unit.v13_execution.v2`;
 - execution contract SHA-256:
