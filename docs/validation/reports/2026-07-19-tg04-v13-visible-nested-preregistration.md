@@ -13,7 +13,7 @@ only the complete eight-case V13 visible matrix.
 ## Frozen Repository And Contract
 
 - branch: `alvaro/tg04-representation-invariant-contract`;
-- code-under-test commit: `f98d1497bf72826948e9a4a0ffce0fca04229015`;
+- code-under-test commit: `ffc5079715c93ae4d4fe448c9f620401a61baabb`;
 - model: `openai:gpt-5.6-luna`;
 - execution contract: `tg04.finite_source_unit.v13_execution.v2`;
 - execution contract SHA-256:
@@ -41,7 +41,7 @@ Its committed location and exact bytes are frozen before any provider call:
   `scripts/validation/claim_events/finite_source_unit/nested_holdout_trial/v13/visible_anaphoric_canary.py`;
 
 - runner SHA-256:
-  `7634b72649fff0804f14ba6ec7f37e15eb02da4570cfca897bc5935941836e93`;
+  `24484c00dde1028e536235d5731ec1e3dbe78f50defa7d18c4c121315569ed84`;
 - durable reservation key:
   `5d1925788702d15ded427cc8ec674242c876475377d28fc4b412ae43bd6e79bd`;
 - durable create-once artifact directory:
