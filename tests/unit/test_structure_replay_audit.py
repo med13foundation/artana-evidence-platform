@@ -8,12 +8,16 @@ import pytest
 
 from scripts.run_structure_replay_audit import structure_replay_exit_code
 from scripts.validation.claim_events.finite_source_unit.contracts import (
+    CandidateVerification,
     SourceUnitCoverageDecision,
     SourceUnitEligibilityCategory,
 )
 from scripts.validation.claim_events.finite_source_unit.structure_review.gate import (
     StructureReplayGateInputs,
     structure_replay_gate_requirements,
+)
+from scripts.validation.claim_events.finite_source_unit.structure_review.runner import (
+    _count_lossy_structure_findings,
 )
 from scripts.validation.claim_events.finite_source_unit.structure_review.source import (
     _verify_sha256,
@@ -32,7 +36,7 @@ def _baseline_gate() -> StructureReplayGateInputs:
         verification_decision_count=2,
         entailed_candidate_count=2,
         trusted_projection_count=0,
-        structure_blocker_count=1,
+        lossy_structure_count=1,
         invalid_argument_type_count=1,
         model_transport_identity_field_count=0,
         audit_identity_mismatch_count=0,
@@ -60,7 +64,7 @@ def test_structure_replay_gate_fails_closed_on_every_boundary() -> None:
         {"verification_decision_count": 1},
         {"entailed_candidate_count": 1},
         {"trusted_projection_count": 1},
-        {"structure_blocker_count": 0},
+        {"lossy_structure_count": 0},
         {"invalid_argument_type_count": 0},
         {"model_transport_identity_field_count": 1},
         {"audit_identity_mismatch_count": 1},
@@ -89,6 +93,42 @@ def test_hash_verification_is_create_once_and_fail_closed(tmp_path: Path) -> Non
     artifact.write_text("changed", encoding="utf-8")
     with pytest.raises(RuntimeError, match="test changed"):
         _verify_sha256(artifact, expected_sha256=expected, label="test")
+
+
+def _structure_decision_payload(structure_decision: str) -> CandidateVerification:
+    return CandidateVerification.model_validate(
+        {
+            "decision": "ENTAILED",
+            "structure_decision": structure_decision,
+            "direction_encoding": "STRUCTURED",
+            "event_type_decision": "VALID",
+            "argument_semantic_decisions": [
+                {
+                    "type_decision": "VALID",
+                    "event_role_decision": "VALID",
+                    "reasoning": "The argument is valid.",
+                },
+                {
+                    "type_decision": "VALID",
+                    "event_role_decision": "VALID",
+                    "reasoning": "The argument is valid.",
+                },
+            ],
+            "projection_eligibility": "REVIEW_ONLY",
+            "evidence_spans": ["source event"],
+            "reasoning": "The event requires review.",
+            "falsification_condition": "The source does not state the event.",
+        },
+    )
+
+
+def test_lossy_gate_does_not_count_abstention_as_affirmative_evidence() -> None:
+    decisions = (
+        _structure_decision_payload("LOSSY"),
+        _structure_decision_payload("ABSTAIN"),
+    )
+
+    assert _count_lossy_structure_findings(decisions) == 1
 
 
 def test_structure_replay_cli_exit_status_follows_gate() -> None:

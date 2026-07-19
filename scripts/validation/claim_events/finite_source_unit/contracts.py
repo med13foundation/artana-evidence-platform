@@ -217,6 +217,16 @@ class CandidateVerification(BaseModel):
                 for item in self.argument_semantic_decisions
             )
         )
+        invalid_trust_signal = (
+            self.structure_decision is EventStructureDecision.INVALID
+            or self.direction_encoding is DirectionEncodingDecision.CONFLICT
+            or invalid_semantics
+        )
+        if (
+            invalid_trust_signal
+            and self.projection_eligibility is not ProjectionEligibilityDecision.REJECT
+        ):
+            raise ValueError("invalid trust signals require REJECT")
         if self.projection_eligibility is ProjectionEligibilityDecision.ELIGIBLE:
             if not self.trusted_projection_eligible:
                 raise ValueError(
@@ -225,7 +235,7 @@ class CandidateVerification(BaseModel):
         elif self.projection_eligibility is ProjectionEligibilityDecision.REVIEW_ONLY:
             review_reason = (
                 self.decision is EntailmentDecision.ENTAILED
-                and not invalid_semantics
+                and not invalid_trust_signal
                 and (
                     self.structure_decision
                     in {EventStructureDecision.LOSSY, EventStructureDecision.ABSTAIN}

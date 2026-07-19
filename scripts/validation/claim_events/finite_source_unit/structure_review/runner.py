@@ -16,6 +16,7 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 )
 
 from scripts.validation.claim_events.finite_source_unit.contracts import (
+    CandidateVerification,
     EntailmentDecision,
     EventStructureDecision,
     SemanticValidityDecision,
@@ -61,6 +62,17 @@ if TYPE_CHECKING:
 
 _REPO_ROOT: Final = Path(__file__).resolve().parents[5]
 _MODEL_ID: Final = "openai:gpt-5.6-luna"
+
+
+def _count_lossy_structure_findings(
+    decisions: tuple[CandidateVerification, ...],
+) -> int:
+    """Count affirmative lossy findings without crediting abstentions."""
+
+    return sum(
+        decision.structure_decision is EventStructureDecision.LOSSY
+        for decision in decisions
+    )
 
 
 def run_structure_replay(
@@ -147,10 +159,7 @@ def _build_report(  # noqa: PLR0913
         OpenAIProviderReceiptVerifier.from_environment(),
     )
     verification_ids = provider_response_ids(records, "weak_review")
-    structure_blocker_count = sum(
-        decision.structure_decision is not EventStructureDecision.COMPLETE
-        for decision in decisions
-    )
+    lossy_structure_count = _count_lossy_structure_findings(decisions)
     invalid_argument_type_count = sum(
         argument.type_decision is SemanticValidityDecision.INVALID
         for decision in decisions
@@ -175,7 +184,7 @@ def _build_report(  # noqa: PLR0913
         trusted_projection_count=sum(
             decision.trusted_projection_eligible for decision in decisions
         ),
-        structure_blocker_count=structure_blocker_count,
+        lossy_structure_count=lossy_structure_count,
         invalid_argument_type_count=invalid_argument_type_count,
         model_transport_identity_field_count=count_model_identity_fields(
             None if verification is None else verification.model_dump(mode="json"),
