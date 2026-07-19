@@ -81,6 +81,11 @@ class RepeatSequenceDefinition:
     configured_model_id: str = "openai:gpt-5.6-luna"
     execution_model_id: str = "openai/gpt-5.6-luna"
     receipt_model_id: str = "gpt-5.6-luna"
+    execution_lease_schema_version: str | None = None
+    archive_sha256: str | None = None
+    expert_graph_sha256: str | None = None
+    source_identity: tuple[tuple[str, object], ...] = ()
+    prompt_digests: tuple[tuple[str, str], ...] = ()
 
     @property
     def label(self) -> str:
@@ -160,6 +165,7 @@ class _ProviderReservationIdentity:
     output: str
     token: str
     repository_evidence: dict[str, object]
+    execution_lease_sha256: str | None = None
 
 
 def require_active(
@@ -170,9 +176,14 @@ def require_active(
     """Reject forged, finalized, or replaced reservations."""
 
     payload = _read_json(authorization.reservation_path, definition=definition)
+    allowed_statuses = (
+        {"RESERVED", "EXECUTING"}
+        if definition.execution_lease_schema_version is not None
+        else {"RESERVED"}
+    )
     if (
         payload.get("schema_version") != definition.reservation_schema_version
-        or payload.get("status") != "RESERVED"
+        or payload.get("status") not in allowed_statuses
         or payload.get("token") != authorization.token
         or payload.get("run_id") != authorization.run_id
         or payload.get("repeat_index") != authorization.repeat_index
@@ -181,8 +192,19 @@ def require_active(
         or payload.get("projection_set_sha256") != definition.projection_set_sha256
         or payload.get("unit_id") != definition.unit_id
         or payload.get("repository_evidence") != authorization.repository_evidence
+        or not _reservation_has_frozen_identity(payload, definition=definition)
     ):
         raise RuntimeError(f"{definition.label} repeat authorization is not active")
+    if definition.execution_lease_schema_version is None:
+        return
+    if payload.get("status") == "EXECUTING":
+        _require_execution_lease(
+            authorization,
+            definition=definition,
+            reservation=payload,
+        )
+    elif _execution_lease_path(authorization.reservation_path).exists():
+        raise RuntimeError(f"{definition.label} execution lease is already consumed")
 
 
 def require_repository_unchanged(
@@ -209,6 +231,11 @@ def provider_evidence_unit_id(
 
     authorization.require_active()
     authorization.require_repository_unchanged()
+    execution_lease_sha256 = (
+        None
+        if definition.execution_lease_schema_version is None
+        else _claim_execution_lease(authorization, definition=definition)
+    )
     return _provider_evidence_unit_id(
         definition=definition,
         identity=_ProviderReservationIdentity(
@@ -217,6 +244,7 @@ def provider_evidence_unit_id(
             output=str(authorization.output),
             token=authorization.token,
             repository_evidence=authorization.repository_evidence,
+            execution_lease_sha256=execution_lease_sha256,
         ),
     )
 
@@ -272,6 +300,7 @@ def reserve_repeat(
         "repository_evidence": repository_evidence,
         "reserved_at": runtime.now_utc().isoformat(),
     }
+    reservation.update(_frozen_definition_evidence(definition))
     with reservation_path.open("x", encoding="utf-8") as reservation_file:
         reservation_file.write(
             json.dumps(reservation, indent=2, sort_keys=True, ensure_ascii=True) + "\n",
@@ -300,6 +329,10 @@ def finalize_repeat(
 
     authorization.require_active()
     authorization.require_repository_unchanged()
+    execution_lease_sha256 = _execution_lease_for_finalization(
+        authorization,
+        definition=definition,
+    )
     if report.get("repository_evidence") != authorization.repository_evidence:
         raise RuntimeError(
             f"report repository differs from {definition.label} reservation"
@@ -320,6 +353,7 @@ def finalize_repeat(
                     output=str(authorization.output),
                     token=authorization.token,
                     repository_evidence=authorization.repository_evidence,
+                    execution_lease_sha256=execution_lease_sha256,
                 ),
             ),
         ),
@@ -397,6 +431,11 @@ def _require_previous_repeat(
         registry_root / f"repeat-{previous_index}.json",
         definition=definition,
     )
+    if not _reservation_has_frozen_identity(
+        previous_reservation,
+        definition=definition,
+    ):
+        raise RuntimeError(f"previous {definition.label} frozen identity changed")
     report = _read_json(request.previous_report, definition=definition)
     previous_repository = _required_dict(
         previous_reservation,
@@ -435,6 +474,13 @@ def _require_previous_repeat(
                         definition=definition,
                     ),
                     repository_evidence=previous_repository,
+                    execution_lease_sha256=_finalized_lease_sha256(
+                        previous_reservation,
+                        reservation_path=(
+                            registry_root / f"repeat-{previous_index}.json"
+                        ),
+                        definition=definition,
+                    ),
                 ),
             ),
         ),
@@ -485,6 +531,11 @@ def _require_report_identity(
         != definition.projection_set_sha256
         or not isinstance(unit, dict)
         or unit.get("unit_id") != definition.unit_id
+        or not _report_has_frozen_identity(
+            source_corpus=source_corpus,
+            unit=unit,
+            definition=definition,
+        )
         or not isinstance(freshness, dict)
         or freshness.get("selection_seed") != definition.selection_seed
         or not isinstance(authorization, dict)
@@ -813,29 +864,35 @@ def _provider_evidence_unit_id(
     definition: RepeatSequenceDefinition,
     identity: _ProviderReservationIdentity,
 ) -> str:
+    payload: dict[str, object] = {
+        "schema_version": definition.provider_reservation_schema_version,
+        "run_id": identity.run_id,
+        "repeat_index": identity.repeat_index,
+        "output": identity.output,
+        "token": identity.token,
+        "repository_commit": _required_string(
+            identity.repository_evidence,
+            "commit",
+            definition=definition,
+        ),
+        "repository_tree_oid": _required_string(
+            identity.repository_evidence,
+            "tracked_tree_oid",
+            definition=definition,
+        ),
+        "repository_tree_sha256": _required_string(
+            identity.repository_evidence,
+            "tracked_tree_sha256",
+            definition=definition,
+        ),
+    }
+    payload.update(_frozen_definition_evidence(definition))
+    if definition.execution_lease_schema_version is not None:
+        if identity.execution_lease_sha256 is None:
+            raise RuntimeError(f"{definition.label} provider lease is unavailable")
+        payload["execution_lease_sha256"] = identity.execution_lease_sha256
     return json.dumps(
-        {
-            "schema_version": definition.provider_reservation_schema_version,
-            "run_id": identity.run_id,
-            "repeat_index": identity.repeat_index,
-            "output": identity.output,
-            "token": identity.token,
-            "repository_commit": _required_string(
-                identity.repository_evidence,
-                "commit",
-                definition=definition,
-            ),
-            "repository_tree_oid": _required_string(
-                identity.repository_evidence,
-                "tracked_tree_oid",
-                definition=definition,
-            ),
-            "repository_tree_sha256": _required_string(
-                identity.repository_evidence,
-                "tracked_tree_sha256",
-                definition=definition,
-            ),
-        },
+        payload,
         sort_keys=True,
         separators=(",", ":"),
         ensure_ascii=True,
@@ -854,6 +911,213 @@ def _provider_evidence_unit_sha256(
     return hashlib.sha256(serialized.encode()).hexdigest()
 
 
+def _frozen_definition_evidence(
+    definition: RepeatSequenceDefinition,
+) -> dict[str, object]:
+    evidence: dict[str, object] = {}
+    if definition.execution_lease_schema_version is not None:
+        evidence["execution_lease_schema_version"] = (
+            definition.execution_lease_schema_version
+        )
+    if definition.archive_sha256 is not None:
+        evidence["archive_sha256"] = definition.archive_sha256
+    if definition.expert_graph_sha256 is not None:
+        evidence["expert_graph_sha256"] = definition.expert_graph_sha256
+    if definition.source_identity:
+        evidence["source_identity"] = dict(definition.source_identity)
+    if definition.prompt_digests:
+        evidence["prompt_digests"] = dict(definition.prompt_digests)
+    return evidence
+
+
+def _reservation_has_frozen_identity(
+    reservation: Mapping[str, object],
+    *,
+    definition: RepeatSequenceDefinition,
+) -> bool:
+    return all(
+        reservation.get(key) == expected
+        for key, expected in _frozen_definition_evidence(definition).items()
+    )
+
+
+def _report_has_frozen_identity(
+    *,
+    source_corpus: Mapping[str, object],
+    unit: Mapping[str, object],
+    definition: RepeatSequenceDefinition,
+) -> bool:
+    if (
+        definition.archive_sha256 is not None
+        and source_corpus.get("archive_sha256") != definition.archive_sha256
+    ):
+        return False
+    if (
+        definition.expert_graph_sha256 is not None
+        and source_corpus.get("expert_graph_sha256") != definition.expert_graph_sha256
+    ):
+        return False
+    return all(
+        unit.get(key) == expected for key, expected in definition.source_identity
+    )
+
+
+def _claim_execution_lease(
+    authorization: RepeatAuthorization,
+    *,
+    definition: RepeatSequenceDefinition,
+) -> str:
+    reservation = _read_json(authorization.reservation_path, definition=definition)
+    if reservation.get("status") != "RESERVED":
+        raise RuntimeError(f"{definition.label} execution lease is already consumed")
+    lease_payload = _execution_lease_payload(reservation, definition=definition)
+    lease_sha256 = _canonical_sha256(lease_payload)
+    lease = {**lease_payload, "lease_sha256": lease_sha256}
+    lease_path = _execution_lease_path(authorization.reservation_path)
+    try:
+        with lease_path.open("x", encoding="utf-8") as lease_file:
+            lease_file.write(
+                json.dumps(lease, indent=2, sort_keys=True, ensure_ascii=True) + "\n",
+            )
+    except FileExistsError as exc:
+        raise RuntimeError(
+            f"{definition.label} execution lease is already consumed"
+        ) from exc
+
+    current = _read_json(authorization.reservation_path, definition=definition)
+    if current != reservation:
+        raise RuntimeError(
+            f"{definition.label} reservation changed during execution claim"
+        )
+    current.update(
+        {
+            "status": "EXECUTING",
+            "execution_lease_sha256": lease_sha256,
+        },
+    )
+    _replace_json(authorization.reservation_path, current)
+    return lease_sha256
+
+
+def _execution_lease_for_finalization(
+    authorization: RepeatAuthorization,
+    *,
+    definition: RepeatSequenceDefinition,
+) -> str | None:
+    if definition.execution_lease_schema_version is None:
+        return None
+    reservation = _read_json(authorization.reservation_path, definition=definition)
+    if reservation.get("status") != "EXECUTING":
+        raise RuntimeError(f"{definition.label} execution has not been claimed")
+    return _validate_execution_lease(
+        reservation,
+        reservation_path=authorization.reservation_path,
+        definition=definition,
+    )
+
+
+def _finalized_lease_sha256(
+    reservation: Mapping[str, object],
+    *,
+    reservation_path: Path,
+    definition: RepeatSequenceDefinition,
+) -> str | None:
+    if definition.execution_lease_schema_version is None:
+        return None
+    if reservation.get("status") != "FINALIZED":
+        raise RuntimeError(f"previous {definition.label} execution is not finalized")
+    return _validate_execution_lease(
+        reservation,
+        reservation_path=reservation_path,
+        definition=definition,
+    )
+
+
+def _require_execution_lease(
+    authorization: RepeatAuthorization,
+    *,
+    definition: RepeatSequenceDefinition,
+    reservation: Mapping[str, object],
+) -> None:
+    _validate_execution_lease(
+        reservation,
+        reservation_path=authorization.reservation_path,
+        definition=definition,
+    )
+
+
+def _validate_execution_lease(
+    reservation: Mapping[str, object],
+    *,
+    reservation_path: Path,
+    definition: RepeatSequenceDefinition,
+) -> str:
+    lease_payload = _execution_lease_payload(reservation, definition=definition)
+    lease_sha256 = _canonical_sha256(lease_payload)
+    lease = _read_json(_execution_lease_path(reservation_path), definition=definition)
+    if (
+        lease != {**lease_payload, "lease_sha256": lease_sha256}
+        or reservation.get("execution_lease_sha256") != lease_sha256
+    ):
+        raise RuntimeError(f"{definition.label} execution lease is invalid")
+    return lease_sha256
+
+
+def _execution_lease_payload(
+    reservation: Mapping[str, object],
+    *,
+    definition: RepeatSequenceDefinition,
+) -> dict[str, object]:
+    schema_version = definition.execution_lease_schema_version
+    if schema_version is None:
+        raise RuntimeError(f"{definition.label} does not use an execution lease")
+    payload: dict[str, object] = {
+        "schema_version": schema_version,
+        "reservation_schema_version": definition.reservation_schema_version,
+        "run_id": _required_string(reservation, "run_id", definition=definition),
+        "repeat_index": _required_int(
+            reservation,
+            "repeat_index",
+            definition=definition,
+        ),
+        "output": _required_string(reservation, "output", definition=definition),
+        "token_sha256": _token_sha256(
+            _required_string(reservation, "token", definition=definition),
+        ),
+        "repository_evidence": _required_dict(
+            reservation,
+            "repository_evidence",
+            definition=definition,
+        ),
+    }
+    payload.update(_frozen_definition_evidence(definition))
+    return payload
+
+
+def _execution_lease_path(reservation_path: Path) -> Path:
+    return reservation_path.with_name(f"{reservation_path.stem}.execution.json")
+
+
+def _canonical_sha256(value: object) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode(),
+    ).hexdigest()
+
+
+def _replace_json(path: Path, value: Mapping[str, object]) -> None:
+    replacement = path.with_suffix(f"{path.suffix}.tmp")
+    replacement.write_text(
+        json.dumps(value, indent=2, sort_keys=True, ensure_ascii=True) + "\n",
+        encoding="utf-8",
+    )
+    replacement.replace(path)
+
+
 def _required_string(
     value: Mapping[str, object],
     key: str,
@@ -862,6 +1126,18 @@ def _required_string(
 ) -> str:
     item = value.get(key)
     if not isinstance(item, str):
+        raise TypeError(f"{definition.label} reservation lacks {key}")
+    return item
+
+
+def _required_int(
+    value: Mapping[str, object],
+    key: str,
+    *,
+    definition: RepeatSequenceDefinition,
+) -> int:
+    item = value.get(key)
+    if not isinstance(item, int) or isinstance(item, bool):
         raise TypeError(f"{definition.label} reservation lacks {key}")
     return item
 

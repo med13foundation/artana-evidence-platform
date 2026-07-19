@@ -44,6 +44,7 @@ if TYPE_CHECKING:
     )
     from scripts.validation.claim_events.finite_source_unit.service import (
         FiniteSourceUnitModelClient,
+        SourceUnitPromptPolicy,
     )
     from scripts.validation.claim_events.finite_source_unit.source_units import (
         FrozenSourceUnit,
@@ -61,9 +62,7 @@ class SingleUnitAgentRunEvidence:
     trusted: tuple[BoundClaimInventoryItem, ...]
     controlled_event_links: tuple[BoundControlledEventLink, ...]
     controlled_event_link_ambiguities: tuple[ControlledEventLinkAmbiguity, ...]
-    unlinked_controlled_event_references: tuple[
-        UnlinkedControlledEventReference, ...
-    ]
+    unlinked_controlled_event_references: tuple[UnlinkedControlledEventReference, ...]
     unlinked_controlled_target_ids: tuple[str, ...]
     extracted_candidate_count: int
     binding_rejection_count: int
@@ -90,6 +89,7 @@ async def execute_source_unit_agents(  # noqa: PLR0913
     unit: FrozenSourceUnit,
     allow_binding_repair: bool = False,
     audit_evidence_unit_id: str | None = None,
+    prompt_policy: SourceUnitPromptPolicy | None = None,
 ) -> SingleUnitAgentRunEvidence:
     """Run exactly one extraction and one independent verification call."""
 
@@ -119,6 +119,7 @@ async def execute_source_unit_agents(  # noqa: PLR0913
             model_id=model_id,
             execution_namespace=execution_namespace,
             unit=unit,
+            prompt_policy=prompt_policy,
         )
         extraction_output = extraction.value.output
         current_extraction = extraction.value
@@ -163,6 +164,7 @@ async def execute_source_unit_agents(  # noqa: PLR0913
             execution_namespace=execution_namespace,
             unit=unit,
             candidates=current_extraction.accepted,
+            prompt_policy=prompt_policy,
         )
         verification_output = verification.parsed
         verified = verification.value

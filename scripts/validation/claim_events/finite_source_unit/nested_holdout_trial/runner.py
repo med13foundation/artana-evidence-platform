@@ -35,7 +35,16 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.thi
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v9.selection import (
     select_ninth_nested_event_holdout,
 )
-from scripts.validation.claim_events.finite_source_unit.service import as_model_client
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10.prompts import (
+    V10_PROMPT_POLICY,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10.selection import (
+    select_tenth_nested_event_holdout,
+)
+from scripts.validation.claim_events.finite_source_unit.service import (
+    SourceUnitPromptPolicy,
+    as_model_client,
+)
 from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
     execute_source_unit_agents,
     sha256_json,
@@ -209,13 +218,45 @@ def preflight_ninth_nested_event_holdout_trial(*, archive: Path) -> None:
         )
 
 
-def _run_authorized_trial(
+def run_tenth_nested_event_holdout_trial(
+    *,
+    archive: Path,
+    run_id: str,
+    repeat_index: int,
+    authorization: RepeatAuthorization,
+) -> dict[str, object]:
+    """Run the V10 context-complete, cue-invariant holdout."""
+
+    if authorization.run_id != run_id or authorization.repeat_index != repeat_index:
+        raise RuntimeError("tenth holdout authorization does not match the request")
+    return _run_authorized_trial(
+        archive=archive,
+        run_id=run_id,
+        repeat_index=repeat_index,
+        authorization=authorization,
+        selection_factory=select_tenth_nested_event_holdout,
+        prompt_policy=V10_PROMPT_POLICY,
+    )
+
+
+def preflight_tenth_nested_event_holdout_trial(*, archive: Path) -> None:
+    """Verify the sealed archive and V10 selection before reservation."""
+
+    with verified_corpus_root(archive) as corpus_root:
+        select_tenth_nested_event_holdout(
+            corpus_root=corpus_root,
+            archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+        )
+
+
+def _run_authorized_trial(  # noqa: PLR0913
     *,
     archive: Path,
     run_id: str,
     repeat_index: int,
     authorization: RepeatAuthorization,
     selection_factory: SelectionFactory,
+    prompt_policy: SourceUnitPromptPolicy | None = None,
 ) -> dict[str, object]:
     authorization.require_active()
     with verified_corpus_root(archive) as corpus_root:
@@ -228,6 +269,7 @@ def _run_authorized_trial(
         run_id=run_id,
         repeat_index=repeat_index,
         authorization=authorization,
+        prompt_policy=prompt_policy,
     )
     authorization.require_active()
     report.pop("report_sha256", None)
@@ -246,6 +288,7 @@ def _run_selected_trial(
     run_id: str,
     repeat_index: int,
     authorization: RepeatAuthorization | None = None,
+    prompt_policy: SourceUnitPromptPolicy | None = None,
 ) -> dict[str, object]:
     repository_evidence = collect_repository_evidence(_REPO_ROOT)
     if repository_evidence["clean"] is not True:
@@ -266,17 +309,19 @@ def _run_selected_trial(
                 if authorization is None
                 else authorization.provider_evidence_unit_id()
             ),
+            prompt_policy=prompt_policy,
         ),
     )
 
 
-async def _run_trial(
+async def _run_trial(  # noqa: PLR0913
     *,
     selection: NestedHoldoutSelection,
     run_id: str,
     repeat_index: int,
     repository_evidence: dict[str, object],
     audit_evidence_unit_id: str | None = None,
+    prompt_policy: SourceUnitPromptPolicy | None = None,
 ) -> dict[str, object]:
     client, tenant, execution_model_id, kernel, store = build_tg04_runtime(_MODEL_ID)
     try:
@@ -292,6 +337,7 @@ async def _run_trial(
                 selection.trial_generation >= _BINDING_REPAIR_MIN_TRIAL_GENERATION
             ),
             audit_evidence_unit_id=audit_evidence_unit_id,
+            prompt_policy=prompt_policy,
         )
     finally:
         with suppress(Exception):
@@ -313,10 +359,12 @@ async def _run_trial(
 
 __all__ = [
     "preflight_ninth_nested_event_holdout_trial",
+    "preflight_tenth_nested_event_holdout_trial",
     "run_eighth_nested_event_holdout_trial",
     "run_fourth_nested_event_holdout_trial",
     "run_nested_event_holdout_trial",
     "run_ninth_nested_event_holdout_trial",
     "run_second_nested_event_holdout_trial",
     "run_third_nested_event_holdout_trial",
+    "run_tenth_nested_event_holdout_trial",
 ]

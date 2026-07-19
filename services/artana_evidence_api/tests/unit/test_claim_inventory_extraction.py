@@ -160,8 +160,8 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-            "document_extraction.claim_pipeline.v32:claim_inventory.v25+"
-            "claim_inventory_completeness.v25+claim_inventory_recovery.v12+"
+        "document_extraction.claim_pipeline.v33:claim_inventory.v26+"
+        "claim_inventory_completeness.v26+claim_inventory_recovery.v12+"
         "claim_framing.v8"
     )
 
@@ -207,6 +207,15 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
     assert "do not emit a generic regulation duplicate" in normalized_prompt
     assert "repeats anywhere in the frozen chunk" in normalized_prompt
     assert "identify exactly one occurrence" in normalized_prompt
+    assert "simultaneously names anti-cd3/anti-cd28 treatment" in normalized_prompt
+    assert "one bundled population or context argument" in normalized_prompt
+    assert "shortest exact verb or phrase" in normalized_prompt
+    assert "production of named gene or protein products as expression" in (
+        normalized_prompt
+    )
+    assert "context copied onto the outer controller is not a substitute" in (
+        normalized_prompt
+    )
 
     completeness_prompt = CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT.casefold()
     assert "referenced event as a distinct sibling claim" in completeness_prompt
@@ -226,6 +235,9 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
     assert "typed source-bound argument for the inherited tested process" in (
         completeness_prompt
     )
+    assert "one bundled argument is incomplete" in completeness_prompt
+    assert "other_explicit is incomplete" in completeness_prompt
+    assert "an outer copy is not a substitute" in completeness_prompt
 
     for prompt in (normalized_prompt, completeness_prompt):
         assert "directional trend" in prompt

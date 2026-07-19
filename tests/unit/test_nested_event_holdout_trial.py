@@ -211,17 +211,17 @@ def _v9_projection_inventory(
             arguments.append(reference_payload)
         event_semantics = semantics[event.event_id]
         payload: dict[str, object] = {
-                    "exact_span": _V9_SOURCE,
-                    "relation_cue_span": event.trigger.exact_span,
-                    "arguments": arguments,
-                    "source_locator": "normalized_extraction_text",
-                    "claim_kind": event_semantics.claim_kind.value,
-                    "event_type": event.event_type,
-                    "assertion_scope": event_semantics.assertion_scope.value,
-                    "polarity": event_semantics.polarity.value,
-                    "epistemic_status": event_semantics.epistemic_status.value,
-                    "inventory_rationale": "Synthetic exact conformance fixture.",
-                }
+            "exact_span": _V9_SOURCE,
+            "relation_cue_span": event.trigger.exact_span,
+            "arguments": arguments,
+            "source_locator": "normalized_extraction_text",
+            "claim_kind": event_semantics.claim_kind.value,
+            "event_type": event.event_type,
+            "assertion_scope": event_semantics.assertion_scope.value,
+            "polarity": event_semantics.polarity.value,
+            "epistemic_status": event_semantics.epistemic_status.value,
+            "inventory_rationale": "Synthetic exact conformance fixture.",
+        }
         if projection.projection_id.endswith("__bionlp-expert-nested-restoration"):
             payload["local_event_id"] = event.event_id
         items.append(ClaimInventoryItem.model_validate(payload))
@@ -258,7 +258,11 @@ def _v9_referent_anchor(referent: SealedReferenceArgument) -> dict[str, str]:
     }
 
 
-def _trusted_inventory(*, wrong_outer_cause: bool = False):
+def _trusted_inventory(
+    *,
+    wrong_outer_cause: bool = False,
+    outer_cue: str = "synergize to resist",
+):
     inner = _item(
         exact_span="ZEB blocks the activity of c-Myb",
         cue="blocks",
@@ -270,7 +274,7 @@ def _trusted_inventory(*, wrong_outer_cause: bool = False):
     outer_cause = "Ets" if wrong_outer_cause else "c-Myb"
     outer = _item(
         exact_span=_SOURCE,
-        cue="synergize to resist",
+        cue=outer_cue,
         arguments=[
             _argument("GENE_OR_PROTEIN", "CAUSE", outer_cause),
             _argument(
@@ -885,6 +889,29 @@ def test_wrong_outer_cause_cannot_receive_nested_graph_credit() -> None:
     assert result.complete_graph_match_count == 0
 
 
+def test_matcher_accepts_only_pre_adjudicated_trigger_alternative() -> None:
+    trusted = _trusted_inventory(outer_cue="resist")
+    links = link_controlled_events(trusted)
+    graph = _sealed_graph()
+    outer = replace(
+        graph.events[1],
+        trigger_alternatives=(SealedTrigger("resist", 863, 869),),
+    )
+    result = match_nested_event_graph(
+        expert_graph=replace(graph, events=(graph.events[0], outer)),
+        trusted=trusted,
+        links=links.links,
+    )
+    unadjudicated = match_nested_event_graph(
+        expert_graph=graph,
+        trusted=trusted,
+        links=links.links,
+    )
+
+    assert result.completely_recovered_once is True
+    assert unadjudicated.complete_graph_match_count == 0
+
+
 def test_projection_set_requires_one_complete_projection_without_partial_credit() -> (
     None
 ):
@@ -1433,6 +1460,25 @@ def test_projection_set_rejects_identity_and_source_drift_before_execution() -> 
     valid = _projection_set(_sealed_graph())
     validate_sealed_projection_set(valid, unit=_frozen_test_unit())
     projection = valid.projections[0]
+    accepted_alternative = SealedTrigger("resist", 863, 869)
+    alternative_graph = replace(
+        projection.graph,
+        events=(
+            projection.graph.events[0],
+            replace(
+                projection.graph.events[1],
+                trigger_alternatives=(accepted_alternative,),
+            ),
+        ),
+    )
+    alternative_set = replace(
+        valid,
+        projections=(replace(projection, graph=alternative_graph),),
+    )
+    validate_sealed_projection_set(alternative_set, unit=_frozen_test_unit())
+    assert alternative_set.as_json()["projections"][0]["graph"]["events"][1][
+        "trigger_alternatives"
+    ] == ({"exact_span": "resist", "source_start": 863, "source_end": 869},)
     dangling_graph = replace(
         projection.graph,
         links=(replace(projection.graph.links[0], controller_event_id="missing"),),
@@ -1481,6 +1527,26 @@ def test_projection_set_rejects_identity_and_source_drift_before_execution() -> 
         projection.graph,
         links=(replace(projection.graph.links[0], event_role="CONTEXT"),),
     )
+    duplicate_trigger_graph = replace(
+        projection.graph,
+        events=(
+            replace(
+                projection.graph.events[0],
+                trigger_alternatives=(projection.graph.events[0].trigger,),
+            ),
+            projection.graph.events[1],
+        ),
+    )
+    shifted_trigger_alternative_graph = replace(
+        projection.graph,
+        events=(
+            projection.graph.events[0],
+            replace(
+                projection.graph.events[1],
+                trigger_alternatives=(replace(accepted_alternative, source_start=862),),
+            ),
+        ),
+    )
     invalid_sets = (
         replace(valid, canonical_projection_id="missing"),
         replace(valid, projections=(projection, projection)),
@@ -1495,6 +1561,14 @@ def test_projection_set_rejects_identity_and_source_drift_before_execution() -> 
         replace(
             valid,
             projections=(replace(projection, graph=unsupported_role_graph),),
+        ),
+        replace(
+            valid,
+            projections=(replace(projection, graph=duplicate_trigger_graph),),
+        ),
+        replace(
+            valid,
+            projections=(replace(projection, graph=shifted_trigger_alternative_graph),),
         ),
     )
 
@@ -1971,14 +2045,10 @@ def test_ninth_selection_freezes_source_complete_projection_family_before_luna()
     canonical = selection.projection_set.canonical_projection
     corpus_directory = Path(corpus)
     a1_lines = set(
-        (corpus_directory / "PMID-8622948.a1")
-        .read_text(encoding="utf-8")
-        .splitlines()
+        (corpus_directory / "PMID-8622948.a1").read_text(encoding="utf-8").splitlines()
     )
     a2_lines = set(
-        (corpus_directory / "PMID-8622948.a2")
-        .read_text(encoding="utf-8")
-        .splitlines()
+        (corpus_directory / "PMID-8622948.a2").read_text(encoding="utf-8").splitlines()
     )
     assert {
         "T25\tProtein 1277 1281\tIL-2",
@@ -2225,7 +2295,8 @@ def test_ninth_bionlp_projection_uses_explicit_shared_trigger_references() -> No
                 argument.controlled_event_ref
                 for argument in controller.bound_arguments
                 if argument.controlled_event_ref is not None
-                and argument.argument.event_role.value == link.controller_event_role.value
+                and argument.argument.event_role.value
+                == link.controller_event_role.value
             ),
             next(
                 event.event_id
@@ -2302,7 +2373,9 @@ def test_ninth_mixed_complete_representations_fail_unique_recovery() -> None:
 def test_ninth_wrong_extra_link_is_not_credited_by_local_event_shape() -> None:
     projection_set = ninth_projection_set()
     canonical = _v9_projection_inventory(projection_index=10)
-    e16 = next(item.item for item in canonical if item.item.local_event_id == "V9-BIONLP-E16")
+    e16 = next(
+        item.item for item in canonical if item.item.local_event_id == "V9-BIONLP-E16"
+    )
     wrong_payload = e16.model_dump(mode="json")
     wrong_payload["local_event_id"] = "wrong-e16-link"
     wrong_arguments = wrong_payload["arguments"]
@@ -2360,9 +2433,10 @@ def test_ninth_wrong_extra_link_is_not_credited_by_local_event_shape() -> None:
             len(projection.graph.links) for projection in projection_set.projections
         ),
     )
-    assert nested_holdout_gate_requirements(gate)[
-        "unmatched_trusted_candidate_zero"
-    ] is False
+    assert (
+        nested_holdout_gate_requirements(gate)["unmatched_trusted_candidate_zero"]
+        is False
+    )
 
 
 def test_ninth_projection_does_not_trust_a_contradictory_unmatched_extra() -> None:

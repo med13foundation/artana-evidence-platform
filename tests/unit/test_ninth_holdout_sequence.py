@@ -182,7 +182,7 @@ def test_ninth_real_replay_rejects_omitted_or_modified_orphan_diagnostics(
             tampered.pop(key)
         else:
             tampered[key] = changed
-        with pytest.raises(RuntimeError, match=f"ninth holdout {key} differs"):
+        with pytest.raises(RuntimeError, match=f"nested holdout {key} differs"):
             require_replayed_ninth_qualification(tampered)
 
 

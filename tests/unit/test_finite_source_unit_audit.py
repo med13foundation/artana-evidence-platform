@@ -27,6 +27,11 @@ from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitExtractionOutput,
     SourceUnitVerificationOutput,
 )
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10.prompts import (
+    V10_PROMPT_POLICY,
+    v10_source_unit_extraction_prompt,
+    v10_source_unit_verification_prompt,
+)
 from scripts.validation.claim_events.finite_source_unit.procedure_gate import (
     ProcedureUnitGateInputs,
     procedure_unit_gate_requirements,
@@ -87,11 +92,13 @@ class _SuccessfulClient:
 class _ProcedureSequenceClient:
     def __init__(self) -> None:
         self.calls: list[type[object]] = []
+        self.prompts: list[str] = []
 
     async def step(self, **kwargs: object) -> object:
         output_schema = kwargs["output_schema"]
         assert isinstance(output_schema, type)
         self.calls.append(output_schema)
+        self.prompts.append(cast("str", kwargs["prompt"]))
         output: SourceUnitExtractionOutput | SourceUnitVerificationOutput
         if output_schema is SourceUnitExtractionOutput:
             output = SourceUnitExtractionOutput(
@@ -1495,6 +1502,59 @@ def test_both_agents_receive_the_same_scientific_eligibility_policy() -> None:
     assert "directional language lies outside that span" in prompts[1]
     assert "INSUFFICIENT must use REJECT" in prompts[1]
     assert "requires ENTAILED plus a non-invalid" in prompts[1]
+
+
+def test_v10_agents_receive_representation_hard_questions_without_mutating_v9() -> None:
+    unit = enumerate_source_units(
+        case_id="v10-prompt-policy",
+        source_text="IL-2 restored production in treated Rel-/- T cells.",
+    )[0]
+    historical_prompts = (
+        _extraction_prompt(unit),
+        _verification_prompt(unit=unit, candidates=()),
+    )
+    v10_prompts = (
+        v10_source_unit_extraction_prompt(unit),
+        v10_source_unit_verification_prompt(unit=unit, candidates=()),
+    )
+
+    assert "V10 SCIENTIFIC REPRESENTATION POLICY" in v10_prompts[0]
+    assert "several material context types" in v10_prompts[0]
+    assert "One bundled" in v10_prompts[0]
+    assert "POPULATION or CONTEXT argument is lossy" in v10_prompts[0]
+    assert "shortest exact verb or phrase" in v10_prompts[0]
+    assert (
+        "production of named gene or protein products is EXPRESSION" in (v10_prompts[0])
+    )
+    assert "V10 SCIENTIFIC REPRESENTATION REVIEW" in v10_prompts[1]
+    assert "Mark the candidate LOSSY" in v10_prompts[1]
+    assert "Mark OTHER_EXPLICIT invalid" in v10_prompts[1]
+    assert "appears only on its outer" in v10_prompts[1]
+    assert "V10 SCIENTIFIC REPRESENTATION" not in historical_prompts[0]
+    assert "V10 SCIENTIFIC REPRESENTATION" not in historical_prompts[1]
+
+
+@pytest.mark.asyncio
+async def test_shared_executor_injects_v10_policy_into_both_agent_calls() -> None:
+    unit = enumerate_source_units(
+        case_id="v10-execution-policy",
+        source_text="Reporter vectors were added and electroporated.",
+    )[0]
+    client = _ProcedureSequenceClient()
+
+    result = await execute_source_unit_agents(
+        client=cast("FiniteSourceUnitModelClient", client),
+        tenant=object(),
+        model_id="openai/gpt-5.6-luna",
+        execution_namespace="v10-prompt-policy",
+        unit=unit,
+        prompt_policy=V10_PROMPT_POLICY,
+    )
+
+    assert result.error_type is None
+    assert len(client.prompts) == 2
+    assert "V10 SCIENTIFIC REPRESENTATION POLICY" in client.prompts[0]
+    assert "V10 SCIENTIFIC REPRESENTATION REVIEW" in client.prompts[1]
 
 
 def test_verifier_prompt_contains_no_opaque_candidate_identity() -> None:

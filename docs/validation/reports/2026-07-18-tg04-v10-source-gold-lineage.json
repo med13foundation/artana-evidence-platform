@@ -1,0 +1,117 @@
+{
+  "agent_execution_attempted": false,
+  "artana_output_available_to_reviewers": false,
+  "blindness_contract": {
+    "allowed_inputs": [
+      "frozen V10 source unit",
+      "BioNLP standoff annotations",
+      "Artana categorical event schema and source-only policy",
+      "authoritative PMC article"
+    ],
+    "forbidden_inputs": [
+      "Artana V10 extraction output",
+      "Luna V10 output",
+      "V10 benchmark score",
+      "numeric model confidence"
+    ]
+  },
+  "execution_custody": {
+    "administrator_threat_boundary": "trusted_not_to_deliberately_delete_or_rewrite_all_custody_records",
+    "archive_sha256": "f70e5f6d6e2a7f7fcdb5c8671715f3909a77662a6238015b2916ce939f2a890f",
+    "execution_lease_schema_version": "tg04_v10_execution_lease.v1",
+    "external_append_only_authority_present": false,
+    "provider_reservation_schema_version": "tg04_v10_provider_reservation.v2",
+    "repeat_reservation_schema_version": "tg04_v10_repeat_reservation.v2",
+    "single_use_failures_covered": [
+      "sequential reuse",
+      "concurrent reuse",
+      "crash-window status rollback",
+      "finalization before claim",
+      "lease mutation",
+      "stale output substitution",
+      "previous-repeat bypass"
+    ]
+  },
+  "generated_at": "2026-07-19T00:39:30Z",
+  "preselection": {
+    "candidate_count": 3,
+    "parent_repository_commit": "661a4ea921b9e40aa2d2df2362282340d9b583cf",
+    "selection_rank": "a7b2a256a3eb75f1efcea5bc01e581ca200c5d951043c6193645c4bebbac952d",
+    "selection_rule": "lowest SHA-256 remaining negated graph seeded by the finalized V9 report",
+    "selection_seed": "59107ff0d23bf9543b23df2add9885d0bab4c7dd0c38ffbd18e030734cc2c897"
+  },
+  "projection_contract": {
+    "canonical_projection_id": "bionlp-nested-null-decrease",
+    "expert_graph_sha256": "ddd564c4fc7a431358df7f193c4b0284ff5dcebc87a4fd6ce6f61d6b29f28cc5",
+    "projection_ids": [
+      "bionlp-nested-null-decrease",
+      "source-only-noncausal-direct-null-decrease"
+    ],
+    "projection_set_sha256": "4f6add86982fe4eabb9df893ee71af9b8cce60aa1b280d18edff9598004821cd",
+    "representation_rules": [
+      "BioNLP-native and source-only cue and causality modes remain separate",
+      "source-only temporal exposure does not create a CAUSE role",
+      "source-only DECREASE preserves FOXP3 theme and expression outcome",
+      "population scopes both nested events and the direct event",
+      "exposure and timeframe scope the tested change only",
+      "pre-existing remains embedded in population identity",
+      "exactly one complete representation family receives qualification credit",
+      "unmatched trusted candidates fail closed"
+    ]
+  },
+  "prompt_contract": {
+    "extraction_prompt_sha256": "13f5cb79aaa72d97b11628ed48847a562ca553a010131b47021d87ce8ccac4e7",
+    "extraction_prompt_version": "tg04.finite_source_unit.extraction.v21",
+    "verification_prompt_probe_sha256": "bbd7aeb9e7365e2744ca843ca4425f4b57d79698b3362f7c8ce146c3ccdc7c0d",
+    "verification_prompt_version": "tg04.finite_source_unit.verification.v20"
+  },
+  "qualification_scope": {
+    "authorizes_luna_repeat_1_only_after_commit_and_clean_tree": true,
+    "human_expert_validation_proven": false,
+    "numeric_llm_scoring_used": false,
+    "trusted_graph_promotion_authorized": false
+  },
+  "reviewers": [
+    {
+      "decision": "NO_GO_SCIENTIFIC_CONTRACT_CONTRADICTED_SOURCE_ONLY_POLICY",
+      "reviewer": "Erdos",
+      "run_id": "019f772a-4e83-7752-a3c8-8e187695ced1"
+    },
+    {
+      "decision": "GO_SCIENTIFIC_CONTRACT_SAFE_TO_FREEZE",
+      "reviewer": "Erdos",
+      "run_id": "019f772a-4e83-7752-a3c8-8e187695ced1"
+    },
+    {
+      "decision": "NO_GO_EXECUTION_LEASE_AND_CUSTODY_INCOMPLETE",
+      "reviewer": "Russell",
+      "run_id": "019f7764-5ff8-7091-9251-82cb5214fb9d"
+    },
+    {
+      "decision": "GO_WITH_DISCLOSED_GOVERNANCE_LIMITATION",
+      "reviewer": "Beauvoir",
+      "run_id": "019f7764-5664-7e42-8be2-c569f9da6059"
+    }
+  ],
+  "schema_version": "tg04_v10_source_gold_lineage.v1",
+  "selected_source": {
+    "article_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2222968/",
+    "case_id": "bionlp-ge-2011-holdout:PMC-2222968-04-Results-03",
+    "input_sha256": "cc50c7039a85ec0c7512d0f8f9571331f4001a61e88284a040ec701ec619a121",
+    "source_end": 2723,
+    "source_sha256": "d452cea84a786851d0d5686c5acab618745b4b8ccaf09cc6fa638a48b370a17a",
+    "source_start": 2622,
+    "text": "Similarly pre-existing iTreg cells did not decrease FOXP3 expression upon IL-4 exposure (Figure S3B).",
+    "unit_index": 17,
+    "unit_id": "source-unit-463bf8e1b37963d7547eb57c6d51545a466050b2c6c9faa9abc76ff8e2330914"
+  },
+  "standoff_gold": [
+    "T58 Protein 2674 2679 FOXP3",
+    "T59 Protein 2696 2700 IL-4",
+    "T84 Negative_regulation 2665 2673 decrease",
+    "T85 Gene_expression 2680 2690 expression",
+    "E30 Negative_regulation:T84 Theme:E31 Cause:T59",
+    "E31 Gene_expression:T85 Theme:T58",
+    "M11 Negation E30"
+  ]
+}

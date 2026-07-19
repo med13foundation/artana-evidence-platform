@@ -112,6 +112,7 @@ class SealedEvent:
     trigger: SealedTrigger
     arguments: tuple[SealedArgument, ...]
     argument_alternatives: tuple[tuple[SealedArgument, ...], ...] = ()
+    trigger_alternatives: tuple[SealedTrigger, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -171,6 +172,10 @@ def _sealed_event_json(event: SealedEvent) -> dict[str, object]:
         payload["argument_alternatives"] = tuple(
             tuple(_sealed_argument_json(item) for item in alternative)
             for alternative in event.argument_alternatives
+        )
+    if event.trigger_alternatives:
+        payload["trigger_alternatives"] = tuple(
+            asdict(trigger) for trigger in event.trigger_alternatives
         )
     return payload
 
@@ -234,10 +239,7 @@ class SealedGraphProjection:
                 "polarity": semantics.polarity,
                 "epistemic_status": semantics.epistemic_status,
             }
-            if (
-                semantics.assertion_scope
-                is not InventoryAssertionScope.SOURCE_ASSERTED
-            ):
+            if semantics.assertion_scope is not InventoryAssertionScope.SOURCE_ASSERTED:
                 payload["assertion_scope"] = semantics.assertion_scope
             semantic_payloads.append(payload)
         return {
@@ -827,12 +829,7 @@ def _validate_projection_graph(
     if len(set(event_ids)) != len(event_ids):
         raise RuntimeError("sealed projection event IDs must be unique")
     for event in graph.events:
-        _require_verbatim_local_span(
-            unit=unit,
-            exact_span=event.trigger.exact_span,
-            source_start=event.trigger.source_start,
-            source_end=event.trigger.source_end,
-        )
+        _validate_event_triggers(event, unit=unit)
         argument_sets = (event.arguments, *event.argument_alternatives)
         if len(
             {
@@ -880,6 +877,27 @@ def _validate_projection_graph(
     )
     if len(set(link_identities)) != len(link_identities):
         raise RuntimeError("sealed projection event links must be unique")
+
+
+def _validate_event_triggers(
+    event: SealedEvent,
+    *,
+    unit: FrozenSourceUnit,
+) -> None:
+    triggers = (event.trigger, *event.trigger_alternatives)
+    trigger_identities = tuple(
+        (trigger.exact_span, trigger.source_start, trigger.source_end)
+        for trigger in triggers
+    )
+    if len(set(trigger_identities)) != len(trigger_identities):
+        raise RuntimeError("sealed event trigger alternatives must be distinct")
+    for trigger in triggers:
+        _require_verbatim_local_span(
+            unit=unit,
+            exact_span=trigger.exact_span,
+            source_start=trigger.source_start,
+            source_end=trigger.source_end,
+        )
 
 
 def _validate_sealed_arguments(

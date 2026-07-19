@@ -90,6 +90,29 @@ class FiniteSourceUnitModelClient(Protocol):
     ) -> ModelStepResult: ...
 
 
+class ExtractionPromptBuilder(Protocol):
+    def __call__(self, unit: FrozenSourceUnit) -> str: ...
+
+
+class VerificationPromptBuilder(Protocol):
+    def __call__(
+        self,
+        *,
+        unit: FrozenSourceUnit,
+        candidates: tuple[BoundClaimInventoryItem, ...],
+    ) -> str: ...
+
+
+@dataclass(frozen=True, slots=True)
+class SourceUnitPromptPolicy:
+    """Versioned prompt builders injected into the shared audited executor."""
+
+    extraction_version: str
+    verification_version: str
+    extraction_prompt: ExtractionPromptBuilder
+    verification_prompt: VerificationPromptBuilder
+
+
 @dataclass(frozen=True, slots=True)
 class SourceUnitExtractionResult:
     """Schema-valid categorical output plus item-level source binding."""
@@ -191,22 +214,24 @@ def bind_source_unit_verification(
     return tuple(verified)
 
 
-async def extract_source_unit(
+async def extract_source_unit(  # noqa: PLR0913
     *,
     client: FiniteSourceUnitModelClient,
     tenant: object,
     model_id: str,
     execution_namespace: str,
     unit: FrozenSourceUnit,
+    prompt_policy: SourceUnitPromptPolicy | None = None,
 ) -> AuditedStructuredStepResult[
     SourceUnitExtractionOutput,
     SourceUnitExtractionResult,
 ]:
     """Run one categorical event decision through Artana's audited agent path."""
 
-    prompt = _extraction_prompt(unit)
+    policy = prompt_policy or default_source_unit_prompt_policy()
+    prompt = policy.extraction_prompt(unit)
     step_key = fingerprinted_step_key(
-        _EXTRACTION_PROMPT_VERSION,
+        policy.extraction_version,
         model_id,
         unit.input_sha256,
         execution_namespace,
@@ -331,16 +356,18 @@ async def verify_source_unit_candidates(  # noqa: PLR0913
     execution_namespace: str,
     unit: FrozenSourceUnit,
     candidates: tuple[BoundClaimInventoryItem, ...],
+    prompt_policy: SourceUnitPromptPolicy | None = None,
 ) -> AuditedStructuredStepResult[
     SourceUnitVerificationOutput,
     tuple[VerifiedEventCandidate, ...],
 ]:
     """Independently verify every accepted candidate using only its source unit."""
 
-    prompt = _verification_prompt(unit=unit, candidates=candidates)
+    policy = prompt_policy or default_source_unit_prompt_policy()
+    prompt = policy.verification_prompt(unit=unit, candidates=candidates)
     candidate_identity = "\n".join(candidate.inventory_id for candidate in candidates)
     step_key = fingerprinted_step_key(
-        _VERIFICATION_PROMPT_VERSION,
+        policy.verification_version,
         model_id,
         unit.input_sha256,
         candidate_identity,
@@ -382,6 +409,17 @@ async def verify_source_unit_candidates(  # noqa: PLR0913
 
 def _extraction_prompt(unit: FrozenSourceUnit) -> str:
     return canonical_source_unit_extraction_prompt(unit)
+
+
+def default_source_unit_prompt_policy() -> SourceUnitPromptPolicy:
+    """Return the immutable prompt identity used by finalized V9 and earlier runs."""
+
+    return SourceUnitPromptPolicy(
+        extraction_version=_EXTRACTION_PROMPT_VERSION,
+        verification_version=_VERIFICATION_PROMPT_VERSION,
+        extraction_prompt=canonical_source_unit_extraction_prompt,
+        verification_prompt=canonical_source_unit_verification_prompt,
+    )
 
 
 def canonical_source_unit_extraction_prompt(unit: FrozenSourceUnit) -> str:
@@ -792,6 +830,7 @@ def as_model_client(client: object) -> FiniteSourceUnitModelClient:
 
 
 __all__ = [
+    "SourceUnitPromptPolicy",
     "SourceUnitExtractionResult",
     "VerifiedEventCandidate",
     "as_model_client",
@@ -800,6 +839,7 @@ __all__ = [
     "canonical_source_unit_binding_repair_prompt",
     "canonical_source_unit_extraction_prompt",
     "canonical_source_unit_verification_prompt",
+    "default_source_unit_prompt_policy",
     "extract_source_unit",
     "repair_source_unit_extraction",
     "verify_source_unit_candidates",

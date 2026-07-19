@@ -166,7 +166,9 @@ def match_nested_event_graph(
         ),
         complete_graph_match_count=len(complete_assignments),
         complete_assignment_inventory_ids=(
-            tuple(sorted(claim.inventory_id for claim in complete_assignments[0].values()))
+            tuple(
+                sorted(claim.inventory_id for claim in complete_assignments[0].values())
+            )
             if len(complete_assignments) == 1
             else ()
         ),
@@ -306,12 +308,16 @@ def _event_matches(
     *,
     expected_links: tuple[SealedEventLink, ...],
 ) -> bool:
+    accepted_triggers = (expert.trigger, *expert.trigger_alternatives)
     return (
         (semantics is None or _event_semantics_match(semantics, candidate))
         and candidate.item.event_type.value == expert.event_type
-        and candidate.trigger_mention.exact_span == expert.trigger.exact_span
-        and candidate.trigger_mention.source_start == expert.trigger.source_start
-        and candidate.trigger_mention.source_end == expert.trigger.source_end
+        and any(
+            candidate.trigger_mention.exact_span == trigger.exact_span
+            and candidate.trigger_mention.source_start == trigger.source_start
+            and candidate.trigger_mention.source_end == trigger.source_end
+            for trigger in accepted_triggers
+        )
         and _direct_argument_match_indices(
             expert,
             candidate,
