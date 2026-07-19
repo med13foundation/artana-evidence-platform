@@ -107,7 +107,7 @@ async def _run_fresh_hidden_discovery(
     if collect_repository_evidence(_REPO_ROOT) != repository_evidence:
         raise RuntimeError("repository changed during fresh discovery")
 
-    events = nary_events_from_bound_inventory(agent_run.accepted)
+    events = nary_events_from_bound_inventory(agent_run.trusted)
     target_events = tuple(
         event
         for event in events
@@ -162,7 +162,7 @@ async def _run_fresh_hidden_discovery(
             if agent_run.verification is None
             else len(agent_run.verification.decisions)
         ),
-        entailed_candidate_count=len(agent_run.accepted),
+        entailed_candidate_count=len(agent_run.entailed),
         target_event_count=len(target_events),
         target_direction_preserved=(
             _optional_text(target_event, "event_type") in _TARGET_EVENT_TYPES

@@ -58,6 +58,42 @@ class SourceUnitCoverageDecision(StrEnum):
     ABSTAIN = "ABSTAIN"
 
 
+class EventStructureDecision(StrEnum):
+    """Whether one candidate preserves the complete source event structure."""
+
+    COMPLETE = "COMPLETE"
+    LOSSY = "LOSSY"
+    INVALID = "INVALID"
+    ABSTAIN = "ABSTAIN"
+
+
+class DirectionEncodingDecision(StrEnum):
+    """Whether material effect direction is machine-readable in the event type."""
+
+    STRUCTURED = "STRUCTURED"
+    SOURCE_ONLY = "SOURCE_ONLY"
+    CONFLICT = "CONFLICT"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
+    ABSTAIN = "ABSTAIN"
+
+
+class SemanticValidityDecision(StrEnum):
+    """Categorical validity of one event or argument semantic assignment."""
+
+    VALID = "VALID"
+    INVALID = "INVALID"
+    ABSTAIN = "ABSTAIN"
+
+
+class ProjectionEligibilityDecision(StrEnum):
+    """Categorical trust routing after entailment and structure review."""
+
+    ELIGIBLE = "ELIGIBLE"
+    REVIEW_ONLY = "REVIEW_ONLY"
+    REJECT = "REJECT"
+    ABSTAIN = "ABSTAIN"
+
+
 class SourceUnitExtractionOutput(BaseModel):
     """Scientific extraction result bound to a unit outside model output."""
 
@@ -97,12 +133,33 @@ class SourceUnitExtractionOutput(BaseModel):
         return self
 
 
+class CandidateArgumentSemanticVerification(BaseModel):
+    """Ordered biomedical type and event-role review for one argument."""
+
+    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
+
+    type_decision: SemanticValidityDecision = Field(..., strict=False)
+    event_role_decision: SemanticValidityDecision = Field(..., strict=False)
+    reasoning: str = Field(..., min_length=1, max_length=2000)
+
+
 class CandidateVerification(BaseModel):
     """One categorical verification paired to its candidate by input order."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
     decision: EntailmentDecision = Field(..., strict=False)
+    structure_decision: EventStructureDecision = Field(..., strict=False)
+    direction_encoding: DirectionEncodingDecision = Field(..., strict=False)
+    event_type_decision: SemanticValidityDecision = Field(..., strict=False)
+    argument_semantic_decisions: tuple[CandidateArgumentSemanticVerification, ...] = (
+        Field(
+            ...,
+            min_length=2,
+            max_length=32,
+        )
+    )
+    projection_eligibility: ProjectionEligibilityDecision = Field(..., strict=False)
     evidence_spans: tuple[str, ...] = Field(default=(), max_length=16)
     reasoning: str = Field(..., min_length=1, max_length=4000)
     falsification_condition: str = Field(..., min_length=1, max_length=4000)
@@ -110,6 +167,13 @@ class CandidateVerification(BaseModel):
     @field_validator("evidence_spans", mode="before")
     @classmethod
     def freeze_evidence_spans(cls, value: object) -> object:
+        if isinstance(value, list):
+            return tuple(value)
+        return value
+
+    @field_validator("argument_semantic_decisions", mode="before")
+    @classmethod
+    def freeze_argument_semantic_decisions(cls, value: object) -> object:
         if isinstance(value, list):
             return tuple(value)
         return value
@@ -137,7 +201,95 @@ class CandidateVerification(BaseModel):
             and not self.evidence_spans
         ):
             raise ValueError("decisive verification requires exact evidence spans")
+        invalid_semantics = (
+            self.event_type_decision is SemanticValidityDecision.INVALID
+            or any(
+                item.type_decision is SemanticValidityDecision.INVALID
+                or item.event_role_decision is SemanticValidityDecision.INVALID
+                for item in self.argument_semantic_decisions
+            )
+        )
+        unresolved_semantics = (
+            self.event_type_decision is SemanticValidityDecision.ABSTAIN
+            or any(
+                item.type_decision is SemanticValidityDecision.ABSTAIN
+                or item.event_role_decision is SemanticValidityDecision.ABSTAIN
+                for item in self.argument_semantic_decisions
+            )
+        )
+        invalid_trust_signal = (
+            self.structure_decision is EventStructureDecision.INVALID
+            or self.direction_encoding is DirectionEncodingDecision.CONFLICT
+            or invalid_semantics
+        )
+        if (
+            invalid_trust_signal
+            and self.projection_eligibility is not ProjectionEligibilityDecision.REJECT
+        ):
+            raise ValueError("invalid trust signals require REJECT")
+        if self.projection_eligibility is ProjectionEligibilityDecision.ELIGIBLE:
+            if not self.trusted_projection_eligible:
+                raise ValueError(
+                    "ELIGIBLE requires entailed, complete, typed structured evidence",
+                )
+        elif self.projection_eligibility is ProjectionEligibilityDecision.REVIEW_ONLY:
+            review_reason = (
+                self.decision is EntailmentDecision.ENTAILED
+                and not invalid_trust_signal
+                and (
+                    self.structure_decision
+                    in {EventStructureDecision.LOSSY, EventStructureDecision.ABSTAIN}
+                    or self.direction_encoding
+                    in {
+                        DirectionEncodingDecision.SOURCE_ONLY,
+                        DirectionEncodingDecision.ABSTAIN,
+                    }
+                    or unresolved_semantics
+                )
+            )
+            if not review_reason:
+                raise ValueError("REVIEW_ONLY requires a non-invalid trust blocker")
+        elif self.projection_eligibility is ProjectionEligibilityDecision.REJECT:
+            rejection_reason = (
+                self.decision
+                in {
+                    EntailmentDecision.CONTRADICTED,
+                    EntailmentDecision.INSUFFICIENT,
+                }
+                or self.structure_decision is EventStructureDecision.INVALID
+                or self.direction_encoding is DirectionEncodingDecision.CONFLICT
+                or invalid_semantics
+            )
+            if not rejection_reason:
+                raise ValueError("REJECT requires contradiction or invalid structure")
+        elif not (
+            self.decision is EntailmentDecision.ABSTAIN
+            or self.structure_decision is EventStructureDecision.ABSTAIN
+            or self.direction_encoding is DirectionEncodingDecision.ABSTAIN
+            or unresolved_semantics
+        ):
+            raise ValueError("ABSTAIN requires an unresolved categorical judgment")
         return self
+
+    @property
+    def trusted_projection_eligible(self) -> bool:
+        """Return deterministic eligibility from categorical agent findings."""
+
+        return (
+            self.decision is EntailmentDecision.ENTAILED
+            and self.structure_decision is EventStructureDecision.COMPLETE
+            and self.direction_encoding
+            in {
+                DirectionEncodingDecision.STRUCTURED,
+                DirectionEncodingDecision.NOT_APPLICABLE,
+            }
+            and self.event_type_decision is SemanticValidityDecision.VALID
+            and all(
+                item.type_decision is SemanticValidityDecision.VALID
+                and item.event_role_decision is SemanticValidityDecision.VALID
+                for item in self.argument_semantic_decisions
+            )
+        )
 
 
 class SourceUnitVerificationOutput(BaseModel):
@@ -195,8 +347,13 @@ class SourceUnitVerificationOutput(BaseModel):
 
 
 __all__ = [
+    "CandidateArgumentSemanticVerification",
     "CandidateVerification",
+    "DirectionEncodingDecision",
     "EntailmentDecision",
+    "EventStructureDecision",
+    "ProjectionEligibilityDecision",
+    "SemanticValidityDecision",
     "SourceUnitCoverageDecision",
     "SourceUnitDecision",
     "SourceUnitEligibilityCategory",

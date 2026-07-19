@@ -40,8 +40,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v3"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v3"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v5"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v5"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
 Return exactly one eligibility_category:
@@ -148,6 +148,10 @@ def bind_source_unit_verification(
     verified: list[VerifiedEventCandidate] = []
     for candidate, decision in zip(candidates, output.decisions, strict=True):
         claim_text = candidate.item.exact_span
+        if len(decision.argument_semantic_decisions) != len(candidate.item.arguments):
+            raise StructuredModelSemanticError(
+                "ordered argument semantic decisions must cover candidate arguments exactly",
+            )
         if any(span not in claim_text for span in decision.evidence_spans):
             raise StructuredModelSemanticError(
                 "verification evidence must occur inside the candidate claim",
@@ -299,6 +303,33 @@ participants, normalize surface text, merge events, or return numeric scores.
 Do not return source-unit identifiers or input hashes. The audited orchestrator
 binds transport identity outside the scientific output.
 
+CONTROLLED-EVENT DECOMPOSITION:
+When one source cue positively or negatively regulates another biological event,
+represent the outer event as POSITIVE_REGULATION, NEGATIVE_REGULATION, or
+REGULATION rather than collapsing it into the controlled event type. Preserve
+the controlled event or process as a BIOLOGICAL_PROCESS argument and preserve
+each material participant of that controlled event as its own correctly typed
+argument. A phrase such as "enhanced nuclear translocation of NF-kappa B" must
+not become only a LOCALIZATION event that leaves "enhanced" unstructured. A
+process span such as "expression of MCP-1 and TNF-alpha" is BIOLOGICAL_PROCESS;
+the named genes or proteins are separate GENE_OR_PROTEIN arguments. Do not label
+a process as GENE_OR_PROTEIN merely because its span contains gene names.
+
+CAUSAL EVENT AND ENTITY SEMANTICS:
+- Use POSITIVE_REGULATION or NEGATIVE_REGULATION when the source names a cause
+  that induces, up-regulates, enhances, inhibits, down-regulates, or otherwise
+  controls a theme or process. Use INCREASE or DECREASE only for a directional
+  change with no explicit causal regulator.
+- For a regulation event, type the regulator as CAUSE and the regulated entity
+  or process as THEME. AGENT is not a substitute for CAUSE merely because a
+  regulator grammatically performs the action.
+- Cytokines, growth factors, transcription factors, receptors, enzymes, and
+  named gene products are GENE_OR_PROTEIN. CHEMICAL_OR_DRUG is for small
+  molecules, compounds, formulations, or explicitly pharmacological treatments;
+  it is not a generic label for an experimentally administered protein.
+- Preserve source-explicit population and context arguments in addition to the
+  causal core; never trade away CAUSE or THEME to include context.
+
 prompt_version: {_EXTRACTION_PROMPT_VERSION}
 
 --- FROZEN SOURCE UNIT ---
@@ -334,10 +365,40 @@ ENTAILED requires the complete event, its direction, polarity, epistemic status,
 trigger, and all material arguments to be explicit in the source. Copy literal
 evidence spans from inside that candidate's exact_span. The evidence must cover
 the trigger and every material argument. Provide concise reasoning and a
-condition that would falsify your decision. Do not repair candidates, use
-outside knowledge, compare against benchmark labels, or return numeric scores.
+condition that would falsify your decision. Do not repair candidates, import
+outside mechanistic or causal claims, compare against benchmark labels, or
+return numeric scores. Standard biomedical entity-class knowledge is allowed
+only for categorical argument typing.
 Do not return source-unit identifiers, candidate identifiers, or input hashes.
 The audited orchestrator binds transport identity outside scientific output.
+
+For every candidate, independently return these additional categorical findings:
+- structure_decision: COMPLETE only when the event type, controlled process,
+  cause, direction, and every material participant are structurally preserved;
+  LOSSY when the text is entailed but material structure survives only in a cue
+  or bundled span; INVALID for a wrong or contradictory structure; ABSTAIN when
+  the source cannot resolve it;
+- direction_encoding: STRUCTURED when a material increase/decrease/regulation is
+  encoded by event_type, SOURCE_ONLY when it appears only in source wording,
+  CONFLICT when the structured direction disagrees, NOT_APPLICABLE when the
+  source event has no material direction, or ABSTAIN;
+- event_type_decision: VALID, INVALID, or ABSTAIN. A named causal regulator plus
+  an induced/up-regulated/enhanced/inhibited/down-regulated theme is regulation;
+  INCREASE or DECREASE is valid only when no explicit causal regulator is named;
+- one argument_semantic_decision in candidate argument order, each containing
+  type_decision and event_role_decision as VALID, INVALID, or ABSTAIN, with one
+  reasoning. A regulator is CAUSE, not merely AGENT. Cytokines, growth factors,
+  transcription factors, receptors, enzymes, and named gene products are
+  GENE_OR_PROTEIN, not CHEMICAL_OR_DRUG merely because they were administered.
+  A biological process is not GENE_OR_PROTEIN merely because its span contains
+  gene names. You may use standard biomedical entity-class knowledge for these
+  type judgments, but no outside mechanistic claim may substitute for the source;
+- projection_eligibility: ELIGIBLE only for an ENTAILED, COMPLETE candidate with
+  STRUCTURED or NOT_APPLICABLE direction, a VALID event type, and all argument
+  types and event roles VALID;
+  REVIEW_ONLY for an entailed but lossy or unresolved candidate; REJECT for a
+  contradiction, invalid event structure, direction conflict, or invalid
+  argument type; ABSTAIN only when a categorical judgment is unresolved.
 
 prompt_version: {_VERIFICATION_PROMPT_VERSION}
 

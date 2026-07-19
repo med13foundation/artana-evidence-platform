@@ -157,6 +157,36 @@ def test_adapter_transformation_accepts_null_inert_reasoning_content() -> None:
     )
 
 
+def test_adapter_transformation_accepts_multiple_inert_reasoning_items() -> None:
+    expectation, response, input_items, _schema = _receipt_fixture()
+    reasoning_items = [
+        {
+            "id": f"reasoning_provider_receipt_{index}",
+            "type": "reasoning",
+            "status": None,
+            "summary": [],
+            "content": [],
+            "encrypted_content": None,
+        }
+        for index in range(2)
+    ]
+    transformed_response = _RetrievedResponse(
+        response_id=response.response_id,
+        output=[*reasoning_items, *response.output],
+    )
+
+    evidence = OpenAIProviderReceiptVerifier(
+        lambda _response_id: transformed_response,
+        lambda _response_id: input_items,
+    ).verify(expectation)
+
+    assert evidence.status == "verified_live"
+    assert evidence.provider_output_hash_matched is False
+    assert evidence.provider_output_verification_source == (
+        "structured_payload_with_verified_envelope"
+    )
+
+
 @pytest.mark.parametrize(
     "unexpected_output",
     [

@@ -38,6 +38,7 @@ from scripts.validation.claim_events.finite_source_unit.procedure_runner import 
 from scripts.validation.claim_events.finite_source_unit.runner import (
     RestartGateInputs,
     _execute_case,
+    _partition_verified_candidates,
     _select_panel,
     eligibility_categories_agree,
     restart_gate_requirements,
@@ -45,6 +46,7 @@ from scripts.validation.claim_events.finite_source_unit.runner import (
 )
 from scripts.validation.claim_events.finite_source_unit.service import (
     FiniteSourceUnitModelClient,
+    VerifiedEventCandidate,
     _extraction_prompt,
     _verification_prompt,
     bind_source_unit_extraction,
@@ -143,6 +145,40 @@ def _event_item(
             ],
         },
     )
+
+
+def _candidate_verification_payload(
+    *,
+    decision: str = "ENTAILED",
+    evidence_spans: list[str] | None = None,
+) -> dict[str, object]:
+    entailed = decision == "ENTAILED"
+    return {
+        "decision": decision,
+        "structure_decision": "COMPLETE",
+        "direction_encoding": "STRUCTURED",
+        "event_type_decision": "VALID",
+        "argument_semantic_decisions": [
+            {
+                "type_decision": "VALID",
+                "event_role_decision": "VALID",
+                "reasoning": "The source span and event role are valid.",
+            },
+            {
+                "type_decision": "VALID",
+                "event_role_decision": "VALID",
+                "reasoning": "The source span and event role are valid.",
+            },
+        ],
+        "projection_eligibility": "ELIGIBLE" if entailed else "REJECT",
+        "evidence_spans": (
+            ["IL-4 inhibited FOXP3 expression."]
+            if evidence_spans is None and entailed
+            else (evidence_spans or [])
+        ),
+        "reasoning": "Categorical source-only verification.",
+        "falsification_condition": "The source does not state the event.",
+    }
 
 
 def test_source_units_preserve_deterministic_offsets_and_coverage() -> None:
@@ -282,14 +318,7 @@ def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> 
             "eligibility_category": "FINDING",
             "coverage_decision": "CANDIDATES_COMPLETE",
             "coverage_reasoning": "The supplied event covers the unit.",
-            "decisions": [
-                {
-                    "decision": "ENTAILED",
-                    "evidence_spans": ["IL-4 inhibited FOXP3 expression."],
-                    "reasoning": "The complete event is literal.",
-                    "falsification_condition": "The source omitted inhibition.",
-                }
-            ],
+            "decisions": [_candidate_verification_payload()],
         },
     )
 
@@ -331,12 +360,7 @@ def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> 
             "coverage_decision": "CANDIDATES_COMPLETE",
             "coverage_reasoning": "The supplied event covers the unit.",
             "decisions": [
-                {
-                    "decision": "ENTAILED",
-                    "evidence_spans": ["Outside knowledge"],
-                    "reasoning": "Unsupported evidence.",
-                    "falsification_condition": "The evidence is absent.",
-                }
+                _candidate_verification_payload(evidence_spans=["Outside knowledge"]),
             ],
         },
     )
@@ -353,18 +377,219 @@ def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> 
             "coverage_decision": "CANDIDATES_COMPLETE",
             "coverage_reasoning": "The supplied event covers the unit.",
             "decisions": [
-                {
-                    "decision": "ENTAILED",
-                    "evidence_spans": ["IL-4"],
-                    "reasoning": "Only one participant was cited.",
-                    "falsification_condition": "The full event is unsupported.",
-                }
+                _candidate_verification_payload(evidence_spans=["IL-4"]),
             ],
         },
     )
     with pytest.raises(StructuredModelSemanticError, match="trigger and every"):
         bind_source_unit_verification(
             partial,
+            unit=unit,
+            candidates=extraction.accepted,
+        )
+
+
+def test_projection_eligibility_fails_closed_on_structure_and_argument_types() -> None:
+    eligible = SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "The candidate covers the source event.",
+            "decisions": [_candidate_verification_payload()],
+        },
+    ).decisions[0]
+    assert eligible.trusted_projection_eligible is True
+
+    lossy = _candidate_verification_payload()
+    lossy["structure_decision"] = "LOSSY"
+    lossy["direction_encoding"] = "SOURCE_ONLY"
+    lossy["projection_eligibility"] = "REVIEW_ONLY"
+    reviewed = SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "The statement is true but structurally lossy.",
+            "decisions": [lossy],
+        },
+    ).decisions[0]
+    assert reviewed.trusted_projection_eligible is False
+
+    invalid_type = _candidate_verification_payload()
+    invalid_type["argument_semantic_decisions"] = [
+        {
+            "type_decision": "VALID",
+            "event_role_decision": "VALID",
+            "reasoning": "The first span and event role are valid.",
+        },
+        {
+            "type_decision": "INVALID",
+            "event_role_decision": "VALID",
+            "reasoning": "The second span is a process, not a protein.",
+        },
+    ]
+    invalid_type["projection_eligibility"] = "REJECT"
+    rejected = SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "The claim is entailed but incorrectly typed.",
+            "decisions": [invalid_type],
+        },
+    ).decisions[0]
+    assert rejected.trusted_projection_eligible is False
+
+    invalid_event_type = _candidate_verification_payload()
+    invalid_event_type["event_type_decision"] = "INVALID"
+    invalid_event_type["projection_eligibility"] = "REJECT"
+    rejected_event = SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "The causal cue was encoded as an uncaused change.",
+            "decisions": [invalid_event_type],
+        },
+    ).decisions[0]
+    assert rejected_event.trusted_projection_eligible is False
+
+    invalid_event_role = _candidate_verification_payload()
+    semantic_decisions = invalid_event_role["argument_semantic_decisions"]
+    assert isinstance(semantic_decisions, list)
+    first_semantic_decision = semantic_decisions[0]
+    assert isinstance(first_semantic_decision, dict)
+    first_semantic_decision["event_role_decision"] = "INVALID"
+    invalid_event_role["projection_eligibility"] = "REJECT"
+    rejected_role = SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "A regulator was labeled AGENT instead of CAUSE.",
+            "decisions": [invalid_event_role],
+        },
+    ).decisions[0]
+    assert rejected_role.trusted_projection_eligible is False
+
+    bad_eligible = dict(lossy)
+    bad_eligible["projection_eligibility"] = "ELIGIBLE"
+    with pytest.raises(ValidationError, match="typed structured evidence"):
+        SourceUnitVerificationOutput.model_validate(
+            {
+                "eligibility_category": "FINDING",
+                "coverage_decision": "CANDIDATES_COMPLETE",
+                "coverage_reasoning": "Adversarial false promotion.",
+                "decisions": [bad_eligible],
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    ("structure_decision", "direction_encoding", "projection_eligibility"),
+    [
+        ("LOSSY", "CONFLICT", "REVIEW_ONLY"),
+        ("INVALID", "SOURCE_ONLY", "REVIEW_ONLY"),
+        ("INVALID", "ABSTAIN", "ABSTAIN"),
+        ("ABSTAIN", "CONFLICT", "ABSTAIN"),
+    ],
+)
+def test_non_reject_routes_reject_invalid_structure_or_direction(
+    structure_decision: str,
+    direction_encoding: str,
+    projection_eligibility: str,
+) -> None:
+    payload = _candidate_verification_payload()
+    payload["structure_decision"] = structure_decision
+    payload["direction_encoding"] = direction_encoding
+    payload["projection_eligibility"] = projection_eligibility
+
+    with pytest.raises(ValidationError, match="invalid trust signals require REJECT"):
+        SourceUnitVerificationOutput.model_validate(
+            {
+                "eligibility_category": "FINDING",
+                "coverage_decision": "CANDIDATES_COMPLETE",
+                "coverage_reasoning": "The candidate has conflicting trust signals.",
+                "decisions": [payload],
+            },
+        )
+
+
+def test_candidate_partition_preserves_entailment_separately_from_trust() -> None:
+    source = "IL-4 inhibited FOXP3 expression."
+    unit = enumerate_source_units(case_id="case-1", source_text=source)[0]
+    extraction = bind_source_unit_extraction(
+        SourceUnitExtractionOutput(
+            eligibility_category=SourceUnitEligibilityCategory.FINDING,
+            decision=SourceUnitDecision.EXPLICIT_EVENT,
+            events=(_event_item(),),
+            reasoning="One explicit event.",
+        ),
+        unit=unit,
+    )
+    trusted = SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "The candidate is complete.",
+            "decisions": [_candidate_verification_payload()],
+        },
+    ).decisions[0]
+    lossy_payload = _candidate_verification_payload()
+    lossy_payload["structure_decision"] = "LOSSY"
+    lossy_payload["projection_eligibility"] = "REVIEW_ONLY"
+    lossy = SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "The candidate is entailed but lossy.",
+            "decisions": [lossy_payload],
+        },
+    ).decisions[0]
+    claim = extraction.accepted[0]
+
+    partition = _partition_verified_candidates(
+        (
+            VerifiedEventCandidate(claim=claim, verification=trusted),
+            VerifiedEventCandidate(claim=claim, verification=lossy),
+        ),
+    )
+
+    assert len(partition.source_entailed_claims) == 2
+    assert partition.trusted_projection_claims == (claim,)
+    assert len(partition.non_trusted_decisions) == 1
+
+
+def test_argument_type_reviews_are_bound_to_candidate_order() -> None:
+    source = "IL-4 inhibited FOXP3 expression."
+    unit = enumerate_source_units(case_id="case-1", source_text=source)[0]
+    extraction = bind_source_unit_extraction(
+        SourceUnitExtractionOutput(
+            eligibility_category=SourceUnitEligibilityCategory.FINDING,
+            decision=SourceUnitDecision.EXPLICIT_EVENT,
+            events=(_event_item(),),
+            reasoning="One explicit event.",
+        ),
+        unit=unit,
+    )
+    payload = _candidate_verification_payload()
+    argument_reviews = payload["argument_semantic_decisions"]
+    assert isinstance(argument_reviews, list)
+    argument_reviews.append(
+        {
+            "type_decision": "VALID",
+            "event_role_decision": "VALID",
+            "reasoning": "Injected unmatched semantic decision.",
+        },
+    )
+    verification = SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "The candidate covers the source event.",
+            "decisions": [payload],
+        },
+    )
+
+    with pytest.raises(StructuredModelSemanticError, match="semantic decisions"):
+        bind_source_unit_verification(
+            verification,
             unit=unit,
             candidates=extraction.accepted,
         )
@@ -404,14 +629,7 @@ def test_false_candidate_can_be_rejected_while_unit_confirms_no_event() -> None:
             "eligibility_category": "MEASUREMENT_ONLY",
             "coverage_decision": "NO_EVENT_CONFIRMED",
             "coverage_reasoning": "Measurement alone does not state a relationship.",
-            "decisions": [
-                {
-                    "decision": "INSUFFICIENT",
-                    "evidence_spans": [],
-                    "reasoning": "The proposed inhibition is absent.",
-                    "falsification_condition": "The source explicitly states inhibition.",
-                }
-            ],
+            "decisions": [_candidate_verification_payload(decision="INSUFFICIENT")],
         },
     )
 
@@ -458,16 +676,14 @@ def test_verification_rejects_contradictory_coverage_truth_table(
                 "coverage_decision": coverage_decision,
                 "coverage_reasoning": "Adversarial truth-table probe.",
                 "decisions": [
-                    {
-                        "decision": candidate_decision,
-                        "evidence_spans": (
+                    _candidate_verification_payload(
+                        decision=candidate_decision,
+                        evidence_spans=(
                             ["complete event"]
                             if candidate_decision == "ENTAILED"
                             else []
                         ),
-                        "reasoning": "Categorical candidate decision.",
-                        "falsification_condition": "The source differs.",
-                    }
+                    ),
                 ],
             },
         )
@@ -504,12 +720,7 @@ def test_abstaining_verifier_cannot_return_an_entailed_candidate() -> None:
                 "coverage_decision": "ABSTAIN",
                 "coverage_reasoning": "The category cannot be resolved safely.",
                 "decisions": [
-                    {
-                        "decision": "ENTAILED",
-                        "evidence_spans": ["complete event"],
-                        "reasoning": "Contradictory entailed output.",
-                        "falsification_condition": "The event is absent.",
-                    }
+                    _candidate_verification_payload(evidence_spans=["complete event"]),
                 ],
             },
         )
@@ -565,11 +776,8 @@ def test_agent_contracts_reject_transport_identity_fields() -> None:
                 "coverage_reasoning": "A procedure is stated.",
                 "decisions": [
                     {
+                        **_candidate_verification_payload(decision="INSUFFICIENT"),
                         "candidate_id": "model-controlled-candidate",
-                        "decision": "INSUFFICIENT",
-                        "evidence_spans": [],
-                        "reasoning": "No result is stated.",
-                        "falsification_condition": "A result is explicit.",
                     },
                 ],
             },
@@ -597,6 +805,15 @@ def test_both_agents_receive_the_same_scientific_eligibility_policy() -> None:
         assert "unit_id:" not in prompt
         assert "unit_input_sha256:" not in prompt
         assert "A methods sentence is scientific only when it" in prompt
+
+    assert "CONTROLLED-EVENT DECOMPOSITION" in prompts[0]
+    assert "Use INCREASE or DECREASE only" in prompts[0]
+    assert "AGENT is not a substitute for CAUSE" in prompts[0]
+    assert "named gene products are GENE_OR_PROTEIN" in prompts[0]
+    assert "structure_decision" in prompts[1]
+    assert "argument_semantic_decision" in prompts[1]
+    assert "event_type_decision" in prompts[1]
+    assert "projection_eligibility" in prompts[1]
 
 
 def test_verifier_prompt_contains_no_opaque_candidate_identity() -> None:

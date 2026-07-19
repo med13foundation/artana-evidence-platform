@@ -14,10 +14,9 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     EntailmentDecision,
-    SourceUnitExtractionOutput,
-    SourceUnitVerificationOutput,
 )
 from scripts.validation.claim_events.finite_source_unit.service import (
+    VerifiedEventCandidate,
     extract_source_unit,
     verify_source_unit_candidates,
 )
@@ -30,6 +29,10 @@ if TYPE_CHECKING:
         ModelAttemptAuditRecord,
     )
 
+    from scripts.validation.claim_events.finite_source_unit.contracts import (
+        SourceUnitExtractionOutput,
+        SourceUnitVerificationOutput,
+    )
     from scripts.validation.claim_events.finite_source_unit.service import (
         FiniteSourceUnitModelClient,
     )
@@ -44,7 +47,9 @@ class SingleUnitAgentRunEvidence:
 
     extraction: SourceUnitExtractionOutput | None
     verification: SourceUnitVerificationOutput | None
-    accepted: tuple[BoundClaimInventoryItem, ...]
+    verified: tuple[VerifiedEventCandidate, ...]
+    entailed: tuple[BoundClaimInventoryItem, ...]
+    trusted: tuple[BoundClaimInventoryItem, ...]
     extracted_candidate_count: int
     binding_rejection_count: int
     records: tuple[ModelAttemptAuditRecord, ...]
@@ -64,7 +69,9 @@ async def execute_source_unit_agents(
     audit = start_model_attempt_audit(evidence_unit_id=unit.unit_id)
     extraction_output: SourceUnitExtractionOutput | None = None
     verification_output: SourceUnitVerificationOutput | None = None
-    accepted: tuple[BoundClaimInventoryItem, ...] = ()
+    verified: tuple[VerifiedEventCandidate, ...] = ()
+    entailed: tuple[BoundClaimInventoryItem, ...] = ()
+    trusted: tuple[BoundClaimInventoryItem, ...] = ()
     extracted_candidate_count = binding_rejection_count = 0
     error_type: str | None = None
     try:
@@ -87,10 +94,16 @@ async def execute_source_unit_agents(
             candidates=extraction.value.accepted,
         )
         verification_output = verification.parsed
-        accepted = tuple(
+        verified = verification.value
+        entailed = tuple(
             candidate.claim
-            for candidate in verification.value
+            for candidate in verified
             if candidate.verification.decision is EntailmentDecision.ENTAILED
+        )
+        trusted = tuple(
+            candidate.claim
+            for candidate in verified
+            if candidate.verification.trusted_projection_eligible
         )
     except Exception as exc:  # noqa: BLE001 - retain categorical failure evidence
         error_type = type(exc).__name__
@@ -99,7 +112,9 @@ async def execute_source_unit_agents(
     return SingleUnitAgentRunEvidence(
         extraction=extraction_output,
         verification=verification_output,
-        accepted=accepted,
+        verified=verified,
+        entailed=entailed,
+        trusted=trusted,
         extracted_candidate_count=extracted_candidate_count,
         binding_rejection_count=binding_rejection_count,
         records=tuple(audit.records),
