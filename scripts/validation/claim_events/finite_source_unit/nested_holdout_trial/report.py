@@ -122,9 +122,7 @@ def build_nested_holdout_report(  # noqa: PLR0913
         entailed_candidate_count=len(agent_run.entailed),
         trusted_candidate_count=len(agent_run.trusted),
         unmatched_trusted_candidate_count=len(
-            {
-                candidate.inventory_id for candidate in agent_run.trusted
-            }
+            {candidate.inventory_id for candidate in agent_run.trusted}
             - set(projection_match.fully_recovered_inventory_ids)
         ),
         review_only_candidate_count=sum(

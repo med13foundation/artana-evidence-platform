@@ -47,6 +47,8 @@ ModelAttemptRole = Literal[
     "schema_retry",
     "zero_candidate_retry",
     "proposal_review",
+    "structure_normalization",
+    "normalized_review",
 ]
 ModelAttemptPassRole = Literal[
     "claim_inventory",
@@ -56,6 +58,8 @@ ModelAttemptPassRole = Literal[
     "primary",
     "weak_review",
     "proposal_review",
+    "structure_normalization",
+    "normalized_review",
 ]
 ModelAttemptValidationOutcome = Literal[
     "accepted",

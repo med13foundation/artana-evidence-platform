@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from fractions import Fraction
 from itertools import product
 from typing import TYPE_CHECKING
 
@@ -66,6 +67,33 @@ class ProjectionSetMatchResult:
     projections: tuple[ProjectionMatchResult, ...]
     fully_recovered_projection_ids: tuple[str, ...]
     fully_recovered_inventory_ids: tuple[str, ...]
+
+
+def best_projection_event_coverage(
+    result: ProjectionSetMatchResult,
+) -> tuple[int, int]:
+    """Return matched and expected counts for the strongest sealed projection."""
+
+    if not result.projections:
+        return (0, 0)
+    coverage: list[tuple[Fraction, int, int, str]] = []
+    for projection in result.projections:
+        match = projection.match
+        if match.expected_event_count <= 0:
+            raise ValueError("sealed projections must contain at least one event")
+        matched_count = sum(
+            bool(inventory_ids) for _, inventory_ids in match.event_inventory_ids
+        )
+        coverage.append(
+            (
+                Fraction(matched_count, match.expected_event_count),
+                matched_count,
+                -match.expected_event_count,
+                projection.projection_id,
+            )
+        )
+    _, matched_count, negative_expected_count, _ = max(coverage)
+    return matched_count, -negative_expected_count
 
 
 def match_nested_event_graph(

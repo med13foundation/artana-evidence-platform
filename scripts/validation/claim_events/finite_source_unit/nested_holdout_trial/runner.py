@@ -41,7 +41,27 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10.selection import (
     select_tenth_nested_event_holdout,
 )
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v11.custody import (
+    require_v11_prompt_preregistration,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v11.prompts import (
+    V11_EXTRACTION_PROMPT_POLICY,
+    V11_NORMALIZATION_PROMPT_VERSION,
+    V11_NORMALIZED_REVIEW_PROMPT_VERSION,
+    v11_normalization_prompt,
+    v11_normalized_review_prompt,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v11.report import (
+    build_v11_report,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v11.selection import (
+    select_eleventh_nested_event_holdout,
+)
+from scripts.validation.claim_events.finite_source_unit.normalization.execution import (
+    execute_three_source_unit_agents,
+)
 from scripts.validation.claim_events.finite_source_unit.service import (
+    FiniteSourceUnitModelClient,
     SourceUnitPromptPolicy,
     as_model_client,
 )
@@ -75,6 +95,12 @@ class RepeatAuthorization(Protocol):
     def require_active(self) -> None: ...
 
     def provider_evidence_unit_id(self) -> str: ...
+
+
+class AsyncClosable(Protocol):
+    """Runtime resource closed after the provider sequence finishes."""
+
+    async def close(self) -> None: ...
 
 
 class SelectionFactory(Protocol):
@@ -249,6 +275,144 @@ def preflight_tenth_nested_event_holdout_trial(*, archive: Path) -> None:
         )
 
 
+def run_eleventh_nested_event_holdout_trial(
+    *,
+    archive: Path,
+    run_id: str,
+    repeat_index: int,
+    authorization: RepeatAuthorization,
+) -> dict[str, object]:
+    """Run the V11 extraction-normalization-review diagnostic once."""
+
+    if authorization.run_id != run_id or authorization.repeat_index != repeat_index:
+        raise RuntimeError("eleventh holdout authorization does not match the request")
+    authorization.require_active()
+    with verified_corpus_root(archive) as corpus_root:
+        selection = select_eleventh_nested_event_holdout(
+            corpus_root=corpus_root,
+            archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+        )
+    repository_evidence = collect_repository_evidence(_REPO_ROOT)
+    if repository_evidence["clean"] is not True:
+        raise RuntimeError("eleventh holdout trial requires a clean tracked worktree")
+    if repository_evidence != authorization.repository_evidence:
+        raise RuntimeError("repository differs from sealed eleventh reservation")
+    raw_client, tenant, execution_model_id, kernel, store = build_tg04_runtime(
+        _MODEL_ID
+    )
+    try:
+        client = as_model_client(raw_client)
+        prepared_extraction_prompt = _prepare_v11_extraction_prompt(selection)
+        audit_evidence_unit_id = authorization.provider_evidence_unit_id()
+    except Exception:
+        asyncio.run(_close_runtime(kernel, store))
+        raise
+    try:
+        report = asyncio.run(
+            _run_eleventh_trial(
+                selection=selection,
+                run_id=run_id,
+                repeat_index=repeat_index,
+                repository_evidence=repository_evidence,
+                audit_evidence_unit_id=audit_evidence_unit_id,
+                prepared_extraction_prompt=prepared_extraction_prompt,
+                client=client,
+                tenant=tenant,
+                execution_model_id=execution_model_id,
+                kernel=kernel,
+                store=store,
+            )
+        )
+    except Exception:
+        asyncio.run(_close_runtime(kernel, store))
+        raise
+    authorization.require_active()
+    report.pop("report_sha256", None)
+    report["repeat_authorization"] = {
+        "run_id": authorization.run_id,
+        "repeat_index": authorization.repeat_index,
+        "token_sha256": hashlib.sha256(authorization.token.encode()).hexdigest(),
+    }
+    report["report_sha256"] = sha256_json(report)
+    return report
+
+
+def preflight_eleventh_nested_event_holdout_trial(*, archive: Path) -> None:
+    """Verify the sealed archive and V11 source before reservation."""
+
+    with verified_corpus_root(archive) as corpus_root:
+        select_eleventh_nested_event_holdout(
+            corpus_root=corpus_root,
+            archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+        )
+
+
+async def _run_eleventh_trial(  # noqa: PLR0913
+    *,
+    selection: NestedHoldoutSelection,
+    run_id: str,
+    repeat_index: int,
+    repository_evidence: dict[str, object],
+    audit_evidence_unit_id: str,
+    prepared_extraction_prompt: str,
+    client: FiniteSourceUnitModelClient,
+    tenant: object,
+    execution_model_id: str,
+    kernel: AsyncClosable,
+    store: AsyncClosable,
+) -> dict[str, object]:
+    try:
+        agent_run = await execute_three_source_unit_agents(
+            client=client,
+            tenant=tenant,
+            model_id=execution_model_id,
+            execution_namespace=hashlib.sha256(
+                audit_evidence_unit_id.encode("utf-8")
+            ).hexdigest(),
+            unit=selection.unit,
+            extraction_prompt_policy=V11_EXTRACTION_PROMPT_POLICY,
+            prepared_extraction_prompt=prepared_extraction_prompt,
+            normalization_prompt_builder=v11_normalization_prompt,
+            normalization_prompt_version=V11_NORMALIZATION_PROMPT_VERSION,
+            review_prompt_builder=v11_normalized_review_prompt,
+            review_prompt_version=V11_NORMALIZED_REVIEW_PROMPT_VERSION,
+            audit_evidence_unit_id=audit_evidence_unit_id,
+        )
+    finally:
+        with suppress(Exception):
+            await kernel.close()
+        with suppress(Exception):
+            await store.close()
+    if collect_repository_evidence(_REPO_ROOT) != repository_evidence:
+        raise RuntimeError("repository changed during eleventh holdout trial")
+    return build_v11_report(
+        selection=selection,
+        run_id=run_id,
+        repeat_index=repeat_index,
+        configured_model_id=_MODEL_ID,
+        execution_model_id=execution_model_id,
+        repository_evidence=repository_evidence,
+        agent_run=agent_run,
+    )
+
+
+async def _close_runtime(kernel: AsyncClosable, store: AsyncClosable) -> None:
+    """Close a prepared runtime when execution cannot start or complete."""
+
+    with suppress(Exception):
+        await kernel.close()
+    with suppress(Exception):
+        await store.close()
+
+
+def _prepare_v11_extraction_prompt(selection: NestedHoldoutSelection) -> str:
+    """Build and verify the first provider prompt before claiming the one-shot."""
+
+    prompt = V11_EXTRACTION_PROMPT_POLICY.extraction_prompt(selection.unit)
+    require_v11_prompt_preregistration(prompt)
+    return prompt
+
+
 def _run_authorized_trial(  # noqa: PLR0913
     *,
     archive: Path,
@@ -358,9 +522,11 @@ async def _run_trial(  # noqa: PLR0913
 
 
 __all__ = [
+    "preflight_eleventh_nested_event_holdout_trial",
     "preflight_ninth_nested_event_holdout_trial",
     "preflight_tenth_nested_event_holdout_trial",
     "run_eighth_nested_event_holdout_trial",
+    "run_eleventh_nested_event_holdout_trial",
     "run_fourth_nested_event_holdout_trial",
     "run_nested_event_holdout_trial",
     "run_ninth_nested_event_holdout_trial",

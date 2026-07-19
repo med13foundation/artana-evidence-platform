@@ -233,7 +233,7 @@ class SealedGraphProjection:
     def as_json(self) -> dict[str, object]:
         semantic_payloads: list[dict[str, object]] = []
         for semantics in self.event_semantics:
-            payload = {
+            payload: dict[str, object] = {
                 "event_id": semantics.event_id,
                 "claim_kind": semantics.claim_kind,
                 "polarity": semantics.polarity,

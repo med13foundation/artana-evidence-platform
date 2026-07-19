@@ -9,19 +9,36 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Protocol, TypeVar
+from typing import TYPE_CHECKING, Protocol, TypeVar
 
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sequence_support.attempt_topology import (
+    allowed_role_pairs,
+    attempt_role_count,
+    non_default_topology_evidence,
+    receipt_matches_attempt,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sequence_support.receipt_reverification import (
+    ReceiptReverificationContract,
+    require_fresh_provider_receipts,
+)
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sequence_support.storage import (
     canonical_sha256 as _canonical_sha256,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sequence_support.storage import (
     replace_json as _replace_json,
 )
-from scripts.validation.claim_frames.provider_receipts import (
-    ProviderReceiptExpectation,
-    ProviderReceiptVerification,
-    ProviderReceiptVerifier,
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sequence_support.terminal_failure import (
+    TerminalFailureContract,
+    is_terminal_workflow_failure,
+    require_terminal_workflow_failure_evidence,
 )
+
+if TYPE_CHECKING:
+    from scripts.validation.claim_frames.provider_receipts import (
+        ProviderReceiptExpectation,
+        ProviderReceiptVerification,
+        ProviderReceiptVerifier,
+    )
 
 
 class RepeatAuthorization(Protocol):
@@ -95,6 +112,14 @@ class RepeatSequenceDefinition:
     successful_reservation_status: str = "FINALIZED"
     terminal_seal_schema_version: str | None = None
     require_pass_for_finalization: bool = False
+    required_attempt_roles: tuple[tuple[str, str, str], ...] = (
+        ("primary", "primary", "extraction"),
+        ("weak_review", "weak_review", "verification"),
+    )
+    allow_schema_retry: bool = True
+    execution_path: str = "agent_only_source_unit"
+    require_output_schema_custody: bool = False
+    allow_terminal_workflow_failure: bool = False
 
     @property
     def label(self) -> str:
@@ -118,6 +143,7 @@ class RepeatSequenceRuntime:
     git_runner: GitRunner
     token_factory: Callable[[int], str]
     now_utc: Callable[[], datetime]
+    validate_attempt_chain: Callable[[dict[str, object], str], None] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -373,20 +399,30 @@ def finalize_repeat(
         raise RuntimeError(
             f"{definition.label} output does not match the executed report"
         )
-    _require_fresh_provider_receipts(
+    gate = report.get("gate")
+    agent_outputs = report.get("agent_outputs")
+    terminal_workflow_failure = (
+        definition.allow_terminal_workflow_failure
+        and is_terminal_workflow_failure(
+            gate=gate,
+            agent_outputs=agent_outputs,
+        )
+    )
+    require_fresh_provider_receipts(
         report,
-        definition=definition,
-        runtime=runtime,
+        contract=ReceiptReverificationContract(
+            label=definition.label,
+            require_output_schema_custody=definition.require_output_schema_custody,
+        ),
+        verifier_factory=runtime.provider_verifier_factory,
+        verify=runtime.verify_provider_receipts,
+        require_gate_passed=not terminal_workflow_failure,
     )
     report_sha256 = report.get("report_sha256")
-    gate = report.get("gate")
     if (
         not isinstance(report_sha256, str)
         or not isinstance(gate, dict)
-        or (
-            definition.require_pass_for_finalization
-            and gate.get("passed") is not True
-        )
+        or (definition.require_pass_for_finalization and gate.get("passed") is not True)
     ):
         raise TypeError(f"{definition.label} report lacks terminal evidence")
     reservation = _read_json(authorization.reservation_path, definition=definition)
@@ -502,10 +538,14 @@ def _require_previous_repeat(
         ),
     )
     runtime.replay_qualification(report)
-    _require_fresh_provider_receipts(
+    require_fresh_provider_receipts(
         report,
-        definition=definition,
-        runtime=runtime,
+        contract=ReceiptReverificationContract(
+            label=definition.label,
+            require_output_schema_custody=definition.require_output_schema_custody,
+        ),
+        verifier_factory=runtime.provider_verifier_factory,
+        verify=runtime.verify_provider_receipts,
     )
     gate = report.get("gate")
     if not isinstance(gate, dict) or gate.get("passed") is not True:
@@ -599,20 +639,47 @@ def _require_live_execution_evidence(
     receipts = report.get("provider_receipts")
     repository = report.get("repository_evidence")
     scope = report.get("conclusion_scope")
+    if definition.allow_terminal_workflow_failure and is_terminal_workflow_failure(
+        gate=gate,
+        agent_outputs=agent_outputs,
+    ):
+        require_terminal_workflow_failure_evidence(
+            contract=TerminalFailureContract(
+                label=definition.label,
+                execution_model_id=definition.execution_model_id,
+                receipt_model_id=definition.receipt_model_id,
+                execution_path=definition.execution_path,
+                roles=definition.required_attempt_roles,
+                evidence_unit_sha256=expected_evidence_unit_sha256,
+            ),
+            unit=unit if isinstance(unit, dict) else {},
+            agent_outputs=(agent_outputs if isinstance(agent_outputs, dict) else {}),
+            attempts=attempts if isinstance(attempts, list) else [],
+            receipts=receipts if isinstance(receipts, dict) else {},
+            repository=repository,
+            scope=scope,
+            report_execution_model_id=report.get("execution_model_id"),
+        )
+        validate_attempt_chain = getattr(runtime, "validate_attempt_chain", None)
+        if validate_attempt_chain is not None:
+            validate_attempt_chain(report, expected_evidence_unit_sha256)
+        return
     if (
         not isinstance(gate, dict)
         or not isinstance(gate.get("passed"), bool)
         or not isinstance(gate.get("requirements"), dict)
         or not isinstance(unit, dict)
         or not isinstance(agent_outputs, dict)
-        or not isinstance(agent_outputs.get("extraction"), dict)
-        or not isinstance(agent_outputs.get("verification"), dict)
+        or any(
+            not isinstance(agent_outputs.get(output_key), dict)
+            for _, _, output_key in definition.required_attempt_roles
+        )
         or not isinstance(attempts, list)
         or not isinstance(receipts, dict)
         or not isinstance(repository, dict)
         or repository.get("clean") is not True
         or not isinstance(scope, dict)
-        or scope.get("execution_path") != "agent_only_source_unit"
+        or scope.get("execution_path") != definition.execution_path
         or scope.get("deterministic_extraction_fallback_available") is not False
         or scope.get("persistence_authorized") is not False
         or report.get("configured_model_id") != definition.configured_model_id
@@ -635,6 +702,9 @@ def _require_live_execution_evidence(
             evidence_unit_sha256=expected_evidence_unit_sha256,
         ),
     )
+    validate_attempt_chain = getattr(runtime, "validate_attempt_chain", None)
+    if validate_attempt_chain is not None:
+        validate_attempt_chain(report, expected_evidence_unit_sha256)
 
 
 def _require_attempt_evidence(
@@ -649,18 +719,19 @@ def _require_attempt_evidence(
     receipts = evidence.receipts
     expected_count = receipts.get("expected_count")
     receipt_items = receipts.get("receipts")
-    primary_count = _attempt_role_count(attempts, "primary")
-    schema_retry_count = _attempt_role_count(attempts, "schema_retry")
-    weak_review_count = _attempt_role_count(attempts, "weak_review")
+    schema_retry_count = attempt_role_count(attempts, "schema_retry")
     dynamic_expected_count = (
         definition.expected_provider_call_count + schema_retry_count
+    )
+    required_role_counts_valid = all(
+        attempt_role_count(attempts, attempt_role) == 1
+        for attempt_role, _, _ in definition.required_attempt_roles
     )
     if (
         receipts.get("status") != "verified_live"
         or not isinstance(expected_count, int)
-        or primary_count != 1
-        or schema_retry_count not in {0, 1}
-        or weak_review_count != 1
+        or not required_role_counts_valid
+        or schema_retry_count not in ({0, 1} if definition.allow_schema_retry else {0})
         or expected_count != dynamic_expected_count
         or receipts.get("verified_count") != expected_count
         or len(attempts) != expected_count
@@ -695,11 +766,10 @@ def _require_attempt_evidence(
             not isinstance(attempt_role, str)
             or not isinstance(pass_role, str)
             or (attempt_role, pass_role)
-            not in {
-                ("primary", "primary"),
-                ("schema_retry", "primary"),
-                ("weak_review", "weak_review"),
-            }
+            not in allowed_role_pairs(
+                definition.required_attempt_roles,
+                allow_schema_retry=definition.allow_schema_retry,
+            )
             or not isinstance(raw_payload, dict)
             or attempt.get("payload_sha256") != runtime.sha256_json(raw_payload)
             or not isinstance(attempt.get("provider_output_sha256"), str)
@@ -715,13 +785,22 @@ def _require_attempt_evidence(
         if attempt_role in payloads_by_role:
             raise RuntimeError(f"{definition.label} attempt role is duplicated")
         payloads_by_role[attempt_role] = raw_payload
-    final_extraction_role = "schema_retry" if schema_retry_count else "primary"
+    expected_roles = {
+        attempt_role for attempt_role, _, _ in definition.required_attempt_roles
+    } | ({"schema_retry"} if schema_retry_count else set())
     if (
-        set(payloads_by_role)
-        != {"primary", "weak_review"}
-        | ({"schema_retry"} if schema_retry_count else set())
-        or agent_outputs.get("extraction") != payloads_by_role[final_extraction_role]
-        or agent_outputs.get("verification") != payloads_by_role["weak_review"]
+        set(payloads_by_role) != expected_roles
+        or any(
+            agent_outputs.get(output_key)
+            != payloads_by_role[
+                (
+                    "schema_retry"
+                    if attempt_role == "primary" and schema_retry_count
+                    else attempt_role
+                )
+            ]
+            for attempt_role, _, output_key in definition.required_attempt_roles
+        )
         or agent_outputs.get("error_type") is not None
     ):
         raise RuntimeError(f"{definition.label} agent outputs are not audit-bound")
@@ -743,15 +822,28 @@ def _require_attempt_evidence(
             or receipt.get("expected_payload_sha256")
             != receipt.get("retrieved_payload_sha256")
             or receipt.get("expected_model_id") != receipt.get("retrieved_model_id")
+            or (
+                definition.require_output_schema_custody
+                and (
+                    not isinstance(receipt.get("expected_output_schema_sha256"), str)
+                    or receipt.get("retrieved_output_schema_sha256")
+                    != receipt.get("expected_output_schema_sha256")
+                    or receipt.get("output_schema_verification_source")
+                    not in {
+                        "provider_input_binding",
+                        "provider_response_and_input_binding",
+                    }
+                )
+            )
         ):
             raise RuntimeError(f"{definition.label} provider receipt is invalid")
         response_id = receipt["response_id"]
         attempt = attempts_by_response_id.get(response_id)
-        if attempt is None or not _receipt_matches_attempt(
+        if attempt is None or not receipt_matches_attempt(
             receipt=receipt,
             attempt=attempt,
             unit_id=unit_id,
-            definition=definition,
+            receipt_model_id=definition.receipt_model_id,
         ):
             raise RuntimeError(
                 f"{definition.label} provider receipt is not audit-bound"
@@ -763,127 +855,22 @@ def _require_attempt_evidence(
         )
 
 
-def _attempt_role_count(attempts: list[object], role: str) -> int:
-    return sum(
-        isinstance(attempt, dict) and attempt.get("attempt_role") == role
-        for attempt in attempts
-    )
-
-
-def _receipt_matches_attempt(
-    *,
-    receipt: dict[object, object],
-    attempt: dict[object, object],
-    unit_id: str,
-    definition: RepeatSequenceDefinition,
-) -> bool:
-    return (
-        receipt.get("expected_case_id") == unit_id
-        and receipt.get("expected_model_id") == definition.receipt_model_id
-        and receipt.get("expected_output_sha256")
-        == attempt.get("provider_output_sha256")
-        and receipt.get("expected_payload_sha256") == attempt.get("payload_sha256")
-        and receipt.get("expected_prompt_sha256") == attempt.get("prompt_sha256")
-        and receipt.get("expected_invocation_id") == attempt.get("invocation_id")
-        and receipt.get("expected_kernel_run_id") == attempt.get("kernel_run_id")
-        and receipt.get("expected_source_sha256") == attempt.get("source_sha256")
-        and receipt.get("expected_input_sha256") == attempt.get("input_sha256")
-        and receipt.get("expected_evidence_unit_sha256")
-        == attempt.get("evidence_unit_sha256")
-    )
-
-
 def _require_fresh_provider_receipts(
     report: dict[str, object],
     *,
     definition: RepeatSequenceDefinition,
     runtime: RepeatSequenceRuntime,
 ) -> None:
-    """Re-retrieve provider evidence at the repeat-finalization boundary."""
+    """Compatibility boundary for the finalized V10 terminal sequence."""
 
-    stored = report.get("provider_receipts")
-    if not isinstance(stored, dict):
-        raise TypeError(f"{definition.label} provider receipts are unavailable")
-    receipt_items = stored.get("receipts")
-    if not isinstance(receipt_items, list):
-        raise TypeError(f"{definition.label} provider receipts are unavailable")
-    expectations = tuple(
-        _expectation_from_receipt(receipt, definition=definition)
-        for receipt in receipt_items
-    )
-    fresh = runtime.verify_provider_receipts(
-        expectations,
-        runtime.provider_verifier_factory(),
-    )
-    if not fresh.gate_passed or fresh.as_json() != stored:
-        raise RuntimeError(
-            f"{definition.label} provider receipts failed independent live "
-            "reverification"
-        )
-
-
-def _expectation_from_receipt(
-    receipt: object,
-    *,
-    definition: RepeatSequenceDefinition,
-) -> ProviderReceiptExpectation:
-    if not isinstance(receipt, dict):
-        raise TypeError(f"{definition.label} provider receipt is invalid")
-    payload_sha256 = receipt.get("expected_payload_sha256")
-    schema_sha256 = receipt.get("expected_output_schema_sha256")
-    if payload_sha256 is not None and not isinstance(payload_sha256, str):
-        raise RuntimeError(f"{definition.label} provider payload identity is invalid")
-    if schema_sha256 is not None and not isinstance(schema_sha256, str):
-        raise RuntimeError(f"{definition.label} provider schema identity is invalid")
-    return ProviderReceiptExpectation(
-        response_id=_required_string(receipt, "response_id", definition=definition),
-        expected_case_id=_required_string(
-            receipt,
-            "expected_case_id",
-            definition=definition,
+    require_fresh_provider_receipts(
+        report,
+        contract=ReceiptReverificationContract(
+            label=definition.label,
+            require_output_schema_custody=definition.require_output_schema_custody,
         ),
-        expected_model_id=_required_string(
-            receipt,
-            "expected_model_id",
-            definition=definition,
-        ),
-        expected_output_sha256=_required_string(
-            receipt,
-            "expected_output_sha256",
-            definition=definition,
-        ),
-        expected_payload_sha256=payload_sha256,
-        expected_prompt_sha256=_required_string(
-            receipt,
-            "expected_prompt_sha256",
-            definition=definition,
-        ),
-        expected_invocation_id=_required_string(
-            receipt,
-            "expected_invocation_id",
-            definition=definition,
-        ),
-        expected_kernel_run_id=_required_string(
-            receipt,
-            "expected_kernel_run_id",
-            definition=definition,
-        ),
-        expected_source_sha256=_required_string(
-            receipt,
-            "expected_source_sha256",
-            definition=definition,
-        ),
-        expected_input_sha256=_required_string(
-            receipt,
-            "expected_input_sha256",
-            definition=definition,
-        ),
-        expected_evidence_unit_sha256=_required_string(
-            receipt,
-            "expected_evidence_unit_sha256",
-            definition=definition,
-        ),
-        expected_output_schema_sha256=schema_sha256,
+        verifier_factory=runtime.provider_verifier_factory,
+        verify=runtime.verify_provider_receipts,
     )
 
 
@@ -959,6 +946,13 @@ def _frozen_definition_evidence(
         evidence["source_identity"] = dict(definition.source_identity)
     if definition.prompt_digests:
         evidence["prompt_digests"] = dict(definition.prompt_digests)
+    topology = non_default_topology_evidence(
+        required_roles=definition.required_attempt_roles,
+        allow_schema_retry=definition.allow_schema_retry,
+        execution_path=definition.execution_path,
+    )
+    if topology is not None:
+        evidence["attempt_topology"] = topology
     return evidence
 
 

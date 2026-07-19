@@ -156,10 +156,9 @@ def _write_or_validate_terminal_seal(
         existing = sequence._read_json(seal_path, definition=definition)  # noqa: SLF001
         unsigned = dict(existing)
         seal_sha256 = unsigned.pop("seal_sha256", None)
-        if (
-            any(existing.get(key) != value for key, value in immutable.items())
-            or seal_sha256 != canonical_sha256(unsigned)
-        ):
+        if any(
+            existing.get(key) != value for key, value in immutable.items()
+        ) or seal_sha256 != canonical_sha256(unsigned):
             raise RuntimeError(f"{definition.label} terminal seal is inconsistent")
         return existing
     seal = {**immutable, "sealed_at": runtime.now_utc().isoformat()}
@@ -233,13 +232,10 @@ def _require_terminal_failure_live_execution_evidence(
         or report.get("configured_model_id") != definition.configured_model_id
         or report.get("execution_model_id") != definition.execution_model_id
     ):
-        raise RuntimeError(
-            f"{definition.label} report lacks terminal failure evidence"
-        )
+        raise RuntimeError(f"{definition.label} report lacks terminal failure evidence")
     requirements = gate["requirements"]
-    if (
-        not definition.critical_gate_requirements.issubset(requirements)
-        or all(value is True for value in requirements.values())
+    if not definition.critical_gate_requirements.issubset(requirements) or all(
+        value is True for value in requirements.values()
     ):
         raise RuntimeError(f"{definition.label} terminal gate is inconsistent")
     _require_terminal_semantic_attempt_evidence(
@@ -278,9 +274,7 @@ def _require_terminal_semantic_attempt_evidence(
             for attempt in evidence.attempts[:-1]
         )
     ):
-        raise RuntimeError(
-            f"{definition.label} terminal semantic failure is invalid"
-        )
+        raise RuntimeError(f"{definition.label} terminal semantic failure is invalid")
     normalized_attempts = [
         dict(attempt) if isinstance(attempt, dict) else attempt
         for attempt in evidence.attempts

@@ -222,6 +222,7 @@ async def extract_source_unit(  # noqa: PLR0913
     execution_namespace: str,
     unit: FrozenSourceUnit,
     prompt_policy: SourceUnitPromptPolicy | None = None,
+    prepared_prompt: str | None = None,
 ) -> AuditedStructuredStepResult[
     SourceUnitExtractionOutput,
     SourceUnitExtractionResult,
@@ -229,7 +230,11 @@ async def extract_source_unit(  # noqa: PLR0913
     """Run one categorical event decision through Artana's audited agent path."""
 
     policy = prompt_policy or default_source_unit_prompt_policy()
-    prompt = policy.extraction_prompt(unit)
+    prompt = (
+        prepared_prompt
+        if prepared_prompt is not None
+        else policy.extraction_prompt(unit)
+    )
     step_key = fingerprinted_step_key(
         policy.extraction_version,
         model_id,

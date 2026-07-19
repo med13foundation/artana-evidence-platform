@@ -26,6 +26,10 @@ from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitExtractionOutput,
     SourceUnitVerificationOutput,
 )
+from scripts.validation.claim_events.finite_source_unit.normalization.contracts import (
+    SourceUnitNormalizationOutput,
+    SourceUnitNormalizedReviewOutput,
+)
 from scripts.validation.claim_events.finite_source_unit.service import (
     VerifiedEventCandidate,
     as_model_client,
@@ -374,6 +378,12 @@ def receipt_expectations_for_finite_source_records(
     schema_hashes = {
         "primary": output_schema_json_sha256(SourceUnitExtractionOutput),
         "weak_review": output_schema_json_sha256(SourceUnitVerificationOutput),
+        "structure_normalization": output_schema_json_sha256(
+            SourceUnitNormalizationOutput
+        ),
+        "normalized_review": output_schema_json_sha256(
+            SourceUnitNormalizedReviewOutput
+        ),
     }
     for record in records:
         invalid_count += int(record.validation_outcome != "accepted")

@@ -284,8 +284,7 @@ def _require_complete_terminal_report_replay(
         unlinked_controlled_event_reference_count=len(link_result.unlinked_references),
         unlinked_controlled_target_count=len(orphan_target_ids),
         invalid_agent_output_count=sum(
-            not isinstance(item, dict)
-            or item.get("validation_outcome") != "accepted"
+            not isinstance(item, dict) or item.get("validation_outcome") != "accepted"
             for item in attempts
         ),
         unidentified_provider_attempt_count=sum(
@@ -358,8 +357,7 @@ def _terminal_conclusion_scope() -> dict[str, object]:
 
 def _attempt_count(attempts: list[object], role: str) -> int:
     return sum(
-        isinstance(item, dict) and item.get("attempt_role") == role
-        for item in attempts
+        isinstance(item, dict) and item.get("attempt_role") == role for item in attempts
     )
 
 
@@ -396,8 +394,7 @@ def _require_tenth_frozen_lineage(report: dict[str, object]) -> None:
     unit = _required_dict(report, "unit")
     if (
         any(unit.get(key) != expected for key, expected in TENTH_SOURCE_IDENTITY)
-        or unit.get("authoritative_article_url")
-        != TENTH_AUTHORITATIVE_ARTICLE_URL
+        or unit.get("authoritative_article_url") != TENTH_AUTHORITATIVE_ARTICLE_URL
     ):
         raise RuntimeError("tenth holdout source identity changed")
     repeat_index = _required_int(report, "repeat_index")
@@ -409,8 +406,7 @@ def _require_tenth_frozen_lineage(report: dict[str, object]) -> None:
         report.get("expected_eligibility_category") != "NULL_RESULT"
         or report.get("pre_registered_repeat_indices") != [1, 2, 3]
         or report.get("task_id") != "fresh_nested_event_identity_holdout_v10"
-        or _sha256_json(report.get("freshness"))
-        != _sha256_json(expected_freshness)
+        or _sha256_json(report.get("freshness")) != _sha256_json(expected_freshness)
     ):
         raise RuntimeError("tenth holdout scientific provenance changed")
     frozen_unit = FrozenSourceUnit(
