@@ -18,7 +18,8 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.run
     run_tenth_nested_event_holdout_trial,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10.sequence import (  # noqa: E402
-    finalize_tenth_repeat,
+    finalize_tenth_outcome,
+    recover_tenth_outcome,
     reserve_tenth_repeat,
 )
 
@@ -33,6 +34,15 @@ def main() -> int:
     args = parser.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     preflight_tenth_nested_event_holdout_trial(archive=args.archive)
+    if args.output.exists():
+        report = recover_tenth_outcome(
+            repository_root=_REPO_ROOT,
+            run_id=args.run_id,
+            repeat_index=args.repeat_index,
+            output=args.output,
+        )
+        print(args.output)
+        return tenth_nested_holdout_exit_code(report)
     authorization = reserve_tenth_repeat(
         repository_root=_REPO_ROOT,
         run_id=args.run_id,
@@ -51,7 +61,7 @@ def main() -> int:
             json.dumps(report, indent=2, sort_keys=True, ensure_ascii=True) + "\n",
         )
     print(args.output)
-    finalize_tenth_repeat(authorization, report=report)
+    finalize_tenth_outcome(authorization, report=report)
     return tenth_nested_holdout_exit_code(report)
 
 

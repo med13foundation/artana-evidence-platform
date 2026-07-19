@@ -11,6 +11,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Protocol, TypeVar
 
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sequence_support.storage import (
+    canonical_sha256 as _canonical_sha256,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sequence_support.storage import (
+    replace_json as _replace_json,
+)
 from scripts.validation.claim_frames.provider_receipts import (
     ProviderReceiptExpectation,
     ProviderReceiptVerification,
@@ -86,6 +92,9 @@ class RepeatSequenceDefinition:
     expert_graph_sha256: str | None = None
     source_identity: tuple[tuple[str, object], ...] = ()
     prompt_digests: tuple[tuple[str, str], ...] = ()
+    successful_reservation_status: str = "FINALIZED"
+    terminal_seal_schema_version: str | None = None
+    require_pass_for_finalization: bool = False
 
     @property
     def label(self) -> str:
@@ -371,12 +380,19 @@ def finalize_repeat(
     )
     report_sha256 = report.get("report_sha256")
     gate = report.get("gate")
-    if not isinstance(report_sha256, str) or not isinstance(gate, dict):
+    if (
+        not isinstance(report_sha256, str)
+        or not isinstance(gate, dict)
+        or (
+            definition.require_pass_for_finalization
+            and gate.get("passed") is not True
+        )
+    ):
         raise TypeError(f"{definition.label} report lacks terminal evidence")
     reservation = _read_json(authorization.reservation_path, definition=definition)
     reservation.update(
         {
-            "status": "FINALIZED",
+            "status": definition.successful_reservation_status,
             "report_sha256": report_sha256,
             "gate_passed": gate.get("passed") is True,
             "finalized_at": runtime.now_utc().isoformat(),
@@ -497,7 +513,8 @@ def _require_previous_repeat(
     report_sha256 = report.get("report_sha256")
     if (
         not isinstance(report_sha256, str)
-        or previous_reservation.get("status") != "FINALIZED"
+        or previous_reservation.get("status")
+        != definition.successful_reservation_status
         or previous_reservation.get("gate_passed") is not True
         or previous_reservation.get("report_sha256") != report_sha256
     ):
@@ -509,6 +526,27 @@ def _require_previous_repeat(
 
 
 def _require_report_identity(
+    report: dict[str, object],
+    *,
+    definition: RepeatSequenceDefinition,
+    runtime: RepeatSequenceRuntime,
+    expectation: _ReportIdentityExpectation,
+) -> None:
+    _require_report_envelope_identity(
+        report,
+        definition=definition,
+        runtime=runtime,
+        expectation=expectation,
+    )
+    _require_live_execution_evidence(
+        report,
+        definition=definition,
+        runtime=runtime,
+        expected_evidence_unit_sha256=expectation.evidence_unit_sha256,
+    )
+
+
+def _require_report_envelope_identity(
     report: dict[str, object],
     *,
     definition: RepeatSequenceDefinition,
@@ -545,12 +583,6 @@ def _require_report_identity(
         or report_sha256 != runtime.sha256_json(unsigned)
     ):
         raise RuntimeError(f"{definition.label} report identity is invalid")
-    _require_live_execution_evidence(
-        report,
-        definition=definition,
-        runtime=runtime,
-        expected_evidence_unit_sha256=expectation.evidence_unit_sha256,
-    )
 
 
 def _require_live_execution_evidence(
@@ -1024,7 +1056,7 @@ def _finalized_lease_sha256(
 ) -> str | None:
     if definition.execution_lease_schema_version is None:
         return None
-    if reservation.get("status") != "FINALIZED":
+    if reservation.get("status") != definition.successful_reservation_status:
         raise RuntimeError(f"previous {definition.label} execution is not finalized")
     return _validate_execution_lease(
         reservation,
@@ -1096,26 +1128,6 @@ def _execution_lease_payload(
 
 def _execution_lease_path(reservation_path: Path) -> Path:
     return reservation_path.with_name(f"{reservation_path.stem}.execution.json")
-
-
-def _canonical_sha256(value: object) -> str:
-    return hashlib.sha256(
-        json.dumps(
-            value,
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=True,
-        ).encode(),
-    ).hexdigest()
-
-
-def _replace_json(path: Path, value: Mapping[str, object]) -> None:
-    replacement = path.with_suffix(f"{path.suffix}.tmp")
-    replacement.write_text(
-        json.dumps(value, indent=2, sort_keys=True, ensure_ascii=True) + "\n",
-        encoding="utf-8",
-    )
-    replacement.replace(path)
 
 
 def _required_string(

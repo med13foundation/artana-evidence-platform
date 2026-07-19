@@ -25,9 +25,7 @@ from artana_evidence_api.document_extraction_support.llm_extraction.invocation_b
     output_schema_json_sha256,
 )
 
-from scripts.run_tenth_nested_event_holdout_trial import (
-    tenth_nested_holdout_exit_code,
-)
+from scripts.run_tenth_nested_event_holdout_trial import tenth_nested_holdout_exit_code
 from scripts.validation.claim_events.bionlp_import import TG04_BIONLP_ARCHIVE_SHA256
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitCoverageDecision,
@@ -51,6 +49,9 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10 import (
     sequence as tenth_sequence,
 )
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10 import (
+    terminal_sequence,
+)
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10.projection import (
     tenth_projection_set,
 )
@@ -60,15 +61,20 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10.qualification import (
     TENTH_ARCHIVE_SHA256,
+    TENTH_AUTHORITATIVE_ARTICLE_URL,
     TENTH_EXPERT_GRAPH_SHA256,
+    TENTH_FRESHNESS_IDENTITY,
     TENTH_PROJECTION_SET_SHA256,
     TENTH_PROMPT_DIGESTS,
     TENTH_SOURCE_IDENTITY,
     require_replayed_tenth_qualification,
+    require_replayed_tenth_terminal_failure,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10.sequence import (
     TenthRepeatAuthorization,
+    finalize_tenth_outcome,
     finalize_tenth_repeat,
+    recover_tenth_outcome,
     reserve_tenth_repeat,
 )
 from scripts.validation.claim_events.finite_source_unit.service import (
@@ -269,8 +275,259 @@ def test_tenth_finalization_requires_real_replay(
     finalize_tenth_repeat(authorization, report=report)
 
     reservation = json.loads(authorization.reservation_path.read_text())
-    assert reservation["status"] == "FINALIZED"
+    assert reservation["status"] == "FINALIZED_PASS"
     assert reservation["gate_passed"] is True
+
+
+def test_tenth_terminal_failure_is_sealed_and_cannot_authorize_next_repeat(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _git_repository(tmp_path)
+    authorization = reserve_tenth_repeat(
+        repository_root=repository,
+        run_id="tg04-v10-terminal",
+        repeat_index=1,
+        output=tmp_path / "terminal.json",
+        previous_report=None,
+    )
+    report = _terminal_tenth_report(
+        _complete_tenth_report(monkeypatch, authorization=authorization)
+    )
+    authorization.output.write_text(json.dumps(report), encoding="utf-8")
+    monkeypatch.setattr(
+        tenth_sequence.OpenAIProviderReceiptVerifier,
+        "from_environment",
+        lambda: _LiveVerifier(),
+    )
+
+    finalize_tenth_outcome(authorization, report=report)
+
+    reservation = json.loads(authorization.reservation_path.read_text())
+    assert reservation["status"] == "TERMINAL_FAILURE"
+    assert reservation["gate_passed"] is False
+    assert reservation["report_sha256"] == report["report_sha256"]
+    assert reservation["terminal_error_type"] == "StructuredModelSemanticError"
+    terminal_path = authorization.reservation_path.with_name(
+        f"{authorization.reservation_path.stem}.terminal.json"
+    )
+    terminal_seal = json.loads(terminal_path.read_text())
+    assert terminal_seal["status"] == "TERMINAL_FAILURE"
+    assert terminal_seal["gate_passed"] is False
+    assert reservation["terminal_seal_sha256"] == terminal_seal["seal_sha256"]
+    with pytest.raises(RuntimeError, match="execution is not finalized"):
+        reserve_tenth_repeat(
+            repository_root=repository,
+            run_id=authorization.run_id,
+            repeat_index=2,
+            output=tmp_path / "repeat-2.json",
+            previous_report=authorization.output,
+        )
+
+
+def test_tenth_terminal_recovery_seals_written_report_without_execution(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _git_repository(tmp_path)
+    authorization = reserve_tenth_repeat(
+        repository_root=repository,
+        run_id="tg04-v10-recovery",
+        repeat_index=1,
+        output=tmp_path / "terminal.json",
+        previous_report=None,
+    )
+    report = _terminal_tenth_report(
+        _complete_tenth_report(monkeypatch, authorization=authorization)
+    )
+    authorization.output.write_text(json.dumps(report), encoding="utf-8")
+    monkeypatch.setattr(
+        tenth_sequence.OpenAIProviderReceiptVerifier,
+        "from_environment",
+        lambda: _LiveVerifier(),
+    )
+
+    recovered = recover_tenth_outcome(
+        repository_root=repository,
+        run_id=authorization.run_id,
+        repeat_index=1,
+        output=authorization.output,
+    )
+
+    assert recovered["report_sha256"] == report["report_sha256"]
+    reservation = json.loads(authorization.reservation_path.read_text())
+    assert reservation["status"] == "TERMINAL_FAILURE"
+
+
+def test_tenth_terminal_recovery_reconciles_existing_create_once_seal(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _git_repository(tmp_path)
+    authorization = reserve_tenth_repeat(
+        repository_root=repository,
+        run_id="tg04-v10-seal-recovery",
+        repeat_index=1,
+        output=tmp_path / "terminal.json",
+        previous_report=None,
+    )
+    report = _terminal_tenth_report(
+        _complete_tenth_report(monkeypatch, authorization=authorization)
+    )
+    authorization.output.write_text(json.dumps(report), encoding="utf-8")
+    monkeypatch.setattr(
+        tenth_sequence.OpenAIProviderReceiptVerifier,
+        "from_environment",
+        lambda: _LiveVerifier(),
+    )
+    real_replace = terminal_sequence.replace_json
+    monkeypatch.setattr(
+        terminal_sequence,
+        "replace_json",
+        lambda path, value: (_ for _ in ()).throw(RuntimeError("simulated crash")),
+    )
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        finalize_tenth_outcome(authorization, report=report)
+    terminal_path = authorization.reservation_path.with_name(
+        f"{authorization.reservation_path.stem}.terminal.json"
+    )
+    assert terminal_path.exists()
+    monkeypatch.setattr(terminal_sequence, "replace_json", real_replace)
+
+    recover_tenth_outcome(
+        repository_root=repository,
+        run_id=authorization.run_id,
+        repeat_index=1,
+        output=authorization.output,
+    )
+
+    reservation = json.loads(authorization.reservation_path.read_text())
+    assert reservation["status"] == "TERMINAL_FAILURE"
+
+
+def test_tenth_terminal_failure_replay_rejects_false_semantic_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = _terminal_tenth_report(_complete_tenth_report(monkeypatch))
+    terminal_attempt = report["attempts"][-1]
+    assert isinstance(terminal_attempt, dict)
+    complete = _complete_tenth_report(monkeypatch)
+    complete_attempt = complete["attempts"][-1]
+    assert isinstance(complete_attempt, dict)
+    terminal_attempt["raw_model_payload"] = complete_attempt["raw_model_payload"]
+
+    with pytest.raises(RuntimeError, match="terminal semantic failure"):
+        require_replayed_tenth_terminal_failure(report)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "gate_decision",
+        "provider_receipt_gate",
+        "benchmark_credit",
+        "fabricated_verified_candidate",
+        "eligibility_category",
+        "authoritative_url",
+        "selection_rule",
+    ],
+)
+def test_tenth_terminal_failure_replay_rejects_derived_field_tampering(
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    report = _terminal_tenth_report(_complete_tenth_report(monkeypatch))
+    if mutation == "gate_decision":
+        gate = report["gate"]
+        assert isinstance(gate, dict)
+        gate["decision"] = "PROCEED_TO_NEXT_PRE_REGISTERED_REPEAT"
+    elif mutation == "provider_receipt_gate":
+        gate = report["gate"]
+        assert isinstance(gate, dict)
+        requirements = gate["requirements"]
+        assert isinstance(requirements, dict)
+        requirements["provider_receipts_verified"] = False
+    elif mutation == "benchmark_credit":
+        scope = report["conclusion_scope"]
+        assert isinstance(scope, dict)
+        scope["benchmark_credit_awarded"] = True
+    elif mutation == "fabricated_verified_candidate":
+        verified = report["verified_candidates"]
+        assert isinstance(verified, list)
+        verified.append({"fabricated": True})
+    elif mutation == "eligibility_category":
+        report["expected_eligibility_category"] = "PROCEDURE_ONLY"
+    elif mutation == "authoritative_url":
+        unit = report["unit"]
+        assert isinstance(unit, dict)
+        unit["authoritative_article_url"] = "https://example.test/wrong"
+    else:
+        freshness = report["freshness"]
+        assert isinstance(freshness, dict)
+        freshness["selection_rule"] = "post_hoc_selection"
+    _resign_report(report)
+
+    with pytest.raises(RuntimeError):
+        require_replayed_tenth_terminal_failure(report)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    ["eligibility_category", "authoritative_url", "selection_rule"],
+)
+def test_tenth_terminal_finalizer_rejects_scientific_provenance_tampering(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    repository = _git_repository(tmp_path)
+    authorization = reserve_tenth_repeat(
+        repository_root=repository,
+        run_id=f"tg04-v10-provenance-{mutation}",
+        repeat_index=1,
+        output=tmp_path / f"{mutation}.json",
+        previous_report=None,
+    )
+    report = _terminal_tenth_report(
+        _complete_tenth_report(monkeypatch, authorization=authorization)
+    )
+    if mutation == "eligibility_category":
+        report["expected_eligibility_category"] = "PROCEDURE_ONLY"
+    elif mutation == "authoritative_url":
+        unit = report["unit"]
+        assert isinstance(unit, dict)
+        unit["authoritative_article_url"] = "https://example.test/wrong"
+    else:
+        freshness = report["freshness"]
+        assert isinstance(freshness, dict)
+        freshness["selection_rule"] = "post_hoc_selection"
+    _resign_report(report)
+    authorization.output.write_text(json.dumps(report), encoding="utf-8")
+    monkeypatch.setattr(
+        tenth_sequence.OpenAIProviderReceiptVerifier,
+        "from_environment",
+        lambda: _LiveVerifier(),
+    )
+
+    with pytest.raises(RuntimeError):
+        finalize_tenth_outcome(authorization, report=report)
+
+    terminal_path = authorization.reservation_path.with_name(
+        f"{authorization.reservation_path.stem}.terminal.json"
+    )
+    assert not terminal_path.exists()
+
+
+def test_tenth_outcome_rejects_nonsemantic_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = _terminal_tenth_report(_complete_tenth_report(monkeypatch))
+    agent_outputs = report["agent_outputs"]
+    assert isinstance(agent_outputs, dict)
+    agent_outputs["error_type"] = "ProviderTransportError"
+
+    with pytest.raises(RuntimeError, match="outcome category is not sealable"):
+        finalize_tenth_outcome(object(), report=report)  # type: ignore[arg-type]
 
 
 def test_tenth_later_repeat_replays_finalized_execution_lease(
@@ -469,27 +726,7 @@ def _complete_tenth_report(
         text=_SOURCE,
         source_sha256=_SOURCE_SHA256,
     )
-    projection_set = tenth_projection_set()
-    graph = projection_set.canonical_projection.graph
-    selection = NestedHoldoutSelection(
-        case_id="bionlp-ge-2011-holdout:PMC-2222968-04-Results-03",
-        unit=unit,
-        expert_graph=graph,
-        trial_generation=10,
-        selection_seed=_SELECTION_SEED,
-        selection_rule="test-reconstruction-of-frozen-v10",
-        excluded_document_ids=("PMID-8622948",),
-        selection_rank="a7b2a256",
-        candidate_unit_count=3,
-        holdout_document_count=219,
-        incompatible_document_ids=(),
-        archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
-        expert_graph_sha256=TENTH_EXPERT_GRAPH_SHA256,
-        authoritative_article_url=("https://pmc.ncbi.nlm.nih.gov/articles/PMC2222968/"),
-        projection_set=projection_set,
-        projection_set_sha256=TENTH_PROJECTION_SET_SHA256,
-        expected_eligibility_category=SourceUnitEligibilityCategory.NULL_RESULT,
-    )
+    selection = _tenth_selection(unit)
     prototype = _nested_inventory()
     extraction = SourceUnitExtractionOutput(
         eligibility_category=SourceUnitEligibilityCategory.NULL_RESULT,
@@ -577,6 +814,155 @@ def _complete_tenth_report(
         }
         report["report_sha256"] = sha256_json(report)
     return report
+
+
+def _terminal_tenth_report(report: dict[str, object]) -> dict[str, object]:
+    unit_payload = report["unit"]
+    assert isinstance(unit_payload, dict)
+    unit = FrozenSourceUnit(
+        unit_id=str(unit_payload["unit_id"]),
+        index=int(unit_payload["unit_index"]),
+        source_start=int(unit_payload["source_start"]),
+        source_end=int(unit_payload["source_end"]),
+        text=str(unit_payload["text"]),
+        source_sha256=str(unit_payload["source_sha256"]),
+    )
+    extraction = SourceUnitExtractionOutput.model_validate(
+        {
+            "eligibility_category": "NULL_RESULT",
+            "decision": "EXPLICIT_EVENT",
+            "events": [
+                {
+                    "exact_span": _SOURCE,
+                    "relation_cue_span": "did not decrease",
+                    "arguments": [
+                        {
+                            "role": "POPULATION",
+                            "event_role": "CONTEXT",
+                            "exact_span": "pre-existing iTreg cells",
+                            "role_rationale": "The tested cell population.",
+                        },
+                        {
+                            "role": "BIOLOGICAL_PROCESS",
+                            "event_role": "THEME",
+                            "exact_span": "FOXP3 expression",
+                            "role_rationale": "The tested expression process.",
+                        },
+                        {
+                            "role": "EXPOSURE",
+                            "event_role": "CONTEXT",
+                            "exact_span": "IL-4 exposure",
+                            "role_rationale": "The explicit exposure context.",
+                        },
+                    ],
+                    "source_locator": "normalized_extraction_text",
+                    "claim_kind": "SCIENTIFIC_FINDING",
+                    "event_type": "DECREASE",
+                    "assertion_scope": "SOURCE_ASSERTED",
+                    "polarity": "NULL_RESULT",
+                    "epistemic_status": "ASSERTED",
+                    "inventory_rationale": "A specific tested decrease was not observed.",
+                }
+            ],
+            "reasoning": "The sentence reports a null decrease event.",
+        }
+    )
+    candidates = bind_source_unit_extraction(extraction, unit=unit).accepted
+    verification = SourceUnitVerificationOutput(
+        eligibility_category=SourceUnitEligibilityCategory.NULL_RESULT,
+        coverage_decision=SourceUnitCoverageDecision.CANDIDATES_COMPLETE,
+        coverage_reasoning="The supplied candidate is incorrectly called complete.",
+        decisions=tuple(
+            _entailed_verification(
+                candidate.item.arguments,
+                evidence_span=candidate.item.exact_span,
+            )
+            for candidate in candidates
+        ),
+    )
+    evidence_unit_sha256 = str(report["attempts"][0]["evidence_unit_sha256"])
+    records = list(
+        _attempt_records(
+            unit=unit,
+            candidates=candidates,
+            extraction=extraction,
+            verification=verification,
+            evidence_unit_sha256=evidence_unit_sha256,
+        )
+    )
+    verification_payload = verification.model_dump(mode="json")
+    records[-1] = replace(
+        records[-1],
+        raw_model_payload_json=json.dumps(verification_payload, sort_keys=True),
+        payload_sha256=sha256_json(verification_payload),
+        validation_outcome="semantic_invalid",
+        error_type="StructuredModelSemanticError",
+    )
+    links = link_controlled_events(candidates)
+    terminal_run = SingleUnitAgentRunEvidence(
+        extraction=extraction,
+        verification=None,
+        verified=(),
+        entailed=(),
+        trusted=(),
+        controlled_event_links=links.links,
+        controlled_event_link_ambiguities=links.ambiguities,
+        unlinked_controlled_event_references=links.unlinked_references,
+        unlinked_controlled_target_ids=(),
+        extracted_candidate_count=len(candidates),
+        binding_rejection_count=0,
+        observed_binding_rejections=(),
+        unresolved_binding_rejections=(),
+        schema_retry_count=0,
+        records=tuple(records),
+        error_type="StructuredModelSemanticError",
+    )
+    repository_evidence = report["repository_evidence"]
+    assert isinstance(repository_evidence, dict)
+    terminal_report = build_nested_holdout_report(
+        selection=_tenth_selection(unit),
+        run_id=str(report["run_id"]),
+        repeat_index=int(report["repeat_index"]),
+        configured_model_id="openai:gpt-5.6-luna",
+        execution_model_id="openai/gpt-5.6-luna",
+        repository_evidence=repository_evidence,
+        agent_run=terminal_run,
+    )
+    repeat_authorization = report.get("repeat_authorization")
+    if isinstance(repeat_authorization, dict):
+        terminal_report.pop("report_sha256")
+        terminal_report["repeat_authorization"] = repeat_authorization
+        terminal_report["report_sha256"] = sha256_json(terminal_report)
+    return terminal_report
+
+
+def _tenth_selection(unit: FrozenSourceUnit) -> NestedHoldoutSelection:
+    projection_set = tenth_projection_set()
+    excluded = TENTH_FRESHNESS_IDENTITY["excluded_document_ids"]
+    incompatible = TENTH_FRESHNESS_IDENTITY["incompatible_document_ids"]
+    assert isinstance(excluded, list)
+    assert isinstance(incompatible, list)
+    return NestedHoldoutSelection(
+        case_id="bionlp-ge-2011-holdout:PMC-2222968-04-Results-03",
+        unit=unit,
+        expert_graph=projection_set.canonical_projection.graph,
+        trial_generation=10,
+        selection_seed=_SELECTION_SEED,
+        selection_rule=str(TENTH_FRESHNESS_IDENTITY["selection_rule"]),
+        excluded_document_ids=tuple(str(item) for item in excluded),
+        selection_rank=str(TENTH_FRESHNESS_IDENTITY["selection_rank"]),
+        candidate_unit_count=int(TENTH_FRESHNESS_IDENTITY["eligible_unit_count"]),
+        holdout_document_count=int(
+            TENTH_FRESHNESS_IDENTITY["non_development_document_count"]
+        ),
+        incompatible_document_ids=tuple(str(item) for item in incompatible),
+        archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+        expert_graph_sha256=TENTH_EXPERT_GRAPH_SHA256,
+        authoritative_article_url=TENTH_AUTHORITATIVE_ARTICLE_URL,
+        projection_set=projection_set,
+        projection_set_sha256=TENTH_PROJECTION_SET_SHA256,
+        expected_eligibility_category=SourceUnitEligibilityCategory.NULL_RESULT,
+    )
 
 
 def _attempt_records(

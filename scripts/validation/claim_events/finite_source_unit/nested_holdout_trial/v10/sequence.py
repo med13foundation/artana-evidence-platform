@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -27,6 +28,10 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10
     TENTH_PROMPT_DIGESTS,
     TENTH_SOURCE_IDENTITY,
     require_replayed_tenth_qualification,
+    require_replayed_tenth_terminal_failure,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10.terminal_sequence import (
+    finalize_terminal_failure,
 )
 from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
     sha256_json,
@@ -85,6 +90,9 @@ _DEFINITION: Final = RepeatSequenceDefinition(
     expert_graph_sha256=TENTH_EXPERT_GRAPH_SHA256,
     source_identity=TENTH_SOURCE_IDENTITY,
     prompt_digests=TENTH_PROMPT_DIGESTS,
+    successful_reservation_status="FINALIZED_PASS",
+    terminal_seal_schema_version="tg04_v10_terminal_seal.v1",
+    require_pass_for_finalization=True,
 )
 
 
@@ -153,6 +161,98 @@ def finalize_tenth_repeat(
     )
 
 
+def _finalize_tenth_terminal_failure(
+    authorization: TenthRepeatAuthorization,
+    *,
+    report: dict[str, object],
+) -> None:
+    """Seal a receipt-backed V10 semantic failure as permanently non-passing."""
+
+    finalize_terminal_failure(
+        authorization,
+        definition=_DEFINITION,
+        runtime=_runtime(),
+        report=report,
+        replay_terminal_failure=require_replayed_tenth_terminal_failure,
+    )
+
+
+def finalize_tenth_outcome(
+    authorization: TenthRepeatAuthorization,
+    *,
+    report: dict[str, object],
+) -> None:
+    """Derive the only allowed terminal state from receipt-bound agent output."""
+
+    agent_outputs = report.get("agent_outputs")
+    if not isinstance(agent_outputs, dict):
+        raise TypeError("tenth holdout agent outputs are unavailable")
+    error_type = agent_outputs.get("error_type")
+    verification = agent_outputs.get("verification")
+    if error_type is None and isinstance(verification, dict):
+        finalize_tenth_repeat(authorization, report=report)
+        return
+    if error_type == "StructuredModelSemanticError" and verification is None:
+        _finalize_tenth_terminal_failure(authorization, report=report)
+        return
+    raise RuntimeError("tenth holdout outcome category is not sealable")
+
+
+def recover_tenth_outcome(
+    *,
+    repository_root: Path,
+    run_id: str,
+    repeat_index: int,
+    output: Path,
+) -> dict[str, object]:
+    """Seal an already written V10 report without issuing another provider call."""
+
+    completed = subprocess.run(
+        (
+            "git",
+            "-C",
+            str(repository_root),
+            "rev-parse",
+            "--path-format=absolute",
+            "--git-path",
+            _DEFINITION.registry_path,
+        ),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    reservation_path = Path(completed.stdout.strip()) / f"repeat-{repeat_index}.json"
+    try:
+        reservation = json.loads(reservation_path.read_text(encoding="utf-8"))
+        report = json.loads(output.resolve().read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        raise RuntimeError("tenth holdout recovery evidence is unavailable") from exc
+    if not isinstance(reservation, dict) or not isinstance(report, dict):
+        raise TypeError("tenth holdout recovery evidence must be JSON objects")
+    repository_evidence = reservation.get("repository_evidence")
+    token = reservation.get("token")
+    if (
+        reservation.get("status") != "EXECUTING"
+        or reservation.get("run_id") != run_id
+        or reservation.get("repeat_index") != repeat_index
+        or reservation.get("output") != str(output.resolve())
+        or not isinstance(repository_evidence, dict)
+        or not isinstance(token, str)
+    ):
+        raise RuntimeError("tenth holdout recovery identity is invalid")
+    authorization = TenthRepeatAuthorization(
+        run_id=run_id,
+        repeat_index=repeat_index,
+        output=output.resolve(),
+        reservation_path=reservation_path,
+        token=token,
+        repository_root=repository_root.resolve(),
+        repository_evidence=repository_evidence,
+    )
+    finalize_tenth_outcome(authorization, report=report)
+    return report
+
+
 def _runtime() -> RepeatSequenceRuntime:
     return RepeatSequenceRuntime(
         collect_repository_evidence=collect_repository_evidence,
@@ -182,6 +282,8 @@ def _authorization_from_values(
 
 __all__ = [
     "TenthRepeatAuthorization",
+    "finalize_tenth_outcome",
     "finalize_tenth_repeat",
+    "recover_tenth_outcome",
     "reserve_tenth_repeat",
 ]
