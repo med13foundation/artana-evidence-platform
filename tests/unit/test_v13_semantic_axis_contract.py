@@ -7,7 +7,11 @@ from scripts.validation.claim_events.finite_source_unit.contracts import (
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v13.prompts import (
     V13_EXTRACTION_PROMPT_VERSION,
+    v13_normalization_prompt,
     v13_source_unit_extraction_prompt,
+)
+from scripts.validation.claim_events.finite_source_unit.service import (
+    bind_source_unit_extraction,
 )
 from scripts.validation.claim_events.finite_source_unit.source_units import (
     enumerate_source_units,
@@ -85,3 +89,27 @@ def test_v13_prompt_defines_neutral_direction_without_changing_history() -> None
     assert "event_type REGULATION, polarity SUPPORT" in prompt
     assert "Never use polarity to" in prompt
     assert "prompt_version: tg04.finite_source_unit.extraction.v21" not in prompt
+
+
+def test_v13_correction_prompt_authorizes_agent_reframe_not_deterministic_repair() -> None:
+    unit = enumerate_source_units(
+        case_id="v13-visible-neutral",
+        source_text=_NEUTRAL_SOURCE,
+    )[0]
+    original_output = SourceUnitExtractionOutput.model_validate(
+        {
+            "eligibility_category": "NO_EVENT",
+            "decision": "NO_EVENT",
+            "events": [],
+            "reasoning": "Visible fixture for prompt construction.",
+        }
+    )
+    original = bind_source_unit_extraction(original_output, unit=unit)
+
+    prompt = v13_normalization_prompt(unit=unit, original=original)
+
+    assert "return the corrected category yourself" in prompt
+    assert "mark that mapping REFRAME" in prompt
+    assert "deterministic binder" in prompt
+    assert "will never make the change" in prompt
+    assert "prompt_version: tg04.finite_source_unit.structure_normalization.v4" in prompt

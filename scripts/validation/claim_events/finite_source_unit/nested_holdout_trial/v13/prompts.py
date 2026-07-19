@@ -10,6 +10,12 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v10
     v10_source_unit_extraction_prompt,
     v10_source_unit_verification_prompt,
 )
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v12.prompts import (
+    V12_NORMALIZATION_PROMPT_VERSION,
+    V12_NORMALIZED_REVIEW_PROMPT_VERSION,
+    v12_normalization_prompt,
+    v12_normalized_review_prompt,
+)
 from scripts.validation.claim_events.finite_source_unit.service import (
     SourceUnitPromptPolicy,
 )
@@ -19,12 +25,24 @@ if TYPE_CHECKING:
         BoundClaimInventoryItem,
     )
 
+    from scripts.validation.claim_events.finite_source_unit.normalization.service import (
+        SourceUnitNormalizationResult,
+    )
+    from scripts.validation.claim_events.finite_source_unit.service import (
+        SourceUnitExtractionResult,
+    )
     from scripts.validation.claim_events.finite_source_unit.source_units import (
         FrozenSourceUnit,
     )
 
 V13_EXTRACTION_PROMPT_VERSION: Final = "tg04.finite_source_unit.extraction.v22"
 V13_VERIFICATION_PROMPT_VERSION: Final = V10_VERIFICATION_PROMPT_VERSION
+V13_NORMALIZATION_PROMPT_VERSION: Final = (
+    "tg04.finite_source_unit.structure_normalization.v4"
+)
+V13_NORMALIZED_REVIEW_PROMPT_VERSION: Final = (
+    "tg04.finite_source_unit.normalized_review.v4"
+)
 
 _ORTHOGONAL_AXIS_POLICY: Final = """V13 ORTHOGONAL SEMANTIC-AXIS POLICY:
 - event_type alone records source-explicit biological effect direction.
@@ -53,6 +71,39 @@ Canonical examples:
   its source-explicit event_type, polarity UNSCOPED, epistemic_status UNASSERTED,
   assertion_scope CONTROLLED_TARGET."""
 
+_CORRECTION_POLICY: Final = """V13 AGENT-AUTHORED SCIENTIFIC CORRECTION POLICY:
+- Treat the original extraction as a source-bound proposal, not as scientific
+  authority. Re-read the frozen source and independently challenge every event
+  type, participant type, event role, claim outcome, epistemic status, and
+  assertion scope.
+- When an original category contradicts its source wording or its own rationale,
+  return the corrected category yourself and mark that mapping REFRAME. The
+  deterministic binder will preserve provenance but will never make the change.
+- Use GENE_OR_PROTEIN for a source-named gene, gene product, protein, ligand,
+  receptor, kinase, transcription factor, enzyme, or cytokine. Do not use
+  OTHER_ENTITY merely because the exact biological identity is unfamiliar.
+- Standard biomedical entity-class knowledge is allowed only for categorical
+  typing. Do not import an unstated mechanism, direction, interaction, or fact.
+- Keep every source-explicit coordinated participant and target. Abstain with
+  UNRESOLVED_TYPING rather than guessing when the source and standard name class
+  do not support one type.
+- Return categorical findings, reasoning, exact spans, and a falsification
+  condition. Return no numeric score or confidence."""
+
+_FALSIFICATION_POLICY: Final = """V13 SOURCE-ONLY SCIENTIFIC FALSIFICATION:
+- Independently compare every normalized participant type with the frozen source
+  wording. Agreement with the correction agent is not evidence.
+- A participant category contradicting the source wording or the agent's own
+  rationale is a material PARTICIPANTS failure, not a stylistic difference.
+- Verify effect direction from event_type, claim outcome from polarity,
+  epistemic force from epistemic_status, and standalone status from
+  assertion_scope as four independent axes.
+- Reject a correction that fixes one category while dropping a coordinated
+  target, changing a role, inventing direction, or promoting a controlled target
+  into a standalone assertion.
+- Return categorical judgments, verbatim evidence, reasoning, and falsification
+  conditions only. Return no numeric score or promotion recommendation."""
+
 
 def v13_source_unit_extraction_prompt(unit: FrozenSourceUnit) -> str:
     """Return V10 semantics plus the non-ambiguous V13 axis contract."""
@@ -78,6 +129,47 @@ def v13_source_unit_verification_prompt(
     return v10_source_unit_verification_prompt(unit=unit, candidates=candidates)
 
 
+def v13_normalization_prompt(
+    *,
+    unit: FrozenSourceUnit,
+    original: SourceUnitExtractionResult,
+) -> str:
+    """Upgrade V12 normalization with source-only agent correction authority."""
+
+    prompt = v12_normalization_prompt(unit=unit, original=original)
+    marker = f"prompt_version: {V12_NORMALIZATION_PROMPT_VERSION}"
+    if prompt.count(marker) != 1:
+        raise RuntimeError("historical V12 normalization prompt identity changed")
+    return prompt.replace(
+        marker,
+        f"{_CORRECTION_POLICY}\n\nprompt_version: "
+        f"{V13_NORMALIZATION_PROMPT_VERSION}",
+    )
+
+
+def v13_normalized_review_prompt(
+    *,
+    unit: FrozenSourceUnit,
+    original: SourceUnitExtractionResult,
+    normalized: SourceUnitNormalizationResult,
+) -> str:
+    """Upgrade V12 review with independent entity-type falsification."""
+
+    prompt = v12_normalized_review_prompt(
+        unit=unit,
+        original=original,
+        normalized=normalized,
+    )
+    marker = f"prompt_version: {V12_NORMALIZED_REVIEW_PROMPT_VERSION}"
+    if prompt.count(marker) != 1:
+        raise RuntimeError("historical V12 review prompt identity changed")
+    return prompt.replace(
+        marker,
+        f"{_FALSIFICATION_POLICY}\n\nprompt_version: "
+        f"{V13_NORMALIZED_REVIEW_PROMPT_VERSION}",
+    )
+
+
 V13_PROMPT_POLICY: Final = SourceUnitPromptPolicy(
     extraction_version=V13_EXTRACTION_PROMPT_VERSION,
     verification_version=V13_VERIFICATION_PROMPT_VERSION,
@@ -88,8 +180,12 @@ V13_PROMPT_POLICY: Final = SourceUnitPromptPolicy(
 
 __all__ = [
     "V13_EXTRACTION_PROMPT_VERSION",
+    "V13_NORMALIZATION_PROMPT_VERSION",
+    "V13_NORMALIZED_REVIEW_PROMPT_VERSION",
     "V13_PROMPT_POLICY",
     "V13_VERIFICATION_PROMPT_VERSION",
     "v13_source_unit_extraction_prompt",
+    "v13_normalization_prompt",
+    "v13_normalized_review_prompt",
     "v13_source_unit_verification_prompt",
 ]
