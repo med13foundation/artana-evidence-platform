@@ -9,7 +9,11 @@ verified Luna call. Luna returned a source-complete joint regulation event, but
 the shared `polarity` field conflated neutral biological direction with claim
 outcome; `UNSCOPED` was rejected before normalization. The next checkpoint must
 separate effect direction, claim outcome, epistemic force, and controlled-target
-scope before spending a fresh hidden unit. Graph persistence remains paused.
+scope before spending a fresh hidden unit. V13 now passes that exact exposed
+semantic-axis case, but the same response mis-types the named regulator as
+`OTHER_ENTITY`; the full visible scientific canary remains failed. A frozen
+agent-correction and source-only falsification pass is next. Graph persistence
+remains paused.
 
 Baseline commit: `884ede20340d7fce7b28994f1bed617b222d2213`
 
