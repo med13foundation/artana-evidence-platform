@@ -268,6 +268,119 @@ def test_invalid_explicit_batch_reference_fails_closed_as_unlinked() -> None:
     )
 
 
+def test_explicit_target_ref_uses_anaphoric_referent_source_evidence() -> None:
+    source = (
+        "EGF activated ERK, and the MEK1-null genotype reduced that activation."
+    )
+    inner_payload = _item(
+        exact_span="EGF activated ERK",
+        cue="activated",
+        event_type="POSITIVE_REGULATION",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "CAUSE", "EGF"),
+            _argument("GENE_OR_PROTEIN", "THEME", "ERK"),
+        ],
+    ).model_dump(mode="json")
+    inner_payload["local_event_id"] = "erk-activation"
+    outer_payload = _item(
+        exact_span="the MEK1-null genotype reduced that activation",
+        cue="reduced",
+        event_type="NEGATIVE_REGULATION",
+        arguments=[
+            _argument("VARIANT", "CAUSE", "the MEK1-null genotype"),
+            {
+                **_argument("BIOLOGICAL_PROCESS", "THEME", "that activation"),
+                "referent_anchors": [
+                    {
+                        "mention_span": "EGF activated ERK",
+                        "left_context": "",
+                        "right_context": ", and the MEK1-null genotype",
+                    }
+                ],
+                "controlled_event_ref": "erk-activation",
+            },
+        ],
+    ).model_dump(mode="json")
+    inner = ClaimInventoryItem.model_validate(inner_payload)
+    outer = ClaimInventoryItem.model_validate(outer_payload)
+    bound_inner, bound_outer = bind_claim_inventory(
+        (inner, outer),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )
+
+    result = link_controlled_events((bound_inner, bound_outer))
+
+    assert result.ambiguities == ()
+    assert result.unlinked_references == ()
+    assert len(result.links) == 1
+    assert result.links[0].controller_inventory_id == bound_outer.inventory_id
+    assert result.links[0].controlled_inventory_id == bound_inner.inventory_id
+    assert source[
+        result.links[0].reference_source_start : result.links[0].reference_source_end
+    ] == "EGF activated ERK"
+
+
+def test_explicit_target_ref_rejects_multiple_incomparable_support_spans() -> None:
+    source = (
+        "Upstream ERK activation process downstream, and the mutant reduced "
+        "that process."
+    )
+    inner_payload = _item(
+        exact_span="ERK activation process",
+        cue="activation",
+        event_type="POSITIVE_REGULATION",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "THEME", "ERK"),
+            _argument("BIOLOGICAL_PROCESS", "EFFECT", "activation process"),
+        ],
+    ).model_dump(mode="json")
+    inner_payload["local_event_id"] = "erk-process"
+    outer_payload = _item(
+        exact_span="the mutant reduced that process",
+        cue="reduced",
+        event_type="NEGATIVE_REGULATION",
+        arguments=[
+            _argument("VARIANT", "CAUSE", "the mutant"),
+            {
+                **_argument("BIOLOGICAL_PROCESS", "THEME", "that process"),
+                "referent_anchors": [
+                    {
+                        "mention_span": "Upstream ERK activation process",
+                        "left_context": "",
+                        "right_context": " downstream",
+                    },
+                    {
+                        "mention_span": "ERK activation process downstream",
+                        "left_context": "Upstream ",
+                        "right_context": ", and the mutant",
+                    },
+                ],
+                "controlled_event_ref": "erk-process",
+            },
+        ],
+    ).model_dump(mode="json")
+    bound_inner, bound_outer = bind_claim_inventory(
+        (
+            ClaimInventoryItem.model_validate(inner_payload),
+            ClaimInventoryItem.model_validate(outer_payload),
+        ),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )
+
+    result = link_controlled_events((bound_inner, bound_outer))
+
+    assert result.links == ()
+    assert result.ambiguities == ()
+    assert {item.reference_exact_span for item in result.unlinked_references} == {
+        "Upstream ERK activation process",
+        "ERK activation process downstream",
+    }
+
+
 def test_link_identity_follows_bound_inner_semantics_without_role_inference() -> None:
     inner_payload = _inner_item().model_dump(mode="json")
     changed_payload = copy.deepcopy(inner_payload)

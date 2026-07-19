@@ -14,6 +14,7 @@ from artana_evidence_api.document_extraction_support.claim_frames.event_types im
     ClaimEventType,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.inventory import (
+    BoundClaimArgument,
     BoundClaimInventoryItem,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.mentions import (
@@ -149,11 +150,13 @@ def link_controlled_events(
             ):
                 continue
             explicit_target_ref = argument.controlled_event_ref
-            reference_mentions = (
-                (argument.primary_mention,)
-                if explicit_target_ref is not None
-                else (*argument.mentions, *argument.referent_mentions)
+            reference_mentions = _controlled_event_reference_mentions(
+                argument,
             )
+            resolved_candidates: list[
+                tuple[BoundClaimInventoryItem, BoundClaimMention]
+            ] = []
+            argument_ambiguities: list[ControlledEventLinkAmbiguity] = []
             for reference_mention in reference_mentions:
                 source_candidates = _controlled_event_candidates(
                     inventory=inventory,
@@ -168,7 +171,7 @@ def link_controlled_events(
                     reference_mention=reference_mention,
                 )
                 if explicit_ambiguity:
-                    ambiguities.append(
+                    argument_ambiguities.append(
                         ControlledEventLinkAmbiguity(
                             controller_inventory_id=controller.inventory_id,
                             controller_argument_index=argument_index,
@@ -181,7 +184,7 @@ def link_controlled_events(
                     continue
                 competing = _competing_candidate_ids(candidates)
                 if competing:
-                    ambiguities.append(
+                    argument_ambiguities.append(
                         ControlledEventLinkAmbiguity(
                             controller_inventory_id=controller.inventory_id,
                             controller_argument_index=argument_index,
@@ -192,16 +195,24 @@ def link_controlled_events(
                         ),
                     )
                     continue
-                links.extend(
-                    _build_link(
-                        controller=controller,
-                        argument_index=argument_index,
-                        event_role=semantic_argument.event_role,
-                        controlled=candidate,
-                        reference_mention=reference_mention,
-                    )
-                    for candidate in candidates
+                resolved_candidates.extend(
+                    (candidate, reference_mention) for candidate in candidates
                 )
+            ambiguities.extend(argument_ambiguities)
+            if explicit_target_ref is not None and (
+                argument_ambiguities or len(resolved_candidates) != 1
+            ):
+                continue
+            links.extend(
+                _build_link(
+                    controller=controller,
+                    argument_index=argument_index,
+                    event_role=semantic_argument.event_role,
+                    controlled=candidate,
+                    reference_mention=reference_mention,
+                )
+                for candidate, reference_mention in resolved_candidates
+            )
     sealed_links = tuple(sorted(links, key=lambda item: item.link_id))
     sealed_ambiguities = tuple(
         sorted(
@@ -385,10 +396,8 @@ def _unlinked_controller_references(
                 semantic.event_role not in _EVENT_REFERENCE_ROLES
             ):
                 continue
-            reference_mentions = (
-                (argument.primary_mention,)
-                if argument.controlled_event_ref is not None
-                else (*argument.mentions, *argument.referent_mentions)
+            reference_mentions = _controlled_event_reference_mentions(
+                argument,
             )
             references = {
                 (mention.source_start, mention.source_end): mention
@@ -413,6 +422,18 @@ def _unlinked_controller_references(
                     )
                 )
     return tuple(unlinked)
+
+
+def _controlled_event_reference_mentions(
+    argument: BoundClaimArgument,
+) -> tuple[BoundClaimMention, ...]:
+    """Keep explicit target identity constrained by its best source evidence."""
+
+    if argument.controlled_event_ref is not None and argument.referent_mentions:
+        return argument.referent_mentions
+    if argument.controlled_event_ref is not None:
+        return (argument.primary_mention,)
+    return (*argument.mentions, *argument.referent_mentions)
 
 
 def unlinked_controlled_target_ids(
