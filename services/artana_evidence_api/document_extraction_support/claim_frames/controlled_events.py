@@ -155,13 +155,30 @@ def link_controlled_events(
                 else (*argument.mentions, *argument.referent_mentions)
             )
             for reference_mention in reference_mentions:
-                candidates = _controlled_event_candidates(
+                source_candidates = _controlled_event_candidates(
                     inventory=inventory,
-                    inventory_by_local_event_id=inventory_by_local_event_id,
                     controller=controller,
                     reference_mention=reference_mention,
-                    explicit_target_ref=explicit_target_ref,
                 )
+                candidates, explicit_ambiguity = _apply_explicit_target_ref(
+                    inventory=inventory,
+                    source_candidates=source_candidates,
+                    inventory_by_local_event_id=inventory_by_local_event_id,
+                    explicit_target_ref=explicit_target_ref,
+                    reference_mention=reference_mention,
+                )
+                if explicit_ambiguity:
+                    ambiguities.append(
+                        ControlledEventLinkAmbiguity(
+                            controller_inventory_id=controller.inventory_id,
+                            controller_argument_index=argument_index,
+                            controller_event_role=semantic_argument.event_role,
+                            candidate_inventory_ids=explicit_ambiguity,
+                            reference_source_start=reference_mention.source_start,
+                            reference_source_end=reference_mention.source_end,
+                        )
+                    )
+                    continue
                 competing = _competing_candidate_ids(candidates)
                 if competing:
                     ambiguities.append(
@@ -210,29 +227,115 @@ def link_controlled_events(
 def _controlled_event_candidates(
     *,
     inventory: tuple[BoundClaimInventoryItem, ...],
-    inventory_by_local_event_id: dict[str, BoundClaimInventoryItem],
     controller: BoundClaimInventoryItem,
     reference_mention: BoundClaimMention,
-    explicit_target_ref: str | None,
 ) -> tuple[BoundClaimInventoryItem, ...]:
-    candidates = (
-        inventory
-        if explicit_target_ref is None
-        else tuple(
-            candidate
-            for candidate in (inventory_by_local_event_id.get(explicit_target_ref),)
-            if candidate is not None
-        )
-    )
     return tuple(
         candidate
-        for candidate in candidates
+        for candidate in inventory
         if _is_controlled_event_candidate(
             controller=controller,
             candidate=candidate,
             reference_mention=reference_mention,
         )
     )
+
+
+def _apply_explicit_target_ref(
+    *,
+    inventory: tuple[BoundClaimInventoryItem, ...],
+    source_candidates: tuple[BoundClaimInventoryItem, ...],
+    inventory_by_local_event_id: dict[str, BoundClaimInventoryItem],
+    explicit_target_ref: str | None,
+    reference_mention: BoundClaimMention,
+) -> tuple[tuple[BoundClaimInventoryItem, ...], tuple[str, ...]]:
+    """Require source evidence, not an agent ID, to identify one target."""
+
+    if explicit_target_ref is None:
+        return source_candidates, ()
+    explicit_target = inventory_by_local_event_id.get(explicit_target_ref)
+    source_candidate_ids = {candidate.inventory_id for candidate in source_candidates}
+    if (
+        explicit_target is None
+        or explicit_target.inventory_id not in source_candidate_ids
+    ):
+        return (), ()
+    if _has_more_specific_source_reference(
+        inventory=inventory,
+        target=explicit_target,
+        reference_mention=reference_mention,
+    ):
+        return (), ()
+    if len(source_candidates) > 1:
+        if not _candidates_share_trigger_identity(source_candidates):
+            return (), _candidate_inventory_ids(source_candidates)
+        competing_ids = _competing_candidate_ids(source_candidates)
+        if explicit_target.inventory_id in competing_ids:
+            return (), competing_ids
+    return (explicit_target,), ()
+
+
+def _has_more_specific_source_reference(
+    *,
+    inventory: tuple[BoundClaimInventoryItem, ...],
+    target: BoundClaimInventoryItem,
+    reference_mention: BoundClaimMention,
+) -> bool:
+    """Prefer the narrowest source span that still contains the target event."""
+
+    for controller in inventory:
+        if controller.item.event_type not in _CONTROL_EVENT_TYPES:
+            continue
+        for argument in controller.bound_arguments:
+            semantic = argument.argument
+            if not (
+                semantic.role is ClaimArgumentRole.BIOLOGICAL_PROCESS
+                and semantic.event_role in _EVENT_REFERENCE_ROLES
+            ):
+                continue
+            for candidate_mention in (*argument.mentions, *argument.referent_mentions):
+                if not _mention_is_strictly_contained(
+                    candidate_mention,
+                    reference_mention,
+                ):
+                    continue
+                if _is_controlled_event_candidate(
+                    controller=controller,
+                    candidate=target,
+                    reference_mention=candidate_mention,
+                ):
+                    return True
+    return False
+
+
+def _mention_is_strictly_contained(
+    mention: BoundClaimMention,
+    container: BoundClaimMention,
+) -> bool:
+    return (
+        container.source_start <= mention.source_start
+        and mention.source_end <= container.source_end
+        and (
+            container.source_start < mention.source_start
+            or mention.source_end < container.source_end
+        )
+    )
+
+
+def _candidates_share_trigger_identity(
+    candidates: tuple[BoundClaimInventoryItem, ...],
+) -> bool:
+    trigger_identities = {
+        (candidate.trigger_mention.source_start, candidate.trigger_mention.source_end)
+        for candidate in candidates
+    }
+    return len(trigger_identities) == 1
+
+
+def _candidate_inventory_ids(
+    candidates: tuple[BoundClaimInventoryItem, ...],
+) -> tuple[str, ...]:
+    return tuple(sorted(candidate.inventory_id for candidate in candidates))
 
 
 def _unique_local_event_ids(
@@ -247,6 +350,8 @@ def _unique_local_event_ids(
         for local_event_id, claims in grouped.items()
         if len(claims) == 1
     }
+
+
 def _unlinked_controller_references(
     *,
     inventory: tuple[BoundClaimInventoryItem, ...],

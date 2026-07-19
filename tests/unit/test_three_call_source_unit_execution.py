@@ -23,6 +23,12 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v11
     v11_normalization_prompt,
     v11_normalized_review_prompt,
 )
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v13.execution import (
+    V13_EXECUTION_POLICY,
+    V13HistoricalSchemaCustodyError,
+    execute_v13_source_unit_agents,
+    require_v13_v4_schema_custody,
+)
 from scripts.validation.claim_events.finite_source_unit.normalization.contracts import (
     MaterialAxis,
     SourceUnitNormalizationOutput,
@@ -39,6 +45,9 @@ from scripts.validation.claim_events.finite_source_unit.normalization.service im
 )
 from scripts.validation.claim_events.finite_source_unit.normalization.v12_contracts import (
     SourceUnitNormalizationOutputV12,
+)
+from scripts.validation.claim_events.finite_source_unit.normalization.v13_contracts import (
+    SourceUnitNormalizationOutputV13,
 )
 from scripts.validation.claim_events.finite_source_unit.service import (
     FiniteSourceUnitModelClient,
@@ -123,6 +132,12 @@ def _v12_normalization() -> SourceUnitNormalizationOutputV12:
     )
 
 
+def _v13_normalization() -> SourceUnitNormalizationOutputV13:
+    return SourceUnitNormalizationOutputV13.model_validate(
+        _normalization().model_dump(mode="json")
+    )
+
+
 def _review(*, axis_decision: str = "PRESERVED") -> SourceUnitNormalizedReviewOutput:
     return SourceUnitNormalizedReviewOutput.model_validate(
         {
@@ -171,12 +186,14 @@ class _ThreeCallClient:
         elif schema in {
             SourceUnitNormalizationOutput,
             SourceUnitNormalizationOutputV12,
+            SourceUnitNormalizationOutputV13,
         }:
-            output = (
-                _v12_normalization()
-                if schema is SourceUnitNormalizationOutputV12
-                else _normalization(bad_mapping=self.bad_mapping)
-            )
+            if schema is SourceUnitNormalizationOutputV12:
+                output = _v12_normalization()
+            elif schema is SourceUnitNormalizationOutputV13:
+                output = _v13_normalization()
+            else:
+                output = _normalization(bad_mapping=self.bad_mapping)
         else:
             assert schema is SourceUnitNormalizedReviewOutput
             output = _review()
@@ -256,6 +273,46 @@ async def test_three_call_path_uses_injected_v12_normalization_schema() -> None:
     ]
     assert result.error_type is None
     assert isinstance(result.normalized_extraction, SourceUnitNormalizationOutputV12)
+
+
+@pytest.mark.asyncio
+async def test_v13_execution_binds_prompt_schema_and_reviewer_versions() -> None:
+    unit = enumerate_source_units(case_id="v13-three-call", source_text=_SOURCE)[0]
+    client = _ThreeCallClient()
+
+    result = await execute_v13_source_unit_agents(
+        client=cast("FiniteSourceUnitModelClient", client),
+        tenant=object(),
+        model_id="openai:gpt-5.6-luna",
+        execution_namespace="v13-three-call-test",
+        unit=unit,
+    )
+
+    assert client.calls == [
+        SourceUnitExtractionOutput,
+        SourceUnitNormalizationOutputV13,
+        SourceUnitNormalizedReviewOutput,
+    ]
+    assert result.error_type is None
+    assert isinstance(result.normalized_extraction, SourceUnitNormalizationOutputV13)
+    assert client.prompts[0].endswith(
+        V13_EXECUTION_POLICY.extraction_prompt_policy.extraction_prompt(unit)
+    )
+    assert "structure_normalization.v5" in client.prompts[1]
+    assert "normalized_review.v5" in client.prompts[2]
+    contract = V13_EXECUTION_POLICY.as_json()
+    assert contract["normalization_output_schema"] == (
+        "scripts.validation.claim_events.finite_source_unit.normalization."
+        "v13_contracts.SourceUnitNormalizationOutputV13"
+    )
+    assert contract["normalization_output_schema_sha256"] == (
+        "43418016713a4b848069e1a82babd0ab0706a5502889d14209ec371512456e0f"
+    )
+
+
+def test_v13_v4_schema_custody_fails_closed_when_issued_schema_is_unavailable() -> None:
+    with pytest.raises(V13HistoricalSchemaCustodyError, match="cannot be replayed"):
+        require_v13_v4_schema_custody()
 
 
 def test_not_applicable_axes_are_unresolved_not_silent_passes() -> None:

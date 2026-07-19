@@ -3,17 +3,40 @@
 from __future__ import annotations
 
 import pytest
+from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
+    output_schema_json_sha256,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
+    StructuredModelSemanticError,
+)
 from pydantic import ValidationError
 
+from scripts.validation.claim_events.finite_source_unit.contracts import (
+    SourceUnitExtractionOutput,
+)
 from scripts.validation.claim_events.finite_source_unit.normalization.contracts import (
     MaterialAxis,
     NormalizationFamily,
     SourceUnitNormalizationOutput,
     SourceUnitNormalizedReviewOutput,
 )
+from scripts.validation.claim_events.finite_source_unit.normalization.service import (
+    bind_source_unit_normalization,
+)
 from scripts.validation.claim_events.finite_source_unit.normalization.v12_contracts import (
     SourceUnitNormalizationOutputV12,
 )
+from scripts.validation.claim_events.finite_source_unit.normalization.v13_contracts import (
+    SourceUnitNormalizationOutputV13,
+)
+from scripts.validation.claim_events.finite_source_unit.service import (
+    bind_source_unit_extraction,
+)
+from scripts.validation.claim_events.finite_source_unit.source_units import (
+    enumerate_source_units,
+)
+
+_NESTED_SOURCE = "ALG-4 regulates Fas ligand expression and cell death."
 
 
 def _argument(
@@ -84,6 +107,128 @@ def _mapping(position: int = 0) -> dict[str, object]:
     }
 
 
+def _controlled_target(
+    *,
+    local_event_id: str,
+    exact_span: str,
+    relation_cue_span: str,
+    event_type: str,
+) -> dict[str, object]:
+    return {
+        "exact_span": exact_span,
+        "relation_cue_span": relation_cue_span,
+        "arguments": [],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": event_type,
+        "assertion_scope": "CONTROLLED_TARGET",
+        "polarity": "UNSCOPED",
+        "epistemic_status": "UNASSERTED",
+        "local_event_id": local_event_id,
+        "inventory_rationale": "The process exists only as a controlled target.",
+    }
+
+
+def _nested_normalization_payload(
+    *,
+    swapped: bool = False,
+    overlapping: bool = False,
+) -> dict[str, object]:
+    expression_ref = "death-1" if swapped else "expression-1"
+    death_ref = "expression-1" if swapped else "death-1"
+    expression_span = (
+        "Fas ligand expression and cell death"
+        if overlapping
+        else "Fas ligand expression"
+    )
+    death_span = "ligand expression and cell death" if overlapping else "cell death"
+    outer = {
+        "exact_span": _NESTED_SOURCE,
+        "relation_cue_span": "regulates",
+        "arguments": [
+            _argument(
+                role="GENE_OR_PROTEIN",
+                event_role="CAUSE",
+                exact_span="ALG-4",
+            ),
+            _argument(
+                role="BIOLOGICAL_PROCESS",
+                event_role="THEME",
+                exact_span=expression_span,
+                controlled_event_ref=expression_ref,
+            ),
+            _argument(
+                role="BIOLOGICAL_PROCESS",
+                event_role="THEME",
+                exact_span=death_span,
+                controlled_event_ref=death_ref,
+            ),
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "REGULATION",
+        "assertion_scope": "SOURCE_ASSERTED",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "local_event_id": "regulation-1",
+        "inventory_rationale": "The source asserts neutral regulation.",
+    }
+    events = [
+        outer,
+        _controlled_target(
+            local_event_id="expression-1",
+            exact_span="Fas ligand expression",
+            relation_cue_span="expression",
+            event_type="EXPRESSION",
+        ),
+        _controlled_target(
+            local_event_id="death-1",
+            exact_span="cell death",
+            relation_cue_span="death",
+            event_type="OTHER_EXPLICIT",
+        ),
+    ]
+    return {
+        "eligibility_category": "FINDING",
+        "family": "NESTED",
+        "abstention_reason": "NONE",
+        "events": events,
+        "mappings": [
+            {
+                "normalized_event_position": position,
+                "source_event_positions": [0],
+                "operation": "SPLIT",
+                "reasoning": "The normalized event preserves one source component.",
+                "falsification_condition": "A missing component would falsify it.",
+            }
+            for position in range(len(events))
+        ],
+        "reasoning": "The outer event controls two explicit process targets.",
+        "falsification_condition": "A mismatched target ID would falsify topology.",
+    }
+
+
+def _nested_original() -> SourceUnitExtractionOutput:
+    payload = _nested_normalization_payload()
+    events = payload["events"]
+    assert isinstance(events, list)
+    outer = dict(events[0])
+    arguments = outer["arguments"]
+    assert isinstance(arguments, list)
+    outer["arguments"] = [
+        {**argument, "controlled_event_ref": None} for argument in arguments
+    ]
+    outer["local_event_id"] = None
+    return SourceUnitExtractionOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "decision": "EXPLICIT_EVENT",
+            "events": [outer],
+            "reasoning": "The source explicitly asserts one controlling event.",
+        }
+    )
+
+
 def test_direct_normalization_is_categorical_and_mapped() -> None:
     output = SourceUnitNormalizationOutput.model_validate(
         {
@@ -124,6 +269,24 @@ def test_v12_provider_schema_requires_normalized_local_event_id() -> None:
         )
 
 
+def test_historical_provider_schema_hashes_remain_immutable() -> None:
+    assert output_schema_json_sha256(SourceUnitExtractionOutput) == (
+        "9d2c47920d0ef3b33d7e79ad155b8ea09dad17a3d7db13a8386e724406ca88f5"
+    )
+    assert output_schema_json_sha256(SourceUnitNormalizationOutputV12) == (
+        "a9b25add9f1b868958a3d6d24ccc5661c2f00758d90691433a043ff8714e2648"
+    )
+
+
+def test_v13_provider_schema_explains_reference_ownership() -> None:
+    schema = SourceUnitNormalizationOutputV13.model_json_schema()
+    argument_schema = schema["$defs"]["V13ClaimInventoryArgument"]
+    assert (
+        "outer controlling event"
+        in (argument_schema["properties"]["controlled_event_ref"]["description"])
+    )
+
+
 def test_v12_rejects_blank_or_duplicate_normalized_local_event_ids() -> None:
     blank = _event(local_event_id=" ")
     with pytest.raises(ValidationError, match="local_event_id"):
@@ -152,6 +315,165 @@ def test_v12_rejects_blank_or_duplicate_normalized_local_event_ids() -> None:
                 "falsification_condition": "Distinct events require distinct IDs.",
             }
         )
+
+
+def test_v13_accepts_complete_two_target_reference_topology() -> None:
+    output = SourceUnitNormalizationOutputV13.model_validate(
+        _nested_normalization_payload()
+    )
+
+    assert output.events[0].arguments[1].controlled_event_ref == "expression-1"
+    assert output.events[0].arguments[2].controlled_event_ref == "death-1"
+
+
+def test_v13_rejects_self_reference() -> None:
+    payload = _nested_normalization_payload()
+    events = payload["events"]
+    assert isinstance(events, list)
+    arguments = events[0]["arguments"]
+    assert isinstance(arguments, list)
+    arguments[1]["controlled_event_ref"] = "regulation-1"
+
+    with pytest.raises(ValidationError, match="distinct event"):
+        SourceUnitNormalizationOutputV13.model_validate(payload)
+
+
+def test_v13_rejects_missing_reference_target() -> None:
+    payload = _nested_normalization_payload()
+    events = payload["events"]
+    assert isinstance(events, list)
+    arguments = events[0]["arguments"]
+    assert isinstance(arguments, list)
+    arguments[1]["controlled_event_ref"] = "missing-event"
+
+    with pytest.raises(ValidationError, match="returned event"):
+        SourceUnitNormalizationOutputV13.model_validate(payload)
+
+
+def test_v13_accepts_reference_to_source_asserted_scientific_event() -> None:
+    payload = _nested_normalization_payload()
+    events = payload["events"]
+    assert isinstance(events, list)
+    target = events[1]
+    assert isinstance(target, dict)
+    target.update(
+        {
+            "arguments": [
+                _argument(exact_span="Fas ligand"),
+                _argument(
+                    role="BIOLOGICAL_PROCESS",
+                    event_role="EFFECT",
+                    exact_span="expression",
+                ),
+            ],
+            "assertion_scope": "SOURCE_ASSERTED",
+            "polarity": "SUPPORT",
+            "epistemic_status": "ASSERTED",
+        }
+    )
+
+    output = SourceUnitNormalizationOutputV13.model_validate(payload)
+
+    assert output.events[1].assertion_scope.value == "SOURCE_ASSERTED"
+    assert output.events[0].arguments[1].controlled_event_ref == "expression-1"
+    unit = enumerate_source_units(
+        case_id="v13-visible-source-asserted-inner",
+        source_text=_NESTED_SOURCE,
+    )[0]
+    original = bind_source_unit_extraction(_nested_original(), unit=unit)
+    result = bind_source_unit_normalization(output, unit=unit, original=original)
+    assert len(result.controlled_event_links) == 2
+
+
+def test_v13_rejects_orphan_controlled_target() -> None:
+    payload = _nested_normalization_payload()
+    events = payload["events"]
+    assert isinstance(events, list)
+    arguments = events[0]["arguments"]
+    assert isinstance(arguments, list)
+    arguments[2]["controlled_event_ref"] = None
+
+    with pytest.raises(ValidationError, match="incoming controlled_event_ref"):
+        SourceUnitNormalizationOutputV13.model_validate(payload)
+
+
+def test_v13_rejects_reference_on_wrong_argument_role() -> None:
+    payload = _nested_normalization_payload()
+    events = payload["events"]
+    assert isinstance(events, list)
+    arguments = events[0]["arguments"]
+    assert isinstance(arguments, list)
+    arguments[1]["role"] = "GENE_OR_PROTEIN"
+
+    with pytest.raises(ValidationError, match="biological-process"):
+        SourceUnitNormalizationOutputV13.model_validate(payload)
+
+
+def test_v13_rejects_reference_owned_by_non_controller_event() -> None:
+    payload = _nested_normalization_payload()
+    events = payload["events"]
+    assert isinstance(events, list)
+    events[0]["event_type"] = "ASSOCIATION"
+
+    with pytest.raises(ValidationError, match="source-asserted regulation event"):
+        SourceUnitNormalizationOutputV13.model_validate(payload)
+
+
+def test_v13_rejects_procedural_controller() -> None:
+    payload = _nested_normalization_payload()
+    events = payload["events"]
+    assert isinstance(events, list)
+    events[0]["claim_kind"] = "PROCEDURAL_CONTEXT"
+
+    with pytest.raises(ValidationError, match="relation-eligible"):
+        SourceUnitNormalizationOutputV13.model_validate(payload)
+
+
+def test_source_binding_accepts_correct_sibling_target_ids() -> None:
+    unit = enumerate_source_units(
+        case_id="v13-visible-correct-siblings",
+        source_text=_NESTED_SOURCE,
+    )[0]
+    original = bind_source_unit_extraction(_nested_original(), unit=unit)
+    normalized = SourceUnitNormalizationOutputV13.model_validate(
+        _nested_normalization_payload()
+    )
+
+    result = bind_source_unit_normalization(normalized, unit=unit, original=original)
+
+    assert len(result.controlled_event_links) == 2
+    assert {link.controlled_inventory_id for link in result.controlled_event_links} == {
+        result.accepted[1].inventory_id,
+        result.accepted[2].inventory_id,
+    }
+
+
+def test_source_binding_rejects_swapped_sibling_target_ids() -> None:
+    unit = enumerate_source_units(
+        case_id="v13-visible-swapped-siblings",
+        source_text=_NESTED_SOURCE,
+    )[0]
+    original = bind_source_unit_extraction(_nested_original(), unit=unit)
+    normalized = SourceUnitNormalizationOutputV13.model_validate(
+        _nested_normalization_payload(swapped=True)
+    )
+
+    with pytest.raises(StructuredModelSemanticError, match="topology is unresolved"):
+        bind_source_unit_normalization(normalized, unit=unit, original=original)
+
+
+def test_source_binding_rejects_swapped_ids_with_overlapping_process_spans() -> None:
+    unit = enumerate_source_units(
+        case_id="v13-visible-overlapping-siblings",
+        source_text=_NESTED_SOURCE,
+    )[0]
+    original = bind_source_unit_extraction(_nested_original(), unit=unit)
+    normalized = SourceUnitNormalizationOutputV13.model_validate(
+        _nested_normalization_payload(swapped=True, overlapping=True)
+    )
+
+    with pytest.raises(StructuredModelSemanticError, match="topology is unresolved"):
+        bind_source_unit_normalization(normalized, unit=unit, original=original)
 
 
 def test_direct_rejects_hidden_controlled_event_structure() -> None:

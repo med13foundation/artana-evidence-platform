@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import hashlib
+
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitExtractionOutput,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.v13.prompts import (
     V13_EXTRACTION_PROMPT_VERSION,
     v13_normalization_prompt,
+    v13_normalization_prompt_v4,
     v13_source_unit_extraction_prompt,
 )
 from scripts.validation.claim_events.finite_source_unit.service import (
@@ -81,7 +84,9 @@ def test_v13_neutral_regulation_is_asserted_support() -> None:
 
 
 def test_v13_prompt_defines_neutral_direction_without_changing_history() -> None:
-    unit = enumerate_source_units(case_id="v13-visible-neutral", source_text=_NEUTRAL_SOURCE)[0]
+    unit = enumerate_source_units(
+        case_id="v13-visible-neutral", source_text=_NEUTRAL_SOURCE
+    )[0]
 
     prompt = v13_source_unit_extraction_prompt(unit)
 
@@ -91,7 +96,9 @@ def test_v13_prompt_defines_neutral_direction_without_changing_history() -> None
     assert "prompt_version: tg04.finite_source_unit.extraction.v21" not in prompt
 
 
-def test_v13_correction_prompt_authorizes_agent_reframe_not_deterministic_repair() -> None:
+def test_v13_correction_prompt_authorizes_agent_reframe_not_deterministic_repair() -> (
+    None
+):
     unit = enumerate_source_units(
         case_id="v13-visible-neutral",
         source_text=_NEUTRAL_SOURCE,
@@ -112,4 +119,17 @@ def test_v13_correction_prompt_authorizes_agent_reframe_not_deterministic_repair
     assert "mark that mapping REFRAME" in prompt
     assert "deterministic binder" in prompt
     assert "will never make the change" in prompt
-    assert "prompt_version: tg04.finite_source_unit.structure_normalization.v4" in prompt
+    assert (
+        "prompt_version: tg04.finite_source_unit.structure_normalization.v5" in prompt
+    )
+    assert "outward-to-inner" in prompt
+    assert "Never point an argument to its owning event" in prompt
+    assert "Do not swap IDs" in prompt
+
+    historical_prompt = v13_normalization_prompt_v4(unit=unit, original=original)
+    assert (
+        hashlib.sha256(historical_prompt.encode("utf-8")).hexdigest()
+        == "6e19c5f66c2e0ff71ad0e9ee5b2c3f2f3aea5875ddeee2ae1ae351671b41cc91"
+    )
+    assert "structure_normalization.v4" in historical_prompt
+    assert "CONTROLLED-EVENT REFERENCE OWNERSHIP" not in historical_prompt

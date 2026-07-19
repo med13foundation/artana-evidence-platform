@@ -2406,8 +2406,9 @@ def test_ninth_wrong_extra_link_is_not_credited_by_local_event_shape() -> None:
 
     wrong_inventory_id = trusted[-1].inventory_id
     assert links.ambiguities == ()
-    assert links.unlinked_references == ()
-    assert len(links.links) == 7
+    assert len(links.unlinked_references) == 1
+    assert links.unlinked_references[0].controller_inventory_id == wrong_inventory_id
+    assert len(links.links) == 6
     assert match.fully_recovered_projection_ids == (
         projection_set.projections[10].projection_id,
     )

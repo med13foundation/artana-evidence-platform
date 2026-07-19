@@ -225,7 +225,7 @@ def test_two_matching_sibling_events_fail_closed_as_ambiguous() -> None:
     }
 
 
-def test_explicit_batch_reference_disambiguates_shared_trigger_siblings() -> None:
+def test_explicit_batch_reference_cannot_override_source_ambiguous_siblings() -> None:
     outer_payload = _outer_item().model_dump(mode="json")
     outer_payload["arguments"][1]["controlled_event_ref"] = "inner-specific"
     outer = ClaimInventoryItem.model_validate(outer_payload)
@@ -239,10 +239,13 @@ def test_explicit_batch_reference_disambiguates_shared_trigger_siblings() -> Non
 
     result = link_controlled_events((bound_outer, specific, generic))
 
-    assert result.ambiguities == ()
+    assert len(result.ambiguities) == 1
     assert result.unlinked_references == ()
-    assert len(result.links) == 1
-    assert result.links[0].controlled_inventory_id == specific.inventory_id
+    assert result.links == ()
+    assert set(result.ambiguities[0].candidate_inventory_ids) == {
+        specific.inventory_id,
+        generic.inventory_id,
+    }
 
 
 def test_invalid_explicit_batch_reference_fails_closed_as_unlinked() -> None:
@@ -463,7 +466,9 @@ def test_agent_declared_anaphoric_process_referent_links_sibling_events() -> Non
     )
     result = link_controlled_events(bound)
 
-    assert [mention.exact_span for mention in bound[2].bound_arguments[0].referent_mentions] == [
+    assert [
+        mention.exact_span for mention in bound[2].bound_arguments[0].referent_mentions
+    ] == [
         "c-Myb",
         "Ets",
     ]
@@ -498,9 +503,7 @@ def test_agent_declared_event_cause_referent_links_inner_binding() -> None:
                 **_argument("BIOLOGICAL_PROCESS", "CAUSE", "this interaction"),
                 "referent_anchors": [
                     {
-                        "mention_span": (
-                            "Foxp3 physically interacts with RORgammat"
-                        ),
+                        "mention_span": ("Foxp3 physically interacts with RORgammat"),
                         "left_context": "Specifically, ",
                         "right_context": ", and this interaction",
                     },
