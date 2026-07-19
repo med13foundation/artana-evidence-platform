@@ -6,6 +6,9 @@ from types import SimpleNamespace
 from typing import cast
 
 import pytest
+from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
+    StructuredModelSemanticError,
+)
 
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitExtractionOutput,
@@ -33,6 +36,9 @@ from scripts.validation.claim_events.finite_source_unit.normalization.review imp
 )
 from scripts.validation.claim_events.finite_source_unit.normalization.service import (
     bind_source_unit_normalization,
+)
+from scripts.validation.claim_events.finite_source_unit.normalization.v12_contracts import (
+    SourceUnitNormalizationOutputV12,
 )
 from scripts.validation.claim_events.finite_source_unit.service import (
     FiniteSourceUnitModelClient,
@@ -111,6 +117,12 @@ def _normalization(*, bad_mapping: bool = False) -> SourceUnitNormalizationOutpu
     )
 
 
+def _v12_normalization() -> SourceUnitNormalizationOutputV12:
+    return SourceUnitNormalizationOutputV12.model_validate(
+        _normalization().model_dump(mode="json")
+    )
+
+
 def _review(*, axis_decision: str = "PRESERVED") -> SourceUnitNormalizedReviewOutput:
     return SourceUnitNormalizedReviewOutput.model_validate(
         {
@@ -156,8 +168,15 @@ class _ThreeCallClient:
         self.prompts.append(cast("str", kwargs["prompt"]))
         if schema is SourceUnitExtractionOutput:
             output: object = _extraction()
-        elif schema is SourceUnitNormalizationOutput:
-            output = _normalization(bad_mapping=self.bad_mapping)
+        elif schema in {
+            SourceUnitNormalizationOutput,
+            SourceUnitNormalizationOutputV12,
+        }:
+            output = (
+                _v12_normalization()
+                if schema is SourceUnitNormalizationOutputV12
+                else _normalization(bad_mapping=self.bad_mapping)
+            )
         else:
             assert schema is SourceUnitNormalizedReviewOutput
             output = _review()
@@ -211,6 +230,34 @@ async def test_three_call_path_preserves_outputs_and_audit_topology() -> None:
     assert client.prompts[0].endswith(v10_source_unit_extraction_prompt(unit))
 
 
+@pytest.mark.asyncio
+async def test_three_call_path_uses_injected_v12_normalization_schema() -> None:
+    unit = enumerate_source_units(case_id="v12-three-call", source_text=_SOURCE)[0]
+    client = _ThreeCallClient()
+
+    result = await execute_three_source_unit_agents(
+        client=cast("FiniteSourceUnitModelClient", client),
+        tenant=object(),
+        model_id="openai:gpt-5.6-luna",
+        execution_namespace="v12-three-call-test",
+        unit=unit,
+        extraction_prompt_policy=V11_EXTRACTION_PROMPT_POLICY,
+        normalization_prompt_builder=v11_normalization_prompt,
+        normalization_prompt_version=V11_NORMALIZATION_PROMPT_VERSION,
+        normalization_output_schema=SourceUnitNormalizationOutputV12,
+        review_prompt_builder=v11_normalized_review_prompt,
+        review_prompt_version=V11_NORMALIZED_REVIEW_PROMPT_VERSION,
+    )
+
+    assert client.calls == [
+        SourceUnitExtractionOutput,
+        SourceUnitNormalizationOutputV12,
+        SourceUnitNormalizedReviewOutput,
+    ]
+    assert result.error_type is None
+    assert isinstance(result.normalized_extraction, SourceUnitNormalizationOutputV12)
+
+
 def test_not_applicable_axes_are_unresolved_not_silent_passes() -> None:
     unit = enumerate_source_units(case_id="v11-not-applicable", source_text=_SOURCE)[0]
     original = bind_source_unit_extraction(_extraction(), unit=unit)
@@ -228,6 +275,49 @@ def test_not_applicable_axes_are_unresolved_not_silent_passes() -> None:
     )
 
     assert reviewed.unresolved_axis_count == len(MaterialAxis)
+
+
+@pytest.mark.parametrize(
+    ("operation", "message"),
+    [
+        ("REFRAME", "REFRAME must alter"),
+        ("SPLIT", "SPLIT requires one source event to produce multiple"),
+    ],
+)
+def test_normalization_rejects_false_operation_labels(
+    operation: str,
+    message: str,
+) -> None:
+    unit = enumerate_source_units(case_id="mapping-operation", source_text=_SOURCE)[0]
+    original = bind_source_unit_extraction(_extraction(), unit=unit)
+    payload = _normalization().model_dump(mode="json")
+    mappings = payload["mappings"]
+    assert isinstance(mappings, list)
+    assert isinstance(mappings[0], dict)
+    mappings[0]["operation"] = operation
+    normalized = SourceUnitNormalizationOutput.model_validate(payload)
+
+    with pytest.raises(StructuredModelSemanticError, match=message):
+        bind_source_unit_normalization(normalized, unit=unit, original=original)
+
+
+def test_normalization_accepts_reframe_when_representation_changes() -> None:
+    unit = enumerate_source_units(case_id="mapping-reframe", source_text=_SOURCE)[0]
+    original = bind_source_unit_extraction(_extraction(), unit=unit)
+    payload = _normalization().model_dump(mode="json")
+    events = payload["events"]
+    mappings = payload["mappings"]
+    assert isinstance(events, list)
+    assert isinstance(events[0], dict)
+    assert isinstance(mappings, list)
+    assert isinstance(mappings[0], dict)
+    events[0]["local_event_id"] = "reframed-null-effect"
+    mappings[0]["operation"] = "REFRAME"
+    normalized = SourceUnitNormalizationOutput.model_validate(payload)
+
+    result = bind_source_unit_normalization(normalized, unit=unit, original=original)
+
+    assert result.output.events[0].local_event_id == "reframed-null-effect"
 
 
 @pytest.mark.asyncio

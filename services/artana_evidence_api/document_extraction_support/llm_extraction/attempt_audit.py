@@ -154,6 +154,10 @@ class ModelAttemptAuditSession:
 
     records: list[ModelAttemptAuditRecord] = field(default_factory=list)
     evidence_unit_sha256: str | None = None
+    record_observer: Callable[[ModelAttemptAuditRecord], None] | None = field(
+        default=None,
+        repr=False,
+    )
     context_token: Token[ModelAttemptAuditSession | None] | None = field(
         default=None,
         repr=False,
@@ -169,6 +173,7 @@ _MODEL_ATTEMPT_AUDIT_SESSION: ContextVar[ModelAttemptAuditSession | None] = Cont
 def start_model_attempt_audit(
     *,
     evidence_unit_id: str | None = None,
+    record_observer: Callable[[ModelAttemptAuditRecord], None] | None = None,
 ) -> ModelAttemptAuditSession:
     """Start an audit scope inherited by child asyncio tasks."""
 
@@ -178,6 +183,7 @@ def start_model_attempt_audit(
         evidence_unit_sha256=(
             _sha256_text(evidence_unit_id) if evidence_unit_id is not None else None
         ),
+        record_observer=record_observer,
     )
     session.context_token = _MODEL_ATTEMPT_AUDIT_SESSION.set(session)
     return session
@@ -291,6 +297,8 @@ def _append_model_attempt_record(record: ModelAttemptAuditRecord) -> None:
     session = current_model_attempt_audit()
     if session is not None:
         session.records.append(record)
+        if session.record_observer is not None:
+            session.record_observer(record)
 
 
 def _build_model_attempt_record(

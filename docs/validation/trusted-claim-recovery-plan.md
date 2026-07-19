@@ -3,10 +3,13 @@
 Created: 2026-07-14
 
 Status: TG-01 through TG-03 are merged. TG-04 now has durable n-ary fixtures,
-typed source binding, and bounded completeness replay. Its frozen four-case
-Luna pilot still failed scientific qualification: the only gold qualification
-case remained incomplete after two rounds and whole-event recall was `0/4`.
-Graph persistence remains paused.
+typed source binding, bounded completeness replay, and finite source-unit
+diagnostics through V11. V11 preserved the source meaning but failed workflow
+qualification because normalized event identity was not schema-required. V12
+is pre-registered on one fresh BioNLP unit with schema-required event identity,
+four source-complete acceptable representations, three-agent falsification,
+and crash-safe create-once custody. Its live call remains paused until the
+final adversarial and repository gates pass. Graph persistence remains paused.
 
 Baseline commit: `884ede20340d7fce7b28994f1bed617b222d2213`
 

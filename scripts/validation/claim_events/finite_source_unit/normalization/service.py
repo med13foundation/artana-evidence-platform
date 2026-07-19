@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections import Counter
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -35,6 +36,7 @@ from scripts.validation.claim_events.finite_source_unit.normalization.contracts 
 )
 
 _MIN_MERGED_SOURCE_EVENTS = 2
+_MIN_SPLIT_NORMALIZED_EVENTS = 2
 
 if TYPE_CHECKING:
     from scripts.validation.claim_events.finite_source_unit.service import (
@@ -152,15 +154,43 @@ def _require_complete_mapping(
             raise StructuredModelSemanticError(
                 "one source event may map repeatedly only through SPLIT operations"
             )
+    _require_mapping_operation_semantics(
+        output=output,
+        original=original,
+        source_use_counts=Counter(mapped_positions),
+    )
+
+
+def _require_mapping_operation_semantics(
+    *,
+    output: SourceUnitNormalizationOutput,
+    original: SourceUnitExtractionResult,
+    source_use_counts: Counter[int],
+) -> None:
+    """Require transformation labels to agree with mapping shape and content."""
+
     for mapping in output.mappings:
+        source_position_count = len(mapping.source_event_positions)
         if (
             mapping.operation is NormalizationOperation.MERGE
-            and len(mapping.source_event_positions) < _MIN_MERGED_SOURCE_EVENTS
+            and source_position_count < _MIN_MERGED_SOURCE_EVENTS
         ):
             raise StructuredModelSemanticError("MERGE requires multiple source events")
+        if mapping.operation in {
+            NormalizationOperation.UNCHANGED,
+            NormalizationOperation.REFRAME,
+            NormalizationOperation.SPLIT,
+        } and source_position_count != 1:
+            raise StructuredModelSemanticError(
+                f"{mapping.operation.value} must reference exactly one source event"
+            )
+        if mapping.operation is NormalizationOperation.SPLIT:
+            source_position = mapping.source_event_positions[0]
+            if source_use_counts[source_position] < _MIN_SPLIT_NORMALIZED_EVENTS:
+                raise StructuredModelSemanticError(
+                    "SPLIT requires one source event to produce multiple normalized events"
+                )
         if mapping.operation is NormalizationOperation.UNCHANGED:
-            if len(mapping.source_event_positions) != 1:
-                raise StructuredModelSemanticError("UNCHANGED must be one-to-one")
             source_event = original.output.events[mapping.source_event_positions[0]]
             normalized_event = output.events[mapping.normalized_event_position]
             if source_event.model_dump(mode="json") != normalized_event.model_dump(
@@ -168,6 +198,15 @@ def _require_complete_mapping(
             ):
                 raise StructuredModelSemanticError(
                     "UNCHANGED mapping altered the source event"
+                )
+        if mapping.operation is NormalizationOperation.REFRAME:
+            source_event = original.output.events[mapping.source_event_positions[0]]
+            normalized_event = output.events[mapping.normalized_event_position]
+            if source_event.model_dump(mode="json") == normalized_event.model_dump(
+                mode="json"
+            ):
+                raise StructuredModelSemanticError(
+                    "REFRAME must alter the source event representation"
                 )
 
 
@@ -223,6 +262,7 @@ async def normalize_source_unit_extraction(  # noqa: PLR0913
     original_raw_output: dict[str, object],
     prompt: str,
     prompt_version: str,
+    output_schema: type[SourceUnitNormalizationOutput] = SourceUnitNormalizationOutput,
 ) -> AuditedStructuredStepResult[
     SourceUnitNormalizationOutput,
     SourceUnitNormalizationResult,
@@ -244,7 +284,7 @@ async def normalize_source_unit_extraction(  # noqa: PLR0913
             tenant=tenant,
             model=model_id,
             prompt=provider_prompt,
-            output_schema=SourceUnitNormalizationOutput,
+            output_schema=output_schema,
             step_key=step_key,
             replay_policy="fork_on_drift",
         )
@@ -253,7 +293,7 @@ async def normalize_source_unit_extraction(  # noqa: PLR0913
         invoke_model=invoke,
         model_id=model_id,
         prompt=prompt,
-        output_schema=SourceUnitNormalizationOutput,
+        output_schema=output_schema,
         step_key=step_key,
         audit_context=ModelAttemptAuditContext(
             attempt_role="structure_normalization",

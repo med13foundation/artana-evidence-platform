@@ -21,6 +21,7 @@ class TerminalFailureContract:
     execution_path: str
     roles: tuple[tuple[str, str, str], ...]
     evidence_unit_sha256: str
+    local_failure_types: tuple[str, ...] = ("SourceUnitPromptBuildError",)
 
 
 def is_terminal_workflow_failure(
@@ -185,7 +186,7 @@ def _require_one_attempt(  # noqa: PLR0913
     if (
         is_last
         and not recorded_failure
-        and agent_outputs.get("error_type") != "SourceUnitPromptBuildError"
+        and agent_outputs.get("error_type") not in contract.local_failure_types
     ):
         raise RuntimeError(f"{contract.label} local failure category is invalid")
     response_id = attempt.get("provider_response_id")

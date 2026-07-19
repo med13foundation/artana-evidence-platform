@@ -120,6 +120,7 @@ class RepeatSequenceDefinition:
     execution_path: str = "agent_only_source_unit"
     require_output_schema_custody: bool = False
     allow_terminal_workflow_failure: bool = False
+    terminal_local_failure_types: tuple[str, ...] = ("SourceUnitPromptBuildError",)
 
     @property
     def label(self) -> str:
@@ -651,6 +652,7 @@ def _require_live_execution_evidence(
                 execution_path=definition.execution_path,
                 roles=definition.required_attempt_roles,
                 evidence_unit_sha256=expected_evidence_unit_sha256,
+                local_failure_types=definition.terminal_local_failure_types,
             ),
             unit=unit if isinstance(unit, dict) else {},
             agent_outputs=(agent_outputs if isinstance(agent_outputs, dict) else {}),

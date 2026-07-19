@@ -11,6 +11,9 @@ from scripts.validation.claim_events.finite_source_unit.normalization.contracts 
     SourceUnitNormalizationOutput,
     SourceUnitNormalizedReviewOutput,
 )
+from scripts.validation.claim_events.finite_source_unit.normalization.v12_contracts import (
+    SourceUnitNormalizationOutputV12,
+)
 
 
 def _argument(
@@ -97,6 +100,58 @@ def test_direct_normalization_is_categorical_and_mapped() -> None:
     assert output.family is NormalizationFamily.DIRECT
     assert output.mappings[0].source_event_positions == (0,)
     assert "score" not in SourceUnitNormalizationOutput.model_fields
+
+
+def test_v12_provider_schema_requires_normalized_local_event_id() -> None:
+    schema = SourceUnitNormalizationOutputV12.model_json_schema()
+    event_schema = schema["$defs"]["V12NormalizedClaimInventoryItem"]
+
+    assert "local_event_id" in event_schema["required"]
+
+    event = _event()
+    del event["local_event_id"]
+    with pytest.raises(ValidationError, match="local_event_id"):
+        SourceUnitNormalizationOutputV12.model_validate(
+            {
+                "eligibility_category": "NULL_RESULT",
+                "family": "DIRECT",
+                "abstention_reason": "NONE",
+                "events": [event],
+                "mappings": [_mapping()],
+                "reasoning": "The source contains one direct null event.",
+                "falsification_condition": "A controlled target would require nesting.",
+            }
+        )
+
+
+def test_v12_rejects_blank_or_duplicate_normalized_local_event_ids() -> None:
+    blank = _event(local_event_id=" ")
+    with pytest.raises(ValidationError, match="local_event_id"):
+        SourceUnitNormalizationOutputV12.model_validate(
+            {
+                "eligibility_category": "NULL_RESULT",
+                "family": "DIRECT",
+                "abstention_reason": "NONE",
+                "events": [blank],
+                "mappings": [_mapping()],
+                "reasoning": "The source contains one direct null event.",
+                "falsification_condition": "A controlled target would require nesting.",
+            }
+        )
+
+    duplicate = _event(local_event_id="same-event")
+    with pytest.raises(ValidationError, match="must be unique"):
+        SourceUnitNormalizationOutputV12.model_validate(
+            {
+                "eligibility_category": "NULL_RESULT",
+                "family": "DIRECT",
+                "abstention_reason": "NONE",
+                "events": [duplicate, duplicate],
+                "mappings": [_mapping(0), _mapping(1)],
+                "reasoning": "Two normalized events are represented.",
+                "falsification_condition": "Distinct events require distinct IDs.",
+            }
+        )
 
 
 def test_direct_rejects_hidden_controlled_event_structure() -> None:
