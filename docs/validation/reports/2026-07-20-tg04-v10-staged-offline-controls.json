@@ -1,0 +1,66 @@
+{
+  "schema": "tg04.v10-staged.offline-controls.v1",
+  "created_on": "2026-07-20",
+  "status": "OFFLINE_CONTROLS_FROZEN_SOURCE_PANEL_UNSEALED",
+  "provider_calls_authorized": false,
+  "graph_writes_authorized": false,
+  "model": "openai:gpt-5.6-sol",
+  "reasoning_effort": null,
+  "reasoning_policy": "Provider default and identical across every producing and common-review call.",
+  "arms": {
+    "baseline": {
+      "name": "atomic-event validator V10 one-shot",
+      "tree_sha256": "bb0b66e96646040717b3d7eaea3b062eb3ebe4bf654119aca16e54d7550abc7a",
+      "producing_stages": [
+        "one_shot_atomic_event_inventory"
+      ]
+    },
+    "candidate": {
+      "name": "staged scientific agent",
+      "producing_stages": [
+        "discovery",
+        "event_extraction",
+        "modifiers",
+        "independent_falsification",
+        "deterministic_graph_projection"
+      ]
+    }
+  },
+  "token_control": {
+    "comparison_basis": "cumulative input_tokens plus output_tokens",
+    "reasoning_tokens_are_reported_but_not_double_counted": true,
+    "maximum_ceiling_difference_fraction": 0.1,
+    "ceiling_per_arm_per_source": 10000,
+    "common_blinded_review_budget_is_equal_and_reported_separately": true
+  },
+  "source_panel": {
+    "status": "NOT_YET_SEALED",
+    "required_untouched_source_count": 3,
+    "source_ids": [],
+    "source_sha256s": []
+  },
+  "categorical_review_only": true,
+  "deterministic_metrics": [
+    "whole_claim_precision",
+    "complete_event_recall",
+    "valuable_claim_recall",
+    "participant_role_fidelity",
+    "direction_fidelity",
+    "polarity_fidelity",
+    "unsupported_or_generic_rate",
+    "negative_null_leakage",
+    "exact_evidence_rate",
+    "provenance_rate"
+  ],
+  "first_source_stop_rules": [
+    "retain V10 if staged recovers no additional complete event",
+    "retain V10 if staged loses any V10 complete event",
+    "retain V10 if staged adds any unsupported or overly generic claim",
+    "retain V10 if staged worsens role, direction, or polarity fidelity",
+    "retain V10 if staged has negative or null leakage",
+    "retain V10 if any staged claim lacks exact evidence or provenance",
+    "retain V10 if staged has any hard safety failure",
+    "invalidate the experiment when paired controls or token ceilings differ"
+  ],
+  "execution_gate": "A separate immutable source seal is required before any provider call."
+}
