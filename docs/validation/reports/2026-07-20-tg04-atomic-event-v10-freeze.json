@@ -1,0 +1,39 @@
+{
+  "schema": "tg04.atomic-event-validator-v10.freeze.v1",
+  "created_on": "2026-07-20",
+  "status": "FROZEN_NO_PROVIDER_CALL",
+  "decision": "BASELINE_ONLY_NO_GO",
+  "identity": {
+    "name": "atomic-event validator V10",
+    "tree_sha256": "bb0b66e96646040717b3d7eaea3b062eb3ebe4bf654119aca16e54d7550abc7a",
+    "tree_hash_algorithm": "sha256 of sorted lines formatted as filename:file_sha256\\n for Python files only"
+  },
+  "execution": {
+    "provider_call_count": 0,
+    "graph_write_count": 0,
+    "scientific_score": null,
+    "scientific_score_reason": "No provider-backed scientific execution was performed for this frozen implementation."
+  },
+  "verification": {
+    "v10_tests_passed": 71,
+    "combined_v8_v9_v10_tests_passed": 147,
+    "ruff": "PASS",
+    "mypy_strict": "PASS",
+    "strict_provider_schema_audit": "PASS"
+  },
+  "files": {
+    "__init__.py": "ee1085a19338ed1a8796c9126e056701f6eeb705545d5d0c170311092d34d29d",
+    "compiled_models.py": "16645a89a1b2e1952b270f6482d2293930a36eb0886b7d7985876640412219bd",
+    "compiler.py": "f95ccced02d78967a8d63f9edfe06f7f68104d8bdae3ddb8c21d727b02a21e1e",
+    "contract.py": "6e948b4060a71f210e8b4f2c87ff14c526f454f014629824442dd329972bf39d",
+    "provider_models.py": "3a5354495e9514c3144afd42fc3d442befa5ad3b6aa71dabce25df01b9f9d1dd",
+    "semantic_rules.py": "77b4dcc019d47f365e81b492f9d78ba1ab8a8f56b55b3a2330e887d27207cc86",
+    "test_contract.py": "ab3fec50ac7c58246859161d5c84b2484abda5440ca6b37dd636d0944088b4c4"
+  },
+  "constraints": [
+    "Do not modify this baseline in place.",
+    "Do not attribute scientific improvement to static or adversarial tests.",
+    "Do not use this baseline to authorize graph persistence or trusted promotion.",
+    "Any later execution must use this exact tree identity as the V10 arm."
+  ]
+}
