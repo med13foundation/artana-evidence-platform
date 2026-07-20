@@ -1,0 +1,28 @@
+{
+  "schema": "tg04.staged-semantics-checkpoint-freeze.v1",
+  "created_on": "2026-07-20",
+  "status": "FROZEN_BEFORE_STAGED_SEMANTICS",
+  "repository_commit": "ed233ceadbb462f52a988d859a27972e432569d5",
+  "frozen_v10_tree_sha256": "bb0b66e96646040717b3d7eaea3b062eb3ebe4bf654119aca16e54d7550abc7a",
+  "exposed_fixture": {
+    "pmid": "40289860",
+    "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+    "v2_result_sha256": "74a652882e3905b514a97f553794f62a3f773596a29b71c047319d2236f5a429",
+    "gold_sha256": "90e33c2d69d06e0c711421f6dc8f343c1b24f72ae9419f7ccd2b32f4ecd36177"
+  },
+  "prior_stage_sha256s": {
+    "anchor_models.py": "6ec04f73e08a0068b6c84d459ea4a845188b83691e6b46f6329b1c131ddbdbe5",
+    "anchor_resolver.py": "009499fa03855e95eb4ca4ea43f008da80c0ba88742120efd62ea228aab74087",
+    "anchor_tests.py": "e8834d0b843f00e9fcf1bfffcf87110bca1ccecd03567cec04f3651bdf6e789c",
+    "categorical_models.py": "a13a869d83273a8722bbb02a4dc84eb11749ef6a745dc6dda57e0e19abd724c7",
+    "categorical_stage.py": "a6bf3476b56b023cf439060977c606d1e7345199434e4d2a2cd476310e677b99",
+    "categorical_tests.py": "6087ef71de2311fd0c8b802cf9bb5fde7c74cf0ff2a1ac447b07e18d1f270eff"
+  },
+  "authorizations": {
+    "provider_calls": false,
+    "untouched_source_selection": false,
+    "untouched_source_freeze": false,
+    "frozen_v10_modification": false,
+    "graph_writes": false
+  }
+}
