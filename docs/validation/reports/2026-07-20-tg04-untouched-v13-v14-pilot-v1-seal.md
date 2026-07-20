@@ -1,6 +1,6 @@
 # TG04 Untouched V13 Versus V14 Pilot V1 Seal
 
-Status: `SEALED_NOT_RUN`
+Status: `COMPLETED_STOP_INVALID_ARM`
 
 Manifest SHA-256: `434c3ca441887041099d8a5660353e5ff06b700dd81d4f8db65105064a6cede1`
 
@@ -58,4 +58,32 @@ qualify Artana for trusted-graph promotion.
 
 ## Outcome
 
-Pending one-shot execution.
+The one-shot pilot stopped after the first source. V13 completed three calls; V14
+failed its primary structured-output contract after one call. The second untouched
+source was not run.
+
+- Decision: `STOP_INVALID_ARM`
+- Provider calls: `4`
+- Fallback/replay: `0`
+- Graph writes: `0`
+- Live-verified receipts: `4`
+- Result file SHA-256: `831bce438f159d686cc119521fb030cccc7c1d481459de2723f3570224f74318`
+- Internal report SHA-256: `b489f4ed520d2d2dcf77a23e0b147193b4c51e931686ae75893ec5f164433706`
+
+V13 recovered two source-grounded events but reconstructed neither frozen event:
+exact precision `0/2`, exact recall `0/2`, participant-role fidelity `0/4`, and
+direction fidelity `0/2`. It lost the required `DR alpha` Theme and separate `S`
+and `X2` Site roles.
+
+V14 emitted two raw events but attached a controlled-event reference to a
+gene/protein Cause, which the schema forbids. Removing only that invalid optional
+reference made the payload schema-valid in a provider-free diagnostic. Its inner
+event still contained the same Theme/Site role error, so no scientific-improvement
+claim is warranted.
+
+Independent source-only and benchmark adjudications agreed that the agents also
+recovered a valid CIITA-dependent regulation claim omitted by the frozen gold.
+That discovery remains review-only and cannot compensate for missed required
+events. The next hypothesis is a role-first event inventory with provider-enforced
+controlled-reference topology and separate, non-compensatory reconstruction and
+source-supported-discovery ledgers.
