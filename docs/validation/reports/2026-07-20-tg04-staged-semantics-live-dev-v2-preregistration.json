@@ -1,0 +1,101 @@
+{
+  "schema": "tg04.staged-semantics.live-dev.preregistration.v2",
+  "created_on": "2026-07-20",
+  "status": "SEALED_EXPOSED_DEVELOPMENT_EXECUTION_AUTHORIZED",
+  "qualification_eligible": false,
+  "model": "openai:gpt-5.6-sol",
+  "reasoning_effort": "high",
+  "source_id": "pubmed:40289860",
+  "source_exposure": "EXPOSED_DEVELOPMENT",
+  "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+  "event_scopes_sha256": "0f37ff7c0b0f1201f3ee7a849f54d8ba89b7db94276b6d0d8e3411328b4ff66e",
+  "frozen_v10_tree_sha256": "bb0b66e96646040717b3d7eaea3b062eb3ebe4bf654119aca16e54d7550abc7a",
+  "corrected_checkpoint_tree_sha256": "71cc71c6aa23c0805739efd0d83c64f7958df89ea6df6f134a0d047d56fba73a",
+  "v2_code_tree_sha256": "cdaad7672181ddb791c5859cfefbc374766324f5130de48d1c0bc9de1ccfdee6",
+  "stages": [
+    "core_event_and_local_roles",
+    "comparison_direction",
+    "quantitative_measurements",
+    "statistical_observation_and_author_claim",
+    "epistemic_status",
+    "source_only_falsification"
+  ],
+  "call_topology": {
+    "calls_per_execution": 6,
+    "first_execution_authorized": true,
+    "second_execution_authorized_only_after_first_pass": true,
+    "maximum_executions": 2,
+    "maximum_provider_calls": 12,
+    "retry_limit": 0,
+    "fallback_allowed": false
+  },
+  "token_ceilings": {
+    "per_call": 25000,
+    "per_execution": 120000
+  },
+  "operations": {
+    "graph_writes_allowed": false,
+    "untouched_source_selection_allowed": false,
+    "untouched_source_freeze_allowed": false,
+    "frozen_v10_modification_allowed": false,
+    "architecture_expansion_during_execution_allowed": false
+  },
+  "success_requirements": {
+    "complete_event_count": 2,
+    "complete_stage_count": 12,
+    "resolved_event_local_role_count": 6,
+    "unsupported_claim_count": 0,
+    "contradiction_count": 0,
+    "a2_result_state": "OBSERVED_DIFFERENCE",
+    "a2_direction": "HIGHER",
+    "a2_operator": "GREATER_THAN",
+    "a2_exact_evidence": "had more comorbidities than",
+    "a2_local_roles": {
+      "FOCAL_POPULATION": "Patients with RA",
+      "COMPARATOR_POPULATION": "patients without RA",
+      "OUTCOME": "comorbidities"
+    },
+    "a5_result_state": "NO_DETECTED_DIFFERENCE",
+    "a5_direction": "UNCHANGED",
+    "a5_operator": "NO_DETECTED_DIFFERENCE",
+    "a5_local_roles": {
+      "FOCAL_POPULATION": "the RA",
+      "COMPARATOR_POPULATION": "non-RA NSCLC",
+      "OUTCOME": "OS"
+    },
+    "a5_p_value_observation": "P_VALUE",
+    "a5_p_value_exact_evidence": "log-rank P = 0.08",
+    "a5_author_claim": "NOT_CLAIMED",
+    "source_review_support": "ENTAILED",
+    "source_review_completeness": "COMPLETE_FOR_ASSERTION",
+    "verified_live_receipt_per_call": true,
+    "replayed_provider_output_allowed": false
+  },
+  "repeatability_requirements": {
+    "categorical_stage_signature_match": true,
+    "complete_scientific_event_signature_match": true,
+    "free_text_explanations_excluded_from_scientific_signature": true
+  },
+  "stop_requirement": "Stop immediately after the first schema, event-local provenance, stage-completeness, support, contradiction, A2/A5 semantic, receipt, replay, token, or deterministic assembly failure. Do not run execution 2 unless execution 1 passes every gate. Do not patch or retry inside the experiment.",
+  "external_file_sha256s": {
+    "__init__.py": "7fa9f93117835120d346e1587e0d1d7d29b27574e12e3088b530d6ea2396c351",
+    "contracts.py": "aaccdc578aaa13c9fad19e8d0165ef5ac2391edf7039615ad35ec3a03a9aa371",
+    "gates.py": "2bc586df5972e448a02e355b85d3103aa050e6bd5bbaa04f3435f8f2d21fbba4",
+    "prompts.py": "4089cc618d969c81dd30ae4b2fad089b22b8a27b2e591928902d1459ef76c6f3",
+    "run_live.py": "0e3ea8d51250e9357e9875f59f85c1bdec8955264c295a4650f9b519a6f37afd",
+    "test_experiment.py": "237549e9b7bcfcf7e6bdf321df13ce28c597df1ad88b00062a9b38f11d23bfc0"
+  },
+  "output_schema_sha256s": {
+    "core_event_and_local_roles": "581193a367d5cd7a5970c51e5d45b1a39bc8b887c23b19ccf4816963a22f0dab",
+    "comparison_direction": "3ae7840b25c57e09824c0c5dc7c4eae6b0c0220c330f6c4300d776c4d6423cde",
+    "quantitative_measurements": "027a55e789a8f01c69475f51595d674b07e973e8e1ed6198c9ad31da2db6214a",
+    "statistical_observation_and_author_claim": "daa32da1dcb878532cdb67eaf0c8e2f02cac545e04b309dac5c5e76ef479621c",
+    "epistemic_status": "c1bdc47596af489d057323c764c1dc429274f9fd8f754651034aa07d6f83fbf9",
+    "source_only_falsification": "9137a9b462c84c99f93b763bac3ffb16ec35d487b7ee077dfc07349cae350dd4"
+  },
+  "offline_validation": {
+    "ruff": "pass",
+    "strict_mypy_all_v2_files": "pass",
+    "combined_regression_tests": 108
+  }
+}
