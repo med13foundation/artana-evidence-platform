@@ -20,3 +20,20 @@ repository changes after the frozen Artana code commit.
 
 A passing result authorizes only the preregistered untouched two-source pilot. It
 does not qualify trusted-graph promotion or authorize a graph write.
+
+## Recorded Outcome
+
+- Decision: `STOP_AND_RECALIBRATE`
+- Calls made: `1` (`source_frame_typing`)
+- Provider response: `resp_0794aff9ec06e3f8006a5d75fe643c81998c7752a5aef321a7`
+- Provider receipt: `verified_live`
+- Result SHA-256: `3941e4cf6234e8c157dcf1c3fac57d9ba2a5f16688eb1e61e5a4bdf7052780eb`
+- Fallbacks, retries, and graph writes: `0`
+
+The run stopped before independent review because Luna used each complete V5
+relation anchor as its frame predicate, while the validator silently required
+the narrower V5 cue anchor. Two independent adversarial reviewers categorized
+the returned frame inventory as scientifically non-lossy and the rejection as a
+procedural contract defect. The official V6 result remains unchanged. V7 must
+reuse this verified payload, correct the relation-versus-trigger distinction,
+and spend only the independent review call that V6 did not reach.
