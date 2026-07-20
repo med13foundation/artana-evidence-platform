@@ -2,7 +2,7 @@
 
 Created: 2026-07-20
 
-Decision: `DEVELOPMENT_PROOF_INCOMPLETE_STOP`
+Decision: `DEVELOPMENT_PROOF_FAILED_STOP`
 
 No new untouched source may be frozen from this result.
 
@@ -82,9 +82,40 @@ V2 external identities:
 - V10 tree changed: no
 - New source selected or frozen: no
 
-## Stop Rule
+## V2 Live Result
 
-Offline V2 is ready for one separately preregistered call on the already
-exposed development fixture. Do not select or freeze another untouched source
-unless that exact V2 call passes frozen V10 compilation end to end. No contract
-rewrite is justified by this result.
+The separately locked V2 call also stopped without retry:
+
+- live calls: 1
+- retries: 0
+- fallback: 0
+- graph writes: 0
+- receipt: `verified_live`
+- replay: false
+- result artifact SHA-256:
+  `74a652882e3905b514a97f553794f62a3f773596a29b71c047319d2236f5a429`
+- terminal error: `AmbiguousAnchorError`
+
+V2 prevented the earlier duplicate-event split but supplied insufficiently
+specific context for four uses of the exact text `OS`. The phrase
+`associated with worse OS.` occurs more than once, so the left/right context
+did not uniquely identify one source occurrence.
+
+This exposed a scope error in the visibility audit. V1 and V2 covered V10's
+own provider-shape constants and exported compiler errors, but V10 compilation
+also invokes inherited V9 `AnchorResolver` validation. Those inherited errors
+were not included in the asserted complete inventory. Therefore we have not
+proven that every effective validation rule is visible to the agent.
+
+## Final Stop Rule
+
+Both bounded exposed calls are now consumed and neither passed end to end. Do
+not call either prompt again, select a new source, or freeze an untouched
+source. Expanding to a V3 catalog immediately would recreate the contract loop
+this work was intended to stop.
+
+The next activity should be analysis, not implementation: decide whether the
+one-shot contract should expose a mechanically generated effective validator
+specification across V8/V9/V10, or whether exact anchor resolution should be a
+separate deterministic or staged responsibility. No further provider call is
+authorized by this report.
