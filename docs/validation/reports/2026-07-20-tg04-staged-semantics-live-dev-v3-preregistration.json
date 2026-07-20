@@ -1,0 +1,118 @@
+{
+  "schema": "tg04.staged-semantics.live-dev.preregistration.v3",
+  "created_on": "2026-07-20",
+  "status": "SEALED_EXPOSED_DEVELOPMENT_EXECUTION_AUTHORIZED",
+  "qualification_eligible": false,
+  "single_change": "Replace V2 A2 evidence exact-string equality with deterministic event-local source-offset containment.",
+  "model": "openai:gpt-5.6-sol",
+  "reasoning_effort": "high",
+  "source_id": "pubmed:40289860",
+  "source_exposure": "EXPOSED_DEVELOPMENT",
+  "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+  "event_scopes_sha256": "0f37ff7c0b0f1201f3ee7a849f54d8ba89b7db94276b6d0d8e3411328b4ff66e",
+  "frozen_v10_tree_sha256": "bb0b66e96646040717b3d7eaea3b062eb3ebe4bf654119aca16e54d7550abc7a",
+  "corrected_checkpoint_tree_sha256": "71cc71c6aa23c0805739efd0d83c64f7958df89ea6df6f134a0d047d56fba73a",
+  "frozen_v2_tree_sha256": "cdaad7672181ddb791c5859cfefbc374766324f5130de48d1c0bc9de1ccfdee6",
+  "frozen_v2_prompts_sha256": "4089cc618d969c81dd30ae4b2fad089b22b8a27b2e591928902d1459ef76c6f3",
+  "v3_code_tree_sha256": "dd9a00070395bb459fd7669c2b4626f89110d8573a8b7a3ba23a75fb4d8493c8",
+  "stages": [
+    "core_event_and_local_roles",
+    "comparison_direction",
+    "quantitative_measurements",
+    "statistical_observation_and_author_claim",
+    "epistemic_status",
+    "source_only_falsification"
+  ],
+  "call_topology": {
+    "calls_per_execution": 6,
+    "first_execution_authorized": true,
+    "second_execution_authorized_only_after_first_pass": true,
+    "maximum_executions": 2,
+    "maximum_provider_calls": 12,
+    "retry_limit": 0,
+    "fallback_allowed": false
+  },
+  "token_ceilings": {
+    "per_call": 25000,
+    "per_execution": 120000
+  },
+  "operations": {
+    "graph_writes_allowed": false,
+    "untouched_source_selection_allowed": false,
+    "untouched_source_freeze_allowed": false,
+    "frozen_v10_modification_allowed": false,
+    "staged_prompt_modification_allowed": false,
+    "architecture_expansion_during_execution_allowed": false
+  },
+  "evidence_span_acceptance": {
+    "scope_id": "A2",
+    "required_cue": "had more comorbidities than",
+    "returned_evidence_must_resolve_to_exact_source_offsets": true,
+    "required_cue_must_resolve_to_exact_source_offsets": true,
+    "returned_evidence_must_be_inside_atomic_event_scope": true,
+    "required_cue_must_be_inside_same_atomic_event_scope": true,
+    "returned_evidence_interval_must_contain_required_cue_interval": true,
+    "abstract_wide_or_cross_event_spans_allowed": false,
+    "predeclared_contradictory_interval_overlap_allowed": false,
+    "deterministic_biomedical_inference_allowed": false
+  },
+  "success_requirements": {
+    "complete_event_count": 2,
+    "complete_stage_count": 12,
+    "resolved_event_local_role_count": 6,
+    "unsupported_claim_count": 0,
+    "contradiction_count": 0,
+    "a2_result_state": "OBSERVED_DIFFERENCE",
+    "a2_direction": "HIGHER",
+    "a2_operator": "GREATER_THAN",
+    "a2_required_cue": "had more comorbidities than",
+    "a2_local_roles": {
+      "FOCAL_POPULATION": "Patients with RA",
+      "COMPARATOR_POPULATION": "patients without RA",
+      "OUTCOME": "comorbidities"
+    },
+    "a5_result_state": "NO_DETECTED_DIFFERENCE",
+    "a5_direction": "UNCHANGED",
+    "a5_operator": "NO_DETECTED_DIFFERENCE",
+    "a5_local_roles": {
+      "FOCAL_POPULATION": "the RA",
+      "COMPARATOR_POPULATION": "non-RA NSCLC",
+      "OUTCOME": "OS"
+    },
+    "a5_p_value_observation": "P_VALUE",
+    "a5_p_value_exact_evidence": "log-rank P = 0.08",
+    "a5_author_claim": "NOT_CLAIMED",
+    "source_review_support": "ENTAILED",
+    "source_review_completeness": "COMPLETE_FOR_ASSERTION",
+    "verified_live_receipt_per_call": true,
+    "replayed_provider_output_allowed": false
+  },
+  "repeatability_requirements": {
+    "categorical_stage_signature_match": true,
+    "complete_scientific_event_signature_match": true,
+    "free_text_explanations_excluded_from_scientific_signature": true
+  },
+  "stop_requirement": "Stop immediately after the first schema, event-local span, stage-completeness, support, contradiction, A2/A5 semantic, receipt, replay, token, or assembly failure. Do not run execution 2 unless execution 1 passes every gate. Do not patch or retry inside V3.",
+  "external_file_sha256s": {
+    "__init__.py": "1acf288badbe98e269d4accb2d666b36dbcfb0550e30eb841814874ee13384f0",
+    "evidence_spans.py": "e7aa23fe8c965fec4f5d2aa16b11c1c08def3fdab92e4e89232693393922b20e",
+    "gates.py": "447bf73121d85585d0178128d75d646149195e25cf7b90234e477b8411ec3894",
+    "run_live.py": "cbc6152c4fa4ee677dfe2dabfface39a591ecaf503735e325cce940b157a8bfe",
+    "test_experiment.py": "505babc57bfeb4eb74e603db6fffabbbb1bc7085f439a73575b2d1962623df05"
+  },
+  "output_schema_sha256s": {
+    "core_event_and_local_roles": "581193a367d5cd7a5970c51e5d45b1a39bc8b887c23b19ccf4816963a22f0dab",
+    "comparison_direction": "3ae7840b25c57e09824c0c5dc7c4eae6b0c0220c330f6c4300d776c4d6423cde",
+    "quantitative_measurements": "027a55e789a8f01c69475f51595d674b07e973e8e1ed6198c9ad31da2db6214a",
+    "statistical_observation_and_author_claim": "daa32da1dcb878532cdb67eaf0c8e2f02cac545e04b309dac5c5e76ef479621c",
+    "epistemic_status": "c1bdc47596af489d057323c764c1dc429274f9fd8f754651034aa07d6f83fbf9",
+    "source_only_falsification": "9137a9b462c84c99f93b763bac3ffb16ec35d487b7ee077dfc07349cae350dd4"
+  },
+  "offline_validation": {
+    "ruff": "pass",
+    "strict_mypy_all_v3_files": "pass",
+    "combined_regression_tests": 115,
+    "service_checks": "pass",
+    "coverage_percent": 87.48
+  }
+}
