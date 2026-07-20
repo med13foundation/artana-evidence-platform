@@ -1,0 +1,32 @@
+{
+  "schema": "tg04.v10-provider-rule-visibility.dev-preregistration.v1",
+  "created_on": "2026-07-20",
+  "status": "EXPOSED_DEVELOPMENT_CALL_AUTHORIZED",
+  "qualification_eligible": false,
+  "model": "openai:gpt-5.6-sol",
+  "reasoning_effort": null,
+  "provider_call_limit": 1,
+  "retry_limit": 0,
+  "fallback_allowed": false,
+  "graph_writes_authorized": false,
+  "source": {
+    "exposure": "EXPOSED_DEVELOPMENT",
+    "pmid": "40289860",
+    "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+  },
+  "v10_tree_sha256": "bb0b66e96646040717b3d7eaea3b062eb3ebe4bf654119aca16e54d7550abc7a",
+  "visibility_scope": {
+    "provider_shape_error_constants": 8,
+    "exported_compiler_error_categories": 9,
+    "coverage_method": "AST equality checks plus verbatim prompt-rendering regressions"
+  },
+  "external_file_sha256s": {
+    "rule_catalog.py": "703e769bddf43f36206da034ade34634ecfdad78bfa970272391be07063423fc",
+    "prompt.py": "f275d80f59ab6b337ebb7ea9456c0466c7b063e0505b7b228299e6ce8771b3a8",
+    "run_exposed.py": "501497adc643620155cc309b36254ac80aa1789cb63a6b2356f197c240b18731",
+    "test_rule_visibility.py": "bd797c31497ce50c133a32b54e2673283a17e70eb3d41ee12bcb71b83bd13a42"
+  },
+  "pass_condition": "One live non-replayed provider response passes frozen V10 provider validation and deterministic compilation with a verified receipt.",
+  "stop_condition": "Any schema, semantic, compilation, custody, receipt, or lineage failure stops the development proof with no retry and no new untouched-source freeze.",
+  "consumed_source_reuse_forbidden": "pubmed:42454948"
+}
