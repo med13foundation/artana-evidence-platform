@@ -24,3 +24,20 @@ participants or context.
 
 A passing result authorizes only the preregistered untouched two-source pilot. It
 does not qualify trusted-graph promotion or authorize a graph write.
+
+## Recorded Outcome
+
+- Decision: `STOP_AND_RECALIBRATE`
+- Calls made: `1` (`source_frame_review`)
+- Provider response: `resp_0133b287f7f9b4b1006a5d7b48b678819bbbd94e6e34bed7ff`
+- Provider receipt: `verified_live`
+- Result SHA-256: `b9412dfef8699469cdc14f6a85e0351566b952888babef86261a7a983d1bb659`
+- Fallbacks, retries, and graph writes: `0`
+
+The run stopped because F2 and F3 repeated every categorical subjudgment as
+valid but returned the redundant derived frame disposition as `REVIEW_ONLY`.
+Two additional copied evidence-context fields did not bind exactly. Two
+independent adversarial reviewers found the scientific content non-lossy and
+confirmed that deterministic derivation plus deterministic evidence-location
+resolution is the correct next contract. The official V7 decision remains
+unchanged; the next provider spend must use untouched sources.
