@@ -1,8 +1,8 @@
 {
   "schema": "tg04.v10-staged.offline-controls.v1",
   "created_on": "2026-07-20",
-  "status": "SOURCE_1_EXECUTION_AUTHORIZED",
-  "provider_calls_authorized": true,
+  "status": "SOURCE_1_INVALID_STOPPED",
+  "provider_calls_authorized": false,
   "graph_writes_authorized": false,
   "model": "openai:gpt-5.6-sol",
   "reasoning_effort": null,
@@ -78,5 +78,5 @@
     "retain V10 if staged has any hard safety failure",
     "invalidate the experiment when paired controls or token ceilings differ"
   ],
-  "execution_gate": "The user authorized the bounded paired provider experiment on 2026-07-20. Authorization covers source 1 only until the preregistered immediate stop rule is applied."
+  "execution_gate": "The source-1 baseline call failed frozen V10 validation. The immediate stop rule now blocks the staged arm, retries, and sources 2 and 3 pending architecture reassessment."
 }

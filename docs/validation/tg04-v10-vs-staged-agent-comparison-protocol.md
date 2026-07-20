@@ -2,7 +2,7 @@
 
 Created: 2026-07-20
 
-Status: `SOURCE_1_EXECUTION_AUTHORIZED`
+Status: `SOURCE_1_INVALID_STOPPED`
 
 Offline controls are frozen in
 `reports/2026-07-20-tg04-v10-staged-offline-controls.json`. The deterministic
@@ -10,8 +10,10 @@ selection gate is implemented in
 `scripts/validation/claim_events/architecture_selection.py`. The source panel
 is frozen in
 `reports/2026-07-20-tg04-v10-staged-untouched-source-seal.json`. These artifacts
-authorize only the preregistered source-1 paired execution. Sources 2 and 3
-remain blocked until the immediate stop rule is applied.
+authorized only the preregistered source-1 paired execution. The baseline call
+failed frozen V10 validation, so the immediate stop rule blocked the staged arm
+and sources 2 and 3. See
+`reports/2026-07-20-tg04-v10-staged-source1-result.md`.
 
 ## Decision Question
 
