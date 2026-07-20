@@ -2,14 +2,15 @@
 
 Created: 2026-07-20
 
-Status: `DESIGNED_NOT_EXECUTED`
+Status: `SEALED_NOT_EXECUTED`
 
 Offline controls are frozen in
 `reports/2026-07-20-tg04-v10-staged-offline-controls.json`. The deterministic
 selection gate is implemented in
 `scripts/validation/claim_events/architecture_selection.py`. The source panel
-remains deliberately unsealed, so these artifacts do not authorize a provider
-call.
+is frozen in
+`reports/2026-07-20-tg04-v10-staged-untouched-source-seal.json`. These artifacts
+still do not authorize a provider call.
 
 ## Decision Question
 

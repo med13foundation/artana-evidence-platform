@@ -1,0 +1,68 @@
+{
+  "schema": "tg04.v10-staged.untouched-source-seal.v1",
+  "created_on": "2026-07-20",
+  "status": "SEALED_NOT_EXECUTED",
+  "panel_id": "tg04-v10-staged-untouched-v1",
+  "panel_sha256": "84408a5b553666151677875b9a48ae63bf4480648f63ac7b4c0790fef822861b",
+  "external_panel_file_sha256": "26902d2de24b5aa503572c48aeadc3bc45487991a8f7c78aa9edcccc05e88023",
+  "selection_package_sha256": "a43c55bdf53a768eacef56e76ebb2459fd5e742c30d313548df44a3e02db61b7",
+  "selection_script_sha256": "cf0a84d5adab561f5a7f953ff75c030f9d7fd3f6767a33e0dc8b73ae67769ce3",
+  "selection_test_sha256": "bc3631bc1d633473e5f0856b9394afdeecf31aff94018b6a1e57ba647ddb3137",
+  "selection_policy": {
+    "candidate_queries_define_semantic_lanes": true,
+    "candidate_record_content_inspected_after_query": false,
+    "ranking": "ascending SHA256(panel_id:lane:pmid)",
+    "candidate_count_per_lane": 100,
+    "publication_date_query": "2025:2026[pdat]",
+    "required_language": "English",
+    "minimum_abstract_characters": 600,
+    "maximum_abstract_characters": 10000,
+    "excluded_publication_types": [
+      "Comment",
+      "Editorial",
+      "Published Erratum",
+      "Retracted Publication",
+      "Retraction of Publication"
+    ]
+  },
+  "sources": [
+    {
+      "lane": "therapeutic_outcome",
+      "query_sha256": "63677117f7494149ac253f42d9b66bd9428a57f976eeb3f478e262fd4eb41e9f",
+      "pmid": "41778357",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/41778357/",
+      "selection_rank_sha256": "004469111242bdd2dfcc2383243ffe0d23ea331783e227a82fe96c49722758e3",
+      "source_sha256": "e88c774f9cb87414ee4e3fd4eaf1119c907de039b94b51f3bbf6a6318a66b0d0",
+      "source_character_count": 1524,
+      "record_xml_sha256": "7578fec656b1d48e26254ccd5f3e4963e8c8534b67bba557119ff145205c7b31"
+    },
+    {
+      "lane": "human_genetics",
+      "query_sha256": "433293abb766d25ed24319012b3c32887bd3894b581ac14c2fc3baf025a93022",
+      "pmid": "42454948",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/42454948/",
+      "selection_rank_sha256": "01e937c52912b5a447d5909b2eaf4d05d85fc2d11806ecde7211b908fa345f45",
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b",
+      "source_character_count": 1856,
+      "record_xml_sha256": "386b1a5e2adad32a624c50c9ee93a14aad6b9d3bd9f6db19243f958da36656f4"
+    },
+    {
+      "lane": "molecular_mechanism",
+      "query_sha256": "261f42ba8cd278c9014d1c5e000627fc5f4e30979c3e5cefbb075645eb17e1e9",
+      "pmid": "41482925",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/41482925/",
+      "selection_rank_sha256": "06679f6ec51658258d38acca06879131a1d4d7563d4c4d46714aed49d4a90da5",
+      "source_sha256": "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe",
+      "source_character_count": 1415,
+      "record_xml_sha256": "773ce2c0a701a54448d422469e358af57748ee4723c04ddc7466b26175172e89"
+    }
+  ],
+  "exposure_audit": {
+    "prior_local_artana_artifact_match_count": 0,
+    "identifiers_checked": "all three PMIDs and all three exact source SHA-256 values",
+    "scope_limitation": "Absence was verified in the repository and recorded local TG04 artifacts. Global provider-account history is not claimed."
+  },
+  "provider_call_count": 0,
+  "graph_write_count": 0,
+  "execution_authorized": false
+}

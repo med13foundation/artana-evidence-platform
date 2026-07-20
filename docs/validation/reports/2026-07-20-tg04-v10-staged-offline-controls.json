@@ -1,7 +1,7 @@
 {
   "schema": "tg04.v10-staged.offline-controls.v1",
   "created_on": "2026-07-20",
-  "status": "OFFLINE_CONTROLS_FROZEN_SOURCE_PANEL_UNSEALED",
+  "status": "OFFLINE_CONTROLS_AND_SOURCE_PANEL_FROZEN",
   "provider_calls_authorized": false,
   "graph_writes_authorized": false,
   "model": "openai:gpt-5.6-sol",
@@ -34,10 +34,20 @@
     "common_blinded_review_budget_is_equal_and_reported_separately": true
   },
   "source_panel": {
-    "status": "NOT_YET_SEALED",
+    "status": "SEALED_NOT_EXECUTED",
     "required_untouched_source_count": 3,
-    "source_ids": [],
-    "source_sha256s": []
+    "panel_id": "tg04-v10-staged-untouched-v1",
+    "panel_sha256": "84408a5b553666151677875b9a48ae63bf4480648f63ac7b4c0790fef822861b",
+    "source_ids": [
+      "pubmed:41778357",
+      "pubmed:42454948",
+      "pubmed:41482925"
+    ],
+    "source_sha256s": [
+      "e88c774f9cb87414ee4e3fd4eaf1119c907de039b94b51f3bbf6a6318a66b0d0",
+      "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b",
+      "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe"
+    ]
   },
   "categorical_review_only": true,
   "deterministic_metrics": [
@@ -62,5 +72,5 @@
     "retain V10 if staged has any hard safety failure",
     "invalidate the experiment when paired controls or token ceilings differ"
   ],
-  "execution_gate": "A separate immutable source seal is required before any provider call."
+  "execution_gate": "The source seal is complete, but the user no-provider-call boundary still controls execution."
 }
