@@ -2,7 +2,7 @@
 
 Created: 2026-07-20
 
-Status: `SEALED_NOT_EXECUTED`
+Status: `SOURCE_1_EXECUTION_AUTHORIZED`
 
 Offline controls are frozen in
 `reports/2026-07-20-tg04-v10-staged-offline-controls.json`. The deterministic
@@ -10,7 +10,8 @@ selection gate is implemented in
 `scripts/validation/claim_events/architecture_selection.py`. The source panel
 is frozen in
 `reports/2026-07-20-tg04-v10-staged-untouched-source-seal.json`. These artifacts
-still do not authorize a provider call.
+authorize only the preregistered source-1 paired execution. Sources 2 and 3
+remain blocked until the immediate stop rule is applied.
 
 ## Decision Question
 
@@ -80,8 +81,9 @@ The comparison controls total model work rather than call count:
 
 - Arm A has one producing call per source.
 - Arm B may use one call for each of its four agent stages.
-- The cumulative input plus output token ceiling for Arm B must be within 10%
-  of Arm A's preregistered ceiling.
+- Both arms have the same 60,000 cumulative input-plus-output-token ceiling per
+  source. The staged ceiling is frozen across discovery (12,000), event
+  extraction (14,000), modifiers (26,000), and falsification (8,000).
 - Stage ceilings are frozen before execution; unused tokens cannot be moved
   after viewing an output.
 - A shared final adjudication budget is applied equally to both arms and is
@@ -132,7 +134,8 @@ event. Correct fragments cannot be assembled across separate incomplete events.
 
 ## Small Paired Sequence
 
-1. Freeze three untouched source hashes without reading their contents.
+1. Freeze three untouched source hashes without reading their contents. Source
+   order is ascending exact source SHA-256, making `pubmed:42454948` source 1.
 2. Freeze prompts, schemas, model settings, per-stage token ceilings, common
    adjudication contracts, and deterministic scorer hashes.
 3. Run both arms on untouched source 1, then perform blinded common adjudication.

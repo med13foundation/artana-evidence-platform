@@ -1,0 +1,50 @@
+{
+  "schema": "tg04.v10-staged.source1-preregistration.v1",
+  "created_on": "2026-07-20",
+  "status": "AUTHORIZED_NOT_EXECUTED",
+  "execution_authorized": true,
+  "qualification_eligible": false,
+  "model": "openai:gpt-5.6-sol",
+  "reasoning_effort": null,
+  "reasoning_policy": "Provider default, identical across both arms.",
+  "api_mode": "responses",
+  "retry_limit": 0,
+  "fallback_allowed": false,
+  "graph_writes_authorized": false,
+  "provider_call_limit": 5,
+  "source_order": "ascending exact source SHA-256",
+  "source_1": {
+    "pmid": "42454948",
+    "source_id": "pubmed:42454948",
+    "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b"
+  },
+  "source_panel_sha256": "84408a5b553666151677875b9a48ae63bf4480648f63ac7b4c0790fef822861b",
+  "v10_tree_sha256": "bb0b66e96646040717b3d7eaea3b062eb3ebe4bf654119aca16e54d7550abc7a",
+  "token_ceilings": {
+    "baseline": 60000,
+    "staged": 60000,
+    "staged_calls": {
+      "discovery": 12000,
+      "event_extraction": 14000,
+      "modifiers": 26000,
+      "independent_falsification": 8000
+    }
+  },
+  "external_file_sha256s": {
+    "experiment_contracts.py": "c02fde9fffe8d48bda9aa8300f4c5d9ff3fee2f46d8653e5df124ad99ec47244",
+    "experiment_prompts.py": "26a9a376fc560e462c44a0068bc2187a4e4193a3cc3f89360a1244ff74664c12",
+    "run_source1.py": "f32685e9996469dc2c23a07252adf4da235b71eb2995991aaa42f8ed6109d2c7",
+    "test_experiment.py": "8579f0228346a0e380a634320599b6c2464b27833f425ea583f8b18cb1bac665"
+  },
+  "producing_topology": {
+    "baseline_calls": ["baseline_v10"],
+    "staged_calls": [
+      "discovery",
+      "event_extraction",
+      "modifiers",
+      "independent_falsification"
+    ]
+  },
+  "immediate_stop_rule": "Stop after source 1 unless staged adds at least one complete event, loses none, invents none, worsens no role or modifier fidelity, and passes all schema, receipt, lineage, evidence, provenance, and token controls.",
+  "authorization_scope": "Source 1 producing calls and blinded common adjudication only. Sources 2 and 3 require the deterministic source-1 ADVANCE_STAGED decision."
+}

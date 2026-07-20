@@ -1,8 +1,8 @@
 {
   "schema": "tg04.v10-staged.offline-controls.v1",
   "created_on": "2026-07-20",
-  "status": "OFFLINE_CONTROLS_AND_SOURCE_PANEL_FROZEN",
-  "provider_calls_authorized": false,
+  "status": "SOURCE_1_EXECUTION_AUTHORIZED",
+  "provider_calls_authorized": true,
   "graph_writes_authorized": false,
   "model": "openai:gpt-5.6-sol",
   "reasoning_effort": null,
@@ -30,7 +30,13 @@
     "comparison_basis": "cumulative input_tokens plus output_tokens",
     "reasoning_tokens_are_reported_but_not_double_counted": true,
     "maximum_ceiling_difference_fraction": 0.1,
-    "ceiling_per_arm_per_source": 10000,
+    "ceiling_per_arm_per_source": 60000,
+    "staged_call_ceilings": {
+      "discovery": 12000,
+      "event_extraction": 14000,
+      "modifiers": 26000,
+      "independent_falsification": 8000
+    },
     "common_blinded_review_budget_is_equal_and_reported_separately": true
   },
   "source_panel": {
@@ -72,5 +78,5 @@
     "retain V10 if staged has any hard safety failure",
     "invalidate the experiment when paired controls or token ceilings differ"
   ],
-  "execution_gate": "The source seal is complete, but the user no-provider-call boundary still controls execution."
+  "execution_gate": "The user authorized the bounded paired provider experiment on 2026-07-20. Authorization covers source 1 only until the preregistered immediate stop rule is applied."
 }
