@@ -70,7 +70,9 @@ V2 external identities:
 - prompt:
   `2363aad9148e2e1eb6c995643a449b1db9fdd525daa448745a127669e34f405f`
 - tests:
-  `cba8ea9a3f0e944c65e7cbb819b1b3ceac1d656d232b38e63d901f98bdb2c1e8`
+  `151ec1269ac38bf81c26d1d8b218cc63201fb7914c24358e8d34458dd4ed9f9b`
+- one-attempt runner:
+  `931c4cdb8e4fa9f2ea2b795bd7f94b55940fd52137d46ce6225f2af19659eaf0`
 
 ## Validation
 
@@ -82,9 +84,7 @@ V2 external identities:
 
 ## Stop Rule
 
-Offline V2 is ready for independent review, but the development proof has not
-passed live end to end. Do not select or freeze another untouched source yet.
-The next decision is intentionally small: either accept one separately
-preregistered V2 call on a different already exposed fixture, or stop and
-reassess whether one-shot V10 is worth another development call. No contract
+Offline V2 is ready for one separately preregistered call on the already
+exposed development fixture. Do not select or freeze another untouched source
+unless that exact V2 call passes frozen V10 compilation end to end. No contract
 rewrite is justified by this result.
