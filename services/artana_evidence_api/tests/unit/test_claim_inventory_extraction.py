@@ -37,6 +37,9 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     claim_inventory_batch_input_sha256,
     derive_claim_local_source_region,
 )
+from artana_evidence_api.document_extraction_support.claim_frames.verification_budget import (
+    ClaimVerificationBudgetLimits,
+)
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
     build_relation_extraction_text_chunks,
@@ -50,11 +53,13 @@ from artana_evidence_api.document_extraction_support.llm_extraction.invocation_b
     parse_provider_invocation_binding,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.prompt_versions import (
+    CLAIM_FALSIFICATION_PROMPT_VERSION,
     CLAIM_FRAME_PIPELINE_COMPONENT_PROMPT_VERSIONS,
     CLAIM_FRAME_PIPELINE_PROMPT_VERSION,
     CLAIM_FRAMING_PROMPT_VERSION,
     CLAIM_INVENTORY_COMPLETENESS_PROMPT_VERSION,
     CLAIM_INVENTORY_PROMPT_VERSION,
+    CLAIM_REPAIR_PROMPT_VERSION,
     MISSING_CLAIM_RECOVERY_PROMPT_VERSION,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.runner import (
@@ -65,6 +70,9 @@ from artana_evidence_api.document_extraction_support.llm_extraction.runner impor
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
     StructuredModelSemanticError,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.verification_loop import (
+    ClaimVerificationRuntimeConfig,
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     start_model_attempt_audit,
@@ -118,12 +126,27 @@ class ScriptedStepRunner:
         )
 
 
+class ReceiptedScriptedStepRunner(ScriptedStepRunner):
+    """Attach complete token and cost receipts to every scripted invocation."""
+
+    async def __call__(self, _client: object, **kwargs: object) -> object:
+        result = await super().__call__(_client, **kwargs)
+        result.usage = ModelUsage(
+            prompt_tokens=100,
+            completion_tokens=20,
+            cost_usd=0.001,
+        )
+        return result
+
+
 def test_claim_frame_pipeline_prompt_version_tracks_every_agent_stage() -> None:
     assert CLAIM_FRAME_PIPELINE_COMPONENT_PROMPT_VERSIONS == (
         CLAIM_INVENTORY_PROMPT_VERSION,
         CLAIM_INVENTORY_COMPLETENESS_PROMPT_VERSION,
         MISSING_CLAIM_RECOVERY_PROMPT_VERSION,
         CLAIM_FRAMING_PROMPT_VERSION,
+        CLAIM_FALSIFICATION_PROMPT_VERSION,
+        CLAIM_REPAIR_PROMPT_VERSION,
     )
 
 
@@ -159,7 +182,7 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
         "document_extraction.claim_pipeline.v17:claim_inventory.v11+"
         "claim_inventory_completeness.v12+claim_inventory_recovery.v11+"
-        "claim_framing.v7"
+        "claim_framing.v7+claim_falsification.v1+claim_repair.v1"
     )
 
 
@@ -485,6 +508,7 @@ async def _run_pipeline(
     text: str,
     runner: ScriptedStepRunner,
     max_relations: int = 10,
+    claim_verification_config: ClaimVerificationRuntimeConfig | None = None,
 ) -> LLMRelationExtractionAttempt:
     return await run_llm_relation_extraction_with_zero_retry(
         normalized_text=text,
@@ -498,7 +522,83 @@ async def _run_pipeline(
         model_id="openai/gpt-5.6-luna",
         step_runner=runner,
         execution_namespace="unit-test",
+        claim_verification_config=claim_verification_config,
     )
+
+
+@pytest.mark.asyncio
+async def test_runner_verifies_immediately_after_framing_and_locks_promotion() -> None:
+    text = "MED13 causes cardiomyopathy."
+    inventory = {
+        "claims": [
+            _inventory_claim(
+                exact_span=text,
+                endpoint_a_span="MED13",
+                relation_cue_span="causes",
+                endpoint_b_span="cardiomyopathy",
+            ),
+        ],
+    }
+    verifier = {
+        "verdict": "ENTAILED",
+        "participant_roles": "FAITHFUL",
+        "direction": "FAITHFUL",
+        "comparison": "NOT_APPLICABLE",
+        "polarity": "FAITHFUL",
+        "uncertainty": "FAITHFUL",
+        "statistical_interpretation": "NOT_APPLICABLE",
+        "observed_statistical_evidence": "NONE",
+        "author_statistical_claim": "NOT_CLAIMED",
+        "completeness": "COMPLETE",
+        "evidence_spans": [text],
+        "explanation": "The source explicitly states the complete causal claim.",
+        "failure_axes": [],
+    }
+    runner = ReceiptedScriptedStepRunner(
+        (
+            inventory,
+            _complete_inventory(),
+            _framed_relation(
+                sentence=text,
+                subject="MED13",
+                relation_type="CAUSES",
+                object_="cardiomyopathy",
+            ),
+            verifier,
+        ),
+    )
+    config = ClaimVerificationRuntimeConfig(
+        enabled=True,
+        framing_model_id="openai/gpt-5.6-sol",
+        verification_model_id="openai/gpt-5.6-sol",
+        repair_model_id="openai/gpt-5.6-sol",
+        reverification_model_id="openai/gpt-5.6-sol",
+        budget_limits=ClaimVerificationBudgetLimits(
+            max_verifier_calls=2,
+            max_repairs=1,
+            max_tokens=1000,
+            max_latency_seconds=10,
+            max_cost_usd=1,
+        ),
+    )
+
+    result = await _run_pipeline(
+        text=text,
+        runner=runner,
+        claim_verification_config=config,
+    )
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].claim_verification_terminal == "VERIFIED_UNREPAIRED"
+    assert result.candidates[0].review_status == "review_only"
+    assert result.candidates[0].trusted_evidence_eligible is False
+    assert len(result.claim_lineage) == 1
+    assert result.claim_lineage[0].claim_verification[0]["terminal"] == (
+        "VERIFIED_UNREPAIRED"
+    )
+    assert [record.attempt_role for record in result.model_attempt_records].count(
+        "claim_verification",
+    ) == 1
 
 
 async def _run_inventory(

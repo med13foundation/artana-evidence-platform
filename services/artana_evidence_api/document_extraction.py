@@ -376,6 +376,9 @@ async def extract_relation_candidates_with_llm(
     store = None
 
     # Resolve model and normalize for LiteLLM (openai:gpt-5.4-mini → openai/gpt-5.4-mini)
+    from artana_evidence_api.document_extraction_support.llm_extraction.verification_loop import (
+        ClaimVerificationRuntimeConfig,
+    )
     from artana_evidence_api.runtime_support import (
         create_artana_postgres_store,
         normalize_litellm_model_id,
@@ -387,6 +390,9 @@ async def extract_relation_candidates_with_llm(
             ModelCapability.EVIDENCE_EXTRACTION,
         )
         .model_id,
+    )
+    claim_verification_config = ClaimVerificationRuntimeConfig.from_environment(
+        default_model_id=model_id,
     )
 
     tenant = TenantContext(
@@ -414,6 +420,11 @@ async def extract_relation_candidates_with_llm(
             model_id=model_id,
             step_runner=run_single_step_with_policy,
             execution_namespace=execution_namespace,
+            **(
+                {"claim_verification_config": claim_verification_config}
+                if claim_verification_config.enabled
+                else {}
+            ),
         )
         raw_relation_count = extraction_attempt.raw_relation_count
         candidates = extraction_attempt.candidates

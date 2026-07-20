@@ -543,9 +543,9 @@ def test_recovery_schema_registry_governs_categorical_adjudication() -> None:
 def test_registry_report_exposes_merge_gate_counts() -> None:
     report = build_agent_output_registry_report()
 
-    assert report["registered_schema_count"] == 20
-    assert report["registered_numeric_field_count"] == 3
-    assert report["origin_governed_numeric_field_count"] == 3
+    assert report["registered_schema_count"] == 22
+    assert report["registered_numeric_field_count"] == 4
+    assert report["origin_governed_numeric_field_count"] == 4
     assert report["debt_numeric_field_count"] == 0
     assert report["active_debt_count"] == 0
     assert report["unquarantined_debt_count"] == 0

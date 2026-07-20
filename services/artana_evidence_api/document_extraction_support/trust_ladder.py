@@ -32,6 +32,9 @@ CandidateTrustFloorFailure = Literal[
     "curie_linked_subject",
     "curie_linked_object",
     "review_only_candidate",
+    "scientific_qualification_incomplete",
+    "missing_claim_verification",
+    "invalid_claim_verification_lineage",
 ]
 
 
@@ -72,6 +75,7 @@ def assess_candidate_trust(
         failures.append("no_fallback_output")
     if _is_review_only_candidate(metadata):
         failures.append("review_only_candidate")
+    failures.extend(_claim_verification_floor_failures(metadata))
 
     grounding = _object(metadata.get("evidence_grounding"))
     if grounding.get("grounded") is not True:
@@ -98,6 +102,28 @@ def assess_candidate_trust(
         tier=_trust_tier_for_failures(tuple(failures)),
         hard_floor_failures=tuple(failures),
     )
+
+
+def _claim_verification_floor_failures(
+    metadata: Mapping[str, object],
+) -> tuple[CandidateTrustFloorFailure, ...]:
+    marker_fields = (
+        "claim_verification",
+        "claim_verification_terminal",
+        "claim_verification_lineage_status",
+        "claim_verification_qualification_complete",
+    )
+    if not any(field in metadata for field in marker_fields):
+        return ()
+    failures: list[CandidateTrustFloorFailure] = []
+    verification = _object(metadata.get("claim_verification"))
+    if not verification:
+        failures.append("missing_claim_verification")
+    elif metadata.get("claim_verification_lineage_status") != "bound":
+        failures.append("invalid_claim_verification_lineage")
+    if metadata.get("claim_verification_qualification_complete") is not True:
+        failures.append("scientific_qualification_incomplete")
+    return tuple(failures)
 
 
 def candidate_trust_ladder_metadata(
@@ -128,6 +154,9 @@ def _trust_tier_for_failures(
         "support_verified_by_agent",
         "canonical_relation_type",
         "review_only_candidate",
+        "scientific_qualification_incomplete",
+        "missing_claim_verification",
+        "invalid_claim_verification_lineage",
     }
     if evidence_failures.isdisjoint(failures):
         return "verified_evidence"

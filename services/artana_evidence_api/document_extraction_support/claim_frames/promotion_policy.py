@@ -111,6 +111,7 @@ def require_claim_frame_promotion_preflight(
             "fallback_output_not_promotable",
             "Fallback extraction output is permanently triage-only.",
         )
+    _require_completed_scientific_qualification(metadata)
     if metadata.get("review_status") == "review_only":
         _reject(
             "review_only_claim_frame",
@@ -138,6 +139,38 @@ def require_claim_frame_promotion_preflight(
             "Canonical promotion requires an agent entailment verification.",
         )
     return frame
+
+
+def _require_completed_scientific_qualification(
+    metadata: Mapping[str, object],
+) -> None:
+    marker_fields = (
+        "claim_verification",
+        "claim_verification_terminal",
+        "claim_verification_lineage_status",
+        "claim_verification_qualification_complete",
+    )
+    if not any(field in metadata for field in marker_fields):
+        return
+    verification = _mapping(metadata.get("claim_verification"))
+    if not verification:
+        _reject(
+            "missing_claim_verification",
+            "Canonical promotion requires candidate-bound scientific verification lineage.",
+        )
+    if metadata.get("claim_verification_lineage_status") != "bound":
+        _reject(
+            "invalid_claim_verification_lineage",
+            "Canonical promotion requires one unambiguous claim-bound verification chain.",
+        )
+    if (
+        metadata.get("claim_verification_qualification_complete") is not True
+        or verification.get("qualification_complete") is not True
+    ):
+        _reject(
+            "scientific_qualification_incomplete",
+            "Scientific verification remains review-only until qualification completes.",
+        )
 
 
 def _require_promotable_claim_adjudication(
