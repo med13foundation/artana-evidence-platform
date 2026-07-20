@@ -1,0 +1,81 @@
+{
+  "schema": "tg04.staged-semantics.live-dev.preregistration.v1",
+  "created_on": "2026-07-20",
+  "status": "ONE_BOUNDED_EXPOSED_DEVELOPMENT_EXECUTION_AUTHORIZED",
+  "qualification_eligible": false,
+  "model": "openai:gpt-5.6-sol",
+  "reasoning_effort": "high",
+  "source_id": "pubmed:40289860",
+  "source_exposure": "EXPOSED_DEVELOPMENT",
+  "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+  "frozen_v10_tree_sha256": "bb0b66e96646040717b3d7eaea3b062eb3ebe4bf654119aca16e54d7550abc7a",
+  "stages": [
+    "core_event",
+    "comparison_direction",
+    "quantitative_measurements",
+    "statistical_evidence",
+    "epistemic_status",
+    "source_only_falsification"
+  ],
+  "call_topology": {
+    "calls_per_execution": 6,
+    "first_execution_authorized": true,
+    "second_execution_authorized_only_after_first_pass": true,
+    "maximum_executions": 2,
+    "maximum_provider_calls": 12,
+    "retry_limit": 0,
+    "fallback_allowed": false
+  },
+  "token_ceilings": {
+    "per_call": 25000,
+    "per_execution": 120000
+  },
+  "operations": {
+    "graph_writes_allowed": false,
+    "untouched_source_selection_allowed": false,
+    "untouched_source_freeze_allowed": false,
+    "frozen_v10_modification_allowed": false,
+    "architecture_expansion_during_execution_allowed": false
+  },
+  "success_requirements": {
+    "complete_stage_count": 12,
+    "unsupported_claim_count": 0,
+    "contradiction_count": 0,
+    "missing_stage_count": 0,
+    "resolved_evidence_equals_total_evidence": true,
+    "a2_result_state": "OBSERVED_DIFFERENCE",
+    "a2_direction": "HIGHER",
+    "a2_operator": "GREATER_THAN",
+    "a2_exact_evidence": "had more comorbidities than",
+    "a5_result_state": "NO_DETECTED_DIFFERENCE",
+    "a5_direction": "UNCHANGED",
+    "a5_operator": "NO_DETECTED_DIFFERENCE",
+    "a5_p_value_status": "OBSERVED",
+    "a5_p_value_significance_claim": "NOT_CLAIMED",
+    "source_review_support": "ENTAILED",
+    "source_review_completeness": "COMPLETE_FOR_ASSERTION"
+  },
+  "repeatability_requirement": "The second execution must have the same deterministic complete categorical-event signature as the first execution.",
+  "stop_requirement": "Stop immediately after the first schema, provenance, stage-completeness, support, contradiction, A2/A5 semantic, receipt, replay, or token failure. Do not run execution 2 unless execution 1 passes every gate.",
+  "external_file_sha256s": {
+    "contracts.py": "0cc2102166a2b9694f725467ed9998391ca391b3e90c0df7cf18ea70e01a3df3",
+    "prompts.py": "98e9e47f2b293755e140543640abee6f089595ad1056e74a9f8e62d29084e7c9",
+    "gates.py": "8b4b28a221fe5668f60b9ab49496212e487836291541fa90badbf9007d339ece",
+    "run_live.py": "7ee3fc5fd294631ba233ee256a6d2baecd19bbed0fc4123ac2ae0679ab272ca1",
+    "test_experiment.py": "fc1b518b59fa5b9900509c3a8f4d577b263f14da827e2067128cab51a55e3b5c"
+  },
+  "output_schema_sha256s": {
+    "core_event": "d6abfff2f6ec8223c235c56d9b6ed0b93aa96088f85765bcf6d2275a1b060dff",
+    "comparison_direction": "3ae7840b25c57e09824c0c5dc7c4eae6b0c0220c330f6c4300d776c4d6423cde",
+    "quantitative_measurements": "027a55e789a8f01c69475f51595d674b07e973e8e1ed6198c9ad31da2db6214a",
+    "statistical_evidence": "b108fca471b9d5333736802af1d2bc3d4b9dfcd259c442e74dcf7232b05d1254",
+    "epistemic_status": "c1bdc47596af489d057323c764c1dc429274f9fd8f754651034aa07d6f83fbf9",
+    "source_only_falsification": "9137a9b462c84c99f93b763bac3ffb16ec35d487b7ee077dfc07349cae350dd4"
+  },
+  "offline_validation": {
+    "ruff": "pass",
+    "strict_mypy_contracts_prompts_gates_tests": "pass",
+    "runner_python_compile": "pass",
+    "combined_regression_tests": 92
+  }
+}
