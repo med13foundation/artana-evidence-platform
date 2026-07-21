@@ -71,6 +71,20 @@ def test_artana_evidence_api_runtime_sync_propagates_env_and_acl_defaults() -> N
     assert 'harness_env_pairs+=("SPACE_ACL_MODE=enforce")' in script
 
 
+def test_bootstrap_secret_removal_overrides_configured_secret_name() -> None:
+    """Regression: completed bootstrap must allow secret detachment in staging."""
+    script = _read_text(API_SYNC_SCRIPT)
+
+    removal_condition = 'if is_true "${ARTANA_EVIDENCE_API_REMOVE_BOOTSTRAP_KEY:-}"; then'
+    configured_secret_condition = (
+        'elif [[ -n "${ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME:-}" ]]; then'
+    )
+    assert removal_condition in script
+    assert configured_secret_condition in script
+    assert script.index(removal_condition) < script.index(configured_secret_condition)
+    assert '--remove-secrets\n    "ARTANA_EVIDENCE_API_BOOTSTRAP_KEY"' in script
+
+
 def test_artana_evidence_api_deploy_workflow_provisions_graph_jwt_secret() -> None:
     """Regression: every API deploy target must pass the graph JWT secret name."""
     workflow = _read_text(API_DEPLOY_WORKFLOW)

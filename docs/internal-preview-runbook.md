@@ -156,6 +156,11 @@ Stop onboarding if any required route is missing, anonymous data access does
 not return `401`, a key cannot be centrally revoked, or the intended use
 requires clinical reliability claims.
 
+After the first admin has been established and its key is stored securely, set
+the staging environment variable
+`ARTANA_EVIDENCE_API_REMOVE_BOOTSTRAP_KEY_STAGING=true`. Subsequent runtime
+syncs then detach the one-time bootstrap secret instead of mounting it again.
+
 ## Current Limitations
 
 - API keys do not yet receive an automatic expiry date. Every preview key needs
