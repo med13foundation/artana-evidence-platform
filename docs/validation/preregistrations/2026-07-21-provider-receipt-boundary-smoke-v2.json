@@ -1,0 +1,148 @@
+{
+  "acceptance": {
+    "canonical_payload_match": "EXACT",
+    "identity_input_schema_usage": "VERIFIED",
+    "structured_category": "OK",
+    "structured_explanation": "Receipt boundary confirmed.",
+    "unknown_envelope_differences_allowed": 0
+  },
+  "budgets": {
+    "input_item_retrieval_requests": 1,
+    "max_cost_usd": 0.25,
+    "max_latency_seconds": 300.0,
+    "max_output_tokens": 1024,
+    "max_total_tokens": 5000,
+    "pricing_usd_per_token": {
+      "cached_input": 5e-07,
+      "input": 5e-06,
+      "output": 3e-05
+    },
+    "provider_creation_calls": 1,
+    "provider_retries": 0,
+    "response_retrieval_requests": 1
+  },
+  "execution_authorized": true,
+  "frozen_state": {
+    "custody": {
+      "commit": "de78524bee4a06bb0ec6d29ed8530a27dddd6e92",
+      "tracked_executable_paths_clean": true
+    },
+    "dependencies": {
+      "bundle_sha256": "13f97298b05b65704c51e4d693849adb46c963f778a79a048d8e4bf2b01fe43f",
+      "files": {
+        "pyproject.toml": "991632643e70dfbdc049a6211b69bc614c6f84d6625adcff96ab0ba1bc362fab"
+      },
+      "packages": {
+        "openai": "2.44.0",
+        "pydantic": "2.13.4"
+      },
+      "python": "3.13.12"
+    },
+    "implementation": {
+      "code_bundle_sha256": "bb5dcd2d856ced9507535a54b626cf6224dc1b19dc45092b7749b29ba496d7bc",
+      "code_files": {
+        "scripts/validation/provider_receipt_boundary/__init__.py": "c8d2bb5865b9d85274660e85845ece6ee015af62218bb421bcccb705bebda1dd",
+        "scripts/validation/provider_receipt_boundary/canonical_payload.py": "85f47eaa3ded69c85e84d93cf93039cec8d9c6708ad2d9590f34eef00f959b69",
+        "scripts/validation/provider_receipt_boundary/contracts.py": "4ab68deed23135d1feeb26ece321254573f02ce0b4139037f63e2a303ab8d054",
+        "scripts/validation/provider_receipt_boundary/identity.py": "a07f468ae572ab07ef4b70e7661dcdb416860a71fc1be1b509518aeda1ad8d30",
+        "scripts/validation/provider_receipt_boundary/smoke.py": "34f64d31256188ee27fb3a9b9b2bdea48f174f07973d94e20bd40cc5d6ce8021",
+        "scripts/validation/provider_receipt_boundary/structural_diff.py": "46e778decc1d15172cfaaa898ae53f693846b779bc9cf84a0ed2415cd2da2e55",
+        "scripts/validation/provider_receipt_boundary/validation.py": "68aa2cc6327ef48dff43ebc8b7a3f581eae4f5c9a2f6ceaaf0d363403565dee0",
+        "scripts/validation/public_gold/lossless_event_provider.py": "7d7caaf0dbb1ad539335e16461bc8d1e1dd58fb9514c5d3093ffbe0274e86d9a"
+      }
+    },
+    "input": {
+      "biomedical_source_included": false,
+      "classification": "NON_SCIENTIFIC",
+      "sha256": "242007c3e6813c9d7ba9fa70d6b87b110b78dcc7d15cacdf94621e2ff49260cb",
+      "text": "This is a non-scientific transport verification. Return category OK and the exact explanation: Receipt boundary confirmed."
+    },
+    "model": {
+      "identity": "openai:gpt-5.6-sol",
+      "provider_model_id": "gpt-5.6-sol",
+      "reasoning_effort": "low",
+      "temperature": "provider_default_not_set"
+    },
+    "output": {
+      "expected_contract": {
+        "category": "OK",
+        "explanation": "Receipt boundary confirmed."
+      },
+      "provider_format": {
+        "name": "ReceiptSmokeOutput",
+        "schema": {
+          "additionalProperties": false,
+          "description": "The deliberately tiny non-scientific structured response.",
+          "properties": {
+            "category": {
+              "const": "OK",
+              "title": "Category",
+              "type": "string"
+            },
+            "explanation": {
+              "const": "Receipt boundary confirmed.",
+              "title": "Explanation",
+              "type": "string"
+            }
+          },
+          "required": [
+            "category",
+            "explanation"
+          ],
+          "title": "ReceiptSmokeOutput",
+          "type": "object"
+        },
+        "strict": true,
+        "type": "json_schema"
+      },
+      "provider_format_sha256": "c7000a28e1f1165907a2f5914a71d41904cdc85cb76f018bad78c725dfcb0f38",
+      "provider_schema_compatible": true,
+      "schema_sha256": "d8d74ee86aa440eb569bfb3fd4dd6f442e25d5bd8b17de90075b87cb3a2ae8de"
+    },
+    "request_metadata": {
+      "artana_data_class": "non-scientific",
+      "artana_experiment": "receipt-boundary-smoke-v2"
+    }
+  },
+  "rules": {
+    "biomedical_source_allowed": false,
+    "fallback_allowed": false,
+    "graph_write_allowed": false,
+    "promotion_allowed": false,
+    "retry_allowed": false,
+    "scientific_experiment_allowed": false
+  },
+  "schema_version": "artana.provider_receipt_boundary.smoke.v2",
+  "status": "FROZEN_AUTHORIZED_FOR_ONE_NON_SCIENTIFIC_CALL",
+  "stop_rules": [
+    "stop before live requests on deterministic preflight failure",
+    "stop before response retrieval when creation stages fail",
+    "stop before input-item retrieval when retrieval-envelope stages fail",
+    "stop at the first receipt validation failure",
+    "never retry, fallback, repair, patch, or change models during the run",
+    "stop after the single smoke whether it passes or fails"
+  ],
+  "terminal_predecessor": {
+    "decision": "INVALID_SMOKE_EXPERIMENT",
+    "preregistration_path": "docs/validation/preregistrations/2026-07-21-provider-receipt-boundary-smoke-v1.json",
+    "preregistration_sha256": "e35244e61d6c757b2cf7a50cba5533058ff6832ab69abd427cba58a4cec763fe",
+    "reinterpretation_allowed": false,
+    "result_path": "docs/validation/reports/2026-07-21-provider-receipt-boundary-smoke-v1-result.json",
+    "result_sha256": "2c94bb7824ed903378227df2b0373445bb64618eab35c6950013cfc3d43e139d",
+    "retry_allowed": false
+  },
+  "validation_order": [
+    "RESPONSE_STATUS",
+    "RECEIPT_IDENTITY",
+    "RECEIPT_MODEL",
+    "RECEIPT_BINDING",
+    "CREATION_SCHEMA",
+    "RECEIPT_INPUT",
+    "RETRIEVAL_SCHEMA",
+    "RECEIPT_PAYLOAD",
+    "RECEIPT_OUTPUT_TOPOLOGY",
+    "RECEIPT_USAGE",
+    "RECEIPT_BUDGET",
+    "RECEIPT_ENVELOPE"
+  ]
+}

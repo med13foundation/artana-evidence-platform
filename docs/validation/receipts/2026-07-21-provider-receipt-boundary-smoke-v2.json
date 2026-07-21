@@ -1,0 +1,27 @@
+{
+  "diagnostics": {
+    "actual_schema_sha256": "f8bf8a3eb6d5797317c2c6b64027871c0fd87bf81162b7fe1fd34654b6d5a81e",
+    "differences": [
+      {
+        "allowlisted": false,
+        "creation_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca",
+        "difference": "ADDED_ON_RETRIEVAL",
+        "path": "$.description",
+        "rationale": null,
+        "retrieval_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+      }
+    ],
+    "expected_schema_sha256": "c7000a28e1f1165907a2f5914a71d41904cdc85cb76f018bad78c725dfcb0f38",
+    "input_item_retrieval_requests": 0,
+    "provider_calls": 1,
+    "response_retrieval_requests": 0
+  },
+  "failure_domain": "TRANSPORT_METADATA",
+  "failure_stage": "CREATION_SCHEMA",
+  "input_item_retrieval_requests": 0,
+  "provider_calls": 1,
+  "provider_retries": 0,
+  "response_retrieval_requests": 0,
+  "root_cause": "creation response schema differs",
+  "status": "UNVERIFIED"
+}

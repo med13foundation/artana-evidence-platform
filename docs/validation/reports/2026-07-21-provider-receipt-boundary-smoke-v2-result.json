@@ -1,0 +1,63 @@
+{
+  "decision": "RECEIPT_BOUNDARY_FAILED",
+  "preflight": {
+    "code_custody": "TRACKED_EXECUTABLE_PATHS_CLEAN",
+    "frozen_state_sha256": "348a7ec65c9ac6400effdeacbeafc162b1e33f878c405bbdbb0dee844bc6a32b",
+    "preregistration_sha256": "66c636677be212a9d4c64288f6f353058ede1d5bc5f70d89bee7da1998a532b7",
+    "status": "PREFLIGHT_PASSED",
+    "validation_order": [
+      "RESPONSE_STATUS",
+      "RECEIPT_IDENTITY",
+      "RECEIPT_MODEL",
+      "RECEIPT_BINDING",
+      "CREATION_SCHEMA",
+      "RECEIPT_INPUT",
+      "RETRIEVAL_SCHEMA",
+      "RECEIPT_PAYLOAD",
+      "RECEIPT_OUTPUT_TOPOLOGY",
+      "RECEIPT_USAGE",
+      "RECEIPT_BUDGET",
+      "RECEIPT_ENVELOPE"
+    ]
+  },
+  "receipt": {
+    "diagnostics": {
+      "actual_schema_sha256": "f8bf8a3eb6d5797317c2c6b64027871c0fd87bf81162b7fe1fd34654b6d5a81e",
+      "differences": [
+        {
+          "allowlisted": false,
+          "creation_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca",
+          "difference": "ADDED_ON_RETRIEVAL",
+          "path": "$.description",
+          "rationale": null,
+          "retrieval_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        }
+      ],
+      "expected_schema_sha256": "c7000a28e1f1165907a2f5914a71d41904cdc85cb76f018bad78c725dfcb0f38",
+      "input_item_retrieval_requests": 0,
+      "provider_calls": 1,
+      "response_retrieval_requests": 0
+    },
+    "failure_domain": "TRANSPORT_METADATA",
+    "failure_stage": "CREATION_SCHEMA",
+    "input_item_retrieval_requests": 0,
+    "provider_calls": 1,
+    "provider_retries": 0,
+    "response_retrieval_requests": 0,
+    "root_cause": "creation response schema differs",
+    "status": "UNVERIFIED"
+  },
+  "receipt_sha256": "aafb54150cf55163d257d55f377995102c484d790c944e42e806ba829186cb5a",
+  "schema_version": "artana.provider_receipt_boundary.smoke_result.v2",
+  "terminal_rules": {
+    "biomedical_sources_accessed": 0,
+    "fallbacks": 0,
+    "graph_writes": 0,
+    "input_item_retrieval_requests": 0,
+    "promotions": 0,
+    "provider_calls": 1,
+    "provider_retries": 0,
+    "response_retrieval_requests": 0,
+    "scientific_experiments_run": 0
+  }
+}
