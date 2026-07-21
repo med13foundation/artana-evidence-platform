@@ -9,8 +9,6 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from openai.lib._parsing._responses import type_to_text_format_param
-
 from scripts.validation.public_gold.bionlp_cg_event_projection import (
     project_development_directory,
 )
@@ -29,6 +27,9 @@ from scripts.validation.public_gold.lossless_event_provider import (
     ProviderExecutionError,
     ProviderRequest,
     execute_single_provider_call,
+)
+from scripts.validation.public_gold.lossless_event_provider_format import (
+    build_scientific_event_provider_format,
 )
 from scripts.validation.public_gold.lossless_event_scoring import (
     score_scientific_event_document,
@@ -94,7 +95,7 @@ def run_experiment(
             output_model=ScientificEventExtraction,
             request=ProviderRequest(
                 provider_input=provider_input,
-                provider_format=type_to_text_format_param(ScientificEventExtraction),
+                provider_format=build_scientific_event_provider_format(),
                 provider_model_id=_required_string(model_state, "provider_model_id"),
                 reasoning_effort=_required_string(model_state, "reasoning_effort"),
                 max_output_tokens=_required_int(budgets, "max_output_tokens"),

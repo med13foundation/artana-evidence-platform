@@ -11,6 +11,10 @@ from scripts.validation.public_gold.lossless_event_preflight import (
     compute_frozen_state,
     verify_preregistration,
 )
+from scripts.validation.public_gold.lossless_event_provider_format import (
+    PROVIDER_RESPONSE_FORMAT_DESCRIPTION,
+    build_scientific_event_provider_format,
+)
 
 ROOT = Path(__file__).parents[2]
 PREREGISTRATION = (
@@ -39,6 +43,16 @@ def test_v3_candidate_recomputes_but_remains_unauthorized(tmp_path: Path) -> Non
     assert len(result["preregistration_sha256"]) == 64
     assert payload["execution_authorized"] is False
     assert payload["status"] == "FROZEN_UNAUTHORIZED_AWAITING_EXPLICIT_AUTHORIZATION"
+
+
+def test_v3_provider_format_has_one_explicit_stable_description() -> None:
+    first = build_scientific_event_provider_format()
+    second = build_scientific_event_provider_format()
+
+    assert first == second
+    assert first is not second
+    assert first["description"] == PROVIDER_RESPONSE_FORMAT_DESCRIPTION
+    assert first["description"]
 
 
 def test_v3_preregistration_rejects_selection_drift(tmp_path: Path) -> None:

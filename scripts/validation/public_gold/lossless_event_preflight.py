@@ -12,12 +12,14 @@ from pathlib import Path
 from artana_evidence_api.document_extraction_support.scientific_events import (
     ScientificEventDocument,
 )
-from openai.lib._parsing._responses import type_to_text_format_param
 
 from scripts.validation.public_gold.lossless_event_experiment_contracts import (
     ScientificEventExtraction,
     assemble_scientific_event_document,
     build_provider_input,
+)
+from scripts.validation.public_gold.lossless_event_provider_format import (
+    build_scientific_event_provider_format,
 )
 from scripts.validation.public_gold.source_selection import (
     development_tree_sha256,
@@ -49,6 +51,7 @@ EXPERIMENT_CODE_FILES = (
     "scripts/validation/public_gold/lossless_event_scoring.py",
     "scripts/validation/public_gold/lossless_event_preflight.py",
     "scripts/validation/public_gold/lossless_event_provider.py",
+    "scripts/validation/public_gold/lossless_event_provider_format.py",
     "scripts/validation/public_gold/lossless_event_live_execution.py",
     "scripts/validation/provider_receipt_boundary/__init__.py",
     "scripts/validation/provider_receipt_boundary/canonical_payload.py",
@@ -101,7 +104,7 @@ def compute_frozen_state(repository_root: Path) -> dict[str, object]:
     dependency_versions = {package: version(package) for package in DEPENDENCY_PACKAGES}
     scientific_schema = ScientificEventDocument.model_json_schema()
     extraction_schema = ScientificEventExtraction.model_json_schema()
-    provider_format = type_to_text_format_param(ScientificEventExtraction)
+    provider_format = build_scientific_event_provider_format()
     _prove_ir_accepts_output_contract(selected.document_id, selected.source_text)
     return {
         "source": {

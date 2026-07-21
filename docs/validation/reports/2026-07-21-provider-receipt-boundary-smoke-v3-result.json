@@ -1,0 +1,72 @@
+{
+  "decision": "RECEIPT_BOUNDARY_VALIDATED",
+  "preflight": {
+    "code_custody": "TRACKED_EXECUTABLE_PATHS_CLEAN",
+    "frozen_state_sha256": "98cfc3ce06c8669fbcdd62fef369ff3782e7bd56369979a735bffbb340af28fd",
+    "preregistration_sha256": "0fc101cb1ef6c84cf3f3f70b55397291ba9777eea9b19a1ab54bac93a68c1c54",
+    "status": "PREFLIGHT_PASSED",
+    "validation_order": [
+      "RESPONSE_STATUS",
+      "RECEIPT_IDENTITY",
+      "RECEIPT_MODEL",
+      "RECEIPT_BINDING",
+      "CREATION_DESCRIPTION",
+      "CREATION_SCHEMA",
+      "RECEIPT_INPUT",
+      "RETRIEVAL_SCHEMA",
+      "RECEIPT_PAYLOAD",
+      "RECEIPT_OUTPUT_TOPOLOGY",
+      "RECEIPT_USAGE",
+      "RECEIPT_BUDGET",
+      "RECEIPT_ENVELOPE"
+    ]
+  },
+  "receipt": {
+    "creation_envelope_sha256": "66f9310c144f65f6bfdb37a6ee6282bece88049548474e7ab336be423f473f2a",
+    "differences": [],
+    "identity": {
+      "created_at": 1784672162.0,
+      "model": "gpt-5.6-sol",
+      "object_type": "response",
+      "output_items": [
+        [
+          "message",
+          "msg_0d2e3634ca9883a9006a5fefa2e644819a8226f9344377bc3d"
+        ]
+      ],
+      "response_id": "resp_0d2e3634ca9883a9006a5fefa20198819ab6c43dae7c371c37",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "provider_calls": 1,
+    "provider_input_sha256": "242007c3e6813c9d7ba9fa70d6b87b110b78dcc7d15cacdf94621e2ff49260cb",
+    "provider_retries": 0,
+    "provider_schema_sha256": "24e6633065f1d3506f4fca9e624c8bdedeed5172d9bf25fa842d26096ea116ac",
+    "response_retrieval_requests": 1,
+    "retrieval_envelope_sha256": "66f9310c144f65f6bfdb37a6ee6282bece88049548474e7ab336be423f473f2a",
+    "scientific_payload_sha256": "b085e4863220a624d609043b70b978c468b4d96e9a8952d6a715de8b5085cc9f",
+    "status": "VERIFIED_LIVE",
+    "usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.0012100000000000001,
+      "input_tokens": 110,
+      "latency_seconds": 1.7329161670058966,
+      "output_tokens": 22,
+      "reasoning_tokens": 0,
+      "total_tokens": 132
+    }
+  },
+  "receipt_sha256": "0bc32a45ba74d0c016e6bdd73810932a61e13564763241954ab67551225590d3",
+  "schema_version": "artana.provider_receipt_boundary.smoke_result.v3",
+  "terminal_rules": {
+    "biomedical_sources_accessed": 0,
+    "fallbacks": 0,
+    "graph_writes": 0,
+    "input_item_retrieval_requests": 1,
+    "promotions": 0,
+    "provider_calls": 1,
+    "provider_retries": 0,
+    "response_retrieval_requests": 1,
+    "scientific_experiments_run": 0
+  }
+}

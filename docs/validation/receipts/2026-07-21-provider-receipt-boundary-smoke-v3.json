@@ -1,0 +1,35 @@
+{
+  "creation_envelope_sha256": "66f9310c144f65f6bfdb37a6ee6282bece88049548474e7ab336be423f473f2a",
+  "differences": [],
+  "identity": {
+    "created_at": 1784672162.0,
+    "model": "gpt-5.6-sol",
+    "object_type": "response",
+    "output_items": [
+      [
+        "message",
+        "msg_0d2e3634ca9883a9006a5fefa2e644819a8226f9344377bc3d"
+      ]
+    ],
+    "response_id": "resp_0d2e3634ca9883a9006a5fefa20198819ab6c43dae7c371c37",
+    "status": "completed"
+  },
+  "input_item_retrieval_requests": 1,
+  "provider_calls": 1,
+  "provider_input_sha256": "242007c3e6813c9d7ba9fa70d6b87b110b78dcc7d15cacdf94621e2ff49260cb",
+  "provider_retries": 0,
+  "provider_schema_sha256": "24e6633065f1d3506f4fca9e624c8bdedeed5172d9bf25fa842d26096ea116ac",
+  "response_retrieval_requests": 1,
+  "retrieval_envelope_sha256": "66f9310c144f65f6bfdb37a6ee6282bece88049548474e7ab336be423f473f2a",
+  "scientific_payload_sha256": "b085e4863220a624d609043b70b978c468b4d96e9a8952d6a715de8b5085cc9f",
+  "status": "VERIFIED_LIVE",
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.0012100000000000001,
+    "input_tokens": 110,
+    "latency_seconds": 1.7329161670058966,
+    "output_tokens": 22,
+    "reasoning_tokens": 0,
+    "total_tokens": 132
+  }
+}
