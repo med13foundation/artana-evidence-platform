@@ -137,7 +137,6 @@ def test_documented_transport_differences_and_json_key_order_are_allowlisted() -
     creation = _response(payload_text='{"status":"OK","detail":"same"}')
     retrieval = copy.deepcopy(creation)
     creation["completed_at"] = None
-    retrieval["text"] = None
     creation_output = creation["output"]
     retrieval_output = retrieval["output"]
     assert isinstance(creation_output, list)
@@ -157,7 +156,6 @@ def test_documented_transport_differences_and_json_key_order_are_allowlisted() -
         "$.output[0].status",
         "$.output[1].content[0].text",
         "$.output[1].phase",
-        "$.text",
     }
 
 
@@ -174,15 +172,15 @@ def test_missing_output_fails() -> None:
     retrieval = _response()
     retrieval["output"] = []
 
-    with pytest.raises(ReceiptBoundaryError, match="output identity"):
+    with pytest.raises(ReceiptBoundaryError, match="output array"):
         _validate(_response(), retrieval)
 
 
 @pytest.mark.parametrize(
     ("field", "value", "message"),
     [
-        ("id", "resp_2", "identities differ"),
-        ("model", "different-model", "returned model differs"),
+        ("id", "resp_2", "identity differs"),
+        ("model", "different-model", "model differs"),
     ],
 )
 def test_changed_identity_fails(field: str, value: str, message: str) -> None:
@@ -215,7 +213,10 @@ def test_incomplete_or_failed_response_fails(field: str, value: object) -> None:
     retrieval = _response()
     retrieval[field] = value
 
-    with pytest.raises(ReceiptBoundaryError, match="not completed|incomplete"):
+    with pytest.raises(
+        ReceiptBoundaryError,
+        match="not completed|incomplete|provider error",
+    ):
         _validate(_response(), retrieval)
 
 
@@ -231,6 +232,17 @@ def test_changed_input_or_schema_fails() -> None:
     differences = error.value.diagnostics["differences"]
     assert differences[0]["path"] == "$.name"
     assert "changed" not in json.dumps(differences)
+
+
+def test_missing_retrieval_schema_fails_before_payload_validation() -> None:
+    retrieval = _response(payload_text='{"status":"NOT_OK"}')
+    retrieval["text"] = None
+
+    with pytest.raises(ReceiptBoundaryError) as error:
+        _validate(_response(), retrieval)
+
+    assert error.value.stage == "RETRIEVAL_SCHEMA"
+    assert error.value.diagnostics["differences"][0]["path"] == "$.text"
 
 
 @pytest.mark.parametrize("usage", [None, {"input_tokens": -1}])

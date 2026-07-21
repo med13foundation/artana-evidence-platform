@@ -34,8 +34,10 @@ class _Dumpable:
 class _InputItems:
     def __init__(self, prompt: str) -> None:
         self.prompt = prompt
+        self.list_calls = 0
 
     def list(self, response_id: str, *, limit: int, order: str):
+        self.list_calls += 1
         assert response_id == "resp-1"
         assert limit == 100
         assert order == "asc"
@@ -61,12 +63,14 @@ class _Responses:
         self.retrieval = retrieval
         self.input_items = _InputItems(prompt)
         self.create_calls = 0
+        self.retrieve_calls = 0
 
     def create(self, **kwargs: object) -> _Dumpable:
         self.create_calls += 1
         return _Dumpable(self.creation)
 
     def retrieve(self, response_id: str) -> _Dumpable:
+        self.retrieve_calls += 1
         assert response_id == "resp-1"
         return _Dumpable(self.retrieval)
 
@@ -158,9 +162,13 @@ def test_provider_transport_calls_model_once_and_verifies_receipt() -> None:
     )
 
     assert client.responses.create_calls == 1
+    assert client.responses.retrieve_calls == 1
+    assert client.responses.input_items.list_calls == 1
     assert execution.extraction.status == "OK"
     assert execution.receipt["status"] == "VERIFIED_LIVE"
     assert execution.receipt["provider_retries"] == 0
+    assert execution.receipt["response_retrieval_requests"] == 1
+    assert execution.receipt["input_item_retrieval_requests"] == 1
     assert execution.receipt["usage"]["total_tokens"] == 150
 
 
@@ -178,3 +186,50 @@ def test_provider_transport_fails_closed_on_retrieved_input_drift() -> None:
         )
 
     assert client.responses.create_calls == 1
+
+
+def test_provider_transport_stops_before_retrieval_on_creation_schema_failure() -> None:
+    prompt = "frozen input"
+    response_format = {"type": "json_schema", "name": "test", "strict": True}
+    creation = _payload(response_format)
+    creation["text"] = {"format": {**response_format, "name": "changed"}}
+    client = _Client(creation, prompt)
+
+    with pytest.raises(ProviderExecutionError) as error:
+        execute_single_provider_call(
+            api_key="test",
+            request=_request(prompt, response_format),
+            output_model=_SmokeOutput,
+            client=client,
+        )
+
+    assert error.value.stage == "CREATION_SCHEMA"
+    assert error.value.diagnostics["response_retrieval_requests"] == 0
+    assert error.value.diagnostics["input_item_retrieval_requests"] == 0
+    assert client.responses.create_calls == 1
+    assert client.responses.retrieve_calls == 0
+    assert client.responses.input_items.list_calls == 0
+
+
+def test_provider_transport_stops_before_input_retrieval_on_identity_failure() -> None:
+    prompt = "frozen input"
+    response_format = {"type": "json_schema", "name": "test", "strict": True}
+    creation = _payload(response_format)
+    retrieval = _payload(response_format)
+    retrieval["id"] = "resp-other"
+    client = _Client(creation, prompt, retrieval=retrieval)
+
+    with pytest.raises(ProviderExecutionError) as error:
+        execute_single_provider_call(
+            api_key="test",
+            request=_request(prompt, response_format),
+            output_model=_SmokeOutput,
+            client=client,
+        )
+
+    assert error.value.stage == "RECEIPT_IDENTITY"
+    assert error.value.diagnostics["response_retrieval_requests"] == 1
+    assert error.value.diagnostics["input_item_retrieval_requests"] == 0
+    assert client.responses.create_calls == 1
+    assert client.responses.retrieve_calls == 1
+    assert client.responses.input_items.list_calls == 0

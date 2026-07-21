@@ -17,13 +17,30 @@ def extract_canonical_payload(response: dict[str, object]) -> CanonicalPayload:
 
     message = _select_final_message(response)
     text = _extract_structured_text(message)
-    try:
-        payload = json.loads(text)
-    except json.JSONDecodeError as exc:
-        raise StructuredPayloadError("structured output is not valid JSON") from exc
-    if not isinstance(payload, dict):
-        raise StructuredPayloadError("structured output must be a JSON object")
-    return CanonicalPayload(payload=payload, sha256=canonical_sha256(payload))
+    return _parse_payload(text)
+
+
+def discover_canonical_payload(response: dict[str, object]) -> CanonicalPayload:
+    """Find one output_text payload before enforcing complete output topology."""
+
+    output = response.get("output")
+    if not isinstance(output, list) or not output:
+        raise StructuredPayloadError("provider output array is missing or empty")
+    texts: list[str] = []
+    for item in output:
+        if not isinstance(item, dict):
+            continue
+        content = item.get("content")
+        if not isinstance(content, list):
+            continue
+        for part in content:
+            if isinstance(part, dict) and part.get("type") == "output_text":
+                text = part.get("text")
+                if isinstance(text, str) and text:
+                    texts.append(text)
+    if len(texts) != 1:
+        raise StructuredPayloadError("expected exactly one discoverable output_text")
+    return _parse_payload(texts[0])
 
 
 def _select_final_message(response: dict[str, object]) -> dict[str, object]:
@@ -80,6 +97,16 @@ def _extract_structured_text(message: dict[str, object]) -> str:
     return text
 
 
+def _parse_payload(text: str) -> CanonicalPayload:
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise StructuredPayloadError("structured output is not valid JSON") from exc
+    if not isinstance(payload, dict):
+        raise StructuredPayloadError("structured output must be a JSON object")
+    return CanonicalPayload(payload=payload, sha256=canonical_sha256(payload))
+
+
 def canonical_sha256(payload: object) -> str:
     encoded = json.dumps(
         payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
@@ -90,5 +117,6 @@ def canonical_sha256(payload: object) -> str:
 __all__ = [
     "StructuredPayloadError",
     "canonical_sha256",
+    "discover_canonical_payload",
     "extract_canonical_payload",
 ]

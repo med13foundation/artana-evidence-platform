@@ -9,11 +9,14 @@ from dataclasses import asdict
 from scripts.validation.provider_receipt_boundary.canonical_payload import (
     StructuredPayloadError,
     canonical_sha256,
+    discover_canonical_payload,
     extract_canonical_payload,
 )
 from scripts.validation.provider_receipt_boundary.contracts import (
+    CanonicalPayload,
     FieldDifference,
     ReceiptExpectations,
+    ReceiptIdentity,
     ReceiptValidation,
     UsageAccounting,
 )
@@ -28,6 +31,20 @@ from scripts.validation.provider_receipt_boundary.structural_diff import (
 )
 
 _OUTPUT_PATH_RE = re.compile(r"^\$\.output\[(?P<index>[0-9]+)]\.(?P<field>.+)$")
+VALIDATION_ORDER = (
+    "RESPONSE_STATUS",
+    "RECEIPT_IDENTITY",
+    "RECEIPT_MODEL",
+    "RECEIPT_BINDING",
+    "CREATION_SCHEMA",
+    "RECEIPT_INPUT",
+    "RETRIEVAL_SCHEMA",
+    "RECEIPT_PAYLOAD",
+    "RECEIPT_OUTPUT_TOPOLOGY",
+    "RECEIPT_USAGE",
+    "RECEIPT_BUDGET",
+    "RECEIPT_ENVELOPE",
+)
 
 
 class ReceiptBoundaryError(ValueError):
@@ -54,27 +71,93 @@ def validate_provider_receipt(
     expectations: ReceiptExpectations,
     latency_seconds: float,
 ) -> ReceiptValidation:
-    """Validate immutable receipt evidence and explicitly classify every difference."""
+    """Validate a receipt in the preregistered cheapest-first stage order."""
 
-    try:
-        identity = require_same_identity(
-            extract_receipt_identity(
-                creation, expected_model=expectations.provider_model_id
-            ),
-            extract_receipt_identity(
-                retrieval, expected_model=expectations.provider_model_id
-            ),
-        )
-    except ReceiptIdentityError as exc:
-        raise ReceiptBoundaryError("RECEIPT_IDENTITY", str(exc)) from exc
+    _require_completed(creation, label="creation")
+    _require_completed(retrieval, label="retrieval")
+    _require_response_identity(creation, retrieval)
+    _require_model_identity(creation, retrieval, expectations.provider_model_id)
     _require_request_binding(creation, retrieval, expectations)
+    _require_creation_schema(creation, expectations.provider_format)
     _require_input(input_items, expectations.provider_input)
-    _require_schema(creation, retrieval, expectations.provider_format)
+    _require_retrieval_schema(retrieval, expectations.provider_format)
+    creation_payload, retrieval_payload = _require_payload_match(
+        creation,
+        retrieval,
+    )
+    identity = _require_output_topology(
+        creation,
+        retrieval,
+        expected_model=expectations.provider_model_id,
+        expected_payload_sha256=creation_payload.sha256,
+    )
+    usage = _require_usage(
+        creation=creation,
+        retrieval=retrieval,
+        expectations=expectations,
+        latency_seconds=latency_seconds,
+    )
+    _require_budgets(usage, expectations)
+    differences = _require_known_envelope_differences(
+        creation,
+        retrieval,
+    )
+    return ReceiptValidation(
+        identity=identity,
+        scientific_payload_sha256=retrieval_payload.sha256,
+        creation_envelope_sha256=canonical_sha256(creation),
+        retrieval_envelope_sha256=canonical_sha256(retrieval),
+        provider_input_sha256=hashlib.sha256(
+            expectations.provider_input.encode()
+        ).hexdigest(),
+        provider_schema_sha256=canonical_sha256(expectations.provider_format),
+        differences=differences,
+        usage=usage,
+    )
+
+
+def validate_creation_response(
+    creation: dict[str, object],
+    expectations: ReceiptExpectations,
+) -> None:
+    """Stop before retrieval when a creation response fails stages 1 through 5."""
+
+    _require_completed(creation, label="creation")
+    _require_single_response_identity(creation, label="creation")
+    _require_single_model(creation, expectations.provider_model_id, label="creation")
+    _require_single_binding(creation, expectations, label="creation")
+    _require_creation_schema(creation, expectations.provider_format)
+
+
+def validate_retrieval_envelope(
+    creation: dict[str, object],
+    retrieval: dict[str, object],
+    expectations: ReceiptExpectations,
+) -> None:
+    """Stop before input-item retrieval when response envelope stages fail."""
+
+    _require_completed(retrieval, label="retrieval")
+    _require_response_identity(creation, retrieval)
+    _require_model_identity(creation, retrieval, expectations.provider_model_id)
+    _require_request_binding(creation, retrieval, expectations)
+
+
+def _require_payload_match(
+    creation: dict[str, object], retrieval: dict[str, object]
+) -> tuple[CanonicalPayload, CanonicalPayload]:
     try:
-        creation_payload = extract_canonical_payload(creation)
-        retrieval_payload = extract_canonical_payload(retrieval)
+        creation_payload = discover_canonical_payload(creation)
+        retrieval_payload = discover_canonical_payload(retrieval)
     except StructuredPayloadError as exc:
-        raise ReceiptBoundaryError("RECEIPT_PAYLOAD", str(exc)) from exc
+        raise ReceiptBoundaryError(
+            "RECEIPT_PAYLOAD",
+            str(exc),
+            diagnostics=_path_diagnostics(
+                "$.output[*].content[*].text",
+                creation.get("output"),
+                retrieval.get("output"),
+            ),
+        ) from exc
     if creation_payload.sha256 != retrieval_payload.sha256:
         raise ReceiptBoundaryError(
             "RECEIPT_PAYLOAD",
@@ -82,14 +165,56 @@ def validate_provider_receipt(
             diagnostics={
                 "creation_payload_sha256": creation_payload.sha256,
                 "retrieval_payload_sha256": retrieval_payload.sha256,
+                "differences": [
+                    _redacted_difference(
+                        "$.output[*].content[*].text",
+                        creation_payload.payload,
+                        retrieval_payload.payload,
+                    )
+                ],
             },
         )
-    usage = _usage_accounting(
-        creation=creation,
-        retrieval=retrieval,
-        expectations=expectations,
-        latency_seconds=latency_seconds,
-    )
+    return creation_payload, retrieval_payload
+
+
+def _require_output_topology(
+    creation: dict[str, object],
+    retrieval: dict[str, object],
+    *,
+    expected_model: str,
+    expected_payload_sha256: str,
+) -> ReceiptIdentity:
+    try:
+        creation_payload = extract_canonical_payload(creation)
+        retrieval_payload = extract_canonical_payload(retrieval)
+        identity = require_same_identity(
+            extract_receipt_identity(creation, expected_model=expected_model),
+            extract_receipt_identity(retrieval, expected_model=expected_model),
+        )
+    except (ReceiptIdentityError, StructuredPayloadError) as exc:
+        raise ReceiptBoundaryError(
+            "RECEIPT_OUTPUT_TOPOLOGY",
+            str(exc),
+            diagnostics=_path_diagnostics(
+                "$.output",
+                creation.get("output"),
+                retrieval.get("output"),
+            ),
+        ) from exc
+    if (
+        creation_payload.sha256 != expected_payload_sha256
+        or retrieval_payload.sha256 != expected_payload_sha256
+    ):
+        raise ReceiptBoundaryError(
+            "RECEIPT_OUTPUT_TOPOLOGY",
+            "strict output topology changed the discovered payload",
+        )
+    return identity
+
+
+def _require_known_envelope_differences(
+    creation: dict[str, object], retrieval: dict[str, object]
+) -> tuple[FieldDifference, ...]:
     differences = _classify_differences(
         creation=creation,
         retrieval=retrieval,
@@ -107,18 +232,7 @@ def validate_provider_receipt(
                 "retrieval_envelope_sha256": canonical_sha256(retrieval),
             },
         )
-    return ReceiptValidation(
-        identity=identity,
-        scientific_payload_sha256=creation_payload.sha256,
-        creation_envelope_sha256=canonical_sha256(creation),
-        retrieval_envelope_sha256=canonical_sha256(retrieval),
-        provider_input_sha256=hashlib.sha256(
-            expectations.provider_input.encode()
-        ).hexdigest(),
-        provider_schema_sha256=canonical_sha256(expectations.provider_format),
-        differences=differences,
-        usage=usage,
-    )
+    return differences
 
 
 def _require_request_binding(
@@ -127,69 +241,243 @@ def _require_request_binding(
     expectations: ReceiptExpectations,
 ) -> None:
     for label, response in (("creation", creation), ("retrieval", retrieval)):
-        if response.get("metadata") != expectations.metadata:
-            raise ReceiptBoundaryError(
-                "RECEIPT_METADATA", f"{label} custody metadata differs"
-            )
-        reasoning = response.get("reasoning")
-        if (
-            not isinstance(reasoning, dict)
-            or reasoning.get("effort") != expectations.reasoning_effort
-        ):
-            raise ReceiptBoundaryError(
-                "RECEIPT_REASONING", f"{label} reasoning effort differs"
-            )
+        _require_single_binding(response, expectations, label=label)
+
+
+def _require_completed(response: dict[str, object], *, label: str) -> None:
+    if response.get("status") != "completed":
+        raise ReceiptBoundaryError(
+            "RESPONSE_STATUS",
+            f"{label} response is not completed",
+            diagnostics=_path_diagnostics(
+                "$.status",
+                "completed",
+                response.get("status"),
+            ),
+        )
+    if response.get("error") is not None:
+        raise ReceiptBoundaryError(
+            "RESPONSE_STATUS",
+            f"{label} response contains a provider error",
+            diagnostics=_path_diagnostics("$.error", None, response.get("error")),
+        )
+    if response.get("incomplete_details") is not None:
+        raise ReceiptBoundaryError(
+            "RESPONSE_STATUS",
+            f"{label} response contains incomplete details",
+            diagnostics=_path_diagnostics(
+                "$.incomplete_details",
+                None,
+                response.get("incomplete_details"),
+            ),
+        )
+
+
+def _require_response_identity(
+    creation: dict[str, object], retrieval: dict[str, object]
+) -> None:
+    creation_identity = _require_single_response_identity(
+        creation,
+        label="creation",
+    )
+    retrieval_identity = _require_single_response_identity(
+        retrieval,
+        label="retrieval",
+    )
+    if creation_identity != retrieval_identity:
+        raise ReceiptBoundaryError(
+            "RECEIPT_IDENTITY",
+            "creation and retrieval response identity differs",
+            diagnostics=_path_diagnostics(
+                "$.id|$.object|$.created_at",
+                creation_identity,
+                retrieval_identity,
+            ),
+        )
+
+
+def _require_single_response_identity(
+    response: dict[str, object], *, label: str
+) -> tuple[str, str, float]:
+    response_id = response.get("id")
+    object_type = response.get("object")
+    created_at = response.get("created_at")
+    if not isinstance(response_id, str) or not response_id:
+        raise ReceiptBoundaryError(
+            "RECEIPT_IDENTITY",
+            f"{label} response ID is absent",
+            diagnostics=_path_diagnostics("$.id", "NON_EMPTY_STRING", response_id),
+        )
+    if object_type != "response":
+        raise ReceiptBoundaryError(
+            "RECEIPT_IDENTITY",
+            f"{label} object type is not response",
+            diagnostics=_path_diagnostics("$.object", "response", object_type),
+        )
+    if not isinstance(created_at, int | float) or created_at <= 0:
+        raise ReceiptBoundaryError(
+            "RECEIPT_IDENTITY",
+            f"{label} creation timestamp is invalid",
+            diagnostics=_path_diagnostics(
+                "$.created_at",
+                "POSITIVE_NUMBER",
+                created_at,
+            ),
+        )
+    return response_id, object_type, float(created_at)
+
+
+def _require_model_identity(
+    creation: dict[str, object],
+    retrieval: dict[str, object],
+    expected_model: str,
+) -> None:
+    _require_single_model(creation, expected_model, label="creation")
+    _require_single_model(retrieval, expected_model, label="retrieval")
+
+
+def _require_single_model(
+    response: dict[str, object], expected_model: str, *, label: str
+) -> None:
+    if response.get("model") != expected_model:
+        raise ReceiptBoundaryError(
+            "RECEIPT_MODEL",
+            f"{label} model differs from requested model",
+            diagnostics=_path_diagnostics(
+                "$.model",
+                expected_model,
+                response.get("model"),
+            ),
+        )
+
+
+def _require_single_binding(
+    response: dict[str, object],
+    expectations: ReceiptExpectations,
+    *,
+    label: str,
+) -> None:
+    if response.get("metadata") != expectations.metadata:
+        raise ReceiptBoundaryError(
+            "RECEIPT_BINDING",
+            f"{label} custody metadata differs",
+            diagnostics=_path_diagnostics(
+                "$.metadata",
+                expectations.metadata,
+                response.get("metadata"),
+            ),
+        )
+    reasoning = response.get("reasoning")
+    actual_effort = reasoning.get("effort") if isinstance(reasoning, dict) else None
+    if actual_effort != expectations.reasoning_effort:
+        raise ReceiptBoundaryError(
+            "RECEIPT_BINDING",
+            f"{label} reasoning effort differs",
+            diagnostics=_path_diagnostics(
+                "$.reasoning.effort",
+                expectations.reasoning_effort,
+                actual_effort,
+            ),
+        )
 
 
 def _require_input(
     input_items: tuple[dict[str, object], ...], expected_input: str
 ) -> None:
     if len(input_items) != 1:
-        raise ReceiptBoundaryError("RECEIPT_INPUT", "input topology is not singular")
+        raise ReceiptBoundaryError(
+            "RECEIPT_INPUT",
+            "input topology is not singular",
+            diagnostics=_path_diagnostics("$.input_items.length", 1, len(input_items)),
+        )
     item = input_items[0]
     content = item.get("content")
     if item.get("type") != "message" or item.get("role") != "user":
-        raise ReceiptBoundaryError("RECEIPT_INPUT", "input is not one user message")
+        raise ReceiptBoundaryError(
+            "RECEIPT_INPUT",
+            "input is not one user message",
+            diagnostics=_path_diagnostics(
+                "$.input_items[0].type|$.input_items[0].role",
+                ("message", "user"),
+                (item.get("type"), item.get("role")),
+            ),
+        )
     if not isinstance(content, list) or len(content) != 1:
-        raise ReceiptBoundaryError("RECEIPT_INPUT", "input content is not singular")
+        raise ReceiptBoundaryError(
+            "RECEIPT_INPUT",
+            "input content is not singular",
+            diagnostics=_path_diagnostics(
+                "$.input_items[0].content",
+                "ONE_ITEM_ARRAY",
+                content,
+            ),
+        )
     part = content[0]
     if not isinstance(part, dict) or part.get("type") != "input_text":
-        raise ReceiptBoundaryError("RECEIPT_INPUT", "input part is not input_text")
+        raise ReceiptBoundaryError(
+            "RECEIPT_INPUT",
+            "input part is not input_text",
+            diagnostics=_path_diagnostics(
+                "$.input_items[0].content[0].type",
+                "input_text",
+                part.get("type") if isinstance(part, dict) else part,
+            ),
+        )
     if part.get("text") != expected_input:
-        raise ReceiptBoundaryError("RECEIPT_INPUT", "retrieved provider input differs")
+        raise ReceiptBoundaryError(
+            "RECEIPT_INPUT",
+            "retrieved provider input differs",
+            diagnostics=_path_diagnostics(
+                "$.input_items[0].content[0].text",
+                expected_input,
+                part.get("text"),
+            ),
+        )
 
 
-def _require_schema(
-    creation: dict[str, object],
-    retrieval: dict[str, object],
-    expected_format: dict[str, object],
+def _require_creation_schema(
+    creation: dict[str, object], expected_format: dict[str, object]
 ) -> None:
-    creation_format = _response_format(creation)
+    creation_format = _response_format(creation, stage="CREATION_SCHEMA")
     if creation_format != expected_format:
         raise ReceiptBoundaryError(
-            "RECEIPT_SCHEMA",
+            "CREATION_SCHEMA",
             "creation response schema differs",
             diagnostics=_schema_diagnostics(expected_format, creation_format),
         )
-    retrieval_text = retrieval.get("text")
-    if retrieval_text is None:
-        return
-    retrieval_format = _response_format(retrieval)
+
+
+def _require_retrieval_schema(
+    retrieval: dict[str, object], expected_format: dict[str, object]
+) -> None:
+    retrieval_format = _response_format(retrieval, stage="RETRIEVAL_SCHEMA")
     if retrieval_format != expected_format:
         raise ReceiptBoundaryError(
-            "RECEIPT_SCHEMA",
+            "RETRIEVAL_SCHEMA",
             "retrieval response schema differs",
             diagnostics=_schema_diagnostics(expected_format, retrieval_format),
         )
 
 
-def _response_format(response: dict[str, object]) -> dict[str, object]:
+def _response_format(response: dict[str, object], *, stage: str) -> dict[str, object]:
     text = response.get("text")
     if not isinstance(text, dict):
-        raise ReceiptBoundaryError("RECEIPT_SCHEMA", "response schema is absent")
+        raise ReceiptBoundaryError(
+            stage,
+            "response schema is absent",
+            diagnostics=_path_diagnostics("$.text", "OBJECT", text),
+        )
     response_format = text.get("format")
     if not isinstance(response_format, dict):
-        raise ReceiptBoundaryError("RECEIPT_SCHEMA", "response schema is absent")
+        raise ReceiptBoundaryError(
+            stage,
+            "response schema is absent",
+            diagnostics=_path_diagnostics(
+                "$.text.format",
+                "OBJECT",
+                response_format,
+            ),
+        )
     return response_format
 
 
@@ -207,7 +495,26 @@ def _schema_diagnostics(
     }
 
 
-def _usage_accounting(
+def _path_diagnostics(path: str, expected: object, actual: object) -> dict[str, object]:
+    return {
+        "differences": [_redacted_difference(path, expected, actual)],
+        "expected_sha256": canonical_sha256(expected),
+        "actual_sha256": canonical_sha256(actual),
+    }
+
+
+def _redacted_difference(
+    path: str, expected: object, actual: object
+) -> dict[str, object]:
+    return {
+        "path": path,
+        "difference": "VALUE_CHANGED",
+        "expected_sha256": canonical_sha256(expected),
+        "actual_sha256": canonical_sha256(actual),
+    }
+
+
+def _require_usage(
     *,
     creation: dict[str, object],
     retrieval: dict[str, object],
@@ -218,11 +525,23 @@ def _usage_accounting(
     retrieval_usage = retrieval.get("usage")
     if not isinstance(creation_usage, dict) or not isinstance(retrieval_usage, dict):
         raise ReceiptBoundaryError(
-            "RECEIPT_USAGE", "creation or retrieval usage is absent"
+            "RECEIPT_USAGE",
+            "creation or retrieval usage is absent",
+            diagnostics=_path_diagnostics(
+                "$.usage",
+                creation_usage,
+                retrieval_usage,
+            ),
         )
     if creation_usage != retrieval_usage:
         raise ReceiptBoundaryError(
-            "RECEIPT_USAGE", "creation and retrieval usage differ"
+            "RECEIPT_USAGE",
+            "creation and retrieval usage differ",
+            diagnostics=_path_diagnostics(
+                "$.usage",
+                creation_usage,
+                retrieval_usage,
+            ),
         )
     input_tokens = _nonnegative_int(retrieval_usage, "input_tokens")
     output_tokens = _nonnegative_int(retrieval_usage, "output_tokens")
@@ -230,22 +549,32 @@ def _usage_accounting(
     input_details = retrieval_usage.get("input_tokens_details")
     output_details = retrieval_usage.get("output_tokens_details")
     if not isinstance(input_details, dict) or not isinstance(output_details, dict):
-        raise ReceiptBoundaryError("RECEIPT_USAGE", "usage details are absent")
+        raise ReceiptBoundaryError(
+            "RECEIPT_USAGE",
+            "usage details are absent",
+            diagnostics=_path_diagnostics(
+                "$.usage.*_tokens_details",
+                "OBJECTS",
+                (input_details, output_details),
+            ),
+        )
     cached_tokens = _nonnegative_int(input_details, "cached_tokens")
     reasoning_tokens = _nonnegative_int(output_details, "reasoning_tokens")
     if cached_tokens > input_tokens or total_tokens != input_tokens + output_tokens:
-        raise ReceiptBoundaryError("RECEIPT_USAGE", "usage totals are inconsistent")
+        raise ReceiptBoundaryError(
+            "RECEIPT_USAGE",
+            "usage totals are inconsistent",
+            diagnostics=_path_diagnostics(
+                "$.usage",
+                "CONSISTENT_TOTALS",
+                retrieval_usage,
+            ),
+        )
     cost_usd = (
         (input_tokens - cached_tokens) * expectations.pricing["input"]
         + cached_tokens * expectations.pricing["cached_input"]
         + output_tokens * expectations.pricing["output"]
     )
-    if total_tokens > expectations.max_total_tokens:
-        raise ReceiptBoundaryError("TOKEN_BUDGET", "total token ceiling exceeded")
-    if latency_seconds > expectations.max_latency_seconds:
-        raise ReceiptBoundaryError("LATENCY_BUDGET", "latency ceiling exceeded")
-    if cost_usd > expectations.max_cost_usd:
-        raise ReceiptBoundaryError("COST_BUDGET", "cost ceiling exceeded")
     return UsageAccounting(
         input_tokens=input_tokens,
         cached_input_tokens=cached_tokens,
@@ -255,6 +584,36 @@ def _usage_accounting(
         latency_seconds=latency_seconds,
         cost_usd=cost_usd,
     )
+
+
+def _require_budgets(usage: UsageAccounting, expectations: ReceiptExpectations) -> None:
+    checks = (
+        (
+            "$.usage.total_tokens",
+            expectations.max_total_tokens,
+            usage.total_tokens,
+            "total token ceiling exceeded",
+        ),
+        (
+            "$.latency_seconds",
+            expectations.max_latency_seconds,
+            usage.latency_seconds,
+            "latency ceiling exceeded",
+        ),
+        (
+            "$.cost_usd",
+            expectations.max_cost_usd,
+            usage.cost_usd,
+            "cost ceiling exceeded",
+        ),
+    )
+    for path, maximum, actual, message in checks:
+        if actual > maximum:
+            raise ReceiptBoundaryError(
+                "RECEIPT_BUDGET",
+                message,
+                diagnostics=_path_diagnostics(path, maximum, actual),
+            )
 
 
 def _classify_differences(
@@ -401,8 +760,22 @@ def _none_empty_or_missing(difference: RawDifference) -> bool:
 def _nonnegative_int(payload: dict[str, object], key: str) -> int:
     value = payload.get(key)
     if not isinstance(value, int) or value < 0:
-        raise ReceiptBoundaryError("RECEIPT_USAGE", f"{key} is invalid")
+        raise ReceiptBoundaryError(
+            "RECEIPT_USAGE",
+            f"{key} is invalid",
+            diagnostics=_path_diagnostics(
+                f"$.usage.{key}",
+                "NON_NEGATIVE_INTEGER",
+                value,
+            ),
+        )
     return value
 
 
-__all__ = ["ReceiptBoundaryError", "validate_provider_receipt"]
+__all__ = [
+    "VALIDATION_ORDER",
+    "ReceiptBoundaryError",
+    "validate_creation_response",
+    "validate_provider_receipt",
+    "validate_retrieval_envelope",
+]

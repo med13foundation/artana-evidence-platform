@@ -30,14 +30,29 @@ def test_smoke_preregistration_recomputes_exactly_and_is_non_scientific(
 ) -> None:
     path, payload = _write_candidate(tmp_path)
 
-    verification = verify_smoke_preregistration(ROOT, path)
+    verification = verify_smoke_preregistration(
+        ROOT,
+        path,
+        require_clean_code=False,
+    )
 
     assert verification["status"] == "PREFLIGHT_PASSED"
-    assert payload["budgets"]["provider_calls"] == 1
+    assert payload["budgets"]["provider_creation_calls"] == 1
+    assert payload["budgets"]["response_retrieval_requests"] == 1
+    assert payload["budgets"]["input_item_retrieval_requests"] == 1
     assert payload["budgets"]["provider_retries"] == 0
     assert payload["budgets"]["max_cost_usd"] == 0.25
     assert payload["rules"]["biomedical_source_allowed"] is False
     assert "biomedical" not in SMOKE_INPUT.lower()
+    assert payload["frozen_state"]["output"]["expected_contract"] == {
+        "category": "OK",
+        "explanation": "Receipt boundary confirmed.",
+    }
+    assert len(payload["frozen_state"]["custody"]["commit"]) == 40
+    assert payload["frozen_state"]["output"]["provider_schema_compatible"] is True
+    assert payload["terminal_predecessor"]["decision"] == "INVALID_SMOKE_EXPERIMENT"
+    assert payload["terminal_predecessor"]["retry_allowed"] is False
+    assert verification["validation_order"] == payload["validation_order"]
 
 
 def test_openai_response_schema_serialization_uses_wire_aliases_and_unset_fields() -> (
@@ -74,13 +89,13 @@ def test_smoke_preregistration_rejects_request_or_code_drift(tmp_path: Path) -> 
     path.write_text(json.dumps(payload), encoding="utf-8")
 
     with pytest.raises(SmokePreflightError, match="frozen state"):
-        verify_smoke_preregistration(ROOT, path)
+        verify_smoke_preregistration(ROOT, path, require_clean_code=False)
 
 
 @pytest.mark.parametrize(
     ("section", "key", "value", "message"),
     [
-        ("budgets", "provider_calls", 2, "exactly one"),
+        ("budgets", "provider_creation_calls", 2, "exactly one"),
         ("budgets", "max_cost_usd", 0.26, "cost ceiling"),
         ("rules", "retry_allowed", True, "prohibited"),
         ("rules", "scientific_experiment_allowed", True, "prohibited"),
@@ -98,4 +113,4 @@ def test_smoke_preregistration_rejects_unsafe_capabilities(
     path.write_text(json.dumps(payload), encoding="utf-8")
 
     with pytest.raises(SmokePreflightError, match=message):
-        verify_smoke_preregistration(ROOT, path)
+        verify_smoke_preregistration(ROOT, path, require_clean_code=False)

@@ -7,10 +7,11 @@ import hashlib
 import json
 import os
 import platform
+import subprocess
 from dataclasses import dataclass
 from importlib.metadata import version
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 from openai.lib._parsing._responses import type_to_text_format_param
 from pydantic import BaseModel, ConfigDict
@@ -18,6 +19,7 @@ from pydantic import BaseModel, ConfigDict
 from scripts.validation.provider_receipt_boundary.canonical_payload import (
     canonical_sha256,
 )
+from scripts.validation.provider_receipt_boundary.validation import VALIDATION_ORDER
 from scripts.validation.public_gold.lossless_event_provider import (
     ProviderExecutionError,
     ProviderRequest,
@@ -29,12 +31,20 @@ PROVIDER_MODEL_ID = "gpt-5.6-sol"
 REASONING_EFFORT = "low"
 MAX_SMOKE_COST_USD = 0.25
 SMOKE_INPUT = (
-    "This is a non-scientific transport verification. Return the categorical status OK."
+    "This is a non-scientific transport verification. Return category OK and the "
+    "exact explanation: Receipt boundary confirmed."
 )
 SMOKE_METADATA = {
-    "artana_experiment": "receipt-boundary-smoke-v1",
+    "artana_experiment": "receipt-boundary-smoke-v2",
     "artana_data_class": "non-scientific",
 }
+PREDECESSOR_PREREGISTRATION = Path(
+    "docs/validation/preregistrations/"
+    "2026-07-21-provider-receipt-boundary-smoke-v1.json"
+)
+PREDECESSOR_RESULT = Path(
+    "docs/validation/reports/2026-07-21-provider-receipt-boundary-smoke-v1-result.json"
+)
 SMOKE_CODE_FILES = (
     "scripts/validation/provider_receipt_boundary/__init__.py",
     "scripts/validation/provider_receipt_boundary/canonical_payload.py",
@@ -47,10 +57,8 @@ SMOKE_CODE_FILES = (
 )
 DEPENDENCY_FILES = ("pyproject.toml",)
 DEPENDENCY_PACKAGES = ("openai", "pydantic")
-BOUNDARY_FAILURE_STAGES = {
-    "RECEIPT_ENVELOPE",
-    "RECEIPT_PAYLOAD",
-}
+BOUNDARY_FAILURE_STAGES = set(VALIDATION_ORDER) - {"RECEIPT_BUDGET"}
+GIT_EXECUTABLE = "/usr/bin/git"
 
 
 class SmokePreflightError(ValueError):
@@ -72,13 +80,17 @@ class ReceiptSmokeOutput(BaseModel):
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    status: Literal["OK"]
+    category: Literal["OK"]
+    explanation: Literal["Receipt boundary confirmed."]
 
 
 def compute_smoke_frozen_state(repository_root: Path) -> dict[str, object]:
     """Recompute every request and implementation value without a provider call."""
 
-    provider_format = type_to_text_format_param(ReceiptSmokeOutput)
+    provider_format = cast(
+        "dict[str, object]",
+        type_to_text_format_param(ReceiptSmokeOutput),
+    )
     code_files = {
         path: _file_sha256(repository_root / path) for path in SMOKE_CODE_FILES
     }
@@ -91,15 +103,27 @@ def compute_smoke_frozen_state(repository_root: Path) -> dict[str, object]:
         "files": dependency_files,
     }
     return {
+        "custody": {
+            "commit": _git_stdout(repository_root, "rev-parse", "HEAD"),
+            "tracked_executable_paths_clean": True,
+        },
         "input": {
+            "text": SMOKE_INPUT,
             "sha256": _sha256_text(SMOKE_INPUT),
             "classification": "NON_SCIENTIFIC",
             "biomedical_source_included": False,
         },
         "output": {
+            "expected_contract": {
+                "category": "OK",
+                "explanation": "Receipt boundary confirmed.",
+            },
             "schema_sha256": canonical_sha256(ReceiptSmokeOutput.model_json_schema()),
             "provider_format_sha256": canonical_sha256(provider_format),
             "provider_format": provider_format,
+            "provider_schema_compatible": _provider_schema_is_compatible(
+                provider_format
+            ),
         },
         "model": {
             "identity": MODEL_IDENTITY,
@@ -123,12 +147,25 @@ def build_smoke_preregistration(repository_root: Path) -> dict[str, object]:
     """Build the sole authorized non-scientific smoke contract."""
 
     return {
-        "schema_version": "artana.provider_receipt_boundary.smoke.v1",
+        "schema_version": "artana.provider_receipt_boundary.smoke.v2",
         "status": "FROZEN_AUTHORIZED_FOR_ONE_NON_SCIENTIFIC_CALL",
         "execution_authorized": True,
+        "terminal_predecessor": {
+            "preregistration_path": PREDECESSOR_PREREGISTRATION.as_posix(),
+            "preregistration_sha256": _file_sha256(
+                repository_root / PREDECESSOR_PREREGISTRATION
+            ),
+            "result_path": PREDECESSOR_RESULT.as_posix(),
+            "result_sha256": _file_sha256(repository_root / PREDECESSOR_RESULT),
+            "decision": "INVALID_SMOKE_EXPERIMENT",
+            "reinterpretation_allowed": False,
+            "retry_allowed": False,
+        },
         "frozen_state": compute_smoke_frozen_state(repository_root),
         "budgets": {
-            "provider_calls": 1,
+            "provider_creation_calls": 1,
+            "response_retrieval_requests": 1,
+            "input_item_retrieval_requests": 1,
             "provider_retries": 0,
             "max_output_tokens": 1024,
             "max_total_tokens": 5000,
@@ -149,17 +186,29 @@ def build_smoke_preregistration(repository_root: Path) -> dict[str, object]:
             "promotion_allowed": False,
         },
         "acceptance": {
-            "structured_status": "OK",
+            "structured_category": "OK",
+            "structured_explanation": "Receipt boundary confirmed.",
             "canonical_payload_match": "EXACT",
             "identity_input_schema_usage": "VERIFIED",
             "unknown_envelope_differences_allowed": 0,
         },
+        "validation_order": list(VALIDATION_ORDER),
+        "stop_rules": [
+            "stop before live requests on deterministic preflight failure",
+            "stop before response retrieval when creation stages fail",
+            "stop before input-item retrieval when retrieval-envelope stages fail",
+            "stop at the first receipt validation failure",
+            "never retry, fallback, repair, patch, or change models during the run",
+            "stop after the single smoke whether it passes or fails",
+        ],
     }
 
 
 def verify_smoke_preregistration(
     repository_root: Path,
     preregistration_path: Path,
+    *,
+    require_clean_code: bool = True,
 ) -> dict[str, object]:
     """Fail unless an independent recomputation matches the frozen smoke."""
 
@@ -172,8 +221,16 @@ def verify_smoke_preregistration(
         raise SmokePreflightError("smoke is not explicitly authorized")
     budgets = _required_dict(payload, "budgets")
     rules = _required_dict(payload, "rules")
-    if budgets.get("provider_calls") != 1 or budgets.get("provider_retries") != 0:
-        raise SmokePreflightError("smoke is not exactly one provider call")
+    expected_request_budgets = {
+        "provider_creation_calls": 1,
+        "response_retrieval_requests": 1,
+        "input_item_retrieval_requests": 1,
+        "provider_retries": 0,
+    }
+    if any(
+        budgets.get(key) != value for key, value in expected_request_budgets.items()
+    ):
+        raise SmokePreflightError("smoke request budgets are not exactly one each")
     if _required_float(budgets, "max_cost_usd") > MAX_SMOKE_COST_USD:
         raise SmokePreflightError("smoke cost ceiling exceeds $0.25")
     required_false = (
@@ -186,10 +243,20 @@ def verify_smoke_preregistration(
     )
     if any(rules.get(name) is not False for name in required_false):
         raise SmokePreflightError("smoke enables a prohibited capability")
+    if payload.get("validation_order") != list(VALIDATION_ORDER):
+        raise SmokePreflightError("smoke validation order differs")
+    frozen_state = _required_dict(payload, "frozen_state")
+    output_state = _required_dict(frozen_state, "output")
+    if output_state.get("provider_schema_compatible") is not True:
+        raise SmokePreflightError("provider output schema is incompatible")
+    if require_clean_code:
+        _require_clean_code_custody(repository_root)
     return {
         "status": "PREFLIGHT_PASSED",
         "preregistration_sha256": _file_sha256(preregistration_path),
         "frozen_state_sha256": canonical_sha256(payload["frozen_state"]),
+        "validation_order": list(VALIDATION_ORDER),
+        "code_custody": "TRACKED_EXECUTABLE_PATHS_CLEAN",
     }
 
 
@@ -255,9 +322,18 @@ def run_smoke(
         )
         receipt = {
             "status": "UNVERIFIED",
-            "provider_calls": 1,
+            "provider_calls": exc.diagnostics.get("provider_calls", 1),
+            "response_retrieval_requests": exc.diagnostics.get(
+                "response_retrieval_requests",
+                0,
+            ),
+            "input_item_retrieval_requests": exc.diagnostics.get(
+                "input_item_retrieval_requests",
+                0,
+            ),
             "provider_retries": 0,
             "failure_stage": exc.stage,
+            "failure_domain": _failure_domain(exc.stage),
             "root_cause": exc.root_cause,
             "diagnostics": exc.diagnostics,
         }
@@ -311,13 +387,17 @@ def _smoke_result(
     receipt: dict[str, object],
 ) -> dict[str, object]:
     return {
-        "schema_version": "artana.provider_receipt_boundary.smoke_result.v1",
+        "schema_version": "artana.provider_receipt_boundary.smoke_result.v2",
         "decision": decision,
         "preflight": preflight,
         "receipt_sha256": canonical_sha256(receipt),
         "receipt": receipt,
         "terminal_rules": {
-            "provider_calls": 1,
+            "provider_calls": receipt.get("provider_calls"),
+            "response_retrieval_requests": receipt.get("response_retrieval_requests"),
+            "input_item_retrieval_requests": receipt.get(
+                "input_item_retrieval_requests"
+            ),
             "provider_retries": 0,
             "fallbacks": 0,
             "biomedical_sources_accessed": 0,
@@ -341,10 +421,14 @@ def _write_artifacts(
     usage = receipt.get("usage")
     differences = receipt.get("differences")
     failure_stage = receipt.get("failure_stage")
+    failure_domain = receipt.get("failure_domain")
     root_cause = receipt.get("root_cause")
+    diagnostics = receipt.get("diagnostics")
     preflight = _required_dict(result, "preflight")
+    identity = receipt.get("identity")
+    response_id = identity.get("response_id") if isinstance(identity, dict) else None
     report = [
-        "# Provider Receipt Boundary Smoke",
+        "# Provider Receipt Boundary Smoke V2",
         "",
         f"**Decision:** `{result['decision']}`",
         "",
@@ -355,7 +439,12 @@ def _write_artifacts(
         "## Custody",
         "",
         f"- Preregistration: `{preflight['preregistration_sha256']}`",
-        "- Provider calls: `1`",
+        f"- Response ID: `{response_id or 'UNVERIFIED'}`",
+        f"- Provider creation calls: `{receipt.get('provider_calls')}`",
+        "- Response retrieval requests: "
+        f"`{receipt.get('response_retrieval_requests')}`",
+        "- Input-item custody retrieval requests: "
+        f"`{receipt.get('input_item_retrieval_requests')}`",
         "- Provider retries and fallbacks: `0`",
         "- Biomedical sources accessed: `0`",
     ]
@@ -372,6 +461,12 @@ def _write_artifacts(
                 f"- Total tokens: `{usage.get('total_tokens')}`",
                 f"- Latency seconds: `{usage.get('latency_seconds')}`",
                 f"- Cost USD: `{usage.get('cost_usd')}`",
+                f"- Scientific payload SHA-256: "
+                f"`{receipt.get('scientific_payload_sha256')}`",
+                f"- Creation envelope SHA-256: "
+                f"`{receipt.get('creation_envelope_sha256')}`",
+                f"- Retrieval envelope SHA-256: "
+                f"`{receipt.get('retrieval_envelope_sha256')}`",
             ]
         )
     if isinstance(differences, list):
@@ -396,9 +491,21 @@ def _write_artifacts(
                 "## Failure",
                 "",
                 f"- Stage: `{failure_stage}`",
+                f"- Domain: `{failure_domain}`",
                 f"- Root cause: {root_cause}",
             ]
         )
+        if isinstance(diagnostics, dict):
+            report.extend(
+                [
+                    "",
+                    "### Redacted Diagnostics",
+                    "",
+                    "```json",
+                    json.dumps(diagnostics, indent=2, sort_keys=True),
+                    "```",
+                ]
+            )
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
 
@@ -453,6 +560,28 @@ def _pricing(payload: dict[str, object]) -> dict[str, float]:
     }
 
 
+def _failure_domain(stage: str) -> str:
+    if stage == "RECEIPT_PAYLOAD":
+        return "CATEGORICAL_CONTENT"
+    if stage in {"RECEIPT_USAGE", "RECEIPT_BUDGET"}:
+        return "ACCOUNTING"
+    if stage in {
+        "RECEIPT_IDENTITY",
+        "RECEIPT_MODEL",
+        "RECEIPT_BINDING",
+        "RECEIPT_INPUT",
+    }:
+        return "IDENTITY_OR_INPUT_BINDING"
+    if stage in {
+        "CREATION_SCHEMA",
+        "RETRIEVAL_SCHEMA",
+        "RECEIPT_OUTPUT_TOPOLOGY",
+        "RECEIPT_ENVELOPE",
+    }:
+        return "TRANSPORT_METADATA"
+    return "EXECUTION_INTEGRITY"
+
+
 def _sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 
@@ -461,6 +590,56 @@ def _file_sha256(path: Path) -> str:
     if not path.is_file():
         raise SmokePreflightError(f"frozen file is missing: {path}")
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _provider_schema_is_compatible(provider_format: dict[str, object]) -> bool:
+    schema = provider_format.get("schema")
+    if (
+        provider_format.get("type") != "json_schema"
+        or provider_format.get("strict") is not True
+        or not isinstance(provider_format.get("name"), str)
+        or not isinstance(schema, dict)
+    ):
+        return False
+    properties = schema.get("properties")
+    required = schema.get("required")
+    return (
+        schema.get("type") == "object"
+        and schema.get("additionalProperties") is False
+        and isinstance(properties, dict)
+        and set(properties) == {"category", "explanation"}
+        and isinstance(required, list)
+        and set(required) == {"category", "explanation"}
+    )
+
+
+def _require_clean_code_custody(repository_root: Path) -> None:
+    for staged in (False, True):
+        command = [GIT_EXECUTABLE, "diff", "--quiet"]
+        if staged:
+            command.append("--cached")
+        command.extend(["HEAD", "--", *SMOKE_CODE_FILES])
+        completed = subprocess.run(  # noqa: S603 - fixed git executable and args.
+            command,
+            cwd=repository_root,
+            check=False,
+        )
+        if completed.returncode == 1:
+            state = "staged" if staged else "unstaged"
+            raise SmokePreflightError(f"receipt executable paths have {state} changes")
+        if completed.returncode != 0:
+            raise SmokePreflightError("could not verify receipt code custody")
+
+
+def _git_stdout(repository_root: Path, *arguments: str) -> str:
+    completed = subprocess.run(  # noqa: S603 - fixed git executable and args.
+        [GIT_EXECUTABLE, *arguments],
+        cwd=repository_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return completed.stdout.strip()
 
 
 def main() -> int:

@@ -14,7 +14,9 @@ from pydantic import BaseModel
 from scripts.validation.provider_receipt_boundary import (
     ReceiptBoundaryError,
     ReceiptExpectations,
+    validate_creation_response,
     validate_provider_receipt,
+    validate_retrieval_envelope,
 )
 from scripts.validation.provider_receipt_boundary.canonical_payload import (
     extract_canonical_payload,
@@ -123,6 +125,9 @@ def execute_single_provider_call(
         OpenAI(api_key=api_key, max_retries=0, timeout=request.max_latency_seconds),
     )
     started = time.monotonic()
+    provider_calls = 1
+    response_retrieval_requests = 0
+    input_item_retrieval_requests = 0
     try:
         response = provider_client.responses.create(
             model=request.provider_model_id,
@@ -134,37 +139,106 @@ def execute_single_provider_call(
             store=True,
         )
     except Exception as exc:  # noqa: BLE001 - exactly one attempt, never retry.
-        raise ProviderExecutionError("PROVIDER_CALL", type(exc).__name__) from exc
+        raise ProviderExecutionError(
+            "PROVIDER_CALL",
+            type(exc).__name__,
+            diagnostics=_request_counts(
+                provider_calls,
+                response_retrieval_requests,
+                input_item_retrieval_requests,
+            ),
+        ) from exc
     latency_seconds = time.monotonic() - started
     creation = _api_response_dict(response)
-    response_id = creation.get("id")
-    if not isinstance(response_id, str) or not response_id:
-        raise ProviderExecutionError("PROVIDER_ENVELOPE", "response ID is absent")
+    expectations = request.receipt_expectations()
+    try:
+        validate_creation_response(creation, expectations)
+    except ReceiptBoundaryError as exc:
+        raise ProviderExecutionError(
+            exc.stage,
+            exc.root_cause,
+            diagnostics={
+                **_request_counts(
+                    provider_calls,
+                    response_retrieval_requests,
+                    input_item_retrieval_requests,
+                ),
+                **exc.diagnostics,
+            },
+        ) from exc
+    response_id = cast("str", creation["id"])
+    response_retrieval_requests += 1
     try:
         retrieval = _api_response_dict(provider_client.responses.retrieve(response_id))
+    except Exception as exc:  # noqa: BLE001 - one response retrieval, never retry.
+        raise ProviderExecutionError(
+            "RECEIPT_RETRIEVAL",
+            type(exc).__name__,
+            diagnostics={
+                "response_id": response_id,
+                **_request_counts(
+                    provider_calls,
+                    response_retrieval_requests,
+                    input_item_retrieval_requests,
+                ),
+            },
+        ) from exc
+    try:
+        validate_retrieval_envelope(creation, retrieval, expectations)
+    except ReceiptBoundaryError as exc:
+        raise ProviderExecutionError(
+            exc.stage,
+            exc.root_cause,
+            diagnostics={
+                "response_id": response_id,
+                **_request_counts(
+                    provider_calls,
+                    response_retrieval_requests,
+                    input_item_retrieval_requests,
+                ),
+                **exc.diagnostics,
+            },
+        ) from exc
+    input_item_retrieval_requests += 1
+    try:
         page = provider_client.responses.input_items.list(
             response_id, limit=100, order="asc"
         )
         input_items = tuple(_api_response_dict(item) for item in page)
-    except Exception as exc:  # noqa: BLE001 - receipt retrieval is not a model retry.
+    except Exception as exc:  # noqa: BLE001 - one input custody request, never retry.
         raise ProviderExecutionError(
-            "RECEIPT_RETRIEVAL",
+            "RECEIPT_INPUT_RETRIEVAL",
             type(exc).__name__,
-            diagnostics={"response_id": response_id},
+            diagnostics={
+                "response_id": response_id,
+                **_request_counts(
+                    provider_calls,
+                    response_retrieval_requests,
+                    input_item_retrieval_requests,
+                ),
+            },
         ) from exc
     try:
         validation = validate_provider_receipt(
             creation=creation,
             retrieval=retrieval,
             input_items=input_items,
-            expectations=request.receipt_expectations(),
+            expectations=expectations,
             latency_seconds=latency_seconds,
         )
     except ReceiptBoundaryError as exc:
         raise ProviderExecutionError(
             exc.stage,
             exc.root_cause,
-            diagnostics={"response_id": response_id, **exc.diagnostics},
+            diagnostics={
+                "response_id": response_id,
+                **_request_counts(
+                    provider_calls,
+                    response_retrieval_requests,
+                    input_item_retrieval_requests,
+                ),
+                **exc.diagnostics,
+            },
         ) from exc
     canonical_payload = extract_canonical_payload(retrieval)
     try:
@@ -181,7 +255,16 @@ def execute_single_provider_call(
             },
         ) from exc
     receipt = validation.as_json()
-    receipt.update({"provider_calls": 1, "provider_retries": 0})
+    receipt.update(
+        {
+            **_request_counts(
+                provider_calls,
+                response_retrieval_requests,
+                input_item_retrieval_requests,
+            ),
+            "provider_retries": 0,
+        }
+    )
     return ProviderExecution(
         extraction=parsed,
         creation_response=creation,
@@ -199,6 +282,18 @@ def _api_response_dict(response: _Dumpable) -> dict[str, object]:
         exclude_unset=True,
         exclude_none=False,
     )
+
+
+def _request_counts(
+    provider_calls: int,
+    response_retrieval_requests: int,
+    input_item_retrieval_requests: int,
+) -> dict[str, object]:
+    return {
+        "provider_calls": provider_calls,
+        "response_retrieval_requests": response_retrieval_requests,
+        "input_item_retrieval_requests": input_item_retrieval_requests,
+    }
 
 
 __all__ = [
