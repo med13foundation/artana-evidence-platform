@@ -1,6 +1,6 @@
 {
   "schema_version": "artana.public_gold.development_contract.v1",
-  "status": "BLOCKED_BY_REPRESENTABILITY_PREFLIGHT",
+  "status": "REPRESENTABILITY_GATE_PASSED_AWAITING_EXPERIMENT_AUTHORIZATION",
   "execution_authorized": false,
   "purpose": "adapter and prompt calibration on public development splits only",
   "promotion_enabled": false,
@@ -60,5 +60,19 @@
     },
     "provider_call_authorized": false
   },
-  "next_gate": "make the scientific claim contract losslessly represent nested, unary, and source-typed public-gold events before freezing any model execution"
+  "lossless_event_ir_replay": {
+    "documents": 100,
+    "events": 2915,
+    "participant_mentions": 3634,
+    "triggers": 2451,
+    "arguments": 3884,
+    "nested_arguments": 1274,
+    "modifiers": 214,
+    "mismatches": 0,
+    "unresolved_references": 0,
+    "unauthorized_semantic_mappings": 0,
+    "projection_sha256": "819565ff039c421d4fa4e67a508995859221a988c81d33aa849e3bcb24320ca4"
+  },
+  "successor_preregistration": "docs/validation/preregistrations/2026-07-21-lossless-event-ir-development-experiment.json",
+  "next_gate": "explicit authorization for the frozen one-document exposed development experiment"
 }

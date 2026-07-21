@@ -1,0 +1,70 @@
+{
+  "schema_version": "artana.public_gold.lossless_event_ir_experiment.v1",
+  "status": "FROZEN_AWAITING_EXPLICIT_AUTHORIZATION",
+  "execution_authorized": false,
+  "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
+  "provider_calls_made": 0,
+  "source": {
+    "corpus": "BioNLP-ST 2013 Cancer Genetics",
+    "corpus_version": "1.0.0",
+    "split": "development",
+    "development_tree_sha256": "6b9480ad79eab31be9b3a769bc21e1033bfb482ea14c47ab639e18e08778040d",
+    "test_access": "SEALED",
+    "selection_rule": "lowest SHA-256 among development .txt files",
+    "selected_document_id": "PMID-10473104",
+    "selected_source_sha256": "a69c23105caa402b9f830e18d5cfc76bd08f6b97c9b4a56bfa79f440b29115f3",
+    "gold_events_hidden_from_agent": 29,
+    "gold_triggers_hidden_from_agent": 24,
+    "gold_arguments_hidden_from_agent": 37,
+    "gold_nested_arguments_hidden_from_agent": 15,
+    "gold_modifiers_hidden_from_agent": 1
+  },
+  "frozen_implementation": {
+    "base_commit": "55b00db55ac231ca88b0c395a832fc6d710da0e6",
+    "implementation_bundle_sha256": "b9ce4eb0e53e08b1e3742510e01f1b869f79a3f86cfd7150d2755a41ddefd31f",
+    "schema_sha256": "77f1ca5ac9167c4d9976ff859d8a9da039346384e5ba8a6692b3fde3f9da8d8f",
+    "code_files": {
+      "services/artana_evidence_api/document_extraction_support/scientific_events/__init__.py": "9a8a46279cf20fb7d45d7763919de7cb8c6bd3304c407ddfff628520117a62b4",
+      "services/artana_evidence_api/document_extraction_support/scientific_events/contracts.py": "3590fb5b5a3f7d05fb0632f01ea1e9be95264fad56826e29018e27644044805c",
+      "services/artana_evidence_api/document_extraction_support/scientific_events/validation.py": "87fd91991ec432d9bb5367fd35efb9ce41c700c8a5d04fef492070394e5db2c5",
+      "scripts/validation/public_gold/bionlp_cg_event_projection.py": "97df47682e5b6c9311a696862f1707aaafa1523a720215c900b1dfac8863b33e"
+    }
+  },
+  "prompt": {
+    "path": "docs/validation/prompts/2026-07-21-lossless-scientific-event-development-prompt.md",
+    "sha256": "b571f42135138f75b9a23fede02c66db27270caca7fa2dd3b8ac3aa5f929cd76",
+    "gold_ids_counts_phrases_visible_to_agent": false
+  },
+  "model": {
+    "identity": "openai:gpt-5.6-sol",
+    "reasoning_effort": "high",
+    "temperature": "provider_default_not_set"
+  },
+  "budgets": {
+    "provider_calls": 1,
+    "retries": 0,
+    "fallbacks": 0,
+    "max_output_tokens": 20000,
+    "max_total_tokens": 40000,
+    "max_cost_usd": 5.0
+  },
+  "deterministic_acceptance": {
+    "all_output_offsets_resolve": true,
+    "all_references_resolve": true,
+    "event_graph_is_acyclic": true,
+    "complete_event_exact_match_required": true,
+    "unsupported_events_allowed": 0,
+    "unauthorized_semantic_mappings_allowed": 0,
+    "fallback_allowed": false,
+    "retry_allowed": false,
+    "graph_write_allowed": false,
+    "promotion_allowed": false
+  },
+  "stop_rules": [
+    "stop on schema or custody failure",
+    "stop on unresolved or cyclic references",
+    "stop on unsupported scientific content",
+    "stop after the single frozen call regardless of result",
+    "do not patch or reinterpret inside the experiment"
+  ]
+}
