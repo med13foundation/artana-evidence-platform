@@ -40,6 +40,9 @@ MINIMUM_STOP_RULES = 5
 MODEL_IDENTITY = "openai:gpt-5.6-sol"
 PROVIDER_MODEL_ID = "gpt-5.6-sol"
 REASONING_EFFORT = "high"
+ACKNOWLEDGEMENT_TIMEOUT_SECONDS = 30.0
+POLLING_INTERVAL_SECONDS = 5.0
+MAX_POLLING_SECONDS = 900.0
 EXPERIMENT_CODE_FILES = (
     "services/artana_evidence_api/document_extraction_support/scientific_events/__init__.py",
     "services/artana_evidence_api/document_extraction_support/scientific_events/contracts.py",
@@ -59,6 +62,11 @@ EXPERIMENT_CODE_FILES = (
     "scripts/validation/provider_receipt_boundary/identity.py",
     "scripts/validation/provider_receipt_boundary/structural_diff.py",
     "scripts/validation/provider_receipt_boundary/validation.py",
+    "scripts/validation/provider_receipt_boundary/background/__init__.py",
+    "scripts/validation/provider_receipt_boundary/background/contracts.py",
+    "scripts/validation/provider_receipt_boundary/background/execution.py",
+    "scripts/validation/provider_receipt_boundary/background/polling.py",
+    "scripts/validation/provider_receipt_boundary/background/states.py",
 )
 DEPENDENCY_FILES = ("pyproject.toml",)
 DEPENDENCY_PACKAGES = ("openai", "litellm", "pydantic")
@@ -166,6 +174,17 @@ def compute_frozen_state(repository_root: Path) -> dict[str, object]:
             "reasoning_effort": REASONING_EFFORT,
             "temperature": "provider_default_not_set",
         },
+        "transport": {
+            "mode": "OPENAI_RESPONSES_BACKGROUND_POLLING",
+            "background": True,
+            "acknowledgement_timeout_seconds": ACKNOWLEDGEMENT_TIMEOUT_SECONDS,
+            "polling_interval_seconds": POLLING_INTERVAL_SECONDS,
+            "max_polling_seconds": MAX_POLLING_SECONDS,
+            "provider_creation_calls": 1,
+            "duplicate_creation_calls": 0,
+            "provider_retries": 0,
+            "creation_idempotency_claimed": False,
+        },
     }
 
 
@@ -196,17 +215,18 @@ def build_preregistration(repository_root: Path) -> dict[str, object]:
     """Create a new candidate; callers freeze it as a new immutable file."""
 
     return {
-        "schema_version": "artana.public_gold.lossless_event_experiment.v3",
+        "schema_version": "artana.public_gold.lossless_event_experiment.v4",
         "status": "FROZEN_UNAUTHORIZED_AWAITING_EXPLICIT_AUTHORIZATION",
         "execution_authorized": False,
         "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
         "invalid_predecessor": (
             "docs/validation/preregistrations/"
-            "2026-07-21-lossless-event-ir-development-experiment-v2.json"
+            "2026-07-21-lossless-event-ir-development-experiment-v3.json"
         ),
         "frozen_state": compute_frozen_state(repository_root),
         "budgets": {
             "provider_calls": 1,
+            "duplicate_creation_calls": 0,
             "provider_retries": 0,
             "fallbacks": 0,
             "repairs": 0,
@@ -214,6 +234,9 @@ def build_preregistration(repository_root: Path) -> dict[str, object]:
             "max_total_tokens": 40000,
             "max_cost_usd": 5.0,
             "max_latency_seconds": 900.0,
+            "acknowledgement_timeout_seconds": ACKNOWLEDGEMENT_TIMEOUT_SECONDS,
+            "polling_interval_seconds": POLLING_INTERVAL_SECONDS,
+            "max_polling_seconds": MAX_POLLING_SECONDS,
             "pricing_usd_per_token": {
                 "input": 0.000005,
                 "cached_input": 0.0000005,
@@ -250,10 +273,13 @@ def build_preregistration(repository_root: Path) -> dict[str, object]:
             "promotion_allowed": False,
             "agent_numeric_metrics_allowed": False,
             "sealed_test_access_allowed": False,
+            "creation_idempotency_claimed": False,
         },
         "stop_rules": [
             "stop before the call on any deterministic preflight failure",
             "stop on provider response or receipt verification failure",
+            "never repeat creation after an acknowledgement timeout",
+            "poll only the acknowledged response ID",
             "stop on schema, offset, reference, cycle, provenance, custody, or budget failure",
             "stop after exactly one provider call regardless of scientific result",
             "never retry, repair, patch, reinterpret, or select another source",
@@ -282,6 +308,7 @@ def _verify_safety_contract(
         raise ExperimentPreflightError("budgets and safety rules must be explicit")
     expected_budgets = {
         "provider_calls": 1,
+        "duplicate_creation_calls": 0,
         "provider_retries": 0,
         "fallbacks": 0,
         "repairs": 0,
@@ -297,6 +324,7 @@ def _verify_safety_contract(
         "promotion_allowed",
         "agent_numeric_metrics_allowed",
         "sealed_test_access_allowed",
+        "creation_idempotency_claimed",
     )
     if any(rules.get(rule) is not False for rule in prohibited):
         raise ExperimentPreflightError("a prohibited experiment capability is enabled")

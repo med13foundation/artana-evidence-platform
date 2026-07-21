@@ -9,6 +9,10 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from scripts.validation.provider_receipt_boundary.background import (
+    BackgroundExecutionBudgets,
+    execute_background_provider_call,
+)
 from scripts.validation.public_gold.bionlp_cg_event_projection import (
     project_development_directory,
 )
@@ -18,7 +22,10 @@ from scripts.validation.public_gold.lossless_event_experiment_contracts import (
     build_provider_input,
 )
 from scripts.validation.public_gold.lossless_event_preflight import (
+    ACKNOWLEDGEMENT_TIMEOUT_SECONDS,
     DEVELOPMENT_DIRECTORY,
+    MAX_POLLING_SECONDS,
+    POLLING_INTERVAL_SECONDS,
     PROMPT_PATH,
     canonical_sha256,
     verify_preregistration,
@@ -26,7 +33,6 @@ from scripts.validation.public_gold.lossless_event_preflight import (
 from scripts.validation.public_gold.lossless_event_provider import (
     ProviderExecutionError,
     ProviderRequest,
-    execute_single_provider_call,
 )
 from scripts.validation.public_gold.lossless_event_provider_format import (
     build_scientific_event_provider_format,
@@ -82,7 +88,7 @@ def run_experiment(
     )
     preregistration_sha256 = _file_sha256(preregistration_path)
     metadata = {
-        "artana_experiment": "lossless-event-development-v2",
+        "artana_experiment": "lossless-event-development-v4",
         "artana_preregistration_sha256": preregistration_sha256,
         "artana_source_sha256": selected.source_sha256,
     }
@@ -90,9 +96,14 @@ def run_experiment(
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY is required after offline preflight passes")
     try:
-        execution = execute_single_provider_call(
+        execution = execute_background_provider_call(
             api_key=api_key,
             output_model=ScientificEventExtraction,
+            transport_budgets=BackgroundExecutionBudgets(
+                acknowledgement_timeout_seconds=ACKNOWLEDGEMENT_TIMEOUT_SECONDS,
+                polling_interval_seconds=POLLING_INTERVAL_SECONDS,
+                max_polling_seconds=MAX_POLLING_SECONDS,
+            ),
             request=ProviderRequest(
                 provider_input=provider_input,
                 provider_format=build_scientific_event_provider_format(),
@@ -133,8 +144,9 @@ def run_experiment(
     artifacts.raw_output.write_text(
         json.dumps(
             {
-                "creation": execution.creation_response,
-                "retrieval": execution.retrieval_response,
+                "acknowledgement": execution.acknowledgement_response,
+                "terminal": execution.terminal_response,
+                "confirmation": execution.confirmation_response,
             },
             indent=2,
             sort_keys=True,
@@ -181,7 +193,7 @@ def run_experiment(
         else "DEVELOPMENT_GATE_FAILED"
     )
     final_result: dict[str, object] = {
-        "schema_version": "artana.public_gold.lossless_event_result.v2",
+        "schema_version": "artana.public_gold.lossless_event_result.v3",
         "decision": decision,
         "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
         "preregistration_sha256": preregistration_sha256,
@@ -223,7 +235,7 @@ def _invalid_result(
     root_cause: str,
 ) -> dict[str, object]:
     return {
-        "schema_version": "artana.public_gold.lossless_event_result.v2",
+        "schema_version": "artana.public_gold.lossless_event_result.v3",
         "decision": "INVALID_EXPERIMENT",
         "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
         "preregistration_sha256": preregistration_sha256,
@@ -256,7 +268,7 @@ def _write_artifacts(
     score = result.get("score")
     failure = result.get("failure")
     report = [
-        "# Lossless Scientific Event Development Experiment V2",
+        "# Lossless Scientific Event Development Experiment V4",
         "",
         f"**Decision:** `{decision}`",
         "",
