@@ -11,13 +11,19 @@ reproduction.
 | --- | --- |
 | `BIORED.zip` | `c3032230bd89d22a0923d0df6ae943bc8ea37fba7e42dafa7a8dec21bac02d47` |
 | `BioRED_Annotation_Guideline.pdf` | `e2cf33a9fab76124351c609d3b5fd704e3a8a64fcad2fb8b48227c2aa92feb22` |
-| Deterministic development projection | `a537b29d655f01b297feb74507c9b10b577e99067f950f7847eace08f7de6bd8` |
+| Deterministic development projection | `6c33bb41182305bf2a0874fd8c21b4f762373799268bb7a5de4b623a3b05b944` |
 
 The deterministic adapter read `Dev.BioC.JSON` only and produced a local
 development projection of 100 documents and 1,162 annotated relations. It
 preserves document identifiers, entity offsets, entity types, relation types,
 and the dataset's novel/background category. It does not invoke Artana,
 providers, agents, repair, or graph writes.
+
+The official development file uses `Novel` and `No` as novelty labels. A
+pre-execution audit found and corrected an adapter defect that had accepted only
+`Yes` as novel and therefore mislabeled every relation as background. The
+corrected projection contains 835 novel and 327 background relations. Unknown
+novelty labels now fail closed.
 
 `Test.BioC.JSON` remains sealed by the adapter unless a future preregistration
 explicitly authorizes it. The raw corpus and generated projection are local

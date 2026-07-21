@@ -44,7 +44,7 @@ def _bioc_document() -> dict[str, object]:
                     "entity1": "1",
                     "entity2": "D1",
                     "type": "Cause",
-                    "novel": "Yes",
+                    "novel": "Novel",
                 },
             }
         ],
@@ -73,3 +73,13 @@ def test_test_split_is_sealed_by_default(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="sealed"):
         load_biored_split(source, split="Test")
+
+
+def test_unknown_novelty_label_fails_closed(tmp_path: Path) -> None:
+    document = _bioc_document()
+    document["relations"][0]["infons"]["novel"] = "Yes"
+    source = tmp_path / "Dev.BioC.JSON"
+    source.write_text(json.dumps({"documents": [document]}))
+
+    with pytest.raises(ValueError, match="unsupported BioRED relation novelty"):
+        load_biored_split(source, split="Dev")

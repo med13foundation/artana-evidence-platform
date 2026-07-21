@@ -141,11 +141,7 @@ def _normalize_relation(raw: object, document_id: str) -> BioREDRelation:
     if not isinstance(raw, dict) or not isinstance(raw.get("infons"), dict):
         raise TypeError("BioRED relation must have infons")
     infons = raw["infons"]
-    novelty: Literal["NOVEL", "BACKGROUND"] = (
-        "NOVEL"
-        if _string(infons.get("novel"), "relation novelty") == "Yes"
-        else "BACKGROUND"
-    )
+    novelty = _normalize_novelty(infons.get("novel"))
     return BioREDRelation(
         document_id=document_id,
         relation_id=_string(raw.get("id"), "relation id"),
@@ -154,6 +150,15 @@ def _normalize_relation(raw: object, document_id: str) -> BioREDRelation:
         first_identifier=_string(infons.get("entity1"), "first relation entity"),
         second_identifier=_string(infons.get("entity2"), "second relation entity"),
     )
+
+
+def _normalize_novelty(value: object) -> Literal["NOVEL", "BACKGROUND"]:
+    label = _string(value, "relation novelty")
+    if label == "Novel":
+        return "NOVEL"
+    if label == "No":
+        return "BACKGROUND"
+    raise ValueError(f"unsupported BioRED relation novelty: {label}")
 
 
 def _string(value: object, label: str) -> str:

@@ -1,6 +1,6 @@
 {
   "schema_version": "artana.public_gold.development_contract.v1",
-  "status": "FROZEN_BEFORE_ARTANA_EXECUTION",
+  "status": "BLOCKED_BY_REPRESENTABILITY_PREFLIGHT",
   "execution_authorized": false,
   "purpose": "adapter and prompt calibration on public development splits only",
   "promotion_enabled": false,
@@ -41,5 +41,24 @@
     "unsupported predictions",
     "complete document inventory"
   ],
-  "next_gate": "freeze model, prompts, schemas, budgets, and code hashes before authorizing a development execution"
+  "representability_preflight": {
+    "dataset": "bionlp_st_2013_cg_development",
+    "total_events": 2915,
+    "exactly_representable_events": 224,
+    "exactly_representable_rate": 0.07684391080617496,
+    "excluded_events": 2691,
+    "exclusive_primary_reasons": {
+      "unsupported_event_type": 1144,
+      "nested_event_argument": 997,
+      "insufficient_direct_arguments": 550
+    },
+    "nonexclusive_blockers": {
+      "insufficient_direct_arguments": 1729,
+      "unsupported_event_type": 1144,
+      "nested_event_argument": 1002,
+      "unsupported_argument_role": 240
+    },
+    "provider_call_authorized": false
+  },
+  "next_gate": "make the scientific claim contract losslessly represent nested, unary, and source-typed public-gold events before freezing any model execution"
 }
