@@ -36,6 +36,7 @@ VALIDATION_ORDER = (
     "RECEIPT_IDENTITY",
     "RECEIPT_MODEL",
     "RECEIPT_BINDING",
+    "CREATION_DESCRIPTION",
     "CREATION_SCHEMA",
     "RECEIPT_INPUT",
     "RETRIEVAL_SCHEMA",
@@ -78,6 +79,7 @@ def validate_provider_receipt(
     _require_response_identity(creation, retrieval)
     _require_model_identity(creation, retrieval, expectations.provider_model_id)
     _require_request_binding(creation, retrieval, expectations)
+    _require_creation_description(creation, expectations.provider_format)
     _require_creation_schema(creation, expectations.provider_format)
     _require_input(input_items, expectations.provider_input)
     _require_retrieval_schema(retrieval, expectations.provider_format)
@@ -126,6 +128,7 @@ def validate_creation_response(
     _require_single_response_identity(creation, label="creation")
     _require_single_model(creation, expectations.provider_model_id, label="creation")
     _require_single_binding(creation, expectations, label="creation")
+    _require_creation_description(creation, expectations.provider_format)
     _require_creation_schema(creation, expectations.provider_format)
 
 
@@ -447,15 +450,53 @@ def _require_creation_schema(
         )
 
 
+def _require_creation_description(
+    creation: dict[str, object], expected_format: dict[str, object]
+) -> None:
+    creation_format = _response_format(creation, stage="CREATION_DESCRIPTION")
+    _require_description(
+        actual_format=creation_format,
+        expected_format=expected_format,
+        stage="CREATION_DESCRIPTION",
+    )
+
+
 def _require_retrieval_schema(
     retrieval: dict[str, object], expected_format: dict[str, object]
 ) -> None:
     retrieval_format = _response_format(retrieval, stage="RETRIEVAL_SCHEMA")
+    _require_description(
+        actual_format=retrieval_format,
+        expected_format=expected_format,
+        stage="RETRIEVAL_SCHEMA",
+    )
     if retrieval_format != expected_format:
         raise ReceiptBoundaryError(
             "RETRIEVAL_SCHEMA",
             "retrieval response schema differs",
             diagnostics=_schema_diagnostics(expected_format, retrieval_format),
+        )
+
+
+def _require_description(
+    *,
+    actual_format: dict[str, object],
+    expected_format: dict[str, object],
+    stage: str,
+) -> None:
+    expected = expected_format.get("description")
+    actual = actual_format.get("description")
+    if not isinstance(expected, str) or not expected:
+        raise ReceiptBoundaryError(
+            stage,
+            "frozen response-format description is absent",
+            diagnostics=_path_diagnostics("$.description", "NON_EMPTY_STRING", expected),
+        )
+    if actual != expected:
+        raise ReceiptBoundaryError(
+            stage,
+            "response-format description differs",
+            diagnostics=_path_diagnostics("$.description", expected, actual),
         )
 
 

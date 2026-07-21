@@ -106,6 +106,15 @@ def _request(prompt: str, response_format: dict[str, object]) -> ProviderRequest
     )
 
 
+def _response_format() -> dict[str, object]:
+    return {
+        "type": "json_schema",
+        "name": "test",
+        "description": "A stable transport test response.",
+        "strict": True,
+    }
+
+
 def _payload(response_format: dict[str, object]) -> dict[str, object]:
     structured = {
         "status": "OK",
@@ -151,7 +160,7 @@ def _payload(response_format: dict[str, object]) -> dict[str, object]:
 
 def test_provider_transport_calls_model_once_and_verifies_receipt() -> None:
     prompt = "frozen input"
-    response_format = {"type": "json_schema", "name": "test", "strict": True}
+    response_format = _response_format()
     client = _Client(_payload(response_format), prompt)
 
     execution = execute_single_provider_call(
@@ -174,7 +183,7 @@ def test_provider_transport_calls_model_once_and_verifies_receipt() -> None:
 
 def test_provider_transport_fails_closed_on_retrieved_input_drift() -> None:
     prompt = "frozen input"
-    response_format = {"type": "json_schema", "name": "test", "strict": True}
+    response_format = _response_format()
     client = _Client(_payload(response_format), "changed input")
 
     with pytest.raises(ProviderExecutionError, match="RECEIPT_INPUT"):
@@ -190,7 +199,7 @@ def test_provider_transport_fails_closed_on_retrieved_input_drift() -> None:
 
 def test_provider_transport_stops_before_retrieval_on_creation_schema_failure() -> None:
     prompt = "frozen input"
-    response_format = {"type": "json_schema", "name": "test", "strict": True}
+    response_format = _response_format()
     creation = _payload(response_format)
     creation["text"] = {"format": {**response_format, "name": "changed"}}
     client = _Client(creation, prompt)
@@ -213,7 +222,7 @@ def test_provider_transport_stops_before_retrieval_on_creation_schema_failure() 
 
 def test_provider_transport_stops_before_input_retrieval_on_identity_failure() -> None:
     prompt = "frozen input"
-    response_format = {"type": "json_schema", "name": "test", "strict": True}
+    response_format = _response_format()
     creation = _payload(response_format)
     retrieval = _payload(response_format)
     retrieval["id"] = "resp-other"

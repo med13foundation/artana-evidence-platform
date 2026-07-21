@@ -30,20 +30,24 @@ MODEL_IDENTITY = "openai:gpt-5.6-sol"
 PROVIDER_MODEL_ID = "gpt-5.6-sol"
 REASONING_EFFORT = "low"
 MAX_SMOKE_COST_USD = 0.25
+SMOKE_VERSION = "v3"
+RESPONSE_FORMAT_DESCRIPTION = (
+    "A non-scientific receipt-boundary response with one categorical result."
+)
 SMOKE_INPUT = (
     "This is a non-scientific transport verification. Return category OK and the "
     "exact explanation: Receipt boundary confirmed."
 )
 SMOKE_METADATA = {
-    "artana_experiment": "receipt-boundary-smoke-v2",
+    "artana_experiment": f"receipt-boundary-smoke-{SMOKE_VERSION}",
     "artana_data_class": "non-scientific",
 }
 PREDECESSOR_PREREGISTRATION = Path(
     "docs/validation/preregistrations/"
-    "2026-07-21-provider-receipt-boundary-smoke-v1.json"
+    "2026-07-21-provider-receipt-boundary-smoke-v2.json"
 )
 PREDECESSOR_RESULT = Path(
-    "docs/validation/reports/2026-07-21-provider-receipt-boundary-smoke-v1-result.json"
+    "docs/validation/reports/2026-07-21-provider-receipt-boundary-smoke-v2-result.json"
 )
 SMOKE_CODE_FILES = (
     "scripts/validation/provider_receipt_boundary/__init__.py",
@@ -91,6 +95,7 @@ def compute_smoke_frozen_state(repository_root: Path) -> dict[str, object]:
         "dict[str, object]",
         type_to_text_format_param(ReceiptSmokeOutput),
     )
+    provider_format["description"] = RESPONSE_FORMAT_DESCRIPTION
     code_files = {
         path: _file_sha256(repository_root / path) for path in SMOKE_CODE_FILES
     }
@@ -147,7 +152,7 @@ def build_smoke_preregistration(repository_root: Path) -> dict[str, object]:
     """Build the sole authorized non-scientific smoke contract."""
 
     return {
-        "schema_version": "artana.provider_receipt_boundary.smoke.v2",
+        "schema_version": f"artana.provider_receipt_boundary.smoke.{SMOKE_VERSION}",
         "status": "FROZEN_AUTHORIZED_FOR_ONE_NON_SCIENTIFIC_CALL",
         "execution_authorized": True,
         "terminal_predecessor": {
@@ -157,7 +162,7 @@ def build_smoke_preregistration(repository_root: Path) -> dict[str, object]:
             ),
             "result_path": PREDECESSOR_RESULT.as_posix(),
             "result_sha256": _file_sha256(repository_root / PREDECESSOR_RESULT),
-            "decision": "INVALID_SMOKE_EXPERIMENT",
+            "decision": "RECEIPT_BOUNDARY_FAILED",
             "reinterpretation_allowed": False,
             "retry_allowed": False,
         },
@@ -387,7 +392,9 @@ def _smoke_result(
     receipt: dict[str, object],
 ) -> dict[str, object]:
     return {
-        "schema_version": "artana.provider_receipt_boundary.smoke_result.v2",
+        "schema_version": (
+            f"artana.provider_receipt_boundary.smoke_result.{SMOKE_VERSION}"
+        ),
         "decision": decision,
         "preflight": preflight,
         "receipt_sha256": canonical_sha256(receipt),
@@ -428,7 +435,7 @@ def _write_artifacts(
     identity = receipt.get("identity")
     response_id = identity.get("response_id") if isinstance(identity, dict) else None
     report = [
-        "# Provider Receipt Boundary Smoke V2",
+        f"# Provider Receipt Boundary Smoke {SMOKE_VERSION.upper()}",
         "",
         f"**Decision:** `{result['decision']}`",
         "",

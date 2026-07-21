@@ -9,6 +9,7 @@ from openai.types.responses.response_format_text_json_schema_config import (
 )
 
 from scripts.validation.provider_receipt_boundary.smoke import (
+    RESPONSE_FORMAT_DESCRIPTION,
     SMOKE_INPUT,
     SmokePreflightError,
     build_smoke_preregistration,
@@ -50,7 +51,7 @@ def test_smoke_preregistration_recomputes_exactly_and_is_non_scientific(
     }
     assert len(payload["frozen_state"]["custody"]["commit"]) == 40
     assert payload["frozen_state"]["output"]["provider_schema_compatible"] is True
-    assert payload["terminal_predecessor"]["decision"] == "INVALID_SMOKE_EXPERIMENT"
+    assert payload["terminal_predecessor"]["decision"] == "RECEIPT_BOUNDARY_FAILED"
     assert payload["terminal_predecessor"]["retry_allowed"] is False
     assert verification["validation_order"] == payload["validation_order"]
 
@@ -81,6 +82,15 @@ def test_openai_response_schema_serialization_uses_wire_aliases_and_unset_fields
     }
     assert "schema_" not in api_shape
     assert "description" not in api_shape
+
+
+def test_smoke_freezes_explicit_nonempty_response_format_description() -> None:
+    payload = build_smoke_preregistration(ROOT)
+
+    provider_format = payload["frozen_state"]["output"]["provider_format"]
+
+    assert provider_format["description"] == RESPONSE_FORMAT_DESCRIPTION
+    assert provider_format["description"]
 
 
 def test_smoke_preregistration_rejects_request_or_code_drift(tmp_path: Path) -> None:

@@ -8,6 +8,7 @@ import pytest
 from scripts.validation.provider_receipt_boundary import (
     ReceiptBoundaryError,
     ReceiptExpectations,
+    validate_creation_response,
     validate_provider_receipt,
 )
 from scripts.validation.provider_receipt_boundary.structural_diff import (
@@ -17,6 +18,7 @@ from scripts.validation.provider_receipt_boundary.structural_diff import (
 FORMAT = {
     "type": "json_schema",
     "name": "receipt_smoke",
+    "description": "A stable receipt-boundary response.",
     "strict": True,
     "schema": {
         "type": "object",
@@ -232,6 +234,46 @@ def test_changed_input_or_schema_fails() -> None:
     differences = error.value.diagnostics["differences"]
     assert differences[0]["path"] == "$.name"
     assert "changed" not in json.dumps(differences)
+
+
+@pytest.mark.parametrize("description", [None, "", "changed"])
+def test_creation_description_must_match_exactly(description: object) -> None:
+    creation = _response()
+    response_format = copy.deepcopy(FORMAT)
+    response_format["description"] = description
+    creation["text"] = {"format": response_format}
+
+    with pytest.raises(ReceiptBoundaryError) as error:
+        validate_creation_response(creation, _expectations())
+
+    assert error.value.stage == "CREATION_DESCRIPTION"
+    assert error.value.diagnostics["differences"][0]["path"] == "$.description"
+
+
+def test_creation_description_cannot_be_omitted() -> None:
+    creation = _response()
+    response_format = copy.deepcopy(FORMAT)
+    del response_format["description"]
+    creation["text"] = {"format": response_format}
+
+    with pytest.raises(ReceiptBoundaryError) as error:
+        validate_creation_response(creation, _expectations())
+
+    assert error.value.stage == "CREATION_DESCRIPTION"
+
+
+@pytest.mark.parametrize("description", [None, "", "changed"])
+def test_retrieval_description_must_match_exactly(description: object) -> None:
+    retrieval = _response()
+    response_format = copy.deepcopy(FORMAT)
+    response_format["description"] = description
+    retrieval["text"] = {"format": response_format}
+
+    with pytest.raises(ReceiptBoundaryError) as error:
+        _validate(_response(), retrieval)
+
+    assert error.value.stage == "RETRIEVAL_SCHEMA"
+    assert error.value.diagnostics["differences"][0]["path"] == "$.description"
 
 
 def test_missing_retrieval_schema_fails_before_payload_validation() -> None:
