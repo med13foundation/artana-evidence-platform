@@ -1,0 +1,13 @@
+{
+  "adjudicator_task_usage": "UNAVAILABLE_FROM_CODEX_TASK_RUNTIME",
+  "fallback_invocations": 0,
+  "graph_writes": 0,
+  "provider_calls": "NOT_RUN",
+  "provider_cost_usd": "NOT_RUN",
+  "provider_experiment_executed": false,
+  "provider_latency_ms": "NOT_RUN",
+  "provider_tokens": "NOT_RUN",
+  "schema_version": "source_general_claim_verification.receipts.v2",
+  "terminal": "STOP_REFERENCE_SET_UNRELIABLE",
+  "untouched_sources_accessed": "UNVERIFIED_BY_RUNNER"
+}

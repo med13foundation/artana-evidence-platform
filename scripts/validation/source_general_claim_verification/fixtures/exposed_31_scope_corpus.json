@@ -1,0 +1,343 @@
+{
+  "exposed_only": true,
+  "schema_version": "source_general_claim_verification.corpus.v1",
+  "scopes": [
+    {
+      "scope": {
+        "end": 961,
+        "start": 862,
+        "text": "Patients with RA were more likely to be female and had more comorbidities than patients without RA."
+      },
+      "scope_id": "G-f6852cfe5e2f792b",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+    },
+    {
+      "scope": {
+        "end": 1190,
+        "start": 962,
+        "text": "Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation."
+      },
+      "scope_id": "G-d1286300a242e0e7",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+    },
+    {
+      "scope": {
+        "end": 1301,
+        "start": 1191,
+        "text": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08)"
+      },
+      "scope_id": "G-d0f07ae5d50b2bd2",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+    },
+    {
+      "scope": {
+        "end": 1380,
+        "start": 1191,
+        "text": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09)."
+      },
+      "scope_id": "G-7887375214f36f9f",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+    },
+    {
+      "scope": {
+        "end": 1487,
+        "start": 1381,
+        "text": "Male sex, having more comorbidities, and steroid dose before ICI initiation were associated with worse OS."
+      },
+      "scope_id": "G-76c8c83a66ef47ad",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+    },
+    {
+      "scope": {
+        "end": 1640,
+        "start": 1488,
+        "text": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS."
+      },
+      "scope_id": "G-e9edf448e97a661e",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+    },
+    {
+      "scope": {
+        "end": 1224,
+        "start": 1067,
+        "text": "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023)"
+      },
+      "scope_id": "G-38d616ba3e425d27",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40"
+    },
+    {
+      "scope": {
+        "end": 1340,
+        "start": 1226,
+        "text": "with a more pronounced effect among AI-identified high-risk patients (13.0% vs. 8.9%, HR 1.55, 95% CI: 1.08-2.21)."
+      },
+      "scope_id": "G-c6f1c08eecd8cf53",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40"
+    },
+    {
+      "scope": {
+        "end": 1459,
+        "start": 1341,
+        "text": "While overall echocardiogram utilization remained similar between groups (17.1% vs. 17.3%, HR 1.00, 95% CI: 0.92-1.09)"
+      },
+      "scope_id": "G-0b1467f1198defae",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40"
+    },
+    {
+      "scope": {
+        "end": 1622,
+        "start": 1461,
+        "text": "the intervention group demonstrated higher positive predictive value for identifying low EF among patients receiving echocardiogram (34.2% vs. 20.2%, p < 0.001)."
+      },
+      "scope_id": "G-1b346f6b095ba905",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40"
+    },
+    {
+      "scope": {
+        "end": 1770,
+        "start": 1623,
+        "text": "Post-hoc analysis revealed increased cardiology consultation rates among high-risk patients in the intervention group (29.3% vs. 23.5%, p = 0.027)."
+      },
+      "scope_id": "G-2679331b14fa82e6",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40"
+    },
+    {
+      "scope": {
+        "end": 1340,
+        "start": 1067,
+        "text": "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023), with a more pronounced effect among AI-identified high-risk patients (13.0% vs. 8.9%, HR 1.55, 95% CI: 1.08-2.21)."
+      },
+      "scope_id": "G-0d96e7bd606e9501",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40"
+    },
+    {
+      "scope": {
+        "end": 1986,
+        "start": 1887,
+        "text": "primarily by improving diagnostic efficiency rather than increasing overall healthcare utilization."
+      },
+      "scope_id": "G-e94ebe7e9d47fb9a",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40"
+    },
+    {
+      "scope": {
+        "end": 2056,
+        "start": 1987,
+        "text": "The tool was particularly effective in identifying high-risk patients"
+      },
+      "scope_id": "G-04cb55799af659d3",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40"
+    },
+    {
+      "scope": {
+        "end": 2109,
+        "start": 2057,
+        "text": "who benefited from increased specialist consultation"
+      },
+      "scope_id": "G-1f8f8d8af1fce516",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40"
+    },
+    {
+      "scope": {
+        "end": 2147,
+        "start": 2110,
+        "text": "and more targeted diagnostic testing."
+      },
+      "scope_id": "G-6788a7de43502821",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40"
+    },
+    {
+      "scope": {
+        "end": 645,
+        "start": 527,
+        "text": "High quality clinical grade cceAAV vector based on AAV serotype 9 (AAV9) was produced in 200 L of suspension 293 cells"
+      },
+      "scope_id": "G-9144140bac9566a0",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535"
+    },
+    {
+      "scope": {
+        "end": 699,
+        "start": 646,
+        "text": "with a total yield of 4.3 x 10^16 vector genomes (vg)"
+      },
+      "scope_id": "G-c6ce1423d35ca66b",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535"
+    },
+    {
+      "scope": {
+        "end": 922,
+        "start": 701,
+        "text": "Clinical trial in two spinal muscular atrophy (SMA) patients via intravenous injection at 12-24 months of age revealed no treatment-associated severe adverse events with a dose ranging from 6 x 10^13 to 1.2 x 10^14 vg/kg."
+      },
+      "scope_id": "G-f2dcd54d2c34e7d5",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535"
+    },
+    {
+      "scope": {
+        "end": 1056,
+        "start": 923,
+        "text": "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function"
+      },
+      "scope_id": "G-f18f2b8dcfca47b2",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535"
+    },
+    {
+      "scope": {
+        "end": 1092,
+        "start": 923,
+        "text": "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function and electrophysiological parameters"
+      },
+      "scope_id": "G-e7f470706b7ba982",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535"
+    },
+    {
+      "scope": {
+        "end": 1131,
+        "start": 923,
+        "text": "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function and electrophysiological parameters and capacity for independent mobility."
+      },
+      "scope_id": "G-29869fbcc8aeb3e6",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535"
+    },
+    {
+      "scope": {
+        "end": 1285,
+        "start": 1132,
+        "text": "Our strategy enabled us to perform gene therapy in older SMA patients who had received initial treatment with RNA-splicing modifying drug during infancy."
+      },
+      "scope_id": "G-9074a91ba663d314",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535"
+    },
+    {
+      "scope": {
+        "end": 1425,
+        "start": 1286,
+        "text": "These early data provide preliminary evidence for clinical use of cceAAV vectors, though further validation in larger cohorts is warranted."
+      },
+      "scope_id": "G-1d9acf68ceb6192c",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535"
+    },
+    {
+      "scope": {
+        "end": 1086,
+        "start": 960,
+        "text": "A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance."
+      },
+      "scope_id": "G-3828c170d2d4aff9",
+      "source_id": "exposed-human-genetics",
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b"
+    },
+    {
+      "scope": {
+        "end": 1290,
+        "start": 1087,
+        "text": "Hyponatremia was determined at a higher rate in patients with c.506-276A>G (75.00%), c.282+492G>A (85.70%), c.282+499G>C (87.00%), c.282+495G>A (85.00%), and c.505+375G>A (92.30%) variants in particular."
+      },
+      "scope_id": "G-28b81bccec98783b",
+      "source_id": "exposed-human-genetics",
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b"
+    },
+    {
+      "scope": {
+        "end": 1437,
+        "start": 1291,
+        "text": "The risk of hyponatremia development increased 9.2-fold in the presence of the c.282+492G>A variant (OR = 9.243; 95% CI: 2.259-37.818; p = 0.002)."
+      },
+      "scope_id": "G-62c9d844b023ec9f",
+      "source_id": "exposed-human-genetics",
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b"
+    },
+    {
+      "scope": {
+        "end": 454,
+        "start": 296,
+        "text": "Key results showed that ZmWRKY104 directly interacts with ZmCCaMK in the nucleus in a non-phosphorylation-dependent manner, forming a novel regulatory module."
+      },
+      "scope_id": "G-899de71f85d3f8e2",
+      "source_id": "exposed-molecular-mechanism",
+      "source_sha256": "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe"
+    },
+    {
+      "scope": {
+        "end": 609,
+        "start": 455,
+        "text": "BR treatment upregulates ZmWRKY104 expression, and overexpression of ZmWRKY104 significantly enhances the activities of antioxidant enzymes (APX and SOD)."
+      },
+      "scope_id": "G-d0707250f0ed0de6",
+      "source_id": "exposed-molecular-mechanism",
+      "source_sha256": "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe"
+    },
+    {
+      "scope": {
+        "end": 714,
+        "start": 610,
+        "text": "Co-expression of ZmWRKY104 and ZmCCaMK synergistically promotes the antioxidant defense system in maize."
+      },
+      "scope_id": "G-7e199efed15b3e57",
+      "source_id": "exposed-molecular-mechanism",
+      "source_sha256": "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe"
+    },
+    {
+      "scope": {
+        "end": 1009,
+        "start": 715,
+        "text": "Transgenic maize overexpressing ZmWRKY104 exhibits obvious salt tolerance advantages under 100 mM NaCl stress compared to wild-type plants, including reduced leaf yellowing, increased plant height and root length, as well as decreased electrolyte leakage (EL) and malondialdehyde (MDA) content."
+      },
+      "scope_id": "G-7ed51da6aa3e9d5f",
+      "source_id": "exposed-molecular-mechanism",
+      "source_sha256": "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe"
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "text": "OBJECTIVE: We aimed to compare overall survival (OS) in immune checkpoint inhibitor (ICI)-treated patients with metastatic non-small cell lung cancer (mNSCLC) with pre-existing rheumatoid arthritis (RA) versus those without RA. METHODS: A retrospective cohort study using Medicare claims data was performed. Participants included patients aged >= 66 years with a diagnosis of a malignant neoplasm of lung and bronchus who initiated nivolumab, pembrolizumab, or atezolizumab between March 4, 2015 and April 11, 2019, which is after the US Food and Drug Administration (FDA) approval of ICIs for mNSCLC but before the first FDA approval for stage III disease. Survival analysis using Kaplan-Meier and adjusted Cox proportional hazard models was performed. RESULTS: A total of 2,732 people with mNSCLC (N = 790 RA and N = 1,942 non-RA) were in the analytic cohort. Patients with RA were more likely to be female and had more comorbidities than patients without RA. Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation. There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09). Male sex, having more comorbidities, and steroid dose before ICI initiation were associated with worse OS. In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS. CONCLUSION: After controlling for demographics and comorbid conditions, ICI-treated patients with RA with mNSCLC had no difference in OS compared with patients without RA. After excluding patients receiving dexamethasone, steroid dose was not associated with worse OS."
+    },
+    {
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "text": "BACKGROUND: Early diagnosis of low ejection fraction (EF) remains challenging despite being a treatable condition. This study aimed to evaluate the effectiveness of an electrocardiogram (ECG)-based artificial intelligence (AI)-assisted clinical decision support tool in improving the early diagnosis of low EF among inpatient patients under non-cardiologist care. METHODS: We conducted a pragmatic randomized controlled trial at an academic medical center in Taiwan. 13,631 inpatient patients were randomized to either the intervention group (n = 6,840) receiving AI-generated ECG results or the control group (n = 6,791) following standard care. The primary outcome was the incidence of newly diagnosed low EF (<= 50%) within 30 days following the ECG. Secondary outcomes included echocardiogram utilization rates, positive predictive value for low EF detection, and cardiology consultation rates. Statistical analysis included hazard ratios (HR) with 95% confidence intervals (CI) for time-to-event outcomes and chi-square tests for categorical variables. RESULTS: The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023), with a more pronounced effect among AI-identified high-risk patients (13.0% vs. 8.9%, HR 1.55, 95% CI: 1.08-2.21). While overall echocardiogram utilization remained similar between groups (17.1% vs. 17.3%, HR 1.00, 95% CI: 0.92-1.09), the intervention group demonstrated higher positive predictive value for identifying low EF among patients receiving echocardiogram (34.2% vs. 20.2%, p < 0.001). Post-hoc analysis revealed increased cardiology consultation rates among high-risk patients in the intervention group (29.3% vs. 23.5%, p = 0.027). CONCLUSIONS: Implementation of an AI-ECG algorithm enhanced the early diagnosis of low EF in the inpatient setting, primarily by improving diagnostic efficiency rather than increasing overall healthcare utilization. The tool was particularly effective in identifying high-risk patients who benefited from increased specialist consultation and more targeted diagnostic testing. TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT05117970."
+    },
+    {
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "text": "Covalently closed-end adeno-associated virus (cceAAV) vector is a new generation of self-complementary adeno-associated virus (scAAV) vector that does not utilize a mutant inverted terminal repeat (ITR) for vector production. Importantly, packaged genomes of these cceAAV vectors are markedly more intact than traditional scAAVs, which typically contain a large fraction of incomplete genomes, including many that lost their self-complementary configuration. Here, we report the first in-human experience with a cceAAV vector. High quality clinical grade cceAAV vector based on AAV serotype 9 (AAV9) was produced in 200 L of suspension 293 cells with a total yield of 4.3 x 10^16 vector genomes (vg). Clinical trial in two spinal muscular atrophy (SMA) patients via intravenous injection at 12-24 months of age revealed no treatment-associated severe adverse events with a dose ranging from 6 x 10^13 to 1.2 x 10^14 vg/kg. Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function and electrophysiological parameters and capacity for independent mobility. Our strategy enabled us to perform gene therapy in older SMA patients who had received initial treatment with RNA-splicing modifying drug during infancy. These early data provide preliminary evidence for clinical use of cceAAV vectors, though further validation in larger cohorts is warranted."
+    },
+    {
+      "source_id": "exposed-human-genetics",
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b",
+      "text": "OBJECTIVE: Hyponatremia is one of the most common electrolyte disorders in clinical practice and is frequently observed following thiazide use. Advanced age and female gender are implicated in the etiology of hydrochlorothiazide (HCTZ)-associated hyponatremia. There has also recently been mention of a genetic disposition. This study evaluated the genetic component, and particularly the clinical significance, of variants in the SLC12A3 gene in the development of hyponatremia in hypertensive patients using HCTZ-group diuretics.\nMETHOD: Ninety-five patients presenting to the Tekirda\u011f Nam\u0131k Kemal University nephrology clinic and receiving antihypertensive therapy including HCTZ for at least one month were examined. Peripheral blood specimens were collected from hyponatremic (n = 62) and non-hyponatremic (n = 33) individuals. Variants in the SLC12A3 gene were analyzed using next generation sequencing and were compared with the clinical data.\nRESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance. Hyponatremia was determined at a higher rate in patients with c.506-276A>G (75.00%), c.282+492G>A (85.70%), c.282+499G>C (87.00%), c.282+495G>A (85.00%), and c.505+375G>A (92.30%) variants in particular. The risk of hyponatremia development increased 9.2-fold in the presence of the c.282+492G>A variant (OR = 9.243; 95% CI: 2.259-37.818; p = 0.002).\nCONCLUSION: In conclusion, we think that HCTZ-associated hyponatremia cannot be predicted by clinical and biochemical parameters alone, and that genetic factors should also be considered. Further multi-center prospective studies involving larger populations will clarify the clinical significance of variants in SLC12A3 and other genes and will make a significant contribution to individualized therapeutic approaches."
+    },
+    {
+      "source_id": "exposed-molecular-mechanism",
+      "source_sha256": "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe",
+      "text": "Brassinosteroid (BR)-mediated salt tolerance is a crucial mechanism for maize (Zea mays L.) adaptation to saline-alkaline environments. This study aimed to elucidate the molecular mechanism underlying BR-induced salt tolerance in maize, focusing on the regulatory roles of ZmWRKY104 and ZmCCaMK. Key results showed that ZmWRKY104 directly interacts with ZmCCaMK in the nucleus in a non-phosphorylation-dependent manner, forming a novel regulatory module. BR treatment upregulates ZmWRKY104 expression, and overexpression of ZmWRKY104 significantly enhances the activities of antioxidant enzymes (APX and SOD). Co-expression of ZmWRKY104 and ZmCCaMK synergistically promotes the antioxidant defense system in maize. Transgenic maize overexpressing ZmWRKY104 exhibits obvious salt tolerance advantages under 100 mM NaCl stress compared to wild-type plants, including reduced leaf yellowing, increased plant height and root length, as well as decreased electrolyte leakage (EL) and malondialdehyde (MDA) content. Collectively, this study identifies a novel non-phosphorylation-dependent WRKY-CCaMK regulatory module in the BR signaling pathway, which enhances BR-induced maize salt tolerance by synergistically activating antioxidant defense. The findings highlight ZmWRKY104 as a candidate gene and provide a potential molecular mechanism for salt-tolerant maize breeding in saline-alkaline regions of northern China."
+    }
+  ]
+}

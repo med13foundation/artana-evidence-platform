@@ -1,0 +1,30 @@
+{
+  "adjudicators": [
+    {
+      "artifact_sha256": "589b0de1276c7554ceb346be3e0232e8f731229947c2fa2a4ae3fcd9b0e29a74",
+      "model": "gpt-5.6-sol",
+      "role": "FIRST",
+      "task_id": "019f81e3-2553-73d2-bb9f-8c5f97f4863d"
+    },
+    {
+      "artifact_sha256": "78907ca789edef3af3c52626e6b845b7a6bd6a2c9b7b091d220aac3eab132e6e",
+      "model": "gpt-5.6-sol",
+      "role": "SECOND",
+      "task_id": "019f81e3-2608-79c1-bfcc-7f58d48422e2"
+    },
+    {
+      "artifact_sha256": "97764a514b33f0c37bbc13d64c82a67872aea8a498f91a29a35cf572eea31157",
+      "model": "gpt-5.6-sol",
+      "role": "TIEBREAKER",
+      "task_id": "019f81ea-a8bb-7623-b75e-a7fdcc77670f"
+    }
+  ],
+  "capture_timing": "AFTER_TASK_COMPLETION_FROM_CODEX_TASK_RECORD",
+  "corpus_file_sha256": "35377c6a263a21a47851e70ea935da27f7d83a34c3f11646a71c9c115b93ccb3",
+  "disagreement_request_sha256": "21b5a666e1ae9e583957c35bda0ee9d4f0d505e73ceecda0a556cd3857795266",
+  "filesystem_read_isolation_independently_auditable": false,
+  "prompt_sha256": "291a7edc628ae5069e85f0bba1e62b4c1879425407dbba447b4ee8d12794824c",
+  "schema_sha256": "f612fd798ee0d4b6e9414a662fd225156ad4d031a7ff49fbc834b26b3f0b0d3d",
+  "schema_version": "source_general_claim_verification.execution_manifest.v2",
+  "task_token_and_cost_accounting": "UNAVAILABLE_FROM_CODEX_TASK_RUNTIME"
+}

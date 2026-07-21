@@ -1,0 +1,16 @@
+{
+  "adjudicator_prompt_sha256": "32e44b69b7534db8c3e072d45ad1d2bb3a95eaf8525f18c9c917c08b8eb68a73",
+  "agent_numeric_scores_allowed": false,
+  "corpus_sha256": "44ee2a069ccef4b9f7a64f774d503ce459077492a60083e712a669aa25bcce88",
+  "experiment_execution_authorized": false,
+  "exposed_sources_only": true,
+  "graph_promotion_allowed": false,
+  "maximum_repairs_per_claim": 1,
+  "preregistration_sha256": "f3432a1958e6f8db5a49252f096e428372feca3390d9be2da0c91457a4202738",
+  "resolution_sha256": "820835f5eedbac30004659c7afceed93de2840e28a64c12a65b5bc972ca1df54",
+  "schema_version": "source_general_claim_verification.preregistration.v1",
+  "status": "BLOCKED_REFERENCE_SET_UNRELIABLE",
+  "stop_rule": "unresolved_adjudicator_disagreement_gt_20_percent",
+  "tiebreaker_prompt_sha256": "d779cee646d59a64e37ce47a7ba5bf6992333df42e124f001e31b2a0bf411838",
+  "untouched_sources_allowed": false
+}

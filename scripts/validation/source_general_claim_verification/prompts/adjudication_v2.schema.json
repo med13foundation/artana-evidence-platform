@@ -1,0 +1,468 @@
+{
+  "$defs": {
+    "AdjudicationPacket": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguity_reason": {
+          "enum": [
+            "NONE",
+            "BUNDLED_EVENTS",
+            "FRAGMENT_MISSING_CONTEXT",
+            "OVERLAPPING_SCOPE",
+            "ROLE_UNRESOLVED",
+            "EVENT_BOUNDARY_UNRESOLVED",
+            "OTHER"
+          ],
+          "title": "Ambiguity Reason",
+          "type": "string"
+        },
+        "claim": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AtomicClaim"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "decision": {
+          "enum": [
+            "ADJUDICATED",
+            "AMBIGUOUS",
+            "ABSTAIN"
+          ],
+          "title": "Decision",
+          "type": "string"
+        },
+        "explanation": {
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        },
+        "scope_evidence": {
+          "$ref": "#/$defs/EvidenceSpan"
+        },
+        "scope_id": {
+          "minLength": 1,
+          "title": "Scope Id",
+          "type": "string"
+        },
+        "source_id": {
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope_id",
+        "source_id",
+        "source_sha256",
+        "decision",
+        "ambiguity_reason",
+        "scope_evidence",
+        "claim",
+        "explanation"
+      ],
+      "title": "AdjudicationPacket",
+      "type": "object"
+    },
+    "AtomicClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptable_equivalent_evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceSpan"
+          },
+          "title": "Acceptable Equivalent Evidence",
+          "type": "array"
+        },
+        "author_interpretation": {
+          "enum": [
+            "SIGNIFICANT",
+            "NOT_SIGNIFICANT",
+            "NOT_CLAIMED"
+          ],
+          "title": "Author Interpretation",
+          "type": "string"
+        },
+        "author_interpretation_evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceSpan"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "comparison": {
+          "$ref": "#/$defs/Comparison"
+        },
+        "completeness": {
+          "const": "COMPLETE",
+          "title": "Completeness",
+          "type": "string"
+        },
+        "direction": {
+          "enum": [
+            "INCREASED",
+            "DECREASED",
+            "UNCHANGED",
+            "NO_DIFFERENCE",
+            "POSITIVE_ASSOCIATION",
+            "NEGATIVE_ASSOCIATION",
+            "NO_ASSOCIATION",
+            "PRODUCED",
+            "INTERACTS",
+            "ENABLES",
+            "OBSERVED",
+            "NOT_APPLICABLE"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "direction_evidence": {
+          "$ref": "#/$defs/EvidenceSpan"
+        },
+        "event_evidence": {
+          "$ref": "#/$defs/EvidenceSpan"
+        },
+        "event_type": {
+          "enum": [
+            "OBSERVATION",
+            "ASSOCIATION",
+            "COMPARISON",
+            "INTERACTION",
+            "REGULATION",
+            "INTERVENTION_EFFECT",
+            "PRODUCTION",
+            "QUANTIFICATION",
+            "SAFETY_OUTCOME",
+            "CLINICAL_OUTCOME",
+            "HYPOTHESIS"
+          ],
+          "title": "Event Type",
+          "type": "string"
+        },
+        "explanation": {
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        },
+        "participants": {
+          "items": {
+            "$ref": "#/$defs/Participant"
+          },
+          "minItems": 1,
+          "title": "Participants",
+          "type": "array"
+        },
+        "polarity": {
+          "enum": [
+            "AFFIRMED",
+            "NEGATED",
+            "NULL_RESULT"
+          ],
+          "title": "Polarity",
+          "type": "string"
+        },
+        "polarity_evidence": {
+          "$ref": "#/$defs/EvidenceSpan"
+        },
+        "quantitative_evidence": {
+          "items": {
+            "$ref": "#/$defs/QuantitativeEvidence"
+          },
+          "title": "Quantitative Evidence",
+          "type": "array"
+        },
+        "required_modifiers": {
+          "items": {
+            "$ref": "#/$defs/Modifier"
+          },
+          "title": "Required Modifiers",
+          "type": "array"
+        },
+        "statistical_evidence": {
+          "items": {
+            "$ref": "#/$defs/StatisticalEvidence"
+          },
+          "title": "Statistical Evidence",
+          "type": "array"
+        },
+        "uncertainty": {
+          "enum": [
+            "ASSERTED",
+            "PROVISIONAL",
+            "UNCERTAIN",
+            "HYPOTHESIS"
+          ],
+          "title": "Uncertainty",
+          "type": "string"
+        },
+        "uncertainty_evidence": {
+          "$ref": "#/$defs/EvidenceSpan"
+        }
+      },
+      "required": [
+        "event_type",
+        "event_evidence",
+        "participants",
+        "direction",
+        "direction_evidence",
+        "comparison",
+        "polarity",
+        "polarity_evidence",
+        "uncertainty",
+        "uncertainty_evidence",
+        "quantitative_evidence",
+        "statistical_evidence",
+        "author_interpretation",
+        "author_interpretation_evidence",
+        "required_modifiers",
+        "completeness",
+        "acceptable_equivalent_evidence",
+        "explanation"
+      ],
+      "title": "AtomicClaim",
+      "type": "object"
+    },
+    "Comparison": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceSpan"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "left": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceSpan"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "relation": {
+          "enum": [
+            "GREATER_THAN",
+            "LESS_THAN",
+            "EQUAL_OR_SIMILAR",
+            "NO_DIFFERENCE",
+            "DIFFERENT_FROM",
+            "NOT_APPLICABLE"
+          ],
+          "title": "Relation",
+          "type": "string"
+        },
+        "right": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceSpan"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "relation",
+        "evidence",
+        "left",
+        "right"
+      ],
+      "title": "Comparison",
+      "type": "object"
+    },
+    "EvidenceSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "exclusiveMinimum": 0,
+          "title": "End",
+          "type": "integer"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "text"
+      ],
+      "title": "EvidenceSpan",
+      "type": "object"
+    },
+    "Modifier": {
+      "additionalProperties": false,
+      "properties": {
+        "axis": {
+          "enum": [
+            "POPULATION",
+            "CONTEXT",
+            "TIMEFRAME",
+            "DOSE",
+            "LOCATION",
+            "MECHANISM",
+            "COMPARISON",
+            "UNCERTAINTY",
+            "OTHER"
+          ],
+          "title": "Axis",
+          "type": "string"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceSpan"
+        }
+      },
+      "required": [
+        "axis",
+        "evidence"
+      ],
+      "title": "Modifier",
+      "type": "object"
+    },
+    "Participant": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "$ref": "#/$defs/EvidenceSpan"
+        },
+        "role": {
+          "enum": [
+            "PRIMARY_SUBJECT",
+            "PRIMARY_OBJECT",
+            "INTERVENTION",
+            "COMPARATOR",
+            "POPULATION",
+            "OUTCOME",
+            "VARIANT",
+            "GENE_OR_PROTEIN",
+            "CONDITION",
+            "SECONDARY_PARTICIPANT",
+            "CONTEXT",
+            "SITE"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence",
+        "role"
+      ],
+      "title": "Participant",
+      "type": "object"
+    },
+    "QuantitativeEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "$ref": "#/$defs/EvidenceSpan"
+        },
+        "kind": {
+          "enum": [
+            "COUNT",
+            "PERCENTAGE",
+            "DOSE",
+            "YIELD",
+            "FOLD_CHANGE",
+            "OTHER"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "evidence"
+      ],
+      "title": "QuantitativeEvidence",
+      "type": "object"
+    },
+    "StatisticalEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "$ref": "#/$defs/EvidenceSpan"
+        },
+        "kind": {
+          "enum": [
+            "P_VALUE",
+            "CONFIDENCE_INTERVAL",
+            "EFFECT_ESTIMATE"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "evidence"
+      ],
+      "title": "StatisticalEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "packets": {
+      "items": {
+        "$ref": "#/$defs/AdjudicationPacket"
+      },
+      "maxItems": 31,
+      "minItems": 1,
+      "title": "Packets",
+      "type": "array"
+    },
+    "reviewer_model": {
+      "const": "gpt-5.6-sol",
+      "title": "Reviewer Model",
+      "type": "string"
+    },
+    "reviewer_role": {
+      "enum": [
+        "FIRST",
+        "SECOND",
+        "TIEBREAKER"
+      ],
+      "title": "Reviewer Role",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "source_general_claim_verification.adjudication.v2",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "reviewer_model",
+    "reviewer_role",
+    "packets"
+  ],
+  "title": "AdjudicationBatch",
+  "type": "object"
+}

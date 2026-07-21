@@ -1,0 +1,254 @@
+{
+  "adjudicators": {
+    "first": {
+      "agent_id": "019f81c4-7f89-7e52-8e7d-a5e9c3b59c1c",
+      "artifact_sha256": "46ed0f375660586e03676043cf3e8997c2fbcd455022cd521521d07aaf643225",
+      "artifact_valid": true,
+      "model_id": "gpt-5.6-sol",
+      "provider_response_id": null,
+      "schema_parsed": true,
+      "token_accounting": "UNAVAILABLE_FOR_CODEX_SUBAGENT_TASK",
+      "validation_error_count": 0
+    },
+    "second": {
+      "agent_id": "019f81c4-803f-7871-8c76-f02b437ca319",
+      "artifact_sha256": "2eb9b89e06f512faf4021ff5ed3299c351b54e40a3c755b0bf2f3842789dadee",
+      "artifact_valid": false,
+      "model_id": "gpt-5.6-sol",
+      "provider_response_id": null,
+      "schema_parsed": true,
+      "token_accounting": "UNAVAILABLE_FOR_CODEX_SUBAGENT_TASK",
+      "validation_error_count": 6
+    },
+    "tiebreaker": {
+      "agent_id": "019f81cc-122c-7d31-b69d-4f89b61d9dbe",
+      "artifact_sha256": "6d1425b9ef36d706c8b924f4a04a844875341062d9df627dffbb10343346236d",
+      "artifact_valid": false,
+      "model_id": "gpt-5.6-sol",
+      "provider_response_id": null,
+      "schema_parsed": false,
+      "token_accounting": "UNAVAILABLE_FOR_CODEX_SUBAGENT_TASK",
+      "validation_error_count": 1
+    }
+  },
+  "corpus_sha256": "44ee2a069ccef4b9f7a64f774d503ce459077492a60083e712a669aa25bcce88",
+  "initial_disagreement": {
+    "denominator": 31,
+    "fields_by_scope": {
+      "G-04cb55799af659d3": [
+        "decision",
+        "participants",
+        "direction",
+        "required_modifiers",
+        "completeness"
+      ],
+      "G-0b1467f1198defae": [
+        "decision",
+        "event_type",
+        "participants",
+        "required_modifiers",
+        "completeness"
+      ],
+      "G-0d96e7bd606e9501": [
+        "required_modifiers"
+      ],
+      "G-1b346f6b095ba905": [
+        "decision",
+        "event_type",
+        "participants",
+        "required_modifiers",
+        "completeness"
+      ],
+      "G-1d9acf68ceb6192c": [
+        "participants",
+        "direction",
+        "required_modifiers"
+      ],
+      "G-1f8f8d8af1fce516": [
+        "event_type",
+        "participants",
+        "required_modifiers"
+      ],
+      "G-2679331b14fa82e6": [
+        "decision",
+        "participants",
+        "required_modifiers",
+        "completeness"
+      ],
+      "G-28b81bccec98783b": [
+        "direction",
+        "comparison",
+        "required_modifiers"
+      ],
+      "G-29869fbcc8aeb3e6": [
+        "participants",
+        "quantitative_evidence",
+        "required_modifiers"
+      ],
+      "G-3828c170d2d4aff9": [
+        "decision",
+        "required_modifiers",
+        "completeness"
+      ],
+      "G-38d616ba3e425d27": [
+        "quantitative_evidence",
+        "statistical_observation",
+        "required_modifiers"
+      ],
+      "G-62c9d844b023ec9f": [
+        "participants",
+        "quantitative_evidence",
+        "statistical_observation",
+        "required_modifiers"
+      ],
+      "G-6788a7de43502821": [
+        "event_type",
+        "participants",
+        "required_modifiers"
+      ],
+      "G-76c8c83a66ef47ad": [
+        "participants"
+      ],
+      "G-7887375214f36f9f": [
+        "event_type",
+        "participants"
+      ],
+      "G-7ed51da6aa3e9d5f": [
+        "event_type",
+        "participants",
+        "comparison",
+        "required_modifiers"
+      ],
+      "G-899de71f85d3f8e2": [
+        "participants"
+      ],
+      "G-9074a91ba663d314": [
+        "participants",
+        "required_modifiers"
+      ],
+      "G-9144140bac9566a0": [
+        "participants",
+        "quantitative_evidence",
+        "required_modifiers"
+      ],
+      "G-c6ce1423d35ca66b": [
+        "decision",
+        "participants",
+        "required_modifiers",
+        "completeness"
+      ],
+      "G-c6f1c08eecd8cf53": [
+        "participants",
+        "required_modifiers"
+      ],
+      "G-d0707250f0ed0de6": [
+        "participants",
+        "required_modifiers"
+      ],
+      "G-d0f07ae5d50b2bd2": [
+        "event_type",
+        "participants",
+        "required_modifiers"
+      ],
+      "G-d1286300a242e0e7": [
+        "participants",
+        "direction",
+        "required_modifiers"
+      ],
+      "G-e7f470706b7ba982": [
+        "participants",
+        "quantitative_evidence",
+        "required_modifiers"
+      ],
+      "G-e94ebe7e9d47fb9a": [
+        "event_type",
+        "participants",
+        "direction",
+        "comparison",
+        "required_modifiers"
+      ],
+      "G-e9edf448e97a661e": [
+        "required_modifiers"
+      ],
+      "G-f18f2b8dcfca47b2": [
+        "quantitative_evidence",
+        "required_modifiers"
+      ],
+      "G-f2dcd54d2c34e7d5": [
+        "participants",
+        "required_modifiers"
+      ],
+      "G-f6852cfe5e2f792b": [
+        "participants"
+      ]
+    },
+    "numerator": 30,
+    "rate": 0.967741935483871
+  },
+  "material_fields": [
+    "decision",
+    "event_type",
+    "participants",
+    "direction",
+    "comparison",
+    "polarity",
+    "uncertainty",
+    "quantitative_evidence",
+    "statistical_observation",
+    "author_interpretation",
+    "required_modifiers",
+    "completeness"
+  ],
+  "primary_artifacts_valid": false,
+  "reference_set_reliable": false,
+  "resolution_sha256": "820835f5eedbac30004659c7afceed93de2840e28a64c12a65b5bc972ca1df54",
+  "schema_version": "source_general_claim_verification.resolution.v1",
+  "source_scope_count": 31,
+  "stop_threshold": {
+    "denominator": 5,
+    "numerator": 1,
+    "operator": "GREATER_THAN"
+  },
+  "terminal": "STOP_REFERENCE_SET_UNRELIABLE",
+  "tiebreaker_errors": [
+    "31 validation errors for RawAdjudicationBatch\npackets.0.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.1.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.2.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.3.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.4.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.5.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.6.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.7.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.8.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.9.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.10.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.11.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.12.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.13.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.14.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.15.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.16.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.17.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.18.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.19.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.20.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.21.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.22.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.23.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.24.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.25.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.26.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.27.complete_event\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.28.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets.29.complete_event\n  Input should be a valid string [type=string_type, input_value=False, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\npackets\n  Tuple should have at least 1 item after validation, not 0 [type=too_short, input_value=[{'scope_id': 'G-f6852cfe...not one atomic event.'}], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.13/v/too_short"
+  ],
+  "tiebreaker_schema_valid": false,
+  "unresolved_disagreement": {
+    "denominator": 31,
+    "numerator": 30,
+    "rate": 0.967741935483871,
+    "scope_ids": [
+      "G-04cb55799af659d3",
+      "G-0b1467f1198defae",
+      "G-0d96e7bd606e9501",
+      "G-1b346f6b095ba905",
+      "G-1d9acf68ceb6192c",
+      "G-1f8f8d8af1fce516",
+      "G-2679331b14fa82e6",
+      "G-28b81bccec98783b",
+      "G-29869fbcc8aeb3e6",
+      "G-3828c170d2d4aff9",
+      "G-38d616ba3e425d27",
+      "G-62c9d844b023ec9f",
+      "G-6788a7de43502821",
+      "G-76c8c83a66ef47ad",
+      "G-7887375214f36f9f",
+      "G-7ed51da6aa3e9d5f",
+      "G-899de71f85d3f8e2",
+      "G-9074a91ba663d314",
+      "G-9144140bac9566a0",
+      "G-c6ce1423d35ca66b",
+      "G-c6f1c08eecd8cf53",
+      "G-d0707250f0ed0de6",
+      "G-d0f07ae5d50b2bd2",
+      "G-d1286300a242e0e7",
+      "G-e7f470706b7ba982",
+      "G-e94ebe7e9d47fb9a",
+      "G-e9edf448e97a661e",
+      "G-f18f2b8dcfca47b2",
+      "G-f2dcd54d2c34e7d5",
+      "G-f6852cfe5e2f792b"
+    ]
+  }
+}

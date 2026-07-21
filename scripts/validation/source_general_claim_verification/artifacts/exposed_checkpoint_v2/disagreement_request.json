@@ -1,0 +1,167 @@
+{
+  "disputes": [
+    {
+      "fields": [
+        "comparison"
+      ],
+      "scope_id": "G-d0f07ae5d50b2bd2"
+    },
+    {
+      "fields": [
+        "comparison"
+      ],
+      "scope_id": "G-7887375214f36f9f"
+    },
+    {
+      "fields": [
+        "participants"
+      ],
+      "scope_id": "G-e9edf448e97a661e"
+    },
+    {
+      "fields": [
+        "participants"
+      ],
+      "scope_id": "G-38d616ba3e425d27"
+    },
+    {
+      "fields": [
+        "decision",
+        "ambiguity_reason",
+        "event_type",
+        "participants",
+        "direction",
+        "comparison",
+        "polarity",
+        "uncertainty",
+        "quantitative_evidence",
+        "statistical_evidence",
+        "author_interpretation",
+        "required_modifiers",
+        "completeness"
+      ],
+      "scope_id": "G-0b1467f1198defae"
+    },
+    {
+      "fields": [
+        "decision",
+        "ambiguity_reason",
+        "event_type",
+        "participants",
+        "direction",
+        "comparison",
+        "polarity",
+        "uncertainty",
+        "quantitative_evidence",
+        "statistical_evidence",
+        "author_interpretation",
+        "required_modifiers",
+        "completeness"
+      ],
+      "scope_id": "G-1b346f6b095ba905"
+    },
+    {
+      "fields": [
+        "decision",
+        "ambiguity_reason",
+        "event_type",
+        "participants",
+        "direction",
+        "comparison",
+        "polarity",
+        "uncertainty",
+        "quantitative_evidence",
+        "statistical_evidence",
+        "author_interpretation",
+        "required_modifiers",
+        "completeness"
+      ],
+      "scope_id": "G-2679331b14fa82e6"
+    },
+    {
+      "fields": [
+        "decision",
+        "ambiguity_reason",
+        "event_type",
+        "participants",
+        "direction",
+        "comparison",
+        "polarity",
+        "uncertainty",
+        "quantitative_evidence",
+        "statistical_evidence",
+        "author_interpretation",
+        "required_modifiers",
+        "completeness"
+      ],
+      "scope_id": "G-04cb55799af659d3"
+    },
+    {
+      "fields": [
+        "participants",
+        "required_modifiers"
+      ],
+      "scope_id": "G-9144140bac9566a0"
+    },
+    {
+      "fields": [
+        "decision",
+        "ambiguity_reason",
+        "event_type",
+        "participants",
+        "direction",
+        "comparison",
+        "polarity",
+        "uncertainty",
+        "quantitative_evidence",
+        "statistical_evidence",
+        "author_interpretation",
+        "required_modifiers",
+        "completeness"
+      ],
+      "scope_id": "G-f2dcd54d2c34e7d5"
+    },
+    {
+      "fields": [
+        "quantitative_evidence",
+        "required_modifiers"
+      ],
+      "scope_id": "G-f18f2b8dcfca47b2"
+    },
+    {
+      "fields": [
+        "decision",
+        "ambiguity_reason",
+        "event_type",
+        "participants",
+        "direction",
+        "comparison",
+        "polarity",
+        "uncertainty",
+        "quantitative_evidence",
+        "statistical_evidence",
+        "author_interpretation",
+        "required_modifiers",
+        "completeness"
+      ],
+      "scope_id": "G-9074a91ba663d314"
+    },
+    {
+      "fields": [
+        "participants",
+        "direction"
+      ],
+      "scope_id": "G-1d9acf68ceb6192c"
+    },
+    {
+      "fields": [
+        "participants",
+        "required_modifiers"
+      ],
+      "scope_id": "G-899de71f85d3f8e2"
+    }
+  ],
+  "request_sha256": "21b5a666e1ae9e583957c35bda0ee9d4f0d505e73ceecda0a556cd3857795266",
+  "schema_version": "source_general_claim_verification.disagreement_request.v2",
+  "scope_count": 14
+}

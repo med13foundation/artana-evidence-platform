@@ -1,0 +1,2095 @@
+{
+  "reviewer_model": "gpt-5.6-sol",
+  "reviewer_kind": "codex_subagent_source_only",
+  "scope_count": 31,
+  "packets": [
+    {
+      "scope_id": "G-f6852cfe5e2f792b",
+      "source_label": "exposed-gold-40289860",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+      "passage_start": 862,
+      "passage_end": 961,
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "event_type": "COMPARISON",
+      "complete_event": "Patients with RA were more often female and had more comorbidities than patients without RA.",
+      "participants": [
+        {
+          "exact_span": "Patients with RA",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "patients without RA",
+          "role": "COMPARATOR"
+        },
+        {
+          "exact_span": "female",
+          "role": "MEASUREMENT"
+        },
+        {
+          "exact_span": "more comorbidities",
+          "role": "MEASUREMENT"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "PRESENT",
+        "relation": "GREATER",
+        "lhs_exact_span": "Patients with RA",
+        "rhs_exact_span": "patients without RA"
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "COMPARISON",
+          "exact_span": "than patients without RA"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "Patients with RA were more likely to be female and had more comorbidities than patients without RA."
+      ],
+      "ambiguity_conditions": [
+        "bundled_sex_and_comorbidity_comparisons"
+      ],
+      "evidence_spans": [
+        "Patients with RA were more likely to be female and had more comorbidities than patients without RA."
+      ],
+      "short_explanation": "The passage combines two separable group comparisons: sex distribution and comorbidity burden."
+    },
+    {
+      "scope_id": "G-d1286300a242e0e7",
+      "source_label": "exposed-gold-40289860",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation.",
+      "passage_start": 962,
+      "passage_end": 1190,
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "event_type": "COMPARISON",
+      "complete_event": "Patients with RA had greater steroid use but similar dexamethasone use before ICI initiation compared with those without RA.",
+      "participants": [
+        {
+          "exact_span": "Patients with RA",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "those without RA",
+          "role": "COMPARATOR"
+        },
+        {
+          "exact_span": "steroids",
+          "role": "MEASUREMENT"
+        },
+        {
+          "exact_span": "dexamethasone",
+          "role": "MEASUREMENT"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "PRESENT",
+        "relation": "MIXED",
+        "lhs_exact_span": "Patients with RA",
+        "rhs_exact_span": "those without RA"
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "63%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "45%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "27%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "28%"
+        }
+      ],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "CONTEXT",
+          "exact_span": "usually prescribed for cancer palliation"
+        },
+        {
+          "type": "TIMEFRAME",
+          "exact_span": "before ICI initiation"
+        },
+        {
+          "type": "COMPARISON",
+          "exact_span": "than those without RA"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation."
+      ],
+      "ambiguity_conditions": [
+        "bundled_steroid_and_dexamethasone_comparisons",
+        "mixed_comparison_directions"
+      ],
+      "evidence_spans": [
+        "Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation."
+      ],
+      "short_explanation": "The passage contains a greater-use steroid comparison and a separate equal-use dexamethasone comparison."
+    },
+    {
+      "scope_id": "G-d0f07ae5d50b2bd2",
+      "source_label": "exposed-gold-40289860",
+      "decision": "ADJUDICATED",
+      "exact_passage": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08)",
+      "passage_start": 1191,
+      "passage_end": 1301,
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "event_type": "COMPARISON",
+      "complete_event": "Overall survival did not differ between the RA and non-RA NSCLC Kaplan-Meier curves.",
+      "participants": [
+        {
+          "exact_span": "RA",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "non-RA NSCLC",
+          "role": "COMPARATOR"
+        },
+        {
+          "exact_span": "OS",
+          "role": "OUTCOME"
+        }
+      ],
+      "direction": "NO_DIFFERENCE",
+      "comparison": {
+        "status": "PRESENT",
+        "relation": "NO_DIFFERENCE",
+        "lhs_exact_span": "RA",
+        "rhs_exact_span": "non-RA NSCLC"
+      },
+      "polarity": "NULL_RESULT",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "P_VALUE",
+        "exact_spans": [
+          "log-rank P = 0.08"
+        ]
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "CONTEXT",
+          "exact_span": "Kaplan-Meier survival curves"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08)"
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08)"
+      ],
+      "short_explanation": "This is a single explicit null comparison of overall survival between the two cohorts."
+    },
+    {
+      "scope_id": "G-7887375214f36f9f",
+      "source_label": "exposed-gold-40289860",
+      "decision": "ADJUDICATED",
+      "exact_passage": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "passage_start": 1191,
+      "passage_end": 1380,
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "event_type": "COMPARISON",
+      "complete_event": "Overall survival did not differ between RA and non-RA NSCLC in Kaplan-Meier and adjusted analyses.",
+      "participants": [
+        {
+          "exact_span": "RA",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "non-RA NSCLC",
+          "role": "COMPARATOR"
+        },
+        {
+          "exact_span": "OS",
+          "role": "OUTCOME"
+        }
+      ],
+      "direction": "NO_DIFFERENCE",
+      "comparison": {
+        "status": "PRESENT",
+        "relation": "NO_DIFFERENCE",
+        "lhs_exact_span": "RA",
+        "rhs_exact_span": "non-RA NSCLC"
+      },
+      "polarity": "NULL_RESULT",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "EFFECT_ESTIMATE",
+        "exact_spans": [
+          "hazard ratio 0.92",
+          "95% confidence interval 0.78-1.09"
+        ]
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "CONTEXT",
+          "exact_span": "Kaplan-Meier survival curves"
+        },
+        {
+          "type": "CONTEXT",
+          "exact_span": "adjusted models"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09)."
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09)."
+      ],
+      "short_explanation": "The two analysis forms support the same cohort-level null survival event rather than distinct biomedical outcomes."
+    },
+    {
+      "scope_id": "G-76c8c83a66ef47ad",
+      "source_label": "exposed-gold-40289860",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "Male sex, having more comorbidities, and steroid dose before ICI initiation were associated with worse OS.",
+      "passage_start": 1381,
+      "passage_end": 1487,
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "event_type": "ASSOCIATION",
+      "complete_event": "Male sex, greater comorbidity burden, and pre-ICI steroid dose were each associated with worse overall survival.",
+      "participants": [
+        {
+          "exact_span": "Male sex",
+          "role": "CAUSE"
+        },
+        {
+          "exact_span": "more comorbidities",
+          "role": "CAUSE"
+        },
+        {
+          "exact_span": "steroid dose",
+          "role": "CAUSE"
+        },
+        {
+          "exact_span": "worse OS",
+          "role": "OUTCOME"
+        }
+      ],
+      "direction": "POSITIVE_ASSOCIATION",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "TIMEFRAME",
+          "exact_span": "before ICI initiation"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "Male sex, having more comorbidities, and steroid dose before ICI initiation were associated with worse OS."
+      ],
+      "ambiguity_conditions": [
+        "three_distinct_risk_factor_associations"
+      ],
+      "evidence_spans": [
+        "Male sex, having more comorbidities, and steroid dose before ICI initiation were associated with worse OS."
+      ],
+      "short_explanation": "Three independently representable exposure-outcome associations are bundled into one scope."
+    },
+    {
+      "scope_id": "G-e9edf448e97a661e",
+      "source_label": "exposed-gold-40289860",
+      "decision": "ADJUDICATED",
+      "exact_passage": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS.",
+      "passage_start": 1488,
+      "passage_end": 1640,
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "event_type": "ASSOCIATION",
+      "complete_event": "Pre-ICI steroid dose was not associated with worse overall survival after omitting baseline dexamethasone recipients.",
+      "participants": [
+        {
+          "exact_span": "steroid dose",
+          "role": "CAUSE"
+        },
+        {
+          "exact_span": "worse OS",
+          "role": "OUTCOME"
+        },
+        {
+          "exact_span": "patients receiving baseline dexamethasone",
+          "role": "POPULATION"
+        }
+      ],
+      "direction": "NO_ASSOCIATION",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "NULL_RESULT",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "CONTEXT",
+          "exact_span": "In a sensitivity analysis omitting patients receiving baseline dexamethasone"
+        },
+        {
+          "type": "TIMEFRAME",
+          "exact_span": "before ICI initiation"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS."
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS."
+      ],
+      "short_explanation": "The sensitivity-analysis population and null association are explicitly stated."
+    },
+    {
+      "scope_id": "G-38d616ba3e425d27",
+      "source_label": "exposed-gold-40484925",
+      "decision": "ADJUDICATED",
+      "exact_passage": "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023)",
+      "passage_start": 1067,
+      "passage_end": 1224,
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "event_type": "INTERVENTION_EFFECT",
+      "complete_event": "The AI-assisted intervention increased detection of newly diagnosed low ejection fraction in the overall cohort.",
+      "participants": [
+        {
+          "exact_span": "The intervention",
+          "role": "INTERVENTION"
+        },
+        {
+          "exact_span": "newly diagnosed low EF",
+          "role": "OUTCOME"
+        },
+        {
+          "exact_span": "overall cohort",
+          "role": "POPULATION"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "PRESENT",
+        "relation": "GREATER",
+        "lhs_exact_span": "1.5%",
+        "rhs_exact_span": "1.1%"
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "1.5%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "1.1%"
+        },
+        {
+          "type": "OTHER",
+          "exact_span": "HR 1.50"
+        },
+        {
+          "type": "OTHER",
+          "exact_span": "95% CI: 1.11-2.03"
+        }
+      ],
+      "statistical_observation": {
+        "type": "P_VALUE",
+        "exact_spans": [
+          "P = 0.023"
+        ]
+      },
+      "author_interpretation": "SIGNIFICANT",
+      "required_modifiers": [
+        {
+          "type": "POPULATION",
+          "exact_span": "overall cohort"
+        },
+        {
+          "type": "COMPARISON",
+          "exact_span": "1.5% vs. 1.1%"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023)"
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023)"
+      ],
+      "short_explanation": "The intervention, detection outcome, population, comparison, and explicit significance wording are all present."
+    },
+    {
+      "scope_id": "G-c6f1c08eecd8cf53",
+      "source_label": "exposed-gold-40484925",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "with a more pronounced effect among AI-identified high-risk patients (13.0% vs. 8.9%, HR 1.55, 95% CI: 1.08-2.21).",
+      "passage_start": 1226,
+      "passage_end": 1340,
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "event_type": "INTERVENTION_EFFECT",
+      "complete_event": "The intervention had a more pronounced low-EF detection effect among AI-identified high-risk patients.",
+      "participants": [
+        {
+          "exact_span": "AI-identified high-risk patients",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "low EF",
+          "role": "OUTCOME"
+        },
+        {
+          "exact_span": "intervention",
+          "role": "INTERVENTION"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "PRESENT",
+        "relation": "GREATER",
+        "lhs_exact_span": "13.0%",
+        "rhs_exact_span": "8.9%"
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "13.0%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "8.9%"
+        }
+      ],
+      "statistical_observation": {
+        "type": "EFFECT_ESTIMATE",
+        "exact_spans": [
+          "HR 1.55",
+          "95% CI: 1.08-2.21"
+        ]
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "POPULATION",
+          "exact_span": "AI-identified high-risk patients"
+        },
+        {
+          "type": "COMPARISON",
+          "exact_span": "13.0% vs. 8.9%"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "with a more pronounced effect among AI-identified high-risk patients (13.0% vs. 8.9%, HR 1.55, 95% CI: 1.08-2.21)."
+      ],
+      "ambiguity_conditions": [
+        "leading_dependent_clause",
+        "effect_outcome_inherited_from_prior_clause"
+      ],
+      "evidence_spans": [
+        "with a more pronounced effect among AI-identified high-risk patients (13.0% vs. 8.9%, HR 1.55, 95% CI: 1.08-2.21)."
+      ],
+      "short_explanation": "The fragment quantifies a subgroup effect but inherits the intervention and precise detection outcome from the preceding clause."
+    },
+    {
+      "scope_id": "G-0b1467f1198defae",
+      "source_label": "exposed-gold-40484925",
+      "decision": "ADJUDICATED",
+      "exact_passage": "While overall echocardiogram utilization remained similar between groups (17.1% vs. 17.3%, HR 1.00, 95% CI: 0.92-1.09)",
+      "passage_start": 1341,
+      "passage_end": 1459,
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "event_type": "COMPARISON",
+      "complete_event": "Overall echocardiogram utilization was similar between intervention and control groups.",
+      "participants": [
+        {
+          "exact_span": "intervention group",
+          "role": "INTERVENTION"
+        },
+        {
+          "exact_span": "control group",
+          "role": "COMPARATOR"
+        },
+        {
+          "exact_span": "echocardiogram utilization",
+          "role": "OUTCOME"
+        }
+      ],
+      "direction": "EQUAL_OR_SIMILAR",
+      "comparison": {
+        "status": "PRESENT",
+        "relation": "EQUAL",
+        "lhs_exact_span": "17.1%",
+        "rhs_exact_span": "17.3%"
+      },
+      "polarity": "NULL_RESULT",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "17.1%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "17.3%"
+        }
+      ],
+      "statistical_observation": {
+        "type": "EFFECT_ESTIMATE",
+        "exact_spans": [
+          "HR 1.00",
+          "95% CI: 0.92-1.09"
+        ]
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "CONTEXT",
+          "exact_span": "overall echocardiogram utilization"
+        },
+        {
+          "type": "COMPARISON",
+          "exact_span": "between groups"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "While overall echocardiogram utilization remained similar between groups (17.1% vs. 17.3%, HR 1.00, 95% CI: 0.92-1.09)"
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "While overall echocardiogram utilization remained similar between groups (17.1% vs. 17.3%, HR 1.00, 95% CI: 0.92-1.09)"
+      ],
+      "short_explanation": "The source context identifies the randomized groups, and the passage states a single similar-utilization outcome."
+    },
+    {
+      "scope_id": "G-1b346f6b095ba905",
+      "source_label": "exposed-gold-40484925",
+      "decision": "ADJUDICATED",
+      "exact_passage": "the intervention group demonstrated higher positive predictive value for identifying low EF among patients receiving echocardiogram (34.2% vs. 20.2%, p < 0.001).",
+      "passage_start": 1461,
+      "passage_end": 1622,
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "event_type": "COMPARISON",
+      "complete_event": "The intervention group had higher positive predictive value for low-EF identification among patients receiving echocardiography.",
+      "participants": [
+        {
+          "exact_span": "the intervention group",
+          "role": "INTERVENTION"
+        },
+        {
+          "exact_span": "patients receiving echocardiogram",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "positive predictive value",
+          "role": "MEASUREMENT"
+        },
+        {
+          "exact_span": "low EF",
+          "role": "OUTCOME"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "PRESENT",
+        "relation": "GREATER",
+        "lhs_exact_span": "34.2%",
+        "rhs_exact_span": "20.2%"
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "34.2%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "20.2%"
+        }
+      ],
+      "statistical_observation": {
+        "type": "P_VALUE",
+        "exact_spans": [
+          "p < 0.001"
+        ]
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "POPULATION",
+          "exact_span": "patients receiving echocardiogram"
+        },
+        {
+          "type": "COMPARISON",
+          "exact_span": "34.2% vs. 20.2%"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "the intervention group demonstrated higher positive predictive value for identifying low EF among patients receiving echocardiogram (34.2% vs. 20.2%, p < 0.001)."
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "the intervention group demonstrated higher positive predictive value for identifying low EF among patients receiving echocardiogram (34.2% vs. 20.2%, p < 0.001)."
+      ],
+      "short_explanation": "This is one group comparison for a single diagnostic-performance measurement; no significance label is inferred from the p-value."
+    },
+    {
+      "scope_id": "G-2679331b14fa82e6",
+      "source_label": "exposed-gold-40484925",
+      "decision": "ADJUDICATED",
+      "exact_passage": "Post-hoc analysis revealed increased cardiology consultation rates among high-risk patients in the intervention group (29.3% vs. 23.5%, p = 0.027).",
+      "passage_start": 1623,
+      "passage_end": 1770,
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "event_type": "INTERVENTION_EFFECT",
+      "complete_event": "The intervention increased cardiology consultation rates among AI-identified high-risk patients in post-hoc analysis.",
+      "participants": [
+        {
+          "exact_span": "intervention group",
+          "role": "INTERVENTION"
+        },
+        {
+          "exact_span": "high-risk patients",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "cardiology consultation rates",
+          "role": "OUTCOME"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "PRESENT",
+        "relation": "GREATER",
+        "lhs_exact_span": "29.3%",
+        "rhs_exact_span": "23.5%"
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "29.3%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "23.5%"
+        }
+      ],
+      "statistical_observation": {
+        "type": "P_VALUE",
+        "exact_spans": [
+          "p = 0.027"
+        ]
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "CONTEXT",
+          "exact_span": "Post-hoc analysis"
+        },
+        {
+          "type": "POPULATION",
+          "exact_span": "high-risk patients"
+        },
+        {
+          "type": "COMPARISON",
+          "exact_span": "29.3% vs. 23.5%"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "Post-hoc analysis revealed increased cardiology consultation rates among high-risk patients in the intervention group (29.3% vs. 23.5%, p = 0.027)."
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "Post-hoc analysis revealed increased cardiology consultation rates among high-risk patients in the intervention group (29.3% vs. 23.5%, p = 0.027)."
+      ],
+      "short_explanation": "The post-hoc population, intervention group, consultation outcome, and comparison are explicit."
+    },
+    {
+      "scope_id": "G-0d96e7bd606e9501",
+      "source_label": "exposed-gold-40484925",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023), with a more pronounced effect among AI-identified high-risk patients (13.0% vs. 8.9%, HR 1.55, 95% CI: 1.08-2.21).",
+      "passage_start": 1067,
+      "passage_end": 1340,
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "event_type": "INTERVENTION_EFFECT",
+      "complete_event": "The intervention increased newly diagnosed low-EF detection overall and had a more pronounced effect in AI-identified high-risk patients.",
+      "participants": [
+        {
+          "exact_span": "The intervention",
+          "role": "INTERVENTION"
+        },
+        {
+          "exact_span": "newly diagnosed low EF",
+          "role": "OUTCOME"
+        },
+        {
+          "exact_span": "overall cohort",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "AI-identified high-risk patients",
+          "role": "POPULATION"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "PRESENT",
+        "relation": "GREATER",
+        "lhs_exact_span": "1.5%",
+        "rhs_exact_span": "1.1%"
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "1.5%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "1.1%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "13.0%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "8.9%"
+        }
+      ],
+      "statistical_observation": {
+        "type": "EFFECT_ESTIMATE",
+        "exact_spans": [
+          "HR 1.50",
+          "95% CI: 1.11-2.03",
+          "HR 1.55",
+          "95% CI: 1.08-2.21"
+        ]
+      },
+      "author_interpretation": "SIGNIFICANT",
+      "required_modifiers": [
+        {
+          "type": "POPULATION",
+          "exact_span": "overall cohort"
+        },
+        {
+          "type": "POPULATION",
+          "exact_span": "AI-identified high-risk patients"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023), with a more pronounced effect among AI-identified high-risk patients (13.0% vs. 8.9%, HR 1.55, 95% CI: 1.08-2.21)."
+      ],
+      "ambiguity_conditions": [
+        "overall_and_subgroup_effects_bundled",
+        "two_effect_estimates_for_distinct_populations"
+      ],
+      "evidence_spans": [
+        "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023), with a more pronounced effect among AI-identified high-risk patients (13.0% vs. 8.9%, HR 1.55, 95% CI: 1.08-2.21)."
+      ],
+      "short_explanation": "The scope joins an overall-cohort result and a distinct high-risk subgroup result with separate rates and effect estimates."
+    },
+    {
+      "scope_id": "G-e94ebe7e9d47fb9a",
+      "source_label": "exposed-gold-40484925",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "primarily by improving diagnostic efficiency rather than increasing overall healthcare utilization.",
+      "passage_start": 1887,
+      "passage_end": 1986,
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "event_type": "HYPOTHESIS",
+      "complete_event": "The authors attributed improved early diagnosis primarily to diagnostic efficiency rather than increased overall healthcare utilization.",
+      "participants": [
+        {
+          "exact_span": "diagnostic efficiency",
+          "role": "CAUSE"
+        },
+        {
+          "exact_span": "overall healthcare utilization",
+          "role": "OUTCOME"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "MECHANISM",
+          "exact_span": "improving diagnostic efficiency rather than increasing overall healthcare utilization"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "primarily by improving diagnostic efficiency rather than increasing overall healthcare utilization."
+      ],
+      "ambiguity_conditions": [
+        "dependent_conclusion_fragment",
+        "efficiency_gain_and_utilization_null_bundled"
+      ],
+      "evidence_spans": [
+        "primarily by improving diagnostic efficiency rather than increasing overall healthcare utilization."
+      ],
+      "short_explanation": "The fragment depends on the preceding conclusion and contrasts two separable claims about efficiency and utilization."
+    },
+    {
+      "scope_id": "G-04cb55799af659d3",
+      "source_label": "exposed-gold-40484925",
+      "decision": "ADJUDICATED",
+      "exact_passage": "The tool was particularly effective in identifying high-risk patients",
+      "passage_start": 1987,
+      "passage_end": 2056,
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "event_type": "INTERVENTION_EFFECT",
+      "complete_event": "The AI-ECG tool was particularly effective at identifying high-risk patients.",
+      "participants": [
+        {
+          "exact_span": "The tool",
+          "role": "INTERVENTION"
+        },
+        {
+          "exact_span": "identifying high-risk patients",
+          "role": "OUTCOME"
+        }
+      ],
+      "direction": "ENABLES",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "POPULATION",
+          "exact_span": "high-risk patients"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "The tool was particularly effective in identifying high-risk patients"
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "The tool was particularly effective in identifying high-risk patients"
+      ],
+      "short_explanation": "The conclusion makes one qualitative effectiveness claim about high-risk patient identification."
+    },
+    {
+      "scope_id": "G-1f8f8d8af1fce516",
+      "source_label": "exposed-gold-40484925",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "who benefited from increased specialist consultation",
+      "passage_start": 2057,
+      "passage_end": 2109,
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "event_type": "INTERVENTION_EFFECT",
+      "complete_event": "High-risk patients benefited from increased specialist consultation after use of the tool.",
+      "participants": [
+        {
+          "exact_span": "high-risk patients",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "specialist consultation",
+          "role": "OUTCOME"
+        },
+        {
+          "exact_span": "The tool",
+          "role": "INTERVENTION"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "POPULATION",
+          "exact_span": "high-risk patients"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "who benefited from increased specialist consultation"
+      ],
+      "ambiguity_conditions": [
+        "relative_pronoun_antecedent_outside_scope",
+        "intervention_inherited_from_prior_sentence"
+      ],
+      "evidence_spans": [
+        "who benefited from increased specialist consultation"
+      ],
+      "short_explanation": "The relative clause is not self-contained; both its population antecedent and intervention are supplied by preceding source text."
+    },
+    {
+      "scope_id": "G-6788a7de43502821",
+      "source_label": "exposed-gold-40484925",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "and more targeted diagnostic testing.",
+      "passage_start": 2110,
+      "passage_end": 2147,
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "event_type": "INTERVENTION_EFFECT",
+      "complete_event": "High-risk patients received more targeted diagnostic testing after use of the tool.",
+      "participants": [
+        {
+          "exact_span": "high-risk patients",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "diagnostic testing",
+          "role": "OUTCOME"
+        },
+        {
+          "exact_span": "The tool",
+          "role": "INTERVENTION"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "OTHER",
+          "exact_span": "more targeted diagnostic testing"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "and more targeted diagnostic testing."
+      ],
+      "ambiguity_conditions": [
+        "sentence_fragment",
+        "subject_and_intervention_outside_scope",
+        "benefit_relation_inherited_from_prior_clause"
+      ],
+      "evidence_spans": [
+        "and more targeted diagnostic testing."
+      ],
+      "short_explanation": "This coordinated fragment lacks its own subject, intervention, and explicit event relation."
+    },
+    {
+      "scope_id": "G-9144140bac9566a0",
+      "source_label": "exposed-gold-40518668",
+      "decision": "ADJUDICATED",
+      "exact_passage": "High quality clinical grade cceAAV vector based on AAV serotype 9 (AAV9) was produced in 200 L of suspension 293 cells",
+      "passage_start": 527,
+      "passage_end": 645,
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "event_type": "PRODUCTION",
+      "complete_event": "Clinical-grade AAV9 cceAAV vector was produced in 200 L of suspension 293 cells.",
+      "participants": [
+        {
+          "exact_span": "High quality clinical grade cceAAV vector based on AAV serotype 9 (AAV9)",
+          "role": "THEME"
+        },
+        {
+          "exact_span": "suspension 293 cells",
+          "role": "SITE"
+        }
+      ],
+      "direction": "PRODUCED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "OTHER",
+          "exact_span": "200 L"
+        }
+      ],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "CONTEXT",
+          "exact_span": "High quality clinical grade"
+        },
+        {
+          "type": "LOCATION",
+          "exact_span": "in 200 L of suspension 293 cells"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "High quality clinical grade cceAAV vector based on AAV serotype 9 (AAV9) was produced in 200 L of suspension 293 cells"
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "High quality clinical grade cceAAV vector based on AAV serotype 9 (AAV9) was produced in 200 L of suspension 293 cells"
+      ],
+      "short_explanation": "The product identity and production setting are explicit and constitute one production event."
+    },
+    {
+      "scope_id": "G-c6ce1423d35ca66b",
+      "source_label": "exposed-gold-40518668",
+      "decision": "ADJUDICATED",
+      "exact_passage": "with a total yield of 4.3 x 10^16 vector genomes (vg)",
+      "passage_start": 646,
+      "passage_end": 699,
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "event_type": "QUANTIFICATION",
+      "complete_event": "The cceAAV production yielded 4.3 x 10^16 vector genomes.",
+      "participants": [
+        {
+          "exact_span": "vector genomes (vg)",
+          "role": "MEASUREMENT"
+        }
+      ],
+      "direction": "OBSERVED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "YIELD",
+          "exact_span": "4.3 x 10^16 vector genomes (vg)"
+        }
+      ],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "CONTEXT",
+          "exact_span": "total yield"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "with a total yield of 4.3 x 10^16 vector genomes (vg)"
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "with a total yield of 4.3 x 10^16 vector genomes (vg)"
+      ],
+      "short_explanation": "The fragment supplies a single unambiguous yield measurement for the vector production described immediately before it."
+    },
+    {
+      "scope_id": "G-f2dcd54d2c34e7d5",
+      "source_label": "exposed-gold-40518668",
+      "decision": "ADJUDICATED",
+      "exact_passage": "Clinical trial in two spinal muscular atrophy (SMA) patients via intravenous injection at 12-24 months of age revealed no treatment-associated severe adverse events with a dose ranging from 6 x 10^13 to 1.2 x 10^14 vg/kg.",
+      "passage_start": 701,
+      "passage_end": 922,
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "event_type": "SAFETY_OUTCOME",
+      "complete_event": "No treatment-associated severe adverse events were observed in two SMA patients receiving intravenous gene therapy at the stated dose range.",
+      "participants": [
+        {
+          "exact_span": "two spinal muscular atrophy (SMA) patients",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "intravenous injection",
+          "role": "INTERVENTION"
+        },
+        {
+          "exact_span": "treatment-associated severe adverse events",
+          "role": "OUTCOME"
+        }
+      ],
+      "direction": "OBSERVED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "NEGATED",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "COUNT",
+          "exact_span": "two spinal muscular atrophy (SMA) patients"
+        },
+        {
+          "type": "DOSE",
+          "exact_span": "6 x 10^13 to 1.2 x 10^14 vg/kg"
+        }
+      ],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "TIMEFRAME",
+          "exact_span": "at 12-24 months of age"
+        },
+        {
+          "type": "LOCATION",
+          "exact_span": "via intravenous injection"
+        },
+        {
+          "type": "DOSE",
+          "exact_span": "with a dose ranging from 6 x 10^13 to 1.2 x 10^14 vg/kg"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "Clinical trial in two spinal muscular atrophy (SMA) patients via intravenous injection at 12-24 months of age revealed no treatment-associated severe adverse events with a dose ranging from 6 x 10^13 to 1.2 x 10^14 vg/kg."
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "Clinical trial in two spinal muscular atrophy (SMA) patients via intravenous injection at 12-24 months of age revealed no treatment-associated severe adverse events with a dose ranging from 6 x 10^13 to 1.2 x 10^14 vg/kg."
+      ],
+      "short_explanation": "The small treated population, route, age, dose range, and explicitly absent severe safety outcome are stated."
+    },
+    {
+      "scope_id": "G-f18f2b8dcfca47b2",
+      "source_label": "exposed-gold-40518668",
+      "decision": "ADJUDICATED",
+      "exact_passage": "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function",
+      "passage_start": 923,
+      "passage_end": 1056,
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "event_type": "CLINICAL_OUTCOME",
+      "complete_event": "Both patients rapidly improved in motor capabilities after gene therapy, evidenced by gains in motor function.",
+      "participants": [
+        {
+          "exact_span": "Both patients",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "gene therapy",
+          "role": "INTERVENTION"
+        },
+        {
+          "exact_span": "motor capabilities",
+          "role": "OUTCOME"
+        },
+        {
+          "exact_span": "motor function",
+          "role": "MEASUREMENT"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "COUNT",
+          "exact_span": "Both patients"
+        }
+      ],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "TIMEFRAME",
+          "exact_span": "rapid improvements"
+        },
+        {
+          "type": "CONTEXT",
+          "exact_span": "after gene therapy"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function"
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function"
+      ],
+      "short_explanation": "The scope states one motor-improvement event and one directly aligned motor-function measure."
+    },
+    {
+      "scope_id": "G-e7f470706b7ba982",
+      "source_label": "exposed-gold-40518668",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function and electrophysiological parameters",
+      "passage_start": 923,
+      "passage_end": 1092,
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "event_type": "CLINICAL_OUTCOME",
+      "complete_event": "Both patients rapidly improved after gene therapy, with gains in motor function and electrophysiological parameters.",
+      "participants": [
+        {
+          "exact_span": "Both patients",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "gene therapy",
+          "role": "INTERVENTION"
+        },
+        {
+          "exact_span": "motor function",
+          "role": "OUTCOME"
+        },
+        {
+          "exact_span": "electrophysiological parameters",
+          "role": "MEASUREMENT"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "COUNT",
+          "exact_span": "Both patients"
+        }
+      ],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "TIMEFRAME",
+          "exact_span": "rapid improvements"
+        },
+        {
+          "type": "CONTEXT",
+          "exact_span": "after gene therapy"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function and electrophysiological parameters"
+      ],
+      "ambiguity_conditions": [
+        "motor_and_electrophysiological_outcomes_bundled"
+      ],
+      "evidence_spans": [
+        "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function and electrophysiological parameters"
+      ],
+      "short_explanation": "The scope coordinates motor-function and electrophysiological gains, which are separable outcome domains."
+    },
+    {
+      "scope_id": "G-29869fbcc8aeb3e6",
+      "source_label": "exposed-gold-40518668",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function and electrophysiological parameters and capacity for independent mobility.",
+      "passage_start": 923,
+      "passage_end": 1131,
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "event_type": "CLINICAL_OUTCOME",
+      "complete_event": "Both patients rapidly improved after gene therapy in motor function, electrophysiological parameters, and independent mobility.",
+      "participants": [
+        {
+          "exact_span": "Both patients",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "gene therapy",
+          "role": "INTERVENTION"
+        },
+        {
+          "exact_span": "motor function",
+          "role": "OUTCOME"
+        },
+        {
+          "exact_span": "electrophysiological parameters",
+          "role": "MEASUREMENT"
+        },
+        {
+          "exact_span": "independent mobility",
+          "role": "OUTCOME"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "COUNT",
+          "exact_span": "Both patients"
+        }
+      ],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "TIMEFRAME",
+          "exact_span": "rapid improvements"
+        },
+        {
+          "type": "CONTEXT",
+          "exact_span": "after gene therapy"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function and electrophysiological parameters and capacity for independent mobility."
+      ],
+      "ambiguity_conditions": [
+        "motor_electrophysiological_and_mobility_outcomes_bundled"
+      ],
+      "evidence_spans": [
+        "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function and electrophysiological parameters and capacity for independent mobility."
+      ],
+      "short_explanation": "The scope combines three clinically distinct outcome domains under one improvement statement."
+    },
+    {
+      "scope_id": "G-9074a91ba663d314",
+      "source_label": "exposed-gold-40518668",
+      "decision": "ADJUDICATED",
+      "exact_passage": "Our strategy enabled us to perform gene therapy in older SMA patients who had received initial treatment with RNA-splicing modifying drug during infancy.",
+      "passage_start": 1132,
+      "passage_end": 1285,
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "event_type": "INTERVENTION_EFFECT",
+      "complete_event": "The strategy enabled gene therapy in older SMA patients previously treated during infancy with an RNA-splicing modifying drug.",
+      "participants": [
+        {
+          "exact_span": "Our strategy",
+          "role": "AGENT"
+        },
+        {
+          "exact_span": "gene therapy",
+          "role": "EFFECT"
+        },
+        {
+          "exact_span": "older SMA patients",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "RNA-splicing modifying drug",
+          "role": "INTERVENTION"
+        }
+      ],
+      "direction": "ENABLES",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "POPULATION",
+          "exact_span": "older SMA patients"
+        },
+        {
+          "type": "CONTEXT",
+          "exact_span": "who had received initial treatment with RNA-splicing modifying drug during infancy"
+        },
+        {
+          "type": "TIMEFRAME",
+          "exact_span": "during infancy"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "Our strategy enabled us to perform gene therapy in older SMA patients who had received initial treatment with RNA-splicing modifying drug during infancy."
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "Our strategy enabled us to perform gene therapy in older SMA patients who had received initial treatment with RNA-splicing modifying drug during infancy."
+      ],
+      "short_explanation": "The enabling strategy, target procedure, population, and prior-treatment context are explicit."
+    },
+    {
+      "scope_id": "G-1d9acf68ceb6192c",
+      "source_label": "exposed-gold-40518668",
+      "decision": "ADJUDICATED",
+      "exact_passage": "These early data provide preliminary evidence for clinical use of cceAAV vectors, though further validation in larger cohorts is warranted.",
+      "passage_start": 1286,
+      "passage_end": 1425,
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "event_type": "HYPOTHESIS",
+      "complete_event": "Early data provide preliminary support for clinical use of cceAAV vectors, pending validation in larger cohorts.",
+      "participants": [
+        {
+          "exact_span": "These early data",
+          "role": "AGENT"
+        },
+        {
+          "exact_span": "clinical use of cceAAV vectors",
+          "role": "THEME"
+        },
+        {
+          "exact_span": "larger cohorts",
+          "role": "POPULATION"
+        }
+      ],
+      "direction": "OBSERVED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "PROVISIONAL",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "UNCERTAINTY",
+          "exact_span": "preliminary evidence"
+        },
+        {
+          "type": "UNCERTAINTY",
+          "exact_span": "further validation in larger cohorts is warranted"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "These early data provide preliminary evidence for clinical use of cceAAV vectors, though further validation in larger cohorts is warranted."
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "These early data provide preliminary evidence for clinical use of cceAAV vectors, though further validation in larger cohorts is warranted."
+      ],
+      "short_explanation": "The authors explicitly frame the clinical-use claim as preliminary and requiring larger-cohort validation."
+    },
+    {
+      "scope_id": "G-3828c170d2d4aff9",
+      "source_label": "exposed-human-genetics",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+      "passage_start": 960,
+      "passage_end": 1086,
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b",
+      "event_type": "QUANTIFICATION",
+      "complete_event": "A total of 947 SLC12A3 variants were detected, and most were classified as variants of uncertain significance.",
+      "participants": [
+        {
+          "exact_span": "947 variants",
+          "role": "MEASUREMENT"
+        },
+        {
+          "exact_span": "SLC12A3 gene",
+          "role": "GENE_OR_PROTEIN"
+        },
+        {
+          "exact_span": "uncertain significance",
+          "role": "CONTEXT"
+        }
+      ],
+      "direction": "OBSERVED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "COUNT",
+          "exact_span": "947 variants"
+        }
+      ],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "UNCERTAINTY",
+          "exact_span": "classified as of uncertain significance"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance."
+      ],
+      "ambiguity_conditions": [
+        "variant_count_and_classification_events_bundled"
+      ],
+      "evidence_spans": [
+        "A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance."
+      ],
+      "short_explanation": "Detection/quantification and majority clinical classification are distinct events joined in one sentence."
+    },
+    {
+      "scope_id": "G-28b81bccec98783b",
+      "source_label": "exposed-human-genetics",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "Hyponatremia was determined at a higher rate in patients with c.506-276A>G (75.00%), c.282+492G>A (85.70%), c.282+499G>C (87.00%), c.282+495G>A (85.00%), and c.505+375G>A (92.30%) variants in particular.",
+      "passage_start": 1087,
+      "passage_end": 1290,
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b",
+      "event_type": "ASSOCIATION",
+      "complete_event": "Hyponatremia occurred at higher rates among patients carrying each of five listed SLC12A3 variants.",
+      "participants": [
+        {
+          "exact_span": "Hyponatremia",
+          "role": "OUTCOME"
+        },
+        {
+          "exact_span": "patients",
+          "role": "POPULATION"
+        },
+        {
+          "exact_span": "c.506-276A>G",
+          "role": "VARIANT"
+        },
+        {
+          "exact_span": "c.282+492G>A",
+          "role": "VARIANT"
+        },
+        {
+          "exact_span": "c.282+499G>C",
+          "role": "VARIANT"
+        },
+        {
+          "exact_span": "c.282+495G>A",
+          "role": "VARIANT"
+        },
+        {
+          "exact_span": "c.505+375G>A",
+          "role": "VARIANT"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "PRESENT",
+        "relation": "GREATER",
+        "lhs_exact_span": "patients with c.506-276A>G",
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "75.00%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "85.70%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "87.00%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "85.00%"
+        },
+        {
+          "type": "PERCENTAGE",
+          "exact_span": "92.30%"
+        }
+      ],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "POPULATION",
+          "exact_span": "hypertensive patients using HCTZ-group diuretics"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "Hyponatremia was determined at a higher rate in patients with c.506-276A>G (75.00%), c.282+492G>A (85.70%), c.282+499G>C (87.00%), c.282+495G>A (85.00%), and c.505+375G>A (92.30%) variants in particular."
+      ],
+      "ambiguity_conditions": [
+        "five_variant_specific_associations_bundled",
+        "comparison_reference_not_stated_in_scope"
+      ],
+      "evidence_spans": [
+        "Hyponatremia was determined at a higher rate in patients with c.506-276A>G (75.00%), c.282+492G>A (85.70%), c.282+499G>C (87.00%), c.282+495G>A (85.00%), and c.505+375G>A (92.30%) variants in particular."
+      ],
+      "short_explanation": "Five variant-specific rates are bundled, and the passage does not name the reference group for the higher-rate comparison."
+    },
+    {
+      "scope_id": "G-62c9d844b023ec9f",
+      "source_label": "exposed-human-genetics",
+      "decision": "ADJUDICATED",
+      "exact_passage": "The risk of hyponatremia development increased 9.2-fold in the presence of the c.282+492G>A variant (OR = 9.243; 95% CI: 2.259-37.818; p = 0.002).",
+      "passage_start": 1291,
+      "passage_end": 1437,
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b",
+      "event_type": "ASSOCIATION",
+      "complete_event": "Presence of the c.282+492G>A variant was positively associated with increased risk of hyponatremia development.",
+      "participants": [
+        {
+          "exact_span": "c.282+492G>A variant",
+          "role": "VARIANT"
+        },
+        {
+          "exact_span": "hyponatremia development",
+          "role": "OUTCOME"
+        },
+        {
+          "exact_span": "risk",
+          "role": "MEASUREMENT"
+        }
+      ],
+      "direction": "POSITIVE_ASSOCIATION",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "FOLD_CHANGE",
+          "exact_span": "9.2-fold"
+        },
+        {
+          "type": "OTHER",
+          "exact_span": "OR = 9.243"
+        },
+        {
+          "type": "OTHER",
+          "exact_span": "95% CI: 2.259-37.818"
+        }
+      ],
+      "statistical_observation": {
+        "type": "P_VALUE",
+        "exact_spans": [
+          "p = 0.002"
+        ]
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "CONTEXT",
+          "exact_span": "in the presence of the c.282+492G>A variant"
+        },
+        {
+          "type": "POPULATION",
+          "exact_span": "hypertensive patients using HCTZ-group diuretics"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "The risk of hyponatremia development increased 9.2-fold in the presence of the c.282+492G>A variant (OR = 9.243; 95% CI: 2.259-37.818; p = 0.002)."
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "The risk of hyponatremia development increased 9.2-fold in the presence of the c.282+492G>A variant (OR = 9.243; 95% CI: 2.259-37.818; p = 0.002)."
+      ],
+      "short_explanation": "One variant-risk association is given with a fold change, odds ratio, interval, and p-value; no significance wording is inferred."
+    },
+    {
+      "scope_id": "G-899de71f85d3f8e2",
+      "source_label": "exposed-molecular-mechanism",
+      "decision": "ADJUDICATED",
+      "exact_passage": "Key results showed that ZmWRKY104 directly interacts with ZmCCaMK in the nucleus in a non-phosphorylation-dependent manner, forming a novel regulatory module.",
+      "passage_start": 296,
+      "passage_end": 454,
+      "source_sha256": "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe",
+      "event_type": "INTERACTION",
+      "complete_event": "ZmWRKY104 directly interacts with ZmCCaMK in the nucleus independently of phosphorylation, forming a regulatory module.",
+      "participants": [
+        {
+          "exact_span": "ZmWRKY104",
+          "role": "GENE_OR_PROTEIN"
+        },
+        {
+          "exact_span": "ZmCCaMK",
+          "role": "TARGET"
+        },
+        {
+          "exact_span": "nucleus",
+          "role": "SITE"
+        },
+        {
+          "exact_span": "novel regulatory module",
+          "role": "EFFECT"
+        }
+      ],
+      "direction": "INTERACTS",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "LOCATION",
+          "exact_span": "in the nucleus"
+        },
+        {
+          "type": "MECHANISM",
+          "exact_span": "in a non-phosphorylation-dependent manner"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "Key results showed that ZmWRKY104 directly interacts with ZmCCaMK in the nucleus in a non-phosphorylation-dependent manner, forming a novel regulatory module."
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "Key results showed that ZmWRKY104 directly interacts with ZmCCaMK in the nucleus in a non-phosphorylation-dependent manner, forming a novel regulatory module."
+      ],
+      "short_explanation": "The interacting proteins, nuclear location, phosphorylation independence, and module consequence describe one molecular interaction."
+    },
+    {
+      "scope_id": "G-d0707250f0ed0de6",
+      "source_label": "exposed-molecular-mechanism",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "BR treatment upregulates ZmWRKY104 expression, and overexpression of ZmWRKY104 significantly enhances the activities of antioxidant enzymes (APX and SOD).",
+      "passage_start": 455,
+      "passage_end": 609,
+      "source_sha256": "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe",
+      "event_type": "REGULATION",
+      "complete_event": "BR treatment upregulates ZmWRKY104 expression, while ZmWRKY104 overexpression enhances APX and SOD activities.",
+      "participants": [
+        {
+          "exact_span": "BR treatment",
+          "role": "AGENT"
+        },
+        {
+          "exact_span": "ZmWRKY104 expression",
+          "role": "TARGET"
+        },
+        {
+          "exact_span": "overexpression of ZmWRKY104",
+          "role": "AGENT"
+        },
+        {
+          "exact_span": "antioxidant enzymes (APX and SOD)",
+          "role": "TARGET"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "SIGNIFICANT",
+      "required_modifiers": [
+        {
+          "type": "MECHANISM",
+          "exact_span": "overexpression of ZmWRKY104"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "BR treatment upregulates ZmWRKY104 expression, and overexpression of ZmWRKY104 significantly enhances the activities of antioxidant enzymes (APX and SOD)."
+      ],
+      "ambiguity_conditions": [
+        "two_distinct_regulatory_events",
+        "different_agents_and_targets"
+      ],
+      "evidence_spans": [
+        "BR treatment upregulates ZmWRKY104 expression, and overexpression of ZmWRKY104 significantly enhances the activities of antioxidant enzymes (APX and SOD)."
+      ],
+      "short_explanation": "The sentence bundles BR-to-gene-expression regulation with a separate overexpression-to-enzyme-activity effect."
+    },
+    {
+      "scope_id": "G-7e199efed15b3e57",
+      "source_label": "exposed-molecular-mechanism",
+      "decision": "ADJUDICATED",
+      "exact_passage": "Co-expression of ZmWRKY104 and ZmCCaMK synergistically promotes the antioxidant defense system in maize.",
+      "passage_start": 610,
+      "passage_end": 714,
+      "source_sha256": "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe",
+      "event_type": "REGULATION",
+      "complete_event": "Co-expression of ZmWRKY104 and ZmCCaMK synergistically promotes the antioxidant defense system in maize.",
+      "participants": [
+        {
+          "exact_span": "Co-expression of ZmWRKY104 and ZmCCaMK",
+          "role": "AGENT"
+        },
+        {
+          "exact_span": "antioxidant defense system",
+          "role": "TARGET"
+        },
+        {
+          "exact_span": "maize",
+          "role": "CONTEXT"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "NOT_APPLICABLE",
+        "relation": "NOT_APPLICABLE",
+        "lhs_exact_span": null,
+        "rhs_exact_span": null
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "MECHANISM",
+          "exact_span": "synergistically"
+        },
+        {
+          "type": "CONTEXT",
+          "exact_span": "in maize"
+        }
+      ],
+      "completeness": "COMPLETE",
+      "acceptable_equivalent_evidence_spans": [
+        "Co-expression of ZmWRKY104 and ZmCCaMK synergistically promotes the antioxidant defense system in maize."
+      ],
+      "ambiguity_conditions": [],
+      "evidence_spans": [
+        "Co-expression of ZmWRKY104 and ZmCCaMK synergistically promotes the antioxidant defense system in maize."
+      ],
+      "short_explanation": "A single co-expression perturbation is linked to promotion of one defense-system target."
+    },
+    {
+      "scope_id": "G-7ed51da6aa3e9d5f",
+      "source_label": "exposed-molecular-mechanism",
+      "decision": "AMBIGUOUS",
+      "exact_passage": "Transgenic maize overexpressing ZmWRKY104 exhibits obvious salt tolerance advantages under 100 mM NaCl stress compared to wild-type plants, including reduced leaf yellowing, increased plant height and root length, as well as decreased electrolyte leakage (EL) and malondialdehyde (MDA) content.",
+      "passage_start": 715,
+      "passage_end": 1009,
+      "source_sha256": "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe",
+      "event_type": "INTERVENTION_EFFECT",
+      "complete_event": "ZmWRKY104-overexpressing maize had greater salt tolerance than wild type under 100 mM NaCl, across several morphological and biochemical outcomes.",
+      "participants": [
+        {
+          "exact_span": "Transgenic maize overexpressing ZmWRKY104",
+          "role": "INTERVENTION"
+        },
+        {
+          "exact_span": "wild-type plants",
+          "role": "COMPARATOR"
+        },
+        {
+          "exact_span": "salt tolerance advantages",
+          "role": "OUTCOME"
+        },
+        {
+          "exact_span": "leaf yellowing",
+          "role": "MEASUREMENT"
+        },
+        {
+          "exact_span": "plant height and root length",
+          "role": "MEASUREMENT"
+        },
+        {
+          "exact_span": "electrolyte leakage (EL)",
+          "role": "MEASUREMENT"
+        },
+        {
+          "exact_span": "malondialdehyde (MDA) content",
+          "role": "MEASUREMENT"
+        }
+      ],
+      "direction": "INCREASED",
+      "comparison": {
+        "status": "PRESENT",
+        "relation": "GREATER",
+        "lhs_exact_span": "Transgenic maize overexpressing ZmWRKY104",
+        "rhs_exact_span": "wild-type plants"
+      },
+      "polarity": "POSITIVE",
+      "uncertainty": "ASSERTED",
+      "quantitative_evidence": [
+        {
+          "type": "DOSE",
+          "exact_span": "100 mM NaCl"
+        }
+      ],
+      "statistical_observation": {
+        "type": "NONE",
+        "exact_spans": []
+      },
+      "author_interpretation": "NOT_CLAIMED",
+      "required_modifiers": [
+        {
+          "type": "CONTEXT",
+          "exact_span": "under 100 mM NaCl stress"
+        },
+        {
+          "type": "COMPARISON",
+          "exact_span": "compared to wild-type plants"
+        }
+      ],
+      "completeness": "AMBIGUOUS",
+      "acceptable_equivalent_evidence_spans": [
+        "Transgenic maize overexpressing ZmWRKY104 exhibits obvious salt tolerance advantages under 100 mM NaCl stress compared to wild-type plants, including reduced leaf yellowing, increased plant height and root length, as well as decreased electrolyte leakage (EL) and malondialdehyde (MDA) content."
+      ],
+      "ambiguity_conditions": [
+        "multiple_morphological_and_biochemical_outcomes_bundled",
+        "mixed_measurement_directions"
+      ],
+      "evidence_spans": [
+        "Transgenic maize overexpressing ZmWRKY104 exhibits obvious salt tolerance advantages under 100 mM NaCl stress compared to wild-type plants, including reduced leaf yellowing, increased plant height and root length, as well as decreased electrolyte leakage (EL) and malondialdehyde (MDA) content."
+      ],
+      "short_explanation": "The overall salt-tolerance claim bundles reduced yellowing, two growth measures, and two biochemical injury measures."
+    }
+  ]
+}

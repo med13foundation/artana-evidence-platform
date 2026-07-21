@@ -1,0 +1,14 @@
+{
+  "corpus_sha256": "44ee2a069ccef4b9f7a64f774d503ce459077492a60083e712a669aa25bcce88",
+  "experiment_execution_authorized": false,
+  "planned_experiment": {
+    "maximum_repairs_per_claim": 1,
+    "outcomes_remain_review_only": true,
+    "promotion_enabled": false,
+    "source_class": "exposed_only"
+  },
+  "reason": "unresolved adjudicator disagreement exceeds 20 percent",
+  "reference_packet_set_sha256": null,
+  "schema_version": "source_general_claim_verification.blocked_preregistration.v2",
+  "terminal": "STOP_REFERENCE_SET_UNRELIABLE"
+}

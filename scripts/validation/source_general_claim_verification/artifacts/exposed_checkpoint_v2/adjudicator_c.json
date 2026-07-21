@@ -1,0 +1,1345 @@
+{
+  "schema_version": "source_general_claim_verification.adjudication.v2",
+  "reviewer_model": "gpt-5.6-sol",
+  "reviewer_role": "TIEBREAKER",
+  "packets": [
+    {
+      "scope_id": "G-d0f07ae5d50b2bd2",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "decision": "ADJUDICATED",
+      "ambiguity_reason": "NONE",
+      "scope_evidence": {
+        "end": 1301,
+        "start": 1191,
+        "text": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08)"
+      },
+      "claim": {
+        "event_type": "COMPARISON",
+        "event_evidence": {
+          "end": 1301,
+          "start": 1191,
+          "text": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08)"
+        },
+        "participants": [
+          {
+            "role": "OUTCOME",
+            "evidence": {
+              "start": 1218,
+              "end": 1220,
+              "text": "OS"
+            }
+          },
+          {
+            "role": "POPULATION",
+            "evidence": {
+              "start": 1233,
+              "end": 1235,
+              "text": "RA"
+            }
+          },
+          {
+            "role": "COMPARATOR",
+            "evidence": {
+              "start": 1240,
+              "end": 1252,
+              "text": "non-RA NSCLC"
+            }
+          }
+        ],
+        "direction": "NO_DIFFERENCE",
+        "direction_evidence": {
+          "start": 1201,
+          "end": 1214,
+          "text": "no difference"
+        },
+        "comparison": {
+          "relation": "NO_DIFFERENCE",
+          "evidence": {
+            "start": 1201,
+            "end": 1214,
+            "text": "no difference"
+          },
+          "left": {
+            "start": 1233,
+            "end": 1235,
+            "text": "RA"
+          },
+          "right": {
+            "start": 1240,
+            "end": 1252,
+            "text": "non-RA NSCLC"
+          }
+        },
+        "polarity": "NULL_RESULT",
+        "polarity_evidence": {
+          "start": 1201,
+          "end": 1214,
+          "text": "no difference"
+        },
+        "uncertainty": "ASSERTED",
+        "uncertainty_evidence": {
+          "end": 1301,
+          "start": 1191,
+          "text": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08)"
+        },
+        "quantitative_evidence": [],
+        "statistical_evidence": [
+          {
+            "kind": "P_VALUE",
+            "evidence": {
+              "start": 1292,
+              "end": 1300,
+              "text": "P = 0.08"
+            }
+          }
+        ],
+        "author_interpretation": "NOT_CLAIMED",
+        "author_interpretation_evidence": null,
+        "required_modifiers": [
+          {
+            "axis": "CONTEXT",
+            "evidence": {
+              "start": 1253,
+              "end": 1281,
+              "text": "Kaplan-Meier survival curves"
+            }
+          }
+        ],
+        "completeness": "COMPLETE",
+        "acceptable_equivalent_evidence": [],
+        "explanation": "Overall survival is explicitly reported as not different between the two named groups; the p-value does not itself claim statistical significance."
+      },
+      "explanation": "The scope states one explicit null comparison of overall survival between the RA and non-RA NSCLC groups."
+    },
+    {
+      "scope_id": "G-7887375214f36f9f",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "decision": "ADJUDICATED",
+      "ambiguity_reason": "NONE",
+      "scope_evidence": {
+        "end": 1380,
+        "start": 1191,
+        "text": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09)."
+      },
+      "claim": {
+        "event_type": "COMPARISON",
+        "event_evidence": {
+          "end": 1380,
+          "start": 1191,
+          "text": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09)."
+        },
+        "participants": [
+          {
+            "role": "OUTCOME",
+            "evidence": {
+              "start": 1218,
+              "end": 1220,
+              "text": "OS"
+            }
+          },
+          {
+            "role": "POPULATION",
+            "evidence": {
+              "start": 1233,
+              "end": 1235,
+              "text": "RA"
+            }
+          },
+          {
+            "role": "COMPARATOR",
+            "evidence": {
+              "start": 1240,
+              "end": 1252,
+              "text": "non-RA NSCLC"
+            }
+          }
+        ],
+        "direction": "NO_DIFFERENCE",
+        "direction_evidence": {
+          "start": 1201,
+          "end": 1214,
+          "text": "no difference"
+        },
+        "comparison": {
+          "relation": "NO_DIFFERENCE",
+          "evidence": {
+            "start": 1201,
+            "end": 1214,
+            "text": "no difference"
+          },
+          "left": {
+            "start": 1233,
+            "end": 1235,
+            "text": "RA"
+          },
+          "right": {
+            "start": 1240,
+            "end": 1252,
+            "text": "non-RA NSCLC"
+          }
+        },
+        "polarity": "NULL_RESULT",
+        "polarity_evidence": {
+          "start": 1201,
+          "end": 1214,
+          "text": "no difference"
+        },
+        "uncertainty": "ASSERTED",
+        "uncertainty_evidence": {
+          "end": 1380,
+          "start": 1191,
+          "text": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09)."
+        },
+        "quantitative_evidence": [],
+        "statistical_evidence": [
+          {
+            "kind": "P_VALUE",
+            "evidence": {
+              "start": 1292,
+              "end": 1300,
+              "text": "P = 0.08"
+            }
+          },
+          {
+            "kind": "EFFECT_ESTIMATE",
+            "evidence": {
+              "start": 1326,
+              "end": 1343,
+              "text": "hazard ratio 0.92"
+            }
+          },
+          {
+            "kind": "CONFIDENCE_INTERVAL",
+            "evidence": {
+              "start": 1345,
+              "end": 1378,
+              "text": "95% confidence interval 0.78-1.09"
+            }
+          }
+        ],
+        "author_interpretation": "NOT_CLAIMED",
+        "author_interpretation_evidence": null,
+        "required_modifiers": [
+          {
+            "axis": "CONTEXT",
+            "evidence": {
+              "start": 1253,
+              "end": 1281,
+              "text": "Kaplan-Meier survival curves"
+            }
+          },
+          {
+            "axis": "CONTEXT",
+            "evidence": {
+              "start": 1309,
+              "end": 1324,
+              "text": "adjusted models"
+            }
+          }
+        ],
+        "completeness": "COMPLETE",
+        "acceptable_equivalent_evidence": [],
+        "explanation": "Both analysis descriptions support one no-difference comparison between the same groups and outcome."
+      },
+      "explanation": "The scope reports the same null overall-survival comparison across Kaplan-Meier and adjusted analyses."
+    },
+    {
+      "scope_id": "G-e9edf448e97a661e",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "decision": "ADJUDICATED",
+      "ambiguity_reason": "NONE",
+      "scope_evidence": {
+        "end": 1640,
+        "start": 1488,
+        "text": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS."
+      },
+      "claim": {
+        "event_type": "ASSOCIATION",
+        "event_evidence": {
+          "start": 1566,
+          "end": 1639,
+          "text": "steroid dose before ICI initiation was no longer associated with worse OS"
+        },
+        "participants": [
+          {
+            "role": "POPULATION",
+            "evidence": {
+              "start": 1523,
+              "end": 1564,
+              "text": "patients receiving baseline dexamethasone"
+            }
+          },
+          {
+            "role": "PRIMARY_SUBJECT",
+            "evidence": {
+              "start": 1566,
+              "end": 1578,
+              "text": "steroid dose"
+            }
+          },
+          {
+            "role": "OUTCOME",
+            "evidence": {
+              "start": 1631,
+              "end": 1639,
+              "text": "worse OS"
+            }
+          }
+        ],
+        "direction": "NO_ASSOCIATION",
+        "direction_evidence": {
+          "start": 1605,
+          "end": 1625,
+          "text": "no longer associated"
+        },
+        "comparison": {
+          "relation": "NOT_APPLICABLE",
+          "evidence": null,
+          "left": null,
+          "right": null
+        },
+        "polarity": "NULL_RESULT",
+        "polarity_evidence": {
+          "start": 1605,
+          "end": 1625,
+          "text": "no longer associated"
+        },
+        "uncertainty": "ASSERTED",
+        "uncertainty_evidence": {
+          "start": 1601,
+          "end": 1625,
+          "text": "was no longer associated"
+        },
+        "quantitative_evidence": [],
+        "statistical_evidence": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "author_interpretation_evidence": null,
+        "required_modifiers": [
+          {
+            "axis": "CONTEXT",
+            "evidence": {
+              "start": 1488,
+              "end": 1564,
+              "text": "In a sensitivity analysis omitting patients receiving baseline dexamethasone"
+            }
+          },
+          {
+            "axis": "TIMEFRAME",
+            "evidence": {
+              "start": 1579,
+              "end": 1600,
+              "text": "before ICI initiation"
+            }
+          }
+        ],
+        "completeness": "COMPLETE",
+        "acceptable_equivalent_evidence": [],
+        "explanation": "The omitted baseline-dexamethasone population and pre-ICI timing materially delimit the reported null association."
+      },
+      "explanation": "The sensitivity-analysis scope states one null association between pre-ICI steroid dose and worse overall survival."
+    },
+    {
+      "scope_id": "G-38d616ba3e425d27",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "decision": "ADJUDICATED",
+      "ambiguity_reason": "NONE",
+      "scope_evidence": {
+        "end": 1224,
+        "start": 1067,
+        "text": "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023)"
+      },
+      "claim": {
+        "event_type": "INTERVENTION_EFFECT",
+        "event_evidence": {
+          "end": 1224,
+          "start": 1067,
+          "text": "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023)"
+        },
+        "participants": [
+          {
+            "role": "INTERVENTION",
+            "evidence": {
+              "start": 1067,
+              "end": 1083,
+              "text": "The intervention"
+            }
+          },
+          {
+            "role": "OUTCOME",
+            "evidence": {
+              "start": 1112,
+              "end": 1147,
+              "text": "detection of newly diagnosed low EF"
+            }
+          },
+          {
+            "role": "POPULATION",
+            "evidence": {
+              "start": 1151,
+              "end": 1169,
+              "text": "the overall cohort"
+            }
+          }
+        ],
+        "direction": "INCREASED",
+        "direction_evidence": {
+          "start": 1098,
+          "end": 1107,
+          "text": "increased"
+        },
+        "comparison": {
+          "relation": "GREATER_THAN",
+          "evidence": {
+            "start": 1098,
+            "end": 1107,
+            "text": "increased"
+          },
+          "left": {
+            "start": 1171,
+            "end": 1175,
+            "text": "1.5%"
+          },
+          "right": {
+            "start": 1180,
+            "end": 1184,
+            "text": "1.1%"
+          }
+        },
+        "polarity": "AFFIRMED",
+        "polarity_evidence": {
+          "start": 1098,
+          "end": 1107,
+          "text": "increased"
+        },
+        "uncertainty": "ASSERTED",
+        "uncertainty_evidence": {
+          "end": 1224,
+          "start": 1067,
+          "text": "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023)"
+        },
+        "quantitative_evidence": [
+          {
+            "kind": "PERCENTAGE",
+            "evidence": {
+              "start": 1171,
+              "end": 1175,
+              "text": "1.5%"
+            }
+          },
+          {
+            "kind": "PERCENTAGE",
+            "evidence": {
+              "start": 1180,
+              "end": 1184,
+              "text": "1.1%"
+            }
+          }
+        ],
+        "statistical_evidence": [
+          {
+            "kind": "EFFECT_ESTIMATE",
+            "evidence": {
+              "start": 1186,
+              "end": 1193,
+              "text": "HR 1.50"
+            }
+          },
+          {
+            "kind": "CONFIDENCE_INTERVAL",
+            "evidence": {
+              "start": 1195,
+              "end": 1212,
+              "text": "95% CI: 1.11-2.03"
+            }
+          },
+          {
+            "kind": "P_VALUE",
+            "evidence": {
+              "start": 1214,
+              "end": 1223,
+              "text": "P = 0.023"
+            }
+          }
+        ],
+        "author_interpretation": "SIGNIFICANT",
+        "author_interpretation_evidence": {
+          "start": 1084,
+          "end": 1097,
+          "text": "significantly"
+        },
+        "required_modifiers": [],
+        "completeness": "COMPLETE",
+        "acceptable_equivalent_evidence": [],
+        "explanation": "The intervention, detection outcome, and overall cohort are explicit, with an author-stated significant increase."
+      },
+      "explanation": "The scope reports one intervention effect on detection of newly diagnosed low ejection fraction."
+    },
+    {
+      "scope_id": "G-0b1467f1198defae",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "decision": "AMBIGUOUS",
+      "ambiguity_reason": "FRAGMENT_MISSING_CONTEXT",
+      "scope_evidence": {
+        "end": 1459,
+        "start": 1341,
+        "text": "While overall echocardiogram utilization remained similar between groups (17.1% vs. 17.3%, HR 1.00, 95% CI: 0.92-1.09)"
+      },
+      "claim": null,
+      "explanation": "The scope is a subordinate While-clause and leaves the compared groups unnamed, so the exact fragment cannot supply a complete atomic comparison."
+    },
+    {
+      "scope_id": "G-1b346f6b095ba905",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "decision": "ADJUDICATED",
+      "ambiguity_reason": "NONE",
+      "scope_evidence": {
+        "end": 1622,
+        "start": 1461,
+        "text": "the intervention group demonstrated higher positive predictive value for identifying low EF among patients receiving echocardiogram (34.2% vs. 20.2%, p < 0.001)."
+      },
+      "claim": {
+        "event_type": "COMPARISON",
+        "event_evidence": {
+          "end": 1622,
+          "start": 1461,
+          "text": "the intervention group demonstrated higher positive predictive value for identifying low EF among patients receiving echocardiogram (34.2% vs. 20.2%, p < 0.001)."
+        },
+        "participants": [
+          {
+            "role": "PRIMARY_SUBJECT",
+            "evidence": {
+              "start": 1461,
+              "end": 1483,
+              "text": "the intervention group"
+            }
+          },
+          {
+            "role": "OUTCOME",
+            "evidence": {
+              "start": 1504,
+              "end": 1552,
+              "text": "positive predictive value for identifying low EF"
+            }
+          },
+          {
+            "role": "POPULATION",
+            "evidence": {
+              "start": 1559,
+              "end": 1592,
+              "text": "patients receiving echocardiogram"
+            }
+          }
+        ],
+        "direction": "INCREASED",
+        "direction_evidence": {
+          "start": 1497,
+          "end": 1503,
+          "text": "higher"
+        },
+        "comparison": {
+          "relation": "GREATER_THAN",
+          "evidence": {
+            "start": 1497,
+            "end": 1503,
+            "text": "higher"
+          },
+          "left": {
+            "start": 1594,
+            "end": 1599,
+            "text": "34.2%"
+          },
+          "right": {
+            "start": 1604,
+            "end": 1609,
+            "text": "20.2%"
+          }
+        },
+        "polarity": "AFFIRMED",
+        "polarity_evidence": {
+          "start": 1497,
+          "end": 1503,
+          "text": "higher"
+        },
+        "uncertainty": "ASSERTED",
+        "uncertainty_evidence": {
+          "start": 1484,
+          "end": 1496,
+          "text": "demonstrated"
+        },
+        "quantitative_evidence": [
+          {
+            "kind": "PERCENTAGE",
+            "evidence": {
+              "start": 1594,
+              "end": 1599,
+              "text": "34.2%"
+            }
+          },
+          {
+            "kind": "PERCENTAGE",
+            "evidence": {
+              "start": 1604,
+              "end": 1609,
+              "text": "20.2%"
+            }
+          }
+        ],
+        "statistical_evidence": [
+          {
+            "kind": "P_VALUE",
+            "evidence": {
+              "start": 1611,
+              "end": 1620,
+              "text": "p < 0.001"
+            }
+          }
+        ],
+        "author_interpretation": "NOT_CLAIMED",
+        "author_interpretation_evidence": null,
+        "required_modifiers": [],
+        "completeness": "COMPLETE",
+        "acceptable_equivalent_evidence": [],
+        "explanation": "The higher positive predictive value is the core comparison; the numeric p-value is not an explicit author significance label."
+      },
+      "explanation": "The scope contains one explicit comparison of positive predictive value in the intervention group."
+    },
+    {
+      "scope_id": "G-2679331b14fa82e6",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "decision": "ADJUDICATED",
+      "ambiguity_reason": "NONE",
+      "scope_evidence": {
+        "end": 1770,
+        "start": 1623,
+        "text": "Post-hoc analysis revealed increased cardiology consultation rates among high-risk patients in the intervention group (29.3% vs. 23.5%, p = 0.027)."
+      },
+      "claim": {
+        "event_type": "COMPARISON",
+        "event_evidence": {
+          "end": 1770,
+          "start": 1623,
+          "text": "Post-hoc analysis revealed increased cardiology consultation rates among high-risk patients in the intervention group (29.3% vs. 23.5%, p = 0.027)."
+        },
+        "participants": [
+          {
+            "role": "OUTCOME",
+            "evidence": {
+              "start": 1660,
+              "end": 1689,
+              "text": "cardiology consultation rates"
+            }
+          },
+          {
+            "role": "POPULATION",
+            "evidence": {
+              "start": 1696,
+              "end": 1714,
+              "text": "high-risk patients"
+            }
+          },
+          {
+            "role": "PRIMARY_SUBJECT",
+            "evidence": {
+              "start": 1718,
+              "end": 1740,
+              "text": "the intervention group"
+            }
+          }
+        ],
+        "direction": "INCREASED",
+        "direction_evidence": {
+          "start": 1650,
+          "end": 1659,
+          "text": "increased"
+        },
+        "comparison": {
+          "relation": "GREATER_THAN",
+          "evidence": {
+            "start": 1650,
+            "end": 1659,
+            "text": "increased"
+          },
+          "left": {
+            "start": 1742,
+            "end": 1747,
+            "text": "29.3%"
+          },
+          "right": {
+            "start": 1752,
+            "end": 1757,
+            "text": "23.5%"
+          }
+        },
+        "polarity": "AFFIRMED",
+        "polarity_evidence": {
+          "start": 1650,
+          "end": 1659,
+          "text": "increased"
+        },
+        "uncertainty": "ASSERTED",
+        "uncertainty_evidence": {
+          "start": 1641,
+          "end": 1649,
+          "text": "revealed"
+        },
+        "quantitative_evidence": [
+          {
+            "kind": "PERCENTAGE",
+            "evidence": {
+              "start": 1742,
+              "end": 1747,
+              "text": "29.3%"
+            }
+          },
+          {
+            "kind": "PERCENTAGE",
+            "evidence": {
+              "start": 1752,
+              "end": 1757,
+              "text": "23.5%"
+            }
+          }
+        ],
+        "statistical_evidence": [
+          {
+            "kind": "P_VALUE",
+            "evidence": {
+              "start": 1759,
+              "end": 1768,
+              "text": "p = 0.027"
+            }
+          }
+        ],
+        "author_interpretation": "NOT_CLAIMED",
+        "author_interpretation_evidence": null,
+        "required_modifiers": [
+          {
+            "axis": "CONTEXT",
+            "evidence": {
+              "start": 1623,
+              "end": 1640,
+              "text": "Post-hoc analysis"
+            }
+          }
+        ],
+        "completeness": "COMPLETE",
+        "acceptable_equivalent_evidence": [],
+        "explanation": "The intervention-group high-risk population and consultation-rate outcome define one explicit post-hoc comparison."
+      },
+      "explanation": "The post-hoc scope reports one comparison of cardiology consultation rates."
+    },
+    {
+      "scope_id": "G-04cb55799af659d3",
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "decision": "ADJUDICATED",
+      "ambiguity_reason": "NONE",
+      "scope_evidence": {
+        "end": 2056,
+        "start": 1987,
+        "text": "The tool was particularly effective in identifying high-risk patients"
+      },
+      "claim": {
+        "event_type": "INTERVENTION_EFFECT",
+        "event_evidence": {
+          "end": 2056,
+          "start": 1987,
+          "text": "The tool was particularly effective in identifying high-risk patients"
+        },
+        "participants": [
+          {
+            "role": "INTERVENTION",
+            "evidence": {
+              "start": 1987,
+              "end": 1995,
+              "text": "The tool"
+            }
+          },
+          {
+            "role": "OUTCOME",
+            "evidence": {
+              "start": 2026,
+              "end": 2056,
+              "text": "identifying high-risk patients"
+            }
+          }
+        ],
+        "direction": "ENABLES",
+        "direction_evidence": {
+          "start": 2013,
+          "end": 2037,
+          "text": "effective in identifying"
+        },
+        "comparison": {
+          "relation": "NOT_APPLICABLE",
+          "evidence": null,
+          "left": null,
+          "right": null
+        },
+        "polarity": "AFFIRMED",
+        "polarity_evidence": {
+          "start": 2013,
+          "end": 2022,
+          "text": "effective"
+        },
+        "uncertainty": "ASSERTED",
+        "uncertainty_evidence": {
+          "end": 2056,
+          "start": 1987,
+          "text": "The tool was particularly effective in identifying high-risk patients"
+        },
+        "quantitative_evidence": [],
+        "statistical_evidence": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "author_interpretation_evidence": null,
+        "required_modifiers": [
+          {
+            "axis": "COMPARISON",
+            "evidence": {
+              "start": 2000,
+              "end": 2012,
+              "text": "particularly"
+            }
+          }
+        ],
+        "completeness": "COMPLETE",
+        "acceptable_equivalent_evidence": [],
+        "explanation": "The tool and identification outcome are explicit; particularly is retained as comparative emphasis without inventing an unnamed comparator."
+      },
+      "explanation": "The sentence states one effectiveness event: the tool enabled identification of high-risk patients."
+    },
+    {
+      "scope_id": "G-9144140bac9566a0",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "decision": "ADJUDICATED",
+      "ambiguity_reason": "NONE",
+      "scope_evidence": {
+        "end": 645,
+        "start": 527,
+        "text": "High quality clinical grade cceAAV vector based on AAV serotype 9 (AAV9) was produced in 200 L of suspension 293 cells"
+      },
+      "claim": {
+        "event_type": "PRODUCTION",
+        "event_evidence": {
+          "end": 645,
+          "start": 527,
+          "text": "High quality clinical grade cceAAV vector based on AAV serotype 9 (AAV9) was produced in 200 L of suspension 293 cells"
+        },
+        "participants": [
+          {
+            "role": "PRIMARY_OBJECT",
+            "evidence": {
+              "start": 555,
+              "end": 568,
+              "text": "cceAAV vector"
+            }
+          },
+          {
+            "role": "SECONDARY_PARTICIPANT",
+            "evidence": {
+              "start": 578,
+              "end": 599,
+              "text": "AAV serotype 9 (AAV9)"
+            }
+          },
+          {
+            "role": "CONTEXT",
+            "evidence": {
+              "start": 625,
+              "end": 645,
+              "text": "suspension 293 cells"
+            }
+          }
+        ],
+        "direction": "PRODUCED",
+        "direction_evidence": {
+          "start": 600,
+          "end": 612,
+          "text": "was produced"
+        },
+        "comparison": {
+          "relation": "NOT_APPLICABLE",
+          "evidence": null,
+          "left": null,
+          "right": null
+        },
+        "polarity": "AFFIRMED",
+        "polarity_evidence": {
+          "start": 600,
+          "end": 612,
+          "text": "was produced"
+        },
+        "uncertainty": "ASSERTED",
+        "uncertainty_evidence": {
+          "end": 645,
+          "start": 527,
+          "text": "High quality clinical grade cceAAV vector based on AAV serotype 9 (AAV9) was produced in 200 L of suspension 293 cells"
+        },
+        "quantitative_evidence": [
+          {
+            "kind": "OTHER",
+            "evidence": {
+              "start": 616,
+              "end": 621,
+              "text": "200 L"
+            }
+          }
+        ],
+        "statistical_evidence": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "author_interpretation_evidence": null,
+        "required_modifiers": [
+          {
+            "axis": "OTHER",
+            "evidence": {
+              "start": 527,
+              "end": 554,
+              "text": "High quality clinical grade"
+            }
+          },
+          {
+            "axis": "CONTEXT",
+            "evidence": {
+              "start": 569,
+              "end": 599,
+              "text": "based on AAV serotype 9 (AAV9)"
+            }
+          },
+          {
+            "axis": "CONTEXT",
+            "evidence": {
+              "start": 613,
+              "end": 645,
+              "text": "in 200 L of suspension 293 cells"
+            }
+          }
+        ],
+        "completeness": "COMPLETE",
+        "acceptable_equivalent_evidence": [],
+        "explanation": "Vector identity, serotype, clinical grade, scale, and production-cell context materially distinguish the production event."
+      },
+      "explanation": "The scope states one production event for a clinical-grade cceAAV9 vector in a specified cell-production context."
+    },
+    {
+      "scope_id": "G-f2dcd54d2c34e7d5",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "decision": "AMBIGUOUS",
+      "ambiguity_reason": "FRAGMENT_MISSING_CONTEXT",
+      "scope_evidence": {
+        "end": 922,
+        "start": 701,
+        "text": "Clinical trial in two spinal muscular atrophy (SMA) patients via intravenous injection at 12-24 months of age revealed no treatment-associated severe adverse events with a dose ranging from 6 x 10^13 to 1.2 x 10^14 vg/kg."
+      },
+      "claim": null,
+      "explanation": "The exact scope reports a safety result and dose but does not identify the administered treatment, so a complete treatment-safety event cannot be formed from scope-local evidence."
+    },
+    {
+      "scope_id": "G-f18f2b8dcfca47b2",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "decision": "ADJUDICATED",
+      "ambiguity_reason": "NONE",
+      "scope_evidence": {
+        "end": 1056,
+        "start": 923,
+        "text": "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function"
+      },
+      "claim": {
+        "event_type": "INTERVENTION_EFFECT",
+        "event_evidence": {
+          "start": 923,
+          "end": 1003,
+          "text": "Both patients showed rapid improvements in motor capabilities after gene therapy"
+        },
+        "participants": [
+          {
+            "role": "POPULATION",
+            "evidence": {
+              "start": 923,
+              "end": 936,
+              "text": "Both patients"
+            }
+          },
+          {
+            "role": "OUTCOME",
+            "evidence": {
+              "start": 966,
+              "end": 984,
+              "text": "motor capabilities"
+            }
+          },
+          {
+            "role": "INTERVENTION",
+            "evidence": {
+              "start": 991,
+              "end": 1003,
+              "text": "gene therapy"
+            }
+          }
+        ],
+        "direction": "INCREASED",
+        "direction_evidence": {
+          "start": 950,
+          "end": 962,
+          "text": "improvements"
+        },
+        "comparison": {
+          "relation": "NOT_APPLICABLE",
+          "evidence": null,
+          "left": null,
+          "right": null
+        },
+        "polarity": "AFFIRMED",
+        "polarity_evidence": {
+          "start": 950,
+          "end": 962,
+          "text": "improvements"
+        },
+        "uncertainty": "ASSERTED",
+        "uncertainty_evidence": {
+          "start": 937,
+          "end": 943,
+          "text": "showed"
+        },
+        "quantitative_evidence": [
+          {
+            "kind": "COUNT",
+            "evidence": {
+              "start": 923,
+              "end": 936,
+              "text": "Both patients"
+            }
+          }
+        ],
+        "statistical_evidence": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "author_interpretation_evidence": null,
+        "required_modifiers": [
+          {
+            "axis": "TIMEFRAME",
+            "evidence": {
+              "start": 944,
+              "end": 949,
+              "text": "rapid"
+            }
+          },
+          {
+            "axis": "TIMEFRAME",
+            "evidence": {
+              "start": 985,
+              "end": 1003,
+              "text": "after gene therapy"
+            }
+          }
+        ],
+        "completeness": "COMPLETE",
+        "acceptable_equivalent_evidence": [
+          {
+            "start": 1042,
+            "end": 1056,
+            "text": "motor function"
+          }
+        ],
+        "explanation": "Both patients, the motor outcome, and gene therapy define one improvement event; both is an explicit count-level observation."
+      },
+      "explanation": "The scope reports one post-gene-therapy improvement event in both patients."
+    },
+    {
+      "scope_id": "G-9074a91ba663d314",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "decision": "ADJUDICATED",
+      "ambiguity_reason": "NONE",
+      "scope_evidence": {
+        "end": 1285,
+        "start": 1132,
+        "text": "Our strategy enabled us to perform gene therapy in older SMA patients who had received initial treatment with RNA-splicing modifying drug during infancy."
+      },
+      "claim": {
+        "event_type": "OBSERVATION",
+        "event_evidence": {
+          "end": 1285,
+          "start": 1132,
+          "text": "Our strategy enabled us to perform gene therapy in older SMA patients who had received initial treatment with RNA-splicing modifying drug during infancy."
+        },
+        "participants": [
+          {
+            "role": "PRIMARY_SUBJECT",
+            "evidence": {
+              "start": 1132,
+              "end": 1144,
+              "text": "Our strategy"
+            }
+          },
+          {
+            "role": "PRIMARY_OBJECT",
+            "evidence": {
+              "start": 1167,
+              "end": 1179,
+              "text": "gene therapy"
+            }
+          },
+          {
+            "role": "POPULATION",
+            "evidence": {
+              "start": 1183,
+              "end": 1201,
+              "text": "older SMA patients"
+            }
+          },
+          {
+            "role": "INTERVENTION",
+            "evidence": {
+              "start": 1242,
+              "end": 1269,
+              "text": "RNA-splicing modifying drug"
+            }
+          }
+        ],
+        "direction": "ENABLES",
+        "direction_evidence": {
+          "start": 1145,
+          "end": 1152,
+          "text": "enabled"
+        },
+        "comparison": {
+          "relation": "NOT_APPLICABLE",
+          "evidence": null,
+          "left": null,
+          "right": null
+        },
+        "polarity": "AFFIRMED",
+        "polarity_evidence": {
+          "start": 1145,
+          "end": 1152,
+          "text": "enabled"
+        },
+        "uncertainty": "ASSERTED",
+        "uncertainty_evidence": {
+          "end": 1285,
+          "start": 1132,
+          "text": "Our strategy enabled us to perform gene therapy in older SMA patients who had received initial treatment with RNA-splicing modifying drug during infancy."
+        },
+        "quantitative_evidence": [],
+        "statistical_evidence": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "author_interpretation_evidence": null,
+        "required_modifiers": [
+          {
+            "axis": "CONTEXT",
+            "evidence": {
+              "start": 1202,
+              "end": 1284,
+              "text": "who had received initial treatment with RNA-splicing modifying drug during infancy"
+            }
+          },
+          {
+            "axis": "TIMEFRAME",
+            "evidence": {
+              "start": 1270,
+              "end": 1284,
+              "text": "during infancy"
+            }
+          }
+        ],
+        "completeness": "COMPLETE",
+        "acceptable_equivalent_evidence": [],
+        "explanation": "The enabling strategy, gene-therapy action, older SMA population, and prior infancy treatment form one feasibility observation."
+      },
+      "explanation": "The scope states one enabling event: the strategy made gene therapy possible in a specifically treated older SMA population."
+    },
+    {
+      "scope_id": "G-1d9acf68ceb6192c",
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "decision": "ADJUDICATED",
+      "ambiguity_reason": "NONE",
+      "scope_evidence": {
+        "end": 1425,
+        "start": 1286,
+        "text": "These early data provide preliminary evidence for clinical use of cceAAV vectors, though further validation in larger cohorts is warranted."
+      },
+      "claim": {
+        "event_type": "HYPOTHESIS",
+        "event_evidence": {
+          "start": 1286,
+          "end": 1366,
+          "text": "These early data provide preliminary evidence for clinical use of cceAAV vectors"
+        },
+        "participants": [
+          {
+            "role": "PRIMARY_SUBJECT",
+            "evidence": {
+              "start": 1286,
+              "end": 1302,
+              "text": "These early data"
+            }
+          },
+          {
+            "role": "PRIMARY_OBJECT",
+            "evidence": {
+              "start": 1336,
+              "end": 1366,
+              "text": "clinical use of cceAAV vectors"
+            }
+          }
+        ],
+        "direction": "OBSERVED",
+        "direction_evidence": {
+          "start": 1303,
+          "end": 1331,
+          "text": "provide preliminary evidence"
+        },
+        "comparison": {
+          "relation": "NOT_APPLICABLE",
+          "evidence": null,
+          "left": null,
+          "right": null
+        },
+        "polarity": "AFFIRMED",
+        "polarity_evidence": {
+          "start": 1303,
+          "end": 1310,
+          "text": "provide"
+        },
+        "uncertainty": "PROVISIONAL",
+        "uncertainty_evidence": {
+          "start": 1311,
+          "end": 1322,
+          "text": "preliminary"
+        },
+        "quantitative_evidence": [],
+        "statistical_evidence": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "author_interpretation_evidence": null,
+        "required_modifiers": [
+          {
+            "axis": "UNCERTAINTY",
+            "evidence": {
+              "start": 1368,
+              "end": 1424,
+              "text": "though further validation in larger cohorts is warranted"
+            }
+          }
+        ],
+        "completeness": "COMPLETE",
+        "acceptable_equivalent_evidence": [],
+        "explanation": "Preliminary evidence and the explicit need for larger-cohort validation make this an affirmed but provisional hypothesis-level event."
+      },
+      "explanation": "The scope makes one provisional hypothesis-level claim about clinical use of cceAAV vectors."
+    },
+    {
+      "scope_id": "G-899de71f85d3f8e2",
+      "source_id": "exposed-molecular-mechanism",
+      "source_sha256": "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe",
+      "decision": "ADJUDICATED",
+      "ambiguity_reason": "NONE",
+      "scope_evidence": {
+        "end": 454,
+        "start": 296,
+        "text": "Key results showed that ZmWRKY104 directly interacts with ZmCCaMK in the nucleus in a non-phosphorylation-dependent manner, forming a novel regulatory module."
+      },
+      "claim": {
+        "event_type": "INTERACTION",
+        "event_evidence": {
+          "start": 320,
+          "end": 361,
+          "text": "ZmWRKY104 directly interacts with ZmCCaMK"
+        },
+        "participants": [
+          {
+            "role": "GENE_OR_PROTEIN",
+            "evidence": {
+              "start": 320,
+              "end": 329,
+              "text": "ZmWRKY104"
+            }
+          },
+          {
+            "role": "GENE_OR_PROTEIN",
+            "evidence": {
+              "start": 354,
+              "end": 361,
+              "text": "ZmCCaMK"
+            }
+          }
+        ],
+        "direction": "INTERACTS",
+        "direction_evidence": {
+          "start": 339,
+          "end": 348,
+          "text": "interacts"
+        },
+        "comparison": {
+          "relation": "NOT_APPLICABLE",
+          "evidence": null,
+          "left": null,
+          "right": null
+        },
+        "polarity": "AFFIRMED",
+        "polarity_evidence": {
+          "start": 339,
+          "end": 348,
+          "text": "interacts"
+        },
+        "uncertainty": "ASSERTED",
+        "uncertainty_evidence": {
+          "start": 296,
+          "end": 314,
+          "text": "Key results showed"
+        },
+        "quantitative_evidence": [],
+        "statistical_evidence": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "author_interpretation_evidence": null,
+        "required_modifiers": [
+          {
+            "axis": "MECHANISM",
+            "evidence": {
+              "start": 330,
+              "end": 338,
+              "text": "directly"
+            }
+          },
+          {
+            "axis": "LOCATION",
+            "evidence": {
+              "start": 362,
+              "end": 376,
+              "text": "in the nucleus"
+            }
+          },
+          {
+            "axis": "MECHANISM",
+            "evidence": {
+              "start": 377,
+              "end": 418,
+              "text": "in a non-phosphorylation-dependent manner"
+            }
+          },
+          {
+            "axis": "OTHER",
+            "evidence": {
+              "start": 420,
+              "end": 453,
+              "text": "forming a novel regulatory module"
+            }
+          }
+        ],
+        "completeness": "COMPLETE",
+        "acceptable_equivalent_evidence": [],
+        "explanation": "ZmWRKY104 and ZmCCaMK are the interacting participants; directness, nuclear location, phosphorylation independence, and module formation materially characterize the interaction."
+      },
+      "explanation": "The scope reports one direct protein interaction with location and mechanism qualifiers."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "reason": "unresolved adjudicator disagreement exceeds 20 percent",
+  "requested_metrics": {
+    "abstention_rate": "NOT_RUN",
+    "calls": "NOT_RUN",
+    "comparison_fidelity": "NOT_RUN",
+    "contradictions": "NOT_RUN",
+    "correct_rejection_rate": "NOT_RUN",
+    "cost": "NOT_RUN",
+    "false_acceptance_rate": "NOT_RUN",
+    "latency": "NOT_RUN",
+    "polarity_fidelity": "NOT_RUN",
+    "repair_attempt_rate": "NOT_RUN",
+    "repair_laundering_rate": "NOT_RUN",
+    "role_fidelity": "NOT_RUN",
+    "statistical_fidelity": "NOT_RUN",
+    "tokens": "NOT_RUN",
+    "unauthorized_change_rate": "NOT_RUN",
+    "uncertainty_fidelity": "NOT_RUN",
+    "unsupported_claims": "NOT_RUN",
+    "valid_repair_rate": "NOT_RUN",
+    "valuable_claim_recall_after": "NOT_RUN",
+    "valuable_claim_recall_before": "NOT_RUN"
+  },
+  "schema_version": "source_general_claim_verification.metrics.v2",
+  "status": "NOT_RUN_REFERENCE_SET_UNRELIABLE"
+}

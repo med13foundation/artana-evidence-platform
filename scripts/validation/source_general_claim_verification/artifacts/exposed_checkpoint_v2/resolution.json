@@ -1,0 +1,45 @@
+{
+  "artifact_validation": {
+    "adjudicator_a": {
+      "sha256": "589b0de1276c7554ceb346be3e0232e8f731229947c2fa2a4ae3fcd9b0e29a74",
+      "valid": true
+    },
+    "adjudicator_b": {
+      "sha256": "78907ca789edef3af3c52626e6b845b7a6bd6a2c9b7b091d220aac3eab132e6e",
+      "valid": true
+    },
+    "adjudicator_c": {
+      "sha256": "97764a514b33f0c37bbc13d64c82a67872aea8a498f91a29a35cf572eea31157",
+      "valid": true
+    }
+  },
+  "corpus_sha256": "44ee2a069ccef4b9f7a64f774d503ce459077492a60083e712a669aa25bcce88",
+  "decision": "PIVOT",
+  "experiment_execution_authorized": false,
+  "initial_disagreement_count": 15,
+  "initial_disagreement_rate": 0.4838709677419355,
+  "maximum_allowed_unresolved_rate": 0.2,
+  "reference_packet_set_created": false,
+  "schema_version": "source_general_claim_verification.resolution.v2",
+  "scope_count": 31,
+  "terminal": "STOP_REFERENCE_SET_UNRELIABLE",
+  "unresolved_disagreement_count": 15,
+  "unresolved_disagreement_rate": 0.4838709677419355,
+  "unresolved_scope_ids": [
+    "G-04cb55799af659d3",
+    "G-0b1467f1198defae",
+    "G-1b346f6b095ba905",
+    "G-1d9acf68ceb6192c",
+    "G-2679331b14fa82e6",
+    "G-38d616ba3e425d27",
+    "G-7887375214f36f9f",
+    "G-7e199efed15b3e57",
+    "G-899de71f85d3f8e2",
+    "G-9074a91ba663d314",
+    "G-9144140bac9566a0",
+    "G-d0f07ae5d50b2bd2",
+    "G-e9edf448e97a661e",
+    "G-f18f2b8dcfca47b2",
+    "G-f2dcd54d2c34e7d5"
+  ]
+}
