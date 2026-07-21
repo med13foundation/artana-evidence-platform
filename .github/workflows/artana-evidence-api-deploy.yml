@@ -312,6 +312,15 @@ jobs:
           ARTANA_COMMAND_TIMEOUT_SECONDS: ${{ vars.ARTANA_COMMAND_TIMEOUT_SECONDS_STAGING }}
         run: bash scripts/deploy/sync_artana_evidence_api_cloud_run_runtime_config.sh
 
+      - name: Verify internal preview public boundary (Staging)
+        run: |
+          service_url="$(gcloud run services describe artana-evidence-api-staging \
+            --project "${PROJECT_ID}" \
+            --region "${REGION}" \
+            --format='value(status.url)')"
+          python3 scripts/verify_internal_preview.py \
+            --evidence-base-url "${service_url}"
+
   deploy-production:
     name: Deploy Artana Evidence API to Production
     if: >

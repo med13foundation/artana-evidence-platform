@@ -51,6 +51,7 @@ and endpoint index, as the integration surface.
 
 - [User Guide](docs/user-guide/README.md)
 - [Endpoint Index](docs/user-guide/09-endpoint-index.md)
+- [Internal Preview Runbook](docs/internal-preview-runbook.md)
 - `services/artana_evidence_api/openapi.json`
 - `services/artana_evidence_db/openapi.json`
 - `services/artana_evidence_db/artana-evidence-db.generated.ts`
@@ -164,6 +165,23 @@ make graph-phase6-release-check
 
 Run these only when you intentionally want to hit running local services or
 public external APIs.
+
+For the non-mutating internal-preview boundary checks, set the staging URLs and
+optionally a tester key:
+
+```bash
+export ARTANA_PREVIEW_BASE_URL="https://your-evidence-api.example"
+export ARTANA_PREVIEW_GRAPH_BASE_URL="https://your-graph-api.example"
+make internal-preview-public-check
+
+read -r -s -p "Tester API key: " ARTANA_PREVIEW_API_KEY
+export ARTANA_PREVIEW_API_KEY
+echo
+make internal-preview-authenticated-check
+```
+
+See the [Internal Preview Runbook](docs/internal-preview-runbook.md) before
+creating or distributing tester credentials.
 
 For the live local endpoint contract, start the stack in one terminal:
 

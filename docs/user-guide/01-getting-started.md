@@ -82,6 +82,9 @@ curl -s -X POST "$ARTANA_API_BASE_URL/v2/auth/testers" \
 ```
 
 The response includes the tester's API key once. Save it for that tester.
+For a controlled staging preview, operators should use the tested CLI and the
+issuance, verification, rotation, and revocation procedure in the
+[Internal Preview Runbook](../internal-preview-runbook.md).
 
 ## 3. Verify Your Identity
 

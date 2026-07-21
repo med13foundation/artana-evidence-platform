@@ -158,3 +158,26 @@ def test_artana_evidence_db_deploy_jobs_depend_on_service_checks() -> None:
         assert deploy_block.index("needs: graph-service-checks") < deploy_block.index(
             "docker/build-push-action@v5",
         )
+
+
+def test_staging_deploys_verify_internal_preview_boundaries_after_sync() -> None:
+    api_workflow = _read_text(API_DEPLOY_WORKFLOW)
+    graph_workflow = _read_text(DB_DEPLOY_WORKFLOW)
+    api_staging = _workflow_job_block(api_workflow, "deploy-staging")
+    graph_staging = _workflow_job_block(graph_workflow, "deploy-staging")
+
+    api_sync = "Sync Artana Evidence API runtime config (Staging)"
+    api_verify = "Verify internal preview public boundary (Staging)"
+    assert api_sync in api_staging
+    assert api_verify in api_staging
+    assert api_staging.index(api_sync) < api_staging.index(api_verify)
+    assert "scripts/verify_internal_preview.py" in api_staging
+    assert "--evidence-base-url" in api_staging
+
+    graph_sync = "Sync Artana Evidence DB runtime config (Staging)"
+    graph_verify = "Verify internal preview graph boundary (Staging)"
+    assert graph_sync in graph_staging
+    assert graph_verify in graph_staging
+    assert graph_staging.index(graph_sync) < graph_staging.index(graph_verify)
+    assert "scripts/verify_internal_preview.py" in graph_staging
+    assert "--graph-base-url" in graph_staging
