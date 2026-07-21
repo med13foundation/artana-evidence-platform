@@ -91,22 +91,17 @@ def run_experiment(
     try:
         execution = execute_single_provider_call(
             api_key=api_key,
+            output_model=ScientificEventExtraction,
             request=ProviderRequest(
                 provider_input=provider_input,
                 provider_format=type_to_text_format_param(ScientificEventExtraction),
-                provider_model_id=_required_string(
-                    model_state, "provider_model_id"
-                ),
+                provider_model_id=_required_string(model_state, "provider_model_id"),
                 reasoning_effort=_required_string(model_state, "reasoning_effort"),
                 max_output_tokens=_required_int(budgets, "max_output_tokens"),
                 max_total_tokens=_required_int(budgets, "max_total_tokens"),
                 max_cost_usd=_required_float(budgets, "max_cost_usd"),
-                max_latency_seconds=_required_float(
-                    budgets, "max_latency_seconds"
-                ),
-                pricing=_pricing(
-                    _required_dict(budgets, "pricing_usd_per_token")
-                ),
+                max_latency_seconds=_required_float(budgets, "max_latency_seconds"),
+                pricing=_pricing(_required_dict(budgets, "pricing_usd_per_token")),
                 metadata=metadata,
             ),
         )
@@ -125,6 +120,7 @@ def run_experiment(
                 "provider_retries": 0,
                 "failure_stage": exc.stage,
                 "root_cause": exc.root_cause,
+                "diagnostics": exc.diagnostics,
             },
             result_path=artifacts.result,
             result=result,
@@ -134,7 +130,15 @@ def run_experiment(
 
     artifacts.raw_output.parent.mkdir(parents=True, exist_ok=True)
     artifacts.raw_output.write_text(
-        json.dumps(execution.raw_response, indent=2, sort_keys=True) + "\n",
+        json.dumps(
+            {
+                "creation": execution.creation_response,
+                "retrieval": execution.retrieval_response,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
         encoding="utf-8",
     )
     try:
@@ -175,7 +179,7 @@ def run_experiment(
         if score.scientific_gate_passed
         else "DEVELOPMENT_GATE_FAILED"
     )
-    result: dict[str, object] = {
+    final_result: dict[str, object] = {
         "schema_version": "artana.public_gold.lossless_event_result.v2",
         "decision": decision,
         "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
@@ -204,7 +208,7 @@ def run_experiment(
         receipt_path=artifacts.receipt,
         receipt=execution.receipt,
         result_path=artifacts.result,
-        result=result,
+        result=final_result,
         report_path=artifacts.report,
     )
     return decision

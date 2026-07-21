@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from pydantic import BaseModel, ConfigDict
 
 from scripts.validation.public_gold.lossless_event_provider import (
     ProviderExecutionError,
@@ -15,8 +16,18 @@ class _Dumpable:
     def __init__(self, payload: dict[str, object]) -> None:
         self.payload = payload
 
-    def model_dump(self, *, mode: str) -> dict[str, object]:
+    def to_dict(
+        self,
+        *,
+        mode: str,
+        use_api_names: bool,
+        exclude_unset: bool,
+        exclude_none: bool,
+    ) -> dict[str, object]:
         assert mode == "json"
+        assert use_api_names is True
+        assert exclude_unset is True
+        assert exclude_none is False
         return self.payload
 
 
@@ -40,23 +51,40 @@ class _InputItems:
 
 
 class _Responses:
-    def __init__(self, payload: dict[str, object], prompt: str) -> None:
-        self.payload = payload
+    def __init__(
+        self,
+        creation: dict[str, object],
+        retrieval: dict[str, object],
+        prompt: str,
+    ) -> None:
+        self.creation = creation
+        self.retrieval = retrieval
         self.input_items = _InputItems(prompt)
         self.create_calls = 0
 
     def create(self, **kwargs: object) -> _Dumpable:
         self.create_calls += 1
-        return _Dumpable(self.payload)
+        return _Dumpable(self.creation)
 
     def retrieve(self, response_id: str) -> _Dumpable:
         assert response_id == "resp-1"
-        return _Dumpable(self.payload)
+        return _Dumpable(self.retrieval)
 
 
 class _Client:
-    def __init__(self, payload: dict[str, object], prompt: str) -> None:
-        self.responses = _Responses(payload, prompt)
+    def __init__(
+        self,
+        creation: dict[str, object],
+        prompt: str,
+        retrieval: dict[str, object] | None = None,
+    ) -> None:
+        self.responses = _Responses(creation, retrieval or creation, prompt)
+
+
+class _SmokeOutput(BaseModel):
+    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
+
+    status: str
 
 
 def _request(prompt: str, response_format: dict[str, object]) -> ProviderRequest:
@@ -76,13 +104,13 @@ def _request(prompt: str, response_format: dict[str, object]) -> ProviderRequest
 
 def _payload(response_format: dict[str, object]) -> dict[str, object]:
     structured = {
-        "status": "ABSTAIN",
-        "mentions": [],
-        "events": [],
-        "abstention_reason": "source is ambiguous",
+        "status": "OK",
     }
     return {
         "id": "resp-1",
+        "object": "response",
+        "created_at": 1000.0,
+        "completed_at": 1001.0,
         "status": "completed",
         "error": None,
         "incomplete_details": None,
@@ -92,19 +120,27 @@ def _payload(response_format: dict[str, object]) -> dict[str, object]:
         "text": {"format": response_format},
         "output": [
             {
+                "id": "rs-1",
+                "type": "reasoning",
+                "summary": [],
+                "content": None,
+                "encrypted_content": None,
+                "status": "completed",
+            },
+            {
+                "id": "msg-1",
                 "type": "message",
                 "role": "assistant",
                 "status": "completed",
-                "content": [
-                    {"type": "output_text", "text": json.dumps(structured)}
-                ],
-            }
+                "content": [{"type": "output_text", "text": json.dumps(structured)}],
+            },
         ],
         "usage": {
             "input_tokens": 100,
             "output_tokens": 50,
             "total_tokens": 150,
             "input_tokens_details": {"cached_tokens": 20},
+            "output_tokens_details": {"reasoning_tokens": 10},
         },
     }
 
@@ -117,14 +153,15 @@ def test_provider_transport_calls_model_once_and_verifies_receipt() -> None:
     execution = execute_single_provider_call(
         api_key="test",
         request=_request(prompt, response_format),
+        output_model=_SmokeOutput,
         client=client,
     )
 
     assert client.responses.create_calls == 1
-    assert execution.extraction.status == "ABSTAIN"
+    assert execution.extraction.status == "OK"
     assert execution.receipt["status"] == "VERIFIED_LIVE"
     assert execution.receipt["provider_retries"] == 0
-    assert execution.receipt["total_tokens"] == 150
+    assert execution.receipt["usage"]["total_tokens"] == 150
 
 
 def test_provider_transport_fails_closed_on_retrieved_input_drift() -> None:
@@ -136,6 +173,7 @@ def test_provider_transport_fails_closed_on_retrieved_input_drift() -> None:
         execute_single_provider_call(
             api_key="test",
             request=_request(prompt, response_format),
+            output_model=_SmokeOutput,
             client=client,
         )
 

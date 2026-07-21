@@ -1,0 +1,98 @@
+{
+  "acceptance": {
+    "canonical_payload_match": "EXACT",
+    "identity_input_schema_usage": "VERIFIED",
+    "structured_status": "OK",
+    "unknown_envelope_differences_allowed": 0
+  },
+  "budgets": {
+    "max_cost_usd": 0.25,
+    "max_latency_seconds": 300.0,
+    "max_output_tokens": 1024,
+    "max_total_tokens": 5000,
+    "pricing_usd_per_token": {
+      "cached_input": 5e-07,
+      "input": 5e-06,
+      "output": 3e-05
+    },
+    "provider_calls": 1,
+    "provider_retries": 0
+  },
+  "execution_authorized": true,
+  "frozen_state": {
+    "dependencies": {
+      "bundle_sha256": "13f97298b05b65704c51e4d693849adb46c963f778a79a048d8e4bf2b01fe43f",
+      "files": {
+        "pyproject.toml": "991632643e70dfbdc049a6211b69bc614c6f84d6625adcff96ab0ba1bc362fab"
+      },
+      "packages": {
+        "openai": "2.44.0",
+        "pydantic": "2.13.4"
+      },
+      "python": "3.13.12"
+    },
+    "implementation": {
+      "code_bundle_sha256": "c01b51b758a90b820bfcc29ee96dffe6fdb47a4fa1bfbf64f9850384c62b21a0",
+      "code_files": {
+        "scripts/validation/provider_receipt_boundary/__init__.py": "3a9e2572c510c148c196525b4ac2ff5a56570f4dd873e4200ba3953dae8b7c2f",
+        "scripts/validation/provider_receipt_boundary/canonical_payload.py": "04dd672b75e8a5803d3e2cbaa6b55d7617051b1fe43e523fa681e3f153c12eff",
+        "scripts/validation/provider_receipt_boundary/contracts.py": "4ab68deed23135d1feeb26ece321254573f02ce0b4139037f63e2a303ab8d054",
+        "scripts/validation/provider_receipt_boundary/identity.py": "a07f468ae572ab07ef4b70e7661dcdb416860a71fc1be1b509518aeda1ad8d30",
+        "scripts/validation/provider_receipt_boundary/smoke.py": "923a9834e3afb0eb9e2edc9c481cea720bf67ef0e26dc460b214e6a474891229",
+        "scripts/validation/provider_receipt_boundary/structural_diff.py": "46e778decc1d15172cfaaa898ae53f693846b779bc9cf84a0ed2415cd2da2e55",
+        "scripts/validation/provider_receipt_boundary/validation.py": "03f7bdd9409cbc17ddfcd1a5b8f2cdd5b47b6d8fca462bc01a184b3ff35466bc",
+        "scripts/validation/public_gold/lossless_event_provider.py": "f161c6d1b5178866fd9cd54e946b540f1b9586591a76d2c485d6fd4c5d92c7dc"
+      }
+    },
+    "input": {
+      "biomedical_source_included": false,
+      "classification": "NON_SCIENTIFIC",
+      "sha256": "5c2059c5533984145e40c9776113ee8fe0efdfd73382e06874e13b6a1155341c"
+    },
+    "model": {
+      "identity": "openai:gpt-5.6-sol",
+      "provider_model_id": "gpt-5.6-sol",
+      "reasoning_effort": "low",
+      "temperature": "provider_default_not_set"
+    },
+    "output": {
+      "provider_format": {
+        "name": "ReceiptSmokeOutput",
+        "schema": {
+          "additionalProperties": false,
+          "description": "The deliberately tiny non-scientific structured response.",
+          "properties": {
+            "status": {
+              "const": "OK",
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "title": "ReceiptSmokeOutput",
+          "type": "object"
+        },
+        "strict": true,
+        "type": "json_schema"
+      },
+      "provider_format_sha256": "5ada329fa455e81078165a9d72011b8a760a610dd0c4b18e5b35681b70c1f04e",
+      "schema_sha256": "a6df7f247e1b5c589c86ac5b429aae18125025af19cfb04b090369c7a45c6ba9"
+    },
+    "request_metadata": {
+      "artana_data_class": "non-scientific",
+      "artana_experiment": "receipt-boundary-smoke-v1"
+    }
+  },
+  "rules": {
+    "biomedical_source_allowed": false,
+    "fallback_allowed": false,
+    "graph_write_allowed": false,
+    "promotion_allowed": false,
+    "retry_allowed": false,
+    "scientific_experiment_allowed": false
+  },
+  "schema_version": "artana.provider_receipt_boundary.smoke.v1",
+  "status": "FROZEN_AUTHORIZED_FOR_ONE_NON_SCIENTIFIC_CALL"
+}

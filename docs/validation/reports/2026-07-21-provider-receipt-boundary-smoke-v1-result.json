@@ -1,0 +1,29 @@
+{
+  "decision": "INVALID_SMOKE_EXPERIMENT",
+  "preflight": {
+    "frozen_state_sha256": "2e80373e84684b25e7063318739fa30beb400df56cf603e1f4ef2f88f8cb2791",
+    "preregistration_sha256": "e35244e61d6c757b2cf7a50cba5533058ff6832ab69abd427cba58a4cec763fe",
+    "status": "PREFLIGHT_PASSED"
+  },
+  "receipt": {
+    "diagnostics": {
+      "response_id": "resp_09fa66ffeda439fb006a5fd16b59ec8199af3a2ea4ed67fa20"
+    },
+    "failure_stage": "RECEIPT_SCHEMA",
+    "provider_calls": 1,
+    "provider_retries": 0,
+    "root_cause": "creation response schema differs",
+    "status": "UNVERIFIED"
+  },
+  "receipt_sha256": "12f10dceeef30f1a93cac31effa6996421dcd8b9f3334d4910277eef67529875",
+  "schema_version": "artana.provider_receipt_boundary.smoke_result.v1",
+  "terminal_rules": {
+    "biomedical_sources_accessed": 0,
+    "fallbacks": 0,
+    "graph_writes": 0,
+    "promotions": 0,
+    "provider_calls": 1,
+    "provider_retries": 0,
+    "scientific_experiments_run": 0
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "diagnostics": {
+    "response_id": "resp_09fa66ffeda439fb006a5fd16b59ec8199af3a2ea4ed67fa20"
+  },
+  "failure_stage": "RECEIPT_SCHEMA",
+  "provider_calls": 1,
+  "provider_retries": 0,
+  "root_cause": "creation response schema differs",
+  "status": "UNVERIFIED"
+}

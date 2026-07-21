@@ -27,13 +27,11 @@ from scripts.validation.public_gold.source_selection import (
 )
 
 DEVELOPMENT_DIRECTORY = Path(
-    "validation/public_gold/bionlp_cg/raw/"
-    "bionlp-st-2013-cg-master/original-data/devel"
+    "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel"
 )
 ARCHIVE_PATH = Path("validation/public_gold/bionlp_cg/raw/openbiocorpora-master.zip")
 PROMPT_PATH = Path(
-    "docs/validation/prompts/"
-    "2026-07-21-lossless-scientific-event-development-prompt.md"
+    "docs/validation/prompts/2026-07-21-lossless-scientific-event-development-prompt.md"
 )
 EXPECTED_DOCUMENTS = 100
 MINIMUM_STOP_RULES = 5
@@ -52,6 +50,12 @@ EXPERIMENT_CODE_FILES = (
     "scripts/validation/public_gold/lossless_event_preflight.py",
     "scripts/validation/public_gold/lossless_event_provider.py",
     "scripts/validation/public_gold/lossless_event_live_execution.py",
+    "scripts/validation/provider_receipt_boundary/__init__.py",
+    "scripts/validation/provider_receipt_boundary/canonical_payload.py",
+    "scripts/validation/provider_receipt_boundary/contracts.py",
+    "scripts/validation/provider_receipt_boundary/identity.py",
+    "scripts/validation/provider_receipt_boundary/structural_diff.py",
+    "scripts/validation/provider_receipt_boundary/validation.py",
 )
 DEPENDENCY_FILES = ("pyproject.toml",)
 DEPENDENCY_PACKAGES = ("openai", "litellm", "pydantic")
@@ -163,7 +167,10 @@ def compute_frozen_state(repository_root: Path) -> dict[str, object]:
 
 
 def verify_preregistration(
-    repository_root: Path, preregistration_path: Path
+    repository_root: Path,
+    preregistration_path: Path,
+    *,
+    require_authorized: bool = True,
 ) -> dict[str, object]:
     """Fail closed unless a clean recomputation equals the frozen experiment."""
 
@@ -174,7 +181,7 @@ def verify_preregistration(
         raise ExperimentPreflightError(
             "frozen state differs from clean deterministic recomputation"
         )
-    _verify_safety_contract(preregistration)
+    _verify_safety_contract(preregistration, require_authorized=require_authorized)
     return {
         "status": "PREFLIGHT_PASSED",
         "preregistration_sha256": _file_sha256(preregistration_path),
@@ -186,13 +193,13 @@ def build_preregistration(repository_root: Path) -> dict[str, object]:
     """Create a new candidate; callers freeze it as a new immutable file."""
 
     return {
-        "schema_version": "artana.public_gold.lossless_event_experiment.v2",
-        "status": "FROZEN_AUTHORIZED_FOR_ONE_CALL",
-        "execution_authorized": True,
+        "schema_version": "artana.public_gold.lossless_event_experiment.v3",
+        "status": "FROZEN_UNAUTHORIZED_AWAITING_EXPLICIT_AUTHORIZATION",
+        "execution_authorized": False,
         "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
         "invalid_predecessor": (
             "docs/validation/preregistrations/"
-            "2026-07-21-lossless-event-ir-development-experiment.json"
+            "2026-07-21-lossless-event-ir-development-experiment-v2.json"
         ),
         "frozen_state": compute_frozen_state(repository_root),
         "budgets": {
@@ -251,9 +258,20 @@ def build_preregistration(repository_root: Path) -> dict[str, object]:
     }
 
 
-def _verify_safety_contract(preregistration: dict[str, object]) -> None:
-    if preregistration.get("execution_authorized") is not True:
-        raise ExperimentPreflightError("the new experiment is not explicitly authorized")
+def _verify_safety_contract(
+    preregistration: dict[str, object], *, require_authorized: bool
+) -> None:
+    if require_authorized and preregistration.get("execution_authorized") is not True:
+        raise ExperimentPreflightError(
+            "the new experiment is not explicitly authorized"
+        )
+    if (
+        not require_authorized
+        and preregistration.get("execution_authorized") is not False
+    ):
+        raise ExperimentPreflightError(
+            "unauthorized preregistration unexpectedly permits execution"
+        )
     budgets = preregistration.get("budgets")
     rules = preregistration.get("rules")
     stop_rules = preregistration.get("stop_rules")
@@ -313,6 +331,7 @@ def main() -> int:
     write.add_argument("path", type=Path)
     verify = commands.add_parser("verify")
     verify.add_argument("path", type=Path)
+    verify.add_argument("--allow-unauthorized", action="store_true")
     args = parser.parse_args()
     repository_root = Path(__file__).resolve().parents[3]
     if args.command == "write":
@@ -325,7 +344,11 @@ def main() -> int:
     else:
         print(
             json.dumps(
-                verify_preregistration(repository_root, args.path),
+                verify_preregistration(
+                    repository_root,
+                    args.path,
+                    require_authorized=not args.allow_unauthorized,
+                ),
                 sort_keys=True,
             )
         )

@@ -1,35 +1,51 @@
-"""Exactly-once provider transport and live receipt verification."""
+"""Exactly-once provider transport orchestrating the receipt boundary."""
 
 from __future__ import annotations
 
-import hashlib
 import json
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Protocol, cast
+from typing import Generic, Protocol, TypeVar, cast
 
 from openai import OpenAI
+from pydantic import BaseModel
 
-from scripts.validation.public_gold.lossless_event_experiment_contracts import (
-    ScientificEventExtraction,
+from scripts.validation.provider_receipt_boundary import (
+    ReceiptBoundaryError,
+    ReceiptExpectations,
+    validate_provider_receipt,
 )
+from scripts.validation.provider_receipt_boundary.canonical_payload import (
+    extract_canonical_payload,
+)
+
+_OutputT = TypeVar("_OutputT", bound=BaseModel)
 
 
 class ProviderExecutionError(RuntimeError):
     """The one provider attempt failed an execution-integrity boundary."""
 
-    def __init__(self, stage: str, root_cause: str) -> None:
+    def __init__(
+        self,
+        stage: str,
+        root_cause: str,
+        *,
+        diagnostics: dict[str, object] | None = None,
+    ) -> None:
         super().__init__(f"{stage}: {root_cause}")
         self.stage = stage
         self.root_cause = root_cause
+        self.diagnostics = diagnostics or {}
 
 
 @dataclass(frozen=True, slots=True)
-class ProviderExecution:
+class ProviderExecution(Generic[_OutputT]):
     """Verified output and receipt from one provider model call."""
 
-    extraction: ScientificEventExtraction
-    raw_response: dict[str, object]
+    extraction: _OutputT
+    creation_response: dict[str, object]
+    retrieval_response: dict[str, object]
     receipt: dict[str, object]
 
 
@@ -48,15 +64,37 @@ class ProviderRequest:
     pricing: dict[str, float]
     metadata: dict[str, str]
 
-
-@dataclass(frozen=True, slots=True)
-class _ReceiptContext:
-    request: ProviderRequest
-    latency_seconds: float
+    def receipt_expectations(self) -> ReceiptExpectations:
+        return ReceiptExpectations(
+            provider_input=self.provider_input,
+            provider_format=self.provider_format,
+            provider_model_id=self.provider_model_id,
+            reasoning_effort=self.reasoning_effort,
+            metadata=self.metadata,
+            max_total_tokens=self.max_total_tokens,
+            max_cost_usd=self.max_cost_usd,
+            max_latency_seconds=self.max_latency_seconds,
+            pricing=self.pricing,
+        )
 
 
 class _Dumpable(Protocol):
-    def model_dump(self, *, mode: str) -> dict[str, object]: ...
+    def to_dict(
+        self,
+        *,
+        mode: str,
+        use_api_names: bool,
+        exclude_unset: bool,
+        exclude_none: bool,
+    ) -> dict[str, object]: ...
+
+
+class _InputPage(Protocol):
+    def __iter__(self) -> Iterator[_Dumpable]: ...
+
+
+class _InputItems(Protocol):
+    def list(self, response_id: str, *, limit: int, order: str) -> _InputPage: ...
 
 
 class _Responses(Protocol):
@@ -64,8 +102,7 @@ class _Responses(Protocol):
 
     def retrieve(self, response_id: str) -> _Dumpable: ...
 
-    @property
-    def input_items(self) -> object: ...
+    input_items: _InputItems
 
 
 class _Client(Protocol):
@@ -76,9 +113,10 @@ def execute_single_provider_call(
     *,
     api_key: str,
     request: ProviderRequest,
+    output_model: type[_OutputT],
     client: _Client | None = None,
-) -> ProviderExecution:
-    """Make one model call, then retrieve and verify its immutable receipt."""
+) -> ProviderExecution[_OutputT]:
+    """Make one model call, retrieve once, and delegate all receipt decisions."""
 
     provider_client = client or cast(
         "_Client",
@@ -95,222 +133,72 @@ def execute_single_provider_call(
             metadata=request.metadata,
             store=True,
         )
-    except Exception as exc:  # noqa: BLE001 - no retry; preserve exact failure.
+    except Exception as exc:  # noqa: BLE001 - exactly one attempt, never retry.
         raise ProviderExecutionError("PROVIDER_CALL", type(exc).__name__) from exc
     latency_seconds = time.monotonic() - started
-    raw_response = response.model_dump(mode="json")
-    response_id = _required_string(raw_response, "id")
+    creation = _api_response_dict(response)
+    response_id = creation.get("id")
+    if not isinstance(response_id, str) or not response_id:
+        raise ProviderExecutionError("PROVIDER_ENVELOPE", "response ID is absent")
     try:
-        retrieved = provider_client.responses.retrieve(response_id).model_dump(
-            mode="json"
+        retrieval = _api_response_dict(provider_client.responses.retrieve(response_id))
+        page = provider_client.responses.input_items.list(
+            response_id, limit=100, order="asc"
         )
-        input_items_api = cast(
-            "object",
-            provider_client.responses.input_items,
-        )
-        page = input_items_api.list(response_id, limit=100, order="asc")  # type: ignore[attr-defined]
-        input_items = tuple(item.model_dump(mode="json") for item in page)
-    except Exception as exc:  # noqa: BLE001 - receipt failure is terminal.
-        raise ProviderExecutionError("RECEIPT_RETRIEVAL", type(exc).__name__) from exc
-    receipt = _verify_receipt(
-        initial=raw_response,
-        retrieved=retrieved,
-        input_items=input_items,
-        context=_ReceiptContext(request=request, latency_seconds=latency_seconds),
-    )
+        input_items = tuple(_api_response_dict(item) for item in page)
+    except Exception as exc:  # noqa: BLE001 - receipt retrieval is not a model retry.
+        raise ProviderExecutionError(
+            "RECEIPT_RETRIEVAL",
+            type(exc).__name__,
+            diagnostics={"response_id": response_id},
+        ) from exc
     try:
-        extraction = ScientificEventExtraction.model_validate_json(
-            _structured_output_text(retrieved)
+        validation = validate_provider_receipt(
+            creation=creation,
+            retrieval=retrieval,
+            input_items=input_items,
+            expectations=request.receipt_expectations(),
+            latency_seconds=latency_seconds,
         )
-    except Exception as exc:  # noqa: BLE001 - frozen schema failure is terminal.
-        raise ProviderExecutionError("STRUCTURED_OUTPUT_SCHEMA", type(exc).__name__) from exc
+    except ReceiptBoundaryError as exc:
+        raise ProviderExecutionError(
+            exc.stage,
+            exc.root_cause,
+            diagnostics={"response_id": response_id, **exc.diagnostics},
+        ) from exc
+    canonical_payload = extract_canonical_payload(retrieval)
+    try:
+        parsed = output_model.model_validate_json(
+            json.dumps(canonical_payload.payload, separators=(",", ":"))
+        )
+    except Exception as exc:  # noqa: BLE001 - frozen output schema must fail closed.
+        raise ProviderExecutionError(
+            "STRUCTURED_OUTPUT_SCHEMA",
+            type(exc).__name__,
+            diagnostics={
+                "response_id": response_id,
+                "scientific_payload_sha256": canonical_payload.sha256,
+            },
+        ) from exc
+    receipt = validation.as_json()
+    receipt.update({"provider_calls": 1, "provider_retries": 0})
     return ProviderExecution(
-        extraction=extraction,
-        raw_response=raw_response,
+        extraction=parsed,
+        creation_response=creation,
+        retrieval_response=retrieval,
         receipt=receipt,
     )
 
 
-def _verify_receipt(
-    *,
-    initial: dict[str, object],
-    retrieved: dict[str, object],
-    input_items: tuple[dict[str, object], ...],
-    context: _ReceiptContext,
-) -> dict[str, object]:
-    _verify_response_envelope(initial, retrieved, context.request)
-    retrieved_output_hash = _verify_output_binding(initial, retrieved)
-    _verify_input_and_schema(input_items, retrieved, context.request)
-    return _usage_receipt(
-        response_id=_required_string(initial, "id"),
-        retrieved=retrieved,
-        output_hash=retrieved_output_hash,
-        context=context,
+def _api_response_dict(response: _Dumpable) -> dict[str, object]:
+    """Serialize provider models with wire aliases and only API-returned fields."""
+
+    return response.to_dict(
+        mode="json",
+        use_api_names=True,
+        exclude_unset=True,
+        exclude_none=False,
     )
-
-
-def _verify_response_envelope(
-    initial: dict[str, object],
-    retrieved: dict[str, object],
-    request: ProviderRequest,
-) -> None:
-    response_id = _required_string(initial, "id")
-    if retrieved.get("id") != response_id:
-        raise ProviderExecutionError("RECEIPT_ID", "retrieved response ID differs")
-    if retrieved.get("status") != "completed" or retrieved.get("error") is not None:
-        raise ProviderExecutionError("RECEIPT_STATUS", "response is not completed")
-    if retrieved.get("incomplete_details") is not None:
-        raise ProviderExecutionError("RECEIPT_STATUS", "response is incomplete")
-    if retrieved.get("model") != request.provider_model_id:
-        raise ProviderExecutionError("RECEIPT_MODEL", "provider model differs")
-    reasoning = retrieved.get("reasoning")
-    if not isinstance(reasoning, dict) or reasoning.get("effort") != request.reasoning_effort:
-        raise ProviderExecutionError("RECEIPT_REASONING", "reasoning effort differs")
-    if retrieved.get("metadata") != request.metadata:
-        raise ProviderExecutionError("RECEIPT_METADATA", "custody metadata differs")
-
-
-def _verify_output_binding(
-    initial: dict[str, object], retrieved: dict[str, object]
-) -> str:
-    initial_output_hash = _canonical_sha256(initial.get("output"))
-    retrieved_output_hash = _canonical_sha256(retrieved.get("output"))
-    if initial_output_hash != retrieved_output_hash:
-        raise ProviderExecutionError(
-            "RECEIPT_OUTPUT", "created and retrieved provider outputs differ"
-        )
-    return retrieved_output_hash
-
-
-def _verify_input_and_schema(
-    input_items: tuple[dict[str, object], ...],
-    retrieved: dict[str, object],
-    request: ProviderRequest,
-) -> None:
-    actual_input = _single_user_input(input_items)
-    if actual_input != request.provider_input:
-        raise ProviderExecutionError("RECEIPT_INPUT", "retrieved model input differs")
-    text = retrieved.get("text")
-    if not isinstance(text, dict) or not isinstance(text.get("format"), dict):
-        raise ProviderExecutionError("RECEIPT_SCHEMA", "response schema is absent")
-    retrieved_format = text["format"]
-    if retrieved_format != request.provider_format:
-        raise ProviderExecutionError("RECEIPT_SCHEMA", "response schema differs")
-
-
-def _usage_receipt(
-    *,
-    response_id: str,
-    retrieved: dict[str, object],
-    output_hash: str,
-    context: _ReceiptContext,
-) -> dict[str, object]:
-    request = context.request
-    usage = retrieved.get("usage")
-    if not isinstance(usage, dict):
-        raise ProviderExecutionError("RECEIPT_USAGE", "provider usage is absent")
-    input_tokens = _required_int(usage, "input_tokens")
-    output_tokens = _required_int(usage, "output_tokens")
-    total_tokens = _required_int(usage, "total_tokens")
-    details = usage.get("input_tokens_details")
-    cached_tokens = (
-        details.get("cached_tokens", 0) if isinstance(details, dict) else 0
-    )
-    if not isinstance(cached_tokens, int) or cached_tokens < 0:
-        raise ProviderExecutionError("RECEIPT_USAGE", "cached token count is invalid")
-    cost_usd = (
-        (input_tokens - cached_tokens) * request.pricing["input"]
-        + cached_tokens * request.pricing["cached_input"]
-        + output_tokens * request.pricing["output"]
-    )
-    if total_tokens > request.max_total_tokens:
-        raise ProviderExecutionError("TOKEN_BUDGET", "total token ceiling exceeded")
-    if context.latency_seconds > request.max_latency_seconds:
-        raise ProviderExecutionError("LATENCY_BUDGET", "latency ceiling exceeded")
-    if cost_usd > request.max_cost_usd:
-        raise ProviderExecutionError("COST_BUDGET", "cost ceiling exceeded")
-    return {
-        "status": "VERIFIED_LIVE",
-        "provider_calls": 1,
-        "provider_retries": 0,
-        "response_id": response_id,
-        "model": request.provider_model_id,
-        "reasoning_effort": request.reasoning_effort,
-        "provider_output_sha256": output_hash,
-        "structured_payload_sha256": _canonical_sha256(
-            json.loads(_structured_output_text(retrieved))
-        ),
-        "provider_input_sha256": hashlib.sha256(
-            request.provider_input.encode()
-        ).hexdigest(),
-        "provider_response_format_sha256": _canonical_sha256(
-            request.provider_format
-        ),
-        "input_tokens": input_tokens,
-        "cached_input_tokens": cached_tokens,
-        "output_tokens": output_tokens,
-        "total_tokens": total_tokens,
-        "latency_seconds": context.latency_seconds,
-        "cost_usd": cost_usd,
-        "cost_basis": "frozen per-token rates applied deterministically to provider usage",
-    }
-
-
-def _single_user_input(input_items: tuple[dict[str, object], ...]) -> str:
-    if len(input_items) != 1:
-        raise ProviderExecutionError("RECEIPT_INPUT", "input topology is not singular")
-    item = input_items[0]
-    content = item.get("content")
-    if item.get("type") != "message" or item.get("role") != "user":
-        raise ProviderExecutionError("RECEIPT_INPUT", "input is not one user message")
-    if not isinstance(content, list) or len(content) != 1:
-        raise ProviderExecutionError("RECEIPT_INPUT", "input content is not singular")
-    part = content[0]
-    if not isinstance(part, dict) or part.get("type") != "input_text":
-        raise ProviderExecutionError("RECEIPT_INPUT", "input part is not input_text")
-    return _required_string(part, "text")
-
-
-def _structured_output_text(response: dict[str, object]) -> str:
-    output = response.get("output")
-    if not isinstance(output, list):
-        raise ProviderExecutionError("STRUCTURED_OUTPUT", "output array is absent")
-    texts: list[str] = []
-    for item in output:
-        if not isinstance(item, dict) or item.get("type") != "message":
-            continue
-        content = item.get("content")
-        if not isinstance(content, list):
-            continue
-        for part in content:
-            if isinstance(part, dict) and part.get("type") == "output_text":
-                texts.append(_required_string(part, "text"))
-    if len(texts) != 1:
-        raise ProviderExecutionError(
-            "STRUCTURED_OUTPUT", "expected exactly one output_text payload"
-        )
-    return texts[0]
-
-
-def _required_string(payload: dict[str, object], key: str) -> str:
-    value = payload.get(key)
-    if not isinstance(value, str) or not value:
-        raise ProviderExecutionError("PROVIDER_ENVELOPE", f"{key} is absent")
-    return value
-
-
-def _required_int(payload: dict[str, object], key: str) -> int:
-    value = payload.get(key)
-    if not isinstance(value, int) or value < 0:
-        raise ProviderExecutionError("RECEIPT_USAGE", f"{key} is invalid")
-    return value
-
-
-def _canonical_sha256(payload: object) -> str:
-    encoded = json.dumps(
-        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
-    ).encode()
-    return hashlib.sha256(encoded).hexdigest()
 
 
 __all__ = [
