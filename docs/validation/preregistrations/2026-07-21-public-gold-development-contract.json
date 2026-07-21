@@ -1,0 +1,45 @@
+{
+  "schema_version": "artana.public_gold.development_contract.v1",
+  "status": "FROZEN_BEFORE_ARTANA_EXECUTION",
+  "execution_authorized": false,
+  "purpose": "adapter and prompt calibration on public development splits only",
+  "promotion_enabled": false,
+  "fallback_allowed": false,
+  "retries_allowed": false,
+  "agent_numeric_scores_allowed": false,
+  "datasets": {
+    "biored": {
+      "distribution": "https://ftp.ncbi.nlm.nih.gov/pub/lu/BioRED/BIORED.zip",
+      "archive_sha256": "c3032230bd89d22a0923d0df6ae943bc8ea37fba7e42dafa7a8dec21bac02d47",
+      "development_sha256": "d5ab4d05673ac46fb5e3b2904d2820462dec2c4c50dfcdd8678635ff1b8ce1f5",
+      "test_sha256": "35ec8aad0c62032689b4a957220c7532eb067dc7e159d70cc42e6d40e6c447c6",
+      "development_documents": 100,
+      "development_relations": 1162,
+      "test_access": "SEALED"
+    },
+    "bionlp_st_2013_cg": {
+      "distribution": "https://github.com/openbiocorpora/bionlp-st-2013-cg",
+      "upstream_commit": "b4a603dee25bd6ac5636017c2be41fd2edc52a3e",
+      "archive_sha256": "7da78deacb2d567875cc0db7af5af3dca0d54197d904ef36701eccedaf56c07c",
+      "development_tree_sha256": "6b9480ad79eab31be9b3a769bc21e1033bfb482ea14c47ab639e18e08778040d",
+      "test_tree_sha256": "c0a22f892dbedc396f47abfbe8c7019752b197eb337c704662aa47788bea55d1",
+      "license_sha256": "1d790b574972b557cdda066d2d76d8de9251f4decfa291fd5fc4b565a33c1262",
+      "development_documents": 100,
+      "development_events": 2915,
+      "development_entities": 3634,
+      "development_triggers": 2451,
+      "development_modifiers": 214,
+      "test_access": "SEALED"
+    }
+  },
+  "deterministic_metrics": [
+    "exact complete event recall",
+    "exact trigger recall",
+    "typed argument role fidelity",
+    "exact relation precision and recall",
+    "novelty fidelity",
+    "unsupported predictions",
+    "complete document inventory"
+  ],
+  "next_gate": "freeze model, prompts, schemas, budgets, and code hashes before authorizing a development execution"
+}

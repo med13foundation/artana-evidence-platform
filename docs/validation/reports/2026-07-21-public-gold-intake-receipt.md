@@ -26,12 +26,17 @@ the reproducible provenance record.
 
 ## BioNLP Cancer Genetics
 
-The official task page identifies distinct training, development, and test data
-and links the canonical development archive. On 2026-07-21 the canonical
-development URL returned HTTP 404. No mirror was used, no substitute dataset
-was downloaded, and no claim about Cancer Genetics qualification is made.
+The official task page identifies distinct training, development, and test data,
+but its canonical development URL returned HTTP 404 on 2026-07-21. The
+OpenBioCorpora preservation repository referenced by the BigBio benchmark loader
+was therefore used as a curator-backed secondary distribution. Its `SOURCE`
+file records the original BioNLP URLs, and its archive is pinned to commit
+`b4a603dee25bd6ac5636017c2be41fd2edc52a3e` with SHA-256
+`7da78deacb2d567875cc0db7af5af3dca0d54197d904ef36701eccedaf56c07c`.
 
-This is an acquisition blocker, not an excuse to weaken the two-lane protocol.
-The next action is to obtain a current official or curator-confirmed distribution
-with a version and license receipt, then implement the event-format adapter
-against its development split only.
+The included license states that NaCTeM annotations use CC BY-SA 3.0 while the
+abstracts remain subject to PubMed terms. The development-only adapter validated
+100 documents containing 3,634 physical entities, 2,451 triggers, 2,915 nested
+events, and 214 modifiers. It preserves exact offsets, event types, argument
+roles, event-to-event arguments, and negation/speculation modifiers. The test
+directory remains rejected by the adapter and sealed for later preregistration.
