@@ -1,0 +1,12 @@
+{
+  "diagnostics": {
+    "input_item_retrieval_requests": 0,
+    "provider_calls": 1,
+    "response_retrieval_requests": 0
+  },
+  "failure_stage": "PROVIDER_CALL",
+  "provider_calls_attempted": 1,
+  "provider_retries": 0,
+  "root_cause": "APITimeoutError",
+  "status": "UNVERIFIED"
+}

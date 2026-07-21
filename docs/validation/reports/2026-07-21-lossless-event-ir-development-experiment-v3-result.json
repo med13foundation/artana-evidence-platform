@@ -1,0 +1,23 @@
+{
+  "decision": "INVALID_EXPERIMENT",
+  "failure": {
+    "root_cause": "APITimeoutError",
+    "stage": "PROVIDER_CALL"
+  },
+  "preflight": {
+    "frozen_state_sha256": "e14adef7e6d84f4fb0c7e3fbdf2f8b221349e6817b2641adf6d2c368bc2f9e5f",
+    "preregistration_sha256": "a39c08b789f65031617d682aed55a7d9fa0f5d5ceb5929524e2db50bb2388387",
+    "status": "PREFLIGHT_PASSED"
+  },
+  "preregistration_sha256": "a39c08b789f65031617d682aed55a7d9fa0f5d5ceb5929524e2db50bb2388387",
+  "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
+  "schema_version": "artana.public_gold.lossless_event_result.v2",
+  "terminal_rules": {
+    "fallbacks": 0,
+    "graph_writes": 0,
+    "promotions": 0,
+    "provider_retries": 0,
+    "repairs": 0,
+    "sealed_test_sources_accessed": 0
+  }
+}
