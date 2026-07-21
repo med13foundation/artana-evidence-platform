@@ -1,0 +1,31 @@
+{
+  "decision": "INVALID_EXPERIMENT",
+  "failure": {
+    "root_cause": "created and retrieved provider outputs differ",
+    "stage": "RECEIPT_OUTPUT"
+  },
+  "preflight": {
+    "frozen_state_sha256": "9902c79b0edd224aa680b3fac3c0fa3eef673da1ab75330d488b796361274cf6",
+    "preregistration_sha256": "6628957da82913d0be0bfacd4ba1f6d599356f5661216ba595101fd2f14f9db2",
+    "status": "PREFLIGHT_PASSED"
+  },
+  "provider_accounting": {
+    "calls_attempted": 1,
+    "cost_usd": "UNVERIFIED_NOT_RECORDED",
+    "latency_seconds": "UNVERIFIED_NOT_RECORDED",
+    "provider_retries": 0,
+    "tokens": "UNVERIFIED_NOT_RECORDED"
+  },
+  "preregistration_sha256": "6628957da82913d0be0bfacd4ba1f6d599356f5661216ba595101fd2f14f9db2",
+  "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
+  "scientific_metrics": "NOT_COMPUTED_INVALID_EXPERIMENT",
+  "schema_version": "artana.public_gold.lossless_event_result.v2",
+  "terminal_rules": {
+    "fallbacks": 0,
+    "graph_writes": 0,
+    "promotions": 0,
+    "provider_retries": 0,
+    "repairs": 0,
+    "sealed_test_sources_accessed": 0
+  }
+}

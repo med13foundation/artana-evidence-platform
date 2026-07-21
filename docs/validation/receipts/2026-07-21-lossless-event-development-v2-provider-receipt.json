@@ -1,0 +1,7 @@
+{
+  "failure_stage": "RECEIPT_OUTPUT",
+  "provider_calls_attempted": 1,
+  "provider_retries": 0,
+  "root_cause": "created and retrieved provider outputs differ",
+  "status": "UNVERIFIED"
+}

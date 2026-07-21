@@ -1,0 +1,131 @@
+{
+  "acceptance": {
+    "complete_event_exact_recovery": "ALL",
+    "cycles_allowed": 0,
+    "invalid_offsets_allowed": 0,
+    "modifier_fidelity": "ALL",
+    "nested_event_recovery": "ALL",
+    "trigger_recovery": "ALL",
+    "typed_argument_role_fidelity": "ALL",
+    "unauthorized_semantic_mappings_allowed": 0,
+    "unresolved_references_allowed": 0,
+    "unsupported_or_invented_events_allowed": 0
+  },
+  "budgets": {
+    "fallbacks": 0,
+    "max_cost_usd": 5.0,
+    "max_latency_seconds": 900.0,
+    "max_output_tokens": 20000,
+    "max_total_tokens": 40000,
+    "pricing_usd_per_token": {
+      "cached_input": 5e-07,
+      "input": 5e-06,
+      "output": 3e-05
+    },
+    "provider_calls": 1,
+    "provider_retries": 0,
+    "repairs": 0
+  },
+  "deterministic_metrics": [
+    "complete_event_exact_recovery",
+    "exact_trigger_recovery",
+    "typed_argument_and_participant_role_fidelity",
+    "nested_event_recovery",
+    "negation_and_speculation_fidelity",
+    "unsupported_or_invented_events",
+    "invalid_offsets_unresolved_references_and_cycles"
+  ],
+  "execution_authorized": true,
+  "frozen_state": {
+    "dependencies": {
+      "dependency_bundle_sha256": "855bf175688d7cc191c5fc7c5e97a541e47db59d9997595a278998f494e70a39",
+      "files": {
+        "pyproject.toml": "991632643e70dfbdc049a6211b69bc614c6f84d6625adcff96ab0ba1bc362fab"
+      },
+      "packages": {
+        "litellm": "1.83.0",
+        "openai": "2.44.0",
+        "pydantic": "2.13.4"
+      },
+      "python": "3.13.12"
+    },
+    "implementation": {
+      "code_bundle_sha256": "48354de08a4903cc98eded3d0ee341892e13dd550e134b927f8d8df5d15af28e",
+      "code_files": {
+        "scripts/validation/public_gold/bionlp_cg_adapter.py": "083f20b1ecf06e66f29163fc5ccf5a30b7030184ceca594d4657e92b73e0bd3c",
+        "scripts/validation/public_gold/bionlp_cg_event_projection.py": "97df47682e5b6c9311a696862f1707aaafa1523a720215c900b1dfac8863b33e",
+        "scripts/validation/public_gold/lossless_event_experiment_contracts.py": "9c8991b4c4686a4755e2d12d312f2236b2cabe544e4578fafe3874a8b2b84e54",
+        "scripts/validation/public_gold/lossless_event_live_execution.py": "a7ecc470b5ee5c522fad8234b4e3b0d950d556749fe2f5a65b3c2c2617ab72ec",
+        "scripts/validation/public_gold/lossless_event_preflight.py": "1d2009c799451e8db51f1bff3768d2c40c1876d74a81047116d8953724a48832",
+        "scripts/validation/public_gold/lossless_event_provider.py": "628908961838a088f75334fe3d32597aa9d958892dd1a480c09a6a58385bbd3b",
+        "scripts/validation/public_gold/lossless_event_scoring.py": "2096d27018ccf3d369a6ce4380d89d12a5b4d80ccfcb659439759fc13388641b",
+        "scripts/validation/public_gold/source_selection.py": "82ccbd5a9d152223c8f9b0e453820102b1a96f94849e1d4450259d25508615c4",
+        "services/artana_evidence_api/document_extraction_support/scientific_events/__init__.py": "9a8a46279cf20fb7d45d7763919de7cb8c6bd3304c407ddfff628520117a62b4",
+        "services/artana_evidence_api/document_extraction_support/scientific_events/contracts.py": "3590fb5b5a3f7d05fb0632f01ea1e9be95264fad56826e29018e27644044805c",
+        "services/artana_evidence_api/document_extraction_support/scientific_events/validation.py": "87fd91991ec432d9bb5367fd35efb9ce41c700c8a5d04fef492070394e5db2c5"
+      }
+    },
+    "model": {
+      "identity": "openai:gpt-5.6-sol",
+      "provider_model_id": "gpt-5.6-sol",
+      "reasoning_effort": "high",
+      "temperature": "provider_default_not_set"
+    },
+    "model_input": {
+      "components": [
+        "frozen_generic_prompt",
+        "document_id",
+        "source_sha256",
+        "source_text"
+      ],
+      "gold_annotations_included": false,
+      "gold_arguments_included": false,
+      "gold_counts_included": false,
+      "gold_event_ids_included": false,
+      "sha256": "b3b97864190a7583ca9305fc8547b88657103a9517de30e13fe7f8009b974dd7"
+    },
+    "prompt": {
+      "path": "docs/validation/prompts/2026-07-21-lossless-scientific-event-development-prompt.md",
+      "sha256": "b571f42135138f75b9a23fede02c66db27270caca7fa2dd3b8ac3aa5f929cd76"
+    },
+    "schemas": {
+      "output_contract_accepted_by_ir": true,
+      "provider_output_contract_sha256": "842a1184c09d6fcec7fc870820a7316f5b9532680794d254e72378d27208cf79",
+      "provider_response_format_sha256": "59c467a06e40af26ba7a691a5e28d873504017b53bafa1cfe024ba9222868ebc",
+      "provider_response_format_strict": true,
+      "scientific_event_ir_sha256": "77f1ca5ac9167c4d9976ff859d8a9da039346384e5ba8a6692b3fde3f9da8d8f"
+    },
+    "source": {
+      "archive_sha256": "7da78deacb2d567875cc0db7af5af3dca0d54197d904ef36701eccedaf56c07c",
+      "development_directory": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel",
+      "development_documents": 100,
+      "development_tree_sha256": "6b9480ad79eab31be9b3a769bc21e1033bfb482ea14c47ab639e18e08778040d",
+      "selected_document_id": "PMID-16428936",
+      "selected_source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+      "selection_rule": "minimum (source_sha256, document_id)",
+      "source_inventory_sha256": "77e267c30d4f74875d816f28b4b43b7ae861f8d87c9331a9f2e237fef440b4bf",
+      "test_access": "SEALED_NOT_READ"
+    }
+  },
+  "invalid_predecessor": "docs/validation/preregistrations/2026-07-21-lossless-event-ir-development-experiment.json",
+  "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
+  "rules": {
+    "agent_numeric_metrics_allowed": false,
+    "fallback_allowed": false,
+    "graph_write_allowed": false,
+    "promotion_allowed": false,
+    "prompt_or_schema_change_after_freeze_allowed": false,
+    "repair_allowed": false,
+    "retry_allowed": false,
+    "sealed_test_access_allowed": false
+  },
+  "schema_version": "artana.public_gold.lossless_event_experiment.v2",
+  "status": "FROZEN_AUTHORIZED_FOR_ONE_CALL",
+  "stop_rules": [
+    "stop before the call on any deterministic preflight failure",
+    "stop on provider response or receipt verification failure",
+    "stop on schema, offset, reference, cycle, provenance, custody, or budget failure",
+    "stop after exactly one provider call regardless of scientific result",
+    "never retry, repair, patch, reinterpret, or select another source"
+  ]
+}
