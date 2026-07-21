@@ -1,0 +1,32 @@
+{
+  "schema_version": "artana.lossless_event_provider_receipt.v1",
+  "decision": "INVALID_EXPERIMENT",
+  "generated_at": "2026-07-21T18:43:07Z",
+  "preregistration_sha256": "21cc203885b1e5182b67878e735541b92b8021cbcb2acc5927c36495a4fa58fa",
+  "provider": {
+    "requested_model": "openai:gpt-5.6-sol",
+    "reasoning_effort": "high",
+    "provider_calls": 0,
+    "provider_response_id": null,
+    "receipt_status": "NOT_CREATED_PRECALL_STOP",
+    "raw_output_sha256": null
+  },
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_tokens": 0,
+    "total_tokens": 0
+  },
+  "cost_usd": 0.0,
+  "latency_seconds": 0.0,
+  "retries": 0,
+  "fallbacks": 0,
+  "graph_writes": 0,
+  "promotions": 0,
+  "stop": {
+    "stage": "PREREGISTRATION_CUSTODY_PREFLIGHT",
+    "root_cause": "PREREGISTERED_SELECTION_RULE_MISMATCH",
+    "detail": "PMID-10473104 is not the lowest-SHA-256 development source named by the frozen selection rule."
+  },
+  "sealed_test_split_accessed": false
+}

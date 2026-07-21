@@ -1,0 +1,49 @@
+{
+  "schema_version": "artana.lossless_event_development_result.v1",
+  "decision": "INVALID_EXPERIMENT",
+  "generated_at": "2026-07-21T18:43:07Z",
+  "non_qualifying_development_experiment": true,
+  "preregistration_sha256": "21cc203885b1e5182b67878e735541b92b8021cbcb2acc5927c36495a4fa58fa",
+  "frozen_inputs": {
+    "code_hashes_matched": true,
+    "schema_hash_matched": true,
+    "prompt_hash_matched": true,
+    "selected_source_hash_matched": true,
+    "api_key_present": true,
+    "structured_schema_conversion_passed": true
+  },
+  "selection_preflight": {
+    "development_documents_considered": 100,
+    "frozen_selection_rule": "lowest SHA-256 among development .txt files",
+    "preregistered_document_id": "PMID-10473104",
+    "preregistered_source_sha256": "a69c23105caa402b9f830e18d5cfc76bd08f6b97c9b4a56bfa79f440b29115f3",
+    "actual_minimum_document_id": "PMID-16428936",
+    "actual_minimum_source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+    "selection_rule_matched": false
+  },
+  "execution": {
+    "provider_calls": 0,
+    "retries": 0,
+    "fallbacks": 0,
+    "graph_writes": 0,
+    "promotions": 0,
+    "raw_provider_output_created": false
+  },
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_tokens": 0,
+    "total_tokens": 0,
+    "cost_usd": 0.0
+  },
+  "metrics": null,
+  "mismatches": [
+    {
+      "stage": "PREREGISTRATION_CUSTODY_PREFLIGHT",
+      "root_cause": "PREREGISTERED_SELECTION_RULE_MISMATCH",
+      "scientific_output_affected": false
+    }
+  ],
+  "sealed_test_split_accessed": false,
+  "trusted_graph_ready_claimed": false
+}
