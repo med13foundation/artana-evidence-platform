@@ -1,0 +1,1720 @@
+{
+  "artifact_type": "independent_full_abstract_boundary_adjudication",
+  "artifact_version": "1.0",
+  "producer": {
+    "agent_identity": "Boundary Agent A",
+    "model_identity": "OpenAI Codex GPT-5",
+    "configuration_identity": "full_abstract_exact_span_atomic_boundary_v1"
+  },
+  "offset_convention": "zero_based_end_exclusive_unicode_character_offsets",
+  "participant_role_vocabulary": [
+    "PRIMARY",
+    "SECONDARY",
+    "COMPARATOR",
+    "CONTEXT"
+  ],
+  "classification_vocabulary": [
+    "ATOMIC",
+    "BUNDLED",
+    "FRAGMENTARY",
+    "OVERLAPPING",
+    "EXCLUDE"
+  ],
+  "numeric_scores_emitted": false,
+  "semantic_relation_or_event_labels_emitted": false,
+  "sources": [
+    {
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "units": [
+        {
+          "unit_id": "agent_a_u001",
+          "start": 0,
+          "end": 227,
+          "text": "OBJECTIVE: We aimed to compare overall survival (OS) in immune checkpoint inhibitor (ICI)-treated patients with metastatic non-small cell lung cancer (mNSCLC) with pre-existing rheumatoid arthritis (RA) versus those without RA.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "objective"
+        },
+        {
+          "unit_id": "agent_a_u002",
+          "start": 228,
+          "end": 307,
+          "text": "METHODS: A retrospective cohort study using Medicare claims data was performed.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "method"
+        },
+        {
+          "unit_id": "agent_a_u003",
+          "start": 308,
+          "end": 657,
+          "text": "Participants included patients aged >= 66 years with a diagnosis of a malignant neoplasm of lung and bronchus who initiated nivolumab, pembrolizumab, or atezolizumab between March 4, 2015 and April 11, 2019, which is after the US Food and Drug Administration (FDA) approval of ICIs for mNSCLC but before the first FDA approval for stage III disease.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "method"
+        },
+        {
+          "unit_id": "agent_a_u004",
+          "start": 658,
+          "end": 753,
+          "text": "Survival analysis using Kaplan-Meier and adjusted Cox proportional hazard models was performed.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "method"
+        },
+        {
+          "unit_id": "agent_a_u005",
+          "start": 763,
+          "end": 861,
+          "text": "A total of 2,732 people with mNSCLC (N = 790 RA and N = 1,942 non-RA) were in the analytic cohort.",
+          "participant_spans": [
+            {
+              "start": 774,
+              "end": 832,
+              "text": "2,732 people with mNSCLC (N = 790 RA and N = 1,942 non-RA)",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 845,
+              "end": 860,
+              "text": "analytic cohort",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u006",
+          "start": 862,
+          "end": 961,
+          "text": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+          "participant_spans": [
+            {
+              "start": 862,
+              "end": 878,
+              "text": "Patients with RA",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 902,
+              "end": 908,
+              "text": "female",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 917,
+              "end": 935,
+              "text": "more comorbidities",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 941,
+              "end": 960,
+              "text": "patients without RA",
+              "role": "COMPARATOR"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "coordinated_assertions"
+        },
+        {
+          "unit_id": "agent_a_u007",
+          "start": 862,
+          "end": 908,
+          "text": "Patients with RA were more likely to be female",
+          "participant_spans": [
+            {
+              "start": 862,
+              "end": 878,
+              "text": "Patients with RA",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 902,
+              "end": 908,
+              "text": "female",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "FRAGMENTARY",
+          "reason": "shared_comparator_omitted"
+        },
+        {
+          "unit_id": "agent_a_u008",
+          "start": 913,
+          "end": 961,
+          "text": "had more comorbidities than patients without RA.",
+          "participant_spans": [
+            {
+              "start": 917,
+              "end": 935,
+              "text": "more comorbidities",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 941,
+              "end": 960,
+              "text": "patients without RA",
+              "role": "COMPARATOR"
+            }
+          ],
+          "classification": "FRAGMENTARY",
+          "reason": "shared_subject_omitted"
+        },
+        {
+          "unit_id": "agent_a_u009",
+          "start": 962,
+          "end": 1190,
+          "text": "Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation.",
+          "participant_spans": [
+            {
+              "start": 962,
+              "end": 978,
+              "text": "Patients with RA",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1009,
+              "end": 1017,
+              "text": "steroids",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1023,
+              "end": 1039,
+              "text": "those without RA",
+              "role": "COMPARATOR"
+            },
+            {
+              "start": 1085,
+              "end": 1098,
+              "text": "dexamethasone",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1175,
+              "end": 1189,
+              "text": "ICI initiation",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "coordinated_assertions"
+        },
+        {
+          "unit_id": "agent_a_u010",
+          "start": 962,
+          "end": 1052,
+          "text": "Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%)",
+          "participant_spans": [
+            {
+              "start": 962,
+              "end": 978,
+              "text": "Patients with RA",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1009,
+              "end": 1017,
+              "text": "steroids",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1023,
+              "end": 1039,
+              "text": "those without RA",
+              "role": "COMPARATOR"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u011",
+          "start": 1057,
+          "end": 1190,
+          "text": "equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation.",
+          "participant_spans": [
+            {
+              "start": 1085,
+              "end": 1098,
+              "text": "dexamethasone",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1123,
+              "end": 1140,
+              "text": "cancer palliation",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 1175,
+              "end": 1189,
+              "text": "ICI initiation",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "FRAGMENTARY",
+          "reason": "shared_subject_omitted"
+        },
+        {
+          "unit_id": "agent_a_u012",
+          "start": 1191,
+          "end": 1380,
+          "text": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+          "participant_spans": [
+            {
+              "start": 1218,
+              "end": 1220,
+              "text": "OS",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1233,
+              "end": 1235,
+              "text": "RA",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1240,
+              "end": 1252,
+              "text": "non-RA NSCLC",
+              "role": "COMPARATOR"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion_multiple_analyses"
+        },
+        {
+          "unit_id": "agent_a_u013",
+          "start": 1381,
+          "end": 1487,
+          "text": "Male sex, having more comorbidities, and steroid dose before ICI initiation were associated with worse OS.",
+          "participant_spans": [
+            {
+              "start": 1381,
+              "end": 1389,
+              "text": "Male sex",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1391,
+              "end": 1416,
+              "text": "having more comorbidities",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1422,
+              "end": 1434,
+              "text": "steroid dose",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1442,
+              "end": 1456,
+              "text": "ICI initiation",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 1484,
+              "end": 1486,
+              "text": "OS",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "multiple_primary_participants"
+        },
+        {
+          "unit_id": "agent_a_u014",
+          "start": 1488,
+          "end": 1640,
+          "text": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS.",
+          "participant_spans": [
+            {
+              "start": 1523,
+              "end": 1564,
+              "text": "patients receiving baseline dexamethasone",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 1566,
+              "end": 1578,
+              "text": "steroid dose",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1586,
+              "end": 1600,
+              "text": "ICI initiation",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 1637,
+              "end": 1639,
+              "text": "OS",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u015",
+          "start": 1653,
+          "end": 1812,
+          "text": "After controlling for demographics and comorbid conditions, ICI-treated patients with RA with mNSCLC had no difference in OS compared with patients without RA.",
+          "participant_spans": [
+            {
+              "start": 1713,
+              "end": 1753,
+              "text": "ICI-treated patients with RA with mNSCLC",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1775,
+              "end": 1777,
+              "text": "OS",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1792,
+              "end": 1811,
+              "text": "patients without RA",
+              "role": "COMPARATOR"
+            },
+            {
+              "start": 1675,
+              "end": 1711,
+              "text": "demographics and comorbid conditions",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "OVERLAPPING",
+          "reason": "restates_prior_result"
+        },
+        {
+          "unit_id": "agent_a_u016",
+          "start": 1813,
+          "end": 1909,
+          "text": "After excluding patients receiving dexamethasone, steroid dose was not associated with worse OS.",
+          "participant_spans": [
+            {
+              "start": 1829,
+              "end": 1861,
+              "text": "patients receiving dexamethasone",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 1863,
+              "end": 1875,
+              "text": "steroid dose",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1906,
+              "end": 1908,
+              "text": "OS",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "OVERLAPPING",
+          "reason": "restates_prior_result"
+        }
+      ]
+    },
+    {
+      "source_id": "exposed-gold-40484925",
+      "source_sha256": "f230eab99edc3d26e98b033f6155bd59dfa502b256185c61608e850431d44f40",
+      "units": [
+        {
+          "unit_id": "agent_a_u017",
+          "start": 0,
+          "end": 114,
+          "text": "BACKGROUND: Early diagnosis of low ejection fraction (EF) remains challenging despite being a treatable condition.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "background"
+        },
+        {
+          "unit_id": "agent_a_u018",
+          "start": 115,
+          "end": 363,
+          "text": "This study aimed to evaluate the effectiveness of an electrocardiogram (ECG)-based artificial intelligence (AI)-assisted clinical decision support tool in improving the early diagnosis of low EF among inpatient patients under non-cardiologist care.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "objective"
+        },
+        {
+          "unit_id": "agent_a_u019",
+          "start": 364,
+          "end": 466,
+          "text": "METHODS: We conducted a pragmatic randomized controlled trial at an academic medical center in Taiwan.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "method"
+        },
+        {
+          "unit_id": "agent_a_u020",
+          "start": 467,
+          "end": 646,
+          "text": "13,631 inpatient patients were randomized to either the intervention group (n = 6,840) receiving AI-generated ECG results or the control group (n = 6,791) following standard care.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "method"
+        },
+        {
+          "unit_id": "agent_a_u021",
+          "start": 647,
+          "end": 753,
+          "text": "The primary outcome was the incidence of newly diagnosed low EF (<= 50%) within 30 days following the ECG.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "method"
+        },
+        {
+          "unit_id": "agent_a_u022",
+          "start": 754,
+          "end": 898,
+          "text": "Secondary outcomes included echocardiogram utilization rates, positive predictive value for low EF detection, and cardiology consultation rates.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "method"
+        },
+        {
+          "unit_id": "agent_a_u023",
+          "start": 899,
+          "end": 1057,
+          "text": "Statistical analysis included hazard ratios (HR) with 95% confidence intervals (CI) for time-to-event outcomes and chi-square tests for categorical variables.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "method"
+        },
+        {
+          "unit_id": "agent_a_u024",
+          "start": 1067,
+          "end": 1340,
+          "text": "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023), with a more pronounced effect among AI-identified high-risk patients (13.0% vs. 8.9%, HR 1.55, 95% CI: 1.08-2.21).",
+          "participant_spans": [
+            {
+              "start": 1067,
+              "end": 1083,
+              "text": "The intervention",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1125,
+              "end": 1147,
+              "text": "newly diagnosed low EF",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1155,
+              "end": 1169,
+              "text": "overall cohort",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 1262,
+              "end": 1294,
+              "text": "AI-identified high-risk patients",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "cohort_specific_assertions"
+        },
+        {
+          "unit_id": "agent_a_u025",
+          "start": 1067,
+          "end": 1224,
+          "text": "The intervention significantly increased the detection of newly diagnosed low EF in the overall cohort (1.5% vs. 1.1%, HR 1.50, 95% CI: 1.11-2.03, P = 0.023)",
+          "participant_spans": [
+            {
+              "start": 1067,
+              "end": 1083,
+              "text": "The intervention",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1125,
+              "end": 1147,
+              "text": "newly diagnosed low EF",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1155,
+              "end": 1169,
+              "text": "overall cohort",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u026",
+          "start": 1226,
+          "end": 1340,
+          "text": "with a more pronounced effect among AI-identified high-risk patients (13.0% vs. 8.9%, HR 1.55, 95% CI: 1.08-2.21).",
+          "participant_spans": [
+            {
+              "start": 1262,
+              "end": 1294,
+              "text": "AI-identified high-risk patients",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "FRAGMENTARY",
+          "reason": "dependent_clause"
+        },
+        {
+          "unit_id": "agent_a_u027",
+          "start": 1341,
+          "end": 1622,
+          "text": "While overall echocardiogram utilization remained similar between groups (17.1% vs. 17.3%, HR 1.00, 95% CI: 0.92-1.09), the intervention group demonstrated higher positive predictive value for identifying low EF among patients receiving echocardiogram (34.2% vs. 20.2%, p < 0.001).",
+          "participant_spans": [
+            {
+              "start": 1347,
+              "end": 1381,
+              "text": "overall echocardiogram utilization",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1407,
+              "end": 1413,
+              "text": "groups",
+              "role": "COMPARATOR"
+            },
+            {
+              "start": 1461,
+              "end": 1483,
+              "text": "the intervention group",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1546,
+              "end": 1552,
+              "text": "low EF",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1559,
+              "end": 1592,
+              "text": "patients receiving echocardiogram",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "contrastive_assertions"
+        },
+        {
+          "unit_id": "agent_a_u028",
+          "start": 1347,
+          "end": 1459,
+          "text": "overall echocardiogram utilization remained similar between groups (17.1% vs. 17.3%, HR 1.00, 95% CI: 0.92-1.09)",
+          "participant_spans": [
+            {
+              "start": 1347,
+              "end": 1381,
+              "text": "overall echocardiogram utilization",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1407,
+              "end": 1413,
+              "text": "groups",
+              "role": "COMPARATOR"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u029",
+          "start": 1461,
+          "end": 1622,
+          "text": "the intervention group demonstrated higher positive predictive value for identifying low EF among patients receiving echocardiogram (34.2% vs. 20.2%, p < 0.001).",
+          "participant_spans": [
+            {
+              "start": 1461,
+              "end": 1483,
+              "text": "the intervention group",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1546,
+              "end": 1552,
+              "text": "low EF",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1559,
+              "end": 1592,
+              "text": "patients receiving echocardiogram",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u030",
+          "start": 1623,
+          "end": 1770,
+          "text": "Post-hoc analysis revealed increased cardiology consultation rates among high-risk patients in the intervention group (29.3% vs. 23.5%, p = 0.027).",
+          "participant_spans": [
+            {
+              "start": 1660,
+              "end": 1689,
+              "text": "cardiology consultation rates",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1696,
+              "end": 1714,
+              "text": "high-risk patients",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1722,
+              "end": 1740,
+              "text": "intervention group",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u031",
+          "start": 1784,
+          "end": 1986,
+          "text": "Implementation of an AI-ECG algorithm enhanced the early diagnosis of low EF in the inpatient setting, primarily by improving diagnostic efficiency rather than increasing overall healthcare utilization.",
+          "participant_spans": [
+            {
+              "start": 1784,
+              "end": 1821,
+              "text": "Implementation of an AI-ECG algorithm",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1854,
+              "end": 1860,
+              "text": "low EF",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1868,
+              "end": 1885,
+              "text": "inpatient setting",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 1910,
+              "end": 1931,
+              "text": "diagnostic efficiency",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1955,
+              "end": 1985,
+              "text": "overall healthcare utilization",
+              "role": "COMPARATOR"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "assertion_plus_explanation"
+        },
+        {
+          "unit_id": "agent_a_u032",
+          "start": 1784,
+          "end": 1885,
+          "text": "Implementation of an AI-ECG algorithm enhanced the early diagnosis of low EF in the inpatient setting",
+          "participant_spans": [
+            {
+              "start": 1784,
+              "end": 1821,
+              "text": "Implementation of an AI-ECG algorithm",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1854,
+              "end": 1860,
+              "text": "low EF",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1868,
+              "end": 1885,
+              "text": "inpatient setting",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "OVERLAPPING",
+          "reason": "summary_overlap"
+        },
+        {
+          "unit_id": "agent_a_u033",
+          "start": 1887,
+          "end": 1986,
+          "text": "primarily by improving diagnostic efficiency rather than increasing overall healthcare utilization.",
+          "participant_spans": [
+            {
+              "start": 1910,
+              "end": 1931,
+              "text": "diagnostic efficiency",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1955,
+              "end": 1985,
+              "text": "overall healthcare utilization",
+              "role": "COMPARATOR"
+            }
+          ],
+          "classification": "FRAGMENTARY",
+          "reason": "dependent_explanation"
+        },
+        {
+          "unit_id": "agent_a_u034",
+          "start": 1987,
+          "end": 2147,
+          "text": "The tool was particularly effective in identifying high-risk patients who benefited from increased specialist consultation and more targeted diagnostic testing.",
+          "participant_spans": [
+            {
+              "start": 1987,
+              "end": 1995,
+              "text": "The tool",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 2038,
+              "end": 2056,
+              "text": "high-risk patients",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 2086,
+              "end": 2109,
+              "text": "specialist consultation",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 2128,
+              "end": 2146,
+              "text": "diagnostic testing",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "nested_and_coordinated_assertions"
+        },
+        {
+          "unit_id": "agent_a_u035",
+          "start": 2148,
+          "end": 2211,
+          "text": "TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT05117970.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "registration"
+        }
+      ]
+    },
+    {
+      "source_id": "exposed-gold-40518668",
+      "source_sha256": "1468946984a4a8eac8792dac50b56fe748ccca29dec690cc3a23637eabcc8535",
+      "units": [
+        {
+          "unit_id": "agent_a_u036",
+          "start": 0,
+          "end": 225,
+          "text": "Covalently closed-end adeno-associated virus (cceAAV) vector is a new generation of self-complementary adeno-associated virus (scAAV) vector that does not utilize a mutant inverted terminal repeat (ITR) for vector production.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "background"
+        },
+        {
+          "unit_id": "agent_a_u037",
+          "start": 226,
+          "end": 458,
+          "text": "Importantly, packaged genomes of these cceAAV vectors are markedly more intact than traditional scAAVs, which typically contain a large fraction of incomplete genomes, including many that lost their self-complementary configuration.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "background"
+        },
+        {
+          "unit_id": "agent_a_u038",
+          "start": 459,
+          "end": 526,
+          "text": "Here, we report the first in-human experience with a cceAAV vector.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "study_context"
+        },
+        {
+          "unit_id": "agent_a_u039",
+          "start": 527,
+          "end": 700,
+          "text": "High quality clinical grade cceAAV vector based on AAV serotype 9 (AAV9) was produced in 200 L of suspension 293 cells with a total yield of 4.3 x 10^16 vector genomes (vg).",
+          "participant_spans": [
+            {
+              "start": 527,
+              "end": 599,
+              "text": "High quality clinical grade cceAAV vector based on AAV serotype 9 (AAV9)",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 625,
+              "end": 645,
+              "text": "suspension 293 cells",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u040",
+          "start": 701,
+          "end": 922,
+          "text": "Clinical trial in two spinal muscular atrophy (SMA) patients via intravenous injection at 12-24 months of age revealed no treatment-associated severe adverse events with a dose ranging from 6 x 10^13 to 1.2 x 10^14 vg/kg.",
+          "participant_spans": [
+            {
+              "start": 719,
+              "end": 761,
+              "text": "two spinal muscular atrophy (SMA) patients",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 766,
+              "end": 787,
+              "text": "intravenous injection",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 823,
+              "end": 865,
+              "text": "treatment-associated severe adverse events",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u041",
+          "start": 923,
+          "end": 1131,
+          "text": "Both patients showed rapid improvements in motor capabilities after gene therapy, as evidenced by substantial gains in motor function and electrophysiological parameters and capacity for independent mobility.",
+          "participant_spans": [
+            {
+              "start": 923,
+              "end": 936,
+              "text": "Both patients",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 991,
+              "end": 1003,
+              "text": "gene therapy",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 1042,
+              "end": 1056,
+              "text": "motor function",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1061,
+              "end": 1092,
+              "text": "electrophysiological parameters",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1110,
+              "end": 1130,
+              "text": "independent mobility",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "multiple_outcomes"
+        },
+        {
+          "unit_id": "agent_a_u042",
+          "start": 923,
+          "end": 1003,
+          "text": "Both patients showed rapid improvements in motor capabilities after gene therapy",
+          "participant_spans": [
+            {
+              "start": 923,
+              "end": 936,
+              "text": "Both patients",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 966,
+              "end": 984,
+              "text": "motor capabilities",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 991,
+              "end": 1003,
+              "text": "gene therapy",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u043",
+          "start": 1005,
+          "end": 1131,
+          "text": "as evidenced by substantial gains in motor function and electrophysiological parameters and capacity for independent mobility.",
+          "participant_spans": [
+            {
+              "start": 1042,
+              "end": 1056,
+              "text": "motor function",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1061,
+              "end": 1092,
+              "text": "electrophysiological parameters",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1110,
+              "end": 1130,
+              "text": "independent mobility",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "FRAGMENTARY",
+          "reason": "dependent_evidence_list"
+        },
+        {
+          "unit_id": "agent_a_u044",
+          "start": 1132,
+          "end": 1285,
+          "text": "Our strategy enabled us to perform gene therapy in older SMA patients who had received initial treatment with RNA-splicing modifying drug during infancy.",
+          "participant_spans": [
+            {
+              "start": 1132,
+              "end": 1144,
+              "text": "Our strategy",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1167,
+              "end": 1179,
+              "text": "gene therapy",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1183,
+              "end": 1201,
+              "text": "older SMA patients",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1242,
+              "end": 1269,
+              "text": "RNA-splicing modifying drug",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 1277,
+              "end": 1284,
+              "text": "infancy",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u045",
+          "start": 1286,
+          "end": 1366,
+          "text": "These early data provide preliminary evidence for clinical use of cceAAV vectors",
+          "participant_spans": [
+            {
+              "start": 1286,
+              "end": 1302,
+              "text": "These early data",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1352,
+              "end": 1366,
+              "text": "cceAAV vectors",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u046",
+          "start": 1368,
+          "end": 1425,
+          "text": "though further validation in larger cohorts is warranted.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "future_work"
+        }
+      ]
+    },
+    {
+      "source_id": "exposed-human-genetics",
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b",
+      "units": [
+        {
+          "unit_id": "agent_a_u047",
+          "start": 0,
+          "end": 143,
+          "text": "OBJECTIVE: Hyponatremia is one of the most common electrolyte disorders in clinical practice and is frequently observed following thiazide use.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "background"
+        },
+        {
+          "unit_id": "agent_a_u048",
+          "start": 144,
+          "end": 260,
+          "text": "Advanced age and female gender are implicated in the etiology of hydrochlorothiazide (HCTZ)-associated hyponatremia.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "background"
+        },
+        {
+          "unit_id": "agent_a_u049",
+          "start": 261,
+          "end": 323,
+          "text": "There has also recently been mention of a genetic disposition.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "background"
+        },
+        {
+          "unit_id": "agent_a_u050",
+          "start": 324,
+          "end": 531,
+          "text": "This study evaluated the genetic component, and particularly the clinical significance, of variants in the SLC12A3 gene in the development of hyponatremia in hypertensive patients using HCTZ-group diuretics.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "objective"
+        },
+        {
+          "unit_id": "agent_a_u051",
+          "start": 532,
+          "end": 720,
+          "text": "METHOD: Ninety-five patients presenting to the Tekirdağ Namık Kemal University nephrology clinic and receiving antihypertensive therapy including HCTZ for at least one month were examined.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "method"
+        },
+        {
+          "unit_id": "agent_a_u052",
+          "start": 721,
+          "end": 832,
+          "text": "Peripheral blood specimens were collected from hyponatremic (n = 62) and non-hyponatremic (n = 33) individuals.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "method"
+        },
+        {
+          "unit_id": "agent_a_u053",
+          "start": 833,
+          "end": 950,
+          "text": "Variants in the SLC12A3 gene were analyzed using next generation sequencing and were compared with the clinical data.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "method"
+        },
+        {
+          "unit_id": "agent_a_u054",
+          "start": 960,
+          "end": 1086,
+          "text": "A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+          "participant_spans": [
+            {
+              "start": 971,
+              "end": 983,
+              "text": "947 variants",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1005,
+              "end": 1017,
+              "text": "SLC12A3 gene",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 1019,
+              "end": 1040,
+              "text": "the majority of which",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1063,
+              "end": 1085,
+              "text": "uncertain significance",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "assertion_plus_subordinate_assertion"
+        },
+        {
+          "unit_id": "agent_a_u055",
+          "start": 960,
+          "end": 1017,
+          "text": "A total of 947 variants were detected in the SLC12A3 gene",
+          "participant_spans": [
+            {
+              "start": 971,
+              "end": 983,
+              "text": "947 variants",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1005,
+              "end": 1017,
+              "text": "SLC12A3 gene",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u056",
+          "start": 1019,
+          "end": 1086,
+          "text": "the majority of which were classified as of uncertain significance.",
+          "participant_spans": [
+            {
+              "start": 1019,
+              "end": 1040,
+              "text": "the majority of which",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1063,
+              "end": 1085,
+              "text": "uncertain significance",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "FRAGMENTARY",
+          "reason": "anaphoric_subject"
+        },
+        {
+          "unit_id": "agent_a_u057",
+          "start": 1087,
+          "end": 1290,
+          "text": "Hyponatremia was determined at a higher rate in patients with c.506-276A>G (75.00%), c.282+492G>A (85.70%), c.282+499G>C (87.00%), c.282+495G>A (85.00%), and c.505+375G>A (92.30%) variants in particular.",
+          "participant_spans": [
+            {
+              "start": 1087,
+              "end": 1099,
+              "text": "Hyponatremia",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1135,
+              "end": 1275,
+              "text": "patients with c.506-276A>G (75.00%), c.282+492G>A (85.70%), c.282+499G>C (87.00%), c.282+495G>A (85.00%), and c.505+375G>A (92.30%) variants",
+              "role": "PRIMARY"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion_variant_list"
+        },
+        {
+          "unit_id": "agent_a_u058",
+          "start": 1291,
+          "end": 1437,
+          "text": "The risk of hyponatremia development increased 9.2-fold in the presence of the c.282+492G>A variant (OR = 9.243; 95% CI: 2.259-37.818; p = 0.002).",
+          "participant_spans": [
+            {
+              "start": 1295,
+              "end": 1327,
+              "text": "risk of hyponatremia development",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1370,
+              "end": 1390,
+              "text": "c.282+492G>A variant",
+              "role": "PRIMARY"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u059",
+          "start": 1450,
+          "end": 1625,
+          "text": "In conclusion, we think that HCTZ-associated hyponatremia cannot be predicted by clinical and biochemical parameters alone, and that genetic factors should also be considered.",
+          "participant_spans": [
+            {
+              "start": 1479,
+              "end": 1507,
+              "text": "HCTZ-associated hyponatremia",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1531,
+              "end": 1566,
+              "text": "clinical and biochemical parameters",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1583,
+              "end": 1598,
+              "text": "genetic factors",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "assertion_plus_recommendation"
+        },
+        {
+          "unit_id": "agent_a_u060",
+          "start": 1479,
+          "end": 1572,
+          "text": "HCTZ-associated hyponatremia cannot be predicted by clinical and biochemical parameters alone",
+          "participant_spans": [
+            {
+              "start": 1479,
+              "end": 1507,
+              "text": "HCTZ-associated hyponatremia",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1531,
+              "end": 1566,
+              "text": "clinical and biochemical parameters",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u061",
+          "start": 1583,
+          "end": 1625,
+          "text": "genetic factors should also be considered.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "recommendation"
+        },
+        {
+          "unit_id": "agent_a_u062",
+          "start": 1626,
+          "end": 1856,
+          "text": "Further multi-center prospective studies involving larger populations will clarify the clinical significance of variants in SLC12A3 and other genes and will make a significant contribution to individualized therapeutic approaches.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "future_work"
+        }
+      ]
+    },
+    {
+      "source_id": "exposed-molecular-mechanism",
+      "source_sha256": "d2ca66c3b4bcdd9c9e8655ef2e1cf85d421ac4564a052c60ac794bde62a64cfe",
+      "units": [
+        {
+          "unit_id": "agent_a_u063",
+          "start": 0,
+          "end": 135,
+          "text": "Brassinosteroid (BR)-mediated salt tolerance is a crucial mechanism for maize (Zea mays L.) adaptation to saline-alkaline environments.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "background"
+        },
+        {
+          "unit_id": "agent_a_u064",
+          "start": 136,
+          "end": 295,
+          "text": "This study aimed to elucidate the molecular mechanism underlying BR-induced salt tolerance in maize, focusing on the regulatory roles of ZmWRKY104 and ZmCCaMK.",
+          "participant_spans": [],
+          "classification": "EXCLUDE",
+          "reason": "objective"
+        },
+        {
+          "unit_id": "agent_a_u065",
+          "start": 296,
+          "end": 454,
+          "text": "Key results showed that ZmWRKY104 directly interacts with ZmCCaMK in the nucleus in a non-phosphorylation-dependent manner, forming a novel regulatory module.",
+          "participant_spans": [
+            {
+              "start": 320,
+              "end": 329,
+              "text": "ZmWRKY104",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 354,
+              "end": 361,
+              "text": "ZmCCaMK",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 369,
+              "end": 376,
+              "text": "nucleus",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 430,
+              "end": 453,
+              "text": "novel regulatory module",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "assertion_plus_interpretation"
+        },
+        {
+          "unit_id": "agent_a_u066",
+          "start": 320,
+          "end": 418,
+          "text": "ZmWRKY104 directly interacts with ZmCCaMK in the nucleus in a non-phosphorylation-dependent manner",
+          "participant_spans": [
+            {
+              "start": 320,
+              "end": 329,
+              "text": "ZmWRKY104",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 354,
+              "end": 361,
+              "text": "ZmCCaMK",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 369,
+              "end": 376,
+              "text": "nucleus",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u067",
+          "start": 420,
+          "end": 454,
+          "text": "forming a novel regulatory module.",
+          "participant_spans": [
+            {
+              "start": 430,
+              "end": 453,
+              "text": "novel regulatory module",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "FRAGMENTARY",
+          "reason": "dependent_interpretation"
+        },
+        {
+          "unit_id": "agent_a_u068",
+          "start": 455,
+          "end": 609,
+          "text": "BR treatment upregulates ZmWRKY104 expression, and overexpression of ZmWRKY104 significantly enhances the activities of antioxidant enzymes (APX and SOD).",
+          "participant_spans": [
+            {
+              "start": 455,
+              "end": 467,
+              "text": "BR treatment",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 480,
+              "end": 500,
+              "text": "ZmWRKY104 expression",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 506,
+              "end": 533,
+              "text": "overexpression of ZmWRKY104",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 575,
+              "end": 608,
+              "text": "antioxidant enzymes (APX and SOD)",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "coordinated_assertions"
+        },
+        {
+          "unit_id": "agent_a_u069",
+          "start": 455,
+          "end": 500,
+          "text": "BR treatment upregulates ZmWRKY104 expression",
+          "participant_spans": [
+            {
+              "start": 455,
+              "end": 467,
+              "text": "BR treatment",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 480,
+              "end": 500,
+              "text": "ZmWRKY104 expression",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u070",
+          "start": 506,
+          "end": 609,
+          "text": "overexpression of ZmWRKY104 significantly enhances the activities of antioxidant enzymes (APX and SOD).",
+          "participant_spans": [
+            {
+              "start": 506,
+              "end": 533,
+              "text": "overexpression of ZmWRKY104",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 575,
+              "end": 608,
+              "text": "antioxidant enzymes (APX and SOD)",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u071",
+          "start": 610,
+          "end": 714,
+          "text": "Co-expression of ZmWRKY104 and ZmCCaMK synergistically promotes the antioxidant defense system in maize.",
+          "participant_spans": [
+            {
+              "start": 610,
+              "end": 648,
+              "text": "Co-expression of ZmWRKY104 and ZmCCaMK",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 678,
+              "end": 704,
+              "text": "antioxidant defense system",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 708,
+              "end": 713,
+              "text": "maize",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u072",
+          "start": 715,
+          "end": 1009,
+          "text": "Transgenic maize overexpressing ZmWRKY104 exhibits obvious salt tolerance advantages under 100 mM NaCl stress compared to wild-type plants, including reduced leaf yellowing, increased plant height and root length, as well as decreased electrolyte leakage (EL) and malondialdehyde (MDA) content.",
+          "participant_spans": [
+            {
+              "start": 715,
+              "end": 756,
+              "text": "Transgenic maize overexpressing ZmWRKY104",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 837,
+              "end": 853,
+              "text": "wild-type plants",
+              "role": "COMPARATOR"
+            },
+            {
+              "start": 806,
+              "end": 824,
+              "text": "100 mM NaCl stress",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 865,
+              "end": 887,
+              "text": "reduced leaf yellowing",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 889,
+              "end": 927,
+              "text": "increased plant height and root length",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 940,
+              "end": 1008,
+              "text": "decreased electrolyte leakage (EL) and malondialdehyde (MDA) content",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "summary_plus_multiple_outcomes"
+        },
+        {
+          "unit_id": "agent_a_u073",
+          "start": 715,
+          "end": 853,
+          "text": "Transgenic maize overexpressing ZmWRKY104 exhibits obvious salt tolerance advantages under 100 mM NaCl stress compared to wild-type plants",
+          "participant_spans": [
+            {
+              "start": 715,
+              "end": 756,
+              "text": "Transgenic maize overexpressing ZmWRKY104",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 837,
+              "end": 853,
+              "text": "wild-type plants",
+              "role": "COMPARATOR"
+            },
+            {
+              "start": 806,
+              "end": 824,
+              "text": "100 mM NaCl stress",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "ATOMIC",
+          "reason": "single_assertion"
+        },
+        {
+          "unit_id": "agent_a_u074",
+          "start": 855,
+          "end": 1009,
+          "text": "including reduced leaf yellowing, increased plant height and root length, as well as decreased electrolyte leakage (EL) and malondialdehyde (MDA) content.",
+          "participant_spans": [
+            {
+              "start": 865,
+              "end": 887,
+              "text": "reduced leaf yellowing",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 889,
+              "end": 927,
+              "text": "increased plant height and root length",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 940,
+              "end": 1008,
+              "text": "decreased electrolyte leakage (EL) and malondialdehyde (MDA) content",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "FRAGMENTARY",
+          "reason": "dependent_outcome_list"
+        },
+        {
+          "unit_id": "agent_a_u075",
+          "start": 1010,
+          "end": 1239,
+          "text": "Collectively, this study identifies a novel non-phosphorylation-dependent WRKY-CCaMK regulatory module in the BR signaling pathway, which enhances BR-induced maize salt tolerance by synergistically activating antioxidant defense.",
+          "participant_spans": [
+            {
+              "start": 1048,
+              "end": 1112,
+              "text": "novel non-phosphorylation-dependent WRKY-CCaMK regulatory module",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1120,
+              "end": 1140,
+              "text": "BR signaling pathway",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 1157,
+              "end": 1188,
+              "text": "BR-induced maize salt tolerance",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1219,
+              "end": 1238,
+              "text": "antioxidant defense",
+              "role": "SECONDARY"
+            }
+          ],
+          "classification": "OVERLAPPING",
+          "reason": "summary_overlap"
+        },
+        {
+          "unit_id": "agent_a_u076",
+          "start": 1240,
+          "end": 1415,
+          "text": "The findings highlight ZmWRKY104 as a candidate gene and provide a potential molecular mechanism for salt-tolerant maize breeding in saline-alkaline regions of northern China.",
+          "participant_spans": [
+            {
+              "start": 1240,
+              "end": 1252,
+              "text": "The findings",
+              "role": "PRIMARY"
+            },
+            {
+              "start": 1263,
+              "end": 1272,
+              "text": "ZmWRKY104",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1307,
+              "end": 1336,
+              "text": "potential molecular mechanism",
+              "role": "SECONDARY"
+            },
+            {
+              "start": 1341,
+              "end": 1369,
+              "text": "salt-tolerant maize breeding",
+              "role": "CONTEXT"
+            },
+            {
+              "start": 1373,
+              "end": 1414,
+              "text": "saline-alkaline regions of northern China",
+              "role": "CONTEXT"
+            }
+          ],
+          "classification": "BUNDLED",
+          "reason": "coordinated_interpretations"
+        }
+      ]
+    }
+  ]
+}

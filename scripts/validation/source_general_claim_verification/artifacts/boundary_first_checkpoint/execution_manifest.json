@@ -1,0 +1,23 @@
+{
+  "schema_version": "source_general_claim_verification.boundary_first_manifest.v1",
+  "decision": "PIVOT_TO_PUBLIC_GOLD",
+  "permitted_source_class": "five_exposed_full_abstracts_only",
+  "agent_a": {
+    "task_id": "019f8275-30a2-70f2-93ad-2bdaaa0c6036",
+    "model": "gpt-5.6-sol",
+    "reasoning_effort": "high",
+    "artifact_sha256": "2834c4b1b31b0e36bd9f08df4a761316b2c70d79a27df08076ad0a9c17a6a945",
+    "status": "COMPLETED"
+  },
+  "agent_b": {
+    "task_id": "019f8275-3163-7a10-afa6-d9b503dc7771",
+    "model": "gpt-5.6-luna",
+    "reasoning_effort": "max",
+    "status": "STOPPED_NO_ARTIFACT"
+  },
+  "boundary_agreement": "NOT_COMPUTABLE",
+  "semantic_annotation": "NOT_RUN",
+  "verification_experiment": "NOT_RUN",
+  "graph_promotion": "DISABLED",
+  "untouched_source_access": "NOT_INVOKED_BY_CHECKPOINT_RUNNER"
+}
