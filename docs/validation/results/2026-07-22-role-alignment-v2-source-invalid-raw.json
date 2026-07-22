@@ -1,0 +1,84 @@
+{
+  "decisions": [
+    {
+      "case_id": "role-case-01",
+      "evidence_items": [
+        {
+          "exact_text": "sensitivity to vinblastine"
+        }
+      ],
+      "explanation": "Vinblastine is the object toward which the sensitivity is directed. The source does not state that vinblastine caused the enhanced sensitivity.",
+      "falsification_explanation": "Explicit wording such as \u201cvinblastine increases,\u201d \u201cinduces,\u201d or \u201ccauses\u201d sensitivity would be needed to justify a causal-agent interpretation.",
+      "source_semantic_role": "STIMULUS_OR_OBJECT"
+    },
+    {
+      "case_id": "role-case-02",
+      "evidence_items": [
+        {
+          "exact_text": "sensitivity of carcinoma patients to 5-FU"
+        }
+      ],
+      "explanation": "5-FU is the object of the carcinoma patients\u2019 sensitivity. The statement does not explicitly make 5-FU responsible for producing that sensitivity.",
+      "falsification_explanation": "Wording such as \u201c5-FU causes or induces sensitivity in carcinoma patients\u201d would be needed for a stronger causal interpretation.",
+      "source_semantic_role": "STIMULUS_OR_OBJECT"
+    },
+    {
+      "case_id": "role-case-03",
+      "evidence_items": [
+        {
+          "exact_text": "response of tumors to the VEGFR2 associated tyrosine kinase inhibitor vandetanib"
+        }
+      ],
+      "explanation": "Vandetanib is the treatment or object toward which the tumor response is measured. The source attributes the evaluated impact to VEGF expression, not explicitly to vandetanib causing the response.",
+      "falsification_explanation": "Explicit wording that vandetanib induces, causes, or mediates the tumor response would be needed to assign it a causal-agent role.",
+      "source_semantic_role": "STIMULUS_OR_OBJECT"
+    },
+    {
+      "case_id": "role-case-11",
+      "evidence_items": [
+        {
+          "exact_text": "HCMV immediate-early proteins were clearly shown to be responsible"
+        }
+      ],
+      "explanation": "The phrase \u201cwere clearly shown to be responsible\u201d explicitly assigns the immediate-early proteins responsibility for the elevation of p53 levels.",
+      "falsification_explanation": "No additional wording is needed for the causal-agent classification; \u201cresponsible for elevating p53 levels\u201d is explicit causal wording.",
+      "source_semantic_role": "CAUSAL_AGENT"
+    },
+    {
+      "case_id": "role-case-12",
+      "evidence_items": [
+        {
+          "exact_text": "implanted subcutaneous tumors"
+        }
+      ],
+      "explanation": "The subcutaneous tumors are described as being implanted, so they undergo the planned implantation process rather than performing it.",
+      "falsification_explanation": "Wording that the tumors initiated, caused, or performed the implantation would be needed for a causal or instrumental interpretation; wording that the tumor cells were used to implant another object would instead clarify an instrument role.",
+      "source_semantic_role": "AFFECTED_ENTITY"
+    },
+    {
+      "case_id": "role-case-13",
+      "evidence_items": [
+        {
+          "exact_text": "mitogen-activated protein kinase (MAPK) and phosphoinositide 3-kinase (PI3K) signaling"
+        },
+        {
+          "exact_text": "target these pathways"
+        }
+      ],
+      "explanation": "The source places mitogen-activated protein kinase in a signaling context and later refers broadly to \u201cthese pathways.\u201d It does not specify a distinct causal or object role for the kinase itself in the pathway reference.",
+      "falsification_explanation": "Wording such as \u201cMAPK signaling drives or regulates angiogenesis\u201d would support a causal interpretation, while \u201cagents target the mitogen-activated protein kinase pathway\u201d would explicitly support an object role.",
+      "source_semantic_role": "CONTEXTUAL_PARTICIPANT"
+    },
+    {
+      "case_id": "role-case-14",
+      "evidence_items": [
+        {
+          "exact_text": "nested deletion mutants of the hepatoma type II hexokinase promoter"
+        }
+      ],
+      "explanation": "The nested deletions are described as occurring in promoter mutants associated with type II hexokinase. The source does not state that type II hexokinase itself undergoes the deletion or causes it.",
+      "falsification_explanation": "Explicit wording that type II hexokinase causes the deletion would be needed for a causal interpretation; wording that the type II hexokinase promoter itself was deleted would clarify an affected-entity interpretation.",
+      "source_semantic_role": "CONTEXTUAL_PARTICIPANT"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "preregistration_sha256": "627e5db5da5bbedf7e61e9a3efd83da475ddbef79f6f12767a8ebd1bf8d10b15",
+  "provider_creation_limit": 1,
+  "provider_input_sha256": "5ab5d999b86fffd4c045eb75e6e1d0ad2d8431e1866b8f69c2260d28c5af26fb",
+  "provider_retries": 0,
+  "response_id": "resp_07c12f39d5ecf19c006a6117b893f4819babd83b2dcf9e3d08",
+  "stage": "SOURCE_ROLE_REVIEW",
+  "state": "ACKNOWLEDGED"
+}

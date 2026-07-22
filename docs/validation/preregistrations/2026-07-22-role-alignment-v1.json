@@ -1,0 +1,102 @@
+{
+  "acceptance": {
+    "causal_overstatement_count": 0,
+    "exact_evidence_grounding": "all",
+    "graph_promotion_allowed": false,
+    "projection_basis": [
+      "OFFICIAL_POLICY",
+      "EVALUATION_ONLY_CORPUS_INFERENCE"
+    ],
+    "review_only": true,
+    "target_benchmark_projection": "CAUSE",
+    "target_source_role": [
+      "STIMULUS_OR_OBJECT",
+      "OTHER_EXPLICIT"
+    ],
+    "terminal": "ADVANCE_DUAL_ROLE_PROJECTION",
+    "unsupported_projection_count": 0
+  },
+  "execution": {
+    "duplicate_creation": false,
+    "fallback": false,
+    "model_independent_review": false,
+    "optional_tiebreak_calls": 1,
+    "primary_calls": 2,
+    "same_model_family_independent_calls": true
+  },
+  "experiment_id": "role-alignment-v1",
+  "frozen_at": "2026-07-22",
+  "frozen_state": {
+    "benchmark_input_sha256": "d27c457c746632377fc5018980760a2ef34165aeb22b2c73766e491441f67567",
+    "benchmark_prompt_sha256": "af5c3c76cfb174cc08f67f97528495e565437f4f05e538753e95c2db2a107c29",
+    "benchmark_schema_sha256": "661d1bdd69a71cd16b1fd0d3100a87b3a5641c2bc07d0245c5f251c63571c992",
+    "budgets": {
+      "global_max_cost_usd": 1.0,
+      "global_max_creation_calls": 4,
+      "per_call_max_cost_usd": 0.35,
+      "per_call_max_latency_seconds": 900.0,
+      "per_call_max_output_tokens": 32000,
+      "per_call_max_total_tokens": 40000,
+      "retries": 0
+    },
+    "code_sha256": {
+      "scripts/validation/provider_receipt_boundary/background/contracts.py": "51a79ab28fa381bb6e6692040e0781ab68a6e029c8facc72bf2266e9f82460d8",
+      "scripts/validation/provider_receipt_boundary/background/execution.py": "c84f2c67cce1a1bed25190592e8b2cd1716dec73142283e97a152af90d79783d",
+      "scripts/validation/provider_receipt_boundary/background/polling.py": "3bd5f043c3e2f1be764b6d9e92dfff649e5ad8089aa8b2d1047c273e3cd06b90",
+      "scripts/validation/provider_receipt_boundary/background/states.py": "958a34fa0ab25fd7fb9f877c23bedbd83a1b00e59836b8799f3659b5fc60f2ba",
+      "scripts/validation/public_gold/lossless_event_provider.py": "3504289a8b225b44a11d95dbaa31ea517c50eb829f8732645400e7bad108db5a",
+      "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/contracts.py": "56797fbe4ec244d3a66f884e672cd8d22778ebb47a044c50d7f3b90cf2945c12",
+      "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/evaluation.py": "2faa73b7edade68f14a2fca9bfbc64c796be818ceae5209486a817bcb133c429",
+      "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/evidence.py": "ed2f569444833a8f910c45b394b53fa16b9f81785a60d0dae3fcf94e6d6c9caa",
+      "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/panel.py": "2e6e7adf094f4997d272ddf6eccc5b9cfe15675360e0da28cf752cc7720d25db",
+      "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/policy.py": "ff4b728cca890ced922822c1ab9a2ca03e7dd16d3f1c345d5fdfbedf86d91962",
+      "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/runner.py": "5b3c14f1aaebc756f50f950d5e6ad44a4f2811b71b8f5d44f3f43444a5d6343f",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/attempts.py": "c579a40c0d6739a090e2ce673e5ffcb1c5833c97d36341f7ed310ad3c809f7de",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/custody.py": "8a569b13078af044fa7399c2f237c2a340e76553849d6c0d0fa38d3d6f8bcfb6",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/staged_runner.py": "5835e86475aecf9b6f63fb948cbbc39c086439bfcf7c65814d8c8487272dc526"
+    },
+    "model": "openai:gpt-5.6-luna",
+    "panel_sha256": "497514a29ab7dc62b2d78bce3a6dbc85b3d2cb2c014aa374ae695427b0e20da3",
+    "prior_addendum_sha256": "a73cb22ae5e8342df0c2d0991a69117a82479f8a36ff14b4a51b1802f3c0e067",
+    "prior_result_sha256": "b0b3a7b2c233679deb102a5cbd57ae5c63c25c3c6b1ceed5fdce39e08e9c63c1",
+    "reasoning_effort": "high",
+    "research_sha256": "25909806240b6dd130565b76c8a9c2ebfbdb1fd69ec63dd58969413ac3d75e93",
+    "source_input_sha256": "0046f77a57bb908d9bab2f99cba97d8857c5577de8ef0599a727e885e1808ae3",
+    "source_prompt_sha256": "b1e3be76462a4d871a68e82f040916cf1066bc3095fedfca8647cacbb70dfb6a",
+    "source_schema_sha256": "7a9090e525ea1411abc1931aa5ef927ef3cecb35eaa916b7ee98ee1c20144109",
+    "source_sha256_by_document": {
+      "PMID-11557773": "7e56f5fb90068c5bb4a136a99b63c813e773099d5b457f6ec0d7fde125726fb9",
+      "PMID-16428936": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+      "PMID-19528456": "7885de301657d38afd66eccf133c575fc83dc00d40afac34f37b5763c89bbfeb",
+      "PMID-19620774": "a1579fcaca4e207cde8e7b302fe949b9a580fa590877271fc99364f2bc03525b",
+      "PMID-20006731": "dad9c0890a08e2514774e82243c073b059f57d781a4ca4c028894390df2ac701",
+      "PMID-20554717": "c67517b8efd7e9ab6624965ff69f066b83727ca207e3c39b4c0a781c1d355c72",
+      "PMID-21965773": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880",
+      "PMID-7841024": "0ab682e57a7fd4465d7b4632746bef5dbafd66b872faaeb224d32f2bd2f5893e",
+      "PMID-7966592": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02"
+    },
+    "tiebreak_prompt_sha256": "f4ad1cfa82e8b8a77b916e369f38403087464b06c1444b19cc157c00df56e3e6",
+    "tiebreak_schema_sha256": "f8fc24cc55e2f84f1eb245cb1dce8d04fc0d5f78bbb973cbecf677f3710c51d4"
+  },
+  "prohibitions": [
+    "public gold in agent input",
+    "numeric model scores",
+    "fallback",
+    "retry",
+    "graph write",
+    "trusted promotion",
+    "untouched source access",
+    "overwriting source role with benchmark role"
+  ],
+  "purpose": "Determine whether BioNLP CG Cause for sensitivity-to-drug is source causation or an evaluation convention while preserving cautious source meaning.",
+  "status": "FROZEN_AUTHORIZED",
+  "stop_rules": [
+    "valid positive or negative scientific result",
+    "unresolved adjudicator disagreement above 20%",
+    "missing or contradictory official policy",
+    "need for broad ontology redesign",
+    "repeated provider-budget violation",
+    "global budget exhaustion",
+    "new unrelated validator family"
+  ]
+}

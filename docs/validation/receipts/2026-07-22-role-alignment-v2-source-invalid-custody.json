@@ -1,0 +1,24 @@
+{
+  "canonical_payload_sha256": "97f9b7e8c1fdb50f8140b506de3262db3f6155a9e7c3f7ce3a23b74267e0c2ed",
+  "decision": "INVALID_PROVIDER_EXECUTION",
+  "observed_usage": {
+    "input_tokens": 1461,
+    "input_tokens_details": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0
+    },
+    "output_tokens": 18608,
+    "output_tokens_details": {
+      "reasoning_tokens": 3450
+    },
+    "total_tokens": 20069
+  },
+  "provider_model": "gpt-5.6-luna",
+  "raw_output_path": "docs/validation/results/2026-07-22-role-alignment-v2-source-invalid-raw.json",
+  "reason": "provider output and total tokens exceeded frozen budgets",
+  "requested_max_output_tokens": 16000,
+  "response_id": "resp_07c12f39d5ecf19c006a6117b893f4819babd83b2dcf9e3d08",
+  "retrieval_envelope_sha256": "517ec9d35b7ff002c75ec0f01bc3950dc01b3cb40254b3d5b79f4de695268b7e",
+  "scientific_metrics_calculated": false,
+  "scientific_output_interpreted": false
+}

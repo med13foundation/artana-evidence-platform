@@ -1,0 +1,164 @@
+{
+  "decisions": [
+    {
+      "case_id": "role-case-01",
+      "evidence_items": [
+        {
+          "exact_text": "sensitivity to vinblastine"
+        }
+      ],
+      "explanation": "Vinblastine is the substance toward which cancer-cell sensitivity is directed. The source explicitly identifies decreased c-Myc activity as the enhancer, not vinblastine.",
+      "falsification_explanation": "A causal interpretation would require wording such as \u201cvinblastine caused or enhanced the sensitivity.\u201d",
+      "source_semantic_role": "STIMULUS_OR_OBJECT"
+    },
+    {
+      "case_id": "role-case-02",
+      "evidence_items": [
+        {
+          "exact_text": "sensitivity of carcinoma patients to 5-FU"
+        }
+      ],
+      "explanation": "5-FU is the substance to which carcinoma-patient sensitivity is directed. The enzymes are described as involved in that sensitivity, while 5-FU is not explicitly said to cause it.",
+      "falsification_explanation": "Causal-agent status would require wording such as \u201c5-FU caused or induced the sensitivity.\u201d",
+      "source_semantic_role": "STIMULUS_OR_OBJECT"
+    },
+    {
+      "case_id": "role-case-03",
+      "evidence_items": [
+        {
+          "exact_text": "response of tumors to the VEGFR2 associated tyrosine kinase inhibitor vandetanib"
+        }
+      ],
+      "explanation": "Vandetanib is the inhibitor toward which the tumor response is directed. The stated impact is that of VEGF expression on the response, not an explicit causal action by vandetanib.",
+      "falsification_explanation": "A stronger causal interpretation would require wording such as \u201cvandetanib induced or caused the tumor response.\u201d",
+      "source_semantic_role": "STIMULUS_OR_OBJECT"
+    },
+    {
+      "case_id": "role-case-04",
+      "evidence_items": [
+        {
+          "exact_text": "response to vandetanib was assessed"
+        }
+      ],
+      "explanation": "Vandetanib is the treatment substance to which the cell-line response is directed. The sentence reports assessment and does not explicitly assign vandetanib responsibility for the response.",
+      "falsification_explanation": "Causal-agent status would require wording such as \u201cvandetanib caused the observed response.\u201d",
+      "source_semantic_role": "STIMULUS_OR_OBJECT"
+    },
+    {
+      "case_id": "role-case-05",
+      "evidence_items": [
+        {
+          "exact_text": "VLB sensitivity"
+        }
+      ],
+      "explanation": "VLB is the substance to which the cells are sensitive. Although VLB cytotoxicity is mentioned, the supplied sensitivity relation does not explicitly state that VLB caused the sensitivity state.",
+      "falsification_explanation": "A causal interpretation would require wording such as \u201cVLB caused or induced the increase in sensitivity.\u201d",
+      "source_semantic_role": "STIMULUS_OR_OBJECT"
+    },
+    {
+      "case_id": "role-case-06",
+      "evidence_items": [
+        {
+          "exact_text": "in response to BPDE"
+        }
+      ],
+      "explanation": "BPDE is the stimulus toward which the cells\u2019 growth response is directed. The phrase \u201cin response to\u201d does not by itself explicitly assign BPDE causal responsibility for the response.",
+      "falsification_explanation": "Causal-agent status would require wording such as \u201cBPDE caused the anchorage-independent growth response.\u201d",
+      "source_semantic_role": "STIMULUS_OR_OBJECT"
+    },
+    {
+      "case_id": "role-case-07",
+      "evidence_items": [
+        {
+          "exact_text": "cancer cell sensitivity to vinblastine"
+        }
+      ],
+      "explanation": "Vinblastine is the substance toward which cancer-cell sensitivity is directed. The source states that c-Myc\u2019s role was studied but does not make vinblastine the explicit cause of the sensitivity.",
+      "falsification_explanation": "A causal interpretation would require wording such as \u201cvinblastine caused or increased the cancer-cell sensitivity.\u201d",
+      "source_semantic_role": "STIMULUS_OR_OBJECT"
+    },
+    {
+      "case_id": "role-case-08",
+      "evidence_items": [
+        {
+          "exact_text": "treatment response to vandetanib"
+        }
+      ],
+      "explanation": "Vandetanib is the treatment substance toward which the tumor response is directed. The sentence compares response across VEGF-expressing clones and does not explicitly state that vandetanib caused the response.",
+      "falsification_explanation": "Causal-agent status would require wording such as \u201cvandetanib induced the treatment response.\u201d",
+      "source_semantic_role": "STIMULUS_OR_OBJECT"
+    },
+    {
+      "case_id": "role-case-09",
+      "evidence_items": [
+        {
+          "exact_text": "BPDE treatment caused induction of both AP-1 and NF-kappaB activity"
+        },
+        {
+          "exact_text": "in response to BPDE"
+        }
+      ],
+      "explanation": "The response phrase alone presents BPDE as a stimulus, but the source explicitly states that BPDE treatment caused induction of AP-1 and NF-kappaB activity. That causal wording supports BPDE as the causal agent for the positive regulation.",
+      "falsification_explanation": "No additional wording is needed for the causal interpretation; if the explicit \u201ccaused induction\u201d clause were absent, the remaining \u201cin response to BPDE\u201d wording would support only a stimulus/object role.",
+      "source_semantic_role": "CAUSAL_AGENT"
+    },
+    {
+      "case_id": "role-case-10",
+      "evidence_items": [
+        {
+          "exact_text": "cyclosporine A-sensitive reactivation"
+        }
+      ],
+      "explanation": "The reactivation is described as sensitive to cyclosporine A, making cyclosporine A the object of the sensitivity relation. The source does not say that cyclosporine A caused the reactivation.",
+      "falsification_explanation": "A causal interpretation would require wording such as \u201ccyclosporine A caused or induced reactivation.\u201d",
+      "source_semantic_role": "STIMULUS_OR_OBJECT"
+    },
+    {
+      "case_id": "role-case-11",
+      "evidence_items": [
+        {
+          "exact_text": "immediate-early proteins were clearly shown to be responsible for elevating p53 levels"
+        }
+      ],
+      "explanation": "The source explicitly states that the HCMV immediate-early proteins were responsible for elevating p53 levels, directly assigning them causal responsibility.",
+      "falsification_explanation": "No additional wording is needed; \u201cresponsible for elevating\u201d already provides explicit causal wording.",
+      "source_semantic_role": "CAUSAL_AGENT"
+    },
+    {
+      "case_id": "role-case-12",
+      "evidence_items": [
+        {
+          "exact_text": "implanted subcutaneous tumors"
+        }
+      ],
+      "explanation": "The subcutaneous tumors are described as implanted, so they are the entities undergoing the planned implantation process. The source does not assign them agency.",
+      "falsification_explanation": "To identify the process agent, the source would need wording such as \u201cresearchers implanted the subcutaneous tumors.\u201d To make the tumors causal, it would instead need a separate statement that they caused an outcome.",
+      "source_semantic_role": "AFFECTED_ENTITY"
+    },
+    {
+      "case_id": "role-case-13",
+      "evidence_items": [
+        {
+          "exact_text": "mitogen-activated protein kinase (MAPK) and phosphoinositide 3-kinase (PI3K) signaling"
+        },
+        {
+          "exact_text": "these pathways"
+        }
+      ],
+      "explanation": "Mitogen-activated protein kinase is mentioned as part of a signaling context, while \u201cthese pathways\u201d is the broad target of pharmacologic agents. The source does not resolve whether the kinase itself, rather than the pathway, is the relevant target or agent.",
+      "falsification_explanation": "A stronger causal interpretation would require wording such as \u201cMAPK signaling caused the observed effect.\u201d Explicit target wording such as \u201cagents target the MAPK pathway\u201d would also clarify an object role.",
+      "source_semantic_role": "CONTEXTUAL_PARTICIPANT"
+    },
+    {
+      "case_id": "role-case-14",
+      "evidence_items": [
+        {
+          "exact_text": "nested deletion mutants of the hepatoma type II hexokinase promoter"
+        }
+      ],
+      "explanation": "The phrase identifies nested deletion mutants of the promoter associated with type II hexokinase, making that locus the target affected by the deletion process. No causal agency is assigned to type II hexokinase.",
+      "falsification_explanation": "A causal interpretation would require wording such as \u201ctype II hexokinase caused the observed activation.\u201d Direct wording such as \u201cthe type II hexokinase promoter was deleted\u201d would make the affected relation more explicit.",
+      "source_semantic_role": "AFFECTED_ENTITY"
+    }
+  ]
+}

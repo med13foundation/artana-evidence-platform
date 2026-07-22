@@ -1,0 +1,15 @@
+{
+  "addendum_status": "STOP_ROLE_ONTOLOGY_ALIGNMENT_REQUIRED",
+  "immutable_prior_commit": "c0a2f9455a1f6abea810bbc66b1aa18cd6096643",
+  "prior_decision": "STOP_EVENT_LINKING_SCIENTIFIC_FAILURE",
+  "prior_result_sha256": "b0b3a7b2c233679deb102a5cbd57ae5c63c25c3c6b1ceed5fdce39e08e9c63c1",
+  "remaining_disagreement": {
+    "benchmark_role": "CAUSE",
+    "event_id": "evt_cancer_cell_sensitivity",
+    "participant": "vinblastine",
+    "source_role": "OTHER_EXPLICIT"
+  },
+  "changes_to_prior_result": false,
+  "qualification_credit": false,
+  "trusted_promotion": false
+}

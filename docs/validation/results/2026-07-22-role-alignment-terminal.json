@@ -1,0 +1,27 @@
+{
+  "benchmark_reviews_started": 0,
+  "cost_usd": 0.540645,
+  "decision": "STOP_OPERATIONAL_BLOCKER",
+  "duplicate_creation_calls": 0,
+  "global_max_calls": 4,
+  "global_max_cost_usd": 1.0,
+  "graph_writes": 0,
+  "input_tokens": 3795,
+  "latency_seconds": 451.9032056249562,
+  "official_policy_finding": "No official CG rule was found that makes the object of sensitivity scientifically causal; the complete exposed corpus uses Cause in 10/10 eligible cases, which remains an evaluation-only corpus inference.",
+  "output_tokens": 89475,
+  "provider_creation_calls": 2,
+  "provider_retries": 0,
+  "qualification_credit": false,
+  "response_ids": [
+    "resp_05af183fb64707b3006a61152fe43c819b8e2d2296aae9bb58",
+    "resp_07c12f39d5ecf19c006a6117b893f4819babd83b2dcf9e3d08"
+  ],
+  "review_only": true,
+  "root_cause": "The provider violated its own returned max_output_tokens in two independently frozen calls; the repeated-provider-budget stop rule prevents further creation calls.",
+  "scientific_metrics_calculated": false,
+  "source_reviews_valid": 0,
+  "tiebreak_reviews_started": 0,
+  "total_tokens": 93270,
+  "trusted_promotion": false
+}

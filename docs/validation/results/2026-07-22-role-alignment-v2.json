@@ -1,0 +1,61 @@
+{
+  "cost_usd": 0,
+  "decision": "INVALID_PROVIDER_EXECUTION",
+  "diagnostics": {
+    "actual_sha256": "3e8cbfb0feb0621615d2865527c48bf7ad8767f41fff1c214f14c75365cfbf2b",
+    "budget_accounting": {
+      "cost": "PASS",
+      "latency": "PASS",
+      "observed_cost_usd": 0.113109,
+      "observed_latency_seconds": 107.75459591698018,
+      "observed_output_tokens": 18608,
+      "observed_total_tokens": 20069,
+      "output_tokens": "FAIL",
+      "requested_max_cost_usd": 0.25,
+      "requested_max_latency_seconds": 900.0,
+      "requested_max_output_tokens": 16000,
+      "requested_max_total_tokens": 20000,
+      "total_tokens": "FAIL"
+    },
+    "confirmation_retrieval_requests": 1,
+    "differences": [
+      {
+        "actual_sha256": "3e8cbfb0feb0621615d2865527c48bf7ad8767f41fff1c214f14c75365cfbf2b",
+        "difference": "VALUE_CHANGED",
+        "expected_sha256": "2570901c76653e578fecf066b5fc3fa1619f1a051e928e39797bab1b1342bf40",
+        "path": "$.usage.output_tokens"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "expected_sha256": "2570901c76653e578fecf066b5fc3fa1619f1a051e928e39797bab1b1342bf40",
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "observed_usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.113109,
+      "input_tokens": 1461,
+      "latency_seconds": 107.75459591698018,
+      "output_tokens": 18608,
+      "reasoning_tokens": 3450,
+      "total_tokens": 20069
+    },
+    "polling_retrieval_requests": 20,
+    "provider_creation_calls": 1,
+    "provider_retries": 0,
+    "receipt_status": "REJECTED_BUDGET",
+    "response_id": "resp_07c12f39d5ecf19c006a6117b893f4819babd83b2dcf9e3d08"
+  },
+  "failed_call_usage_verified": false,
+  "failure_stage": "RECEIPT_BUDGET",
+  "input_tokens": 0,
+  "latency_seconds": 0,
+  "output_tokens": 0,
+  "provider_calls": 1,
+  "qualification_credit": false,
+  "response_ids": [
+    "resp_07c12f39d5ecf19c006a6117b893f4819babd83b2dcf9e3d08"
+  ],
+  "root_cause": "output token ceiling exceeded",
+  "total_tokens": 0,
+  "trusted_promotion": false
+}
