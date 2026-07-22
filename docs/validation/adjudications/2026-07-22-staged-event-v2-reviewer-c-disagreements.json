@@ -1,0 +1,173 @@
+{
+  "schema_version": "staged-event-v2-reviewer-c-disagreements-v1",
+  "reviewer": "C",
+  "review_scope": "six disputed ENTAILED events only",
+  "blinding": {
+    "reviewer_a_answers_inspected": false,
+    "reviewer_b_answers_inspected": false
+  },
+  "document_id": "PMID-16428936",
+  "judgments": [
+    {
+      "event_id": "E-6a75a0999b748f2fe913",
+      "labels": [
+        "WRONG_EVENT_TYPE",
+        "WRONG_PARTICIPANT"
+      ],
+      "benchmark_fidelity": "MISMATCH",
+      "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT",
+      "exact_evidence": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+      "rules": [
+        "Event identity requires the public source event type, minimal contiguous trigger, and typed arguments.",
+        "Deterministic or agent adjudication must not relabel a source event type.",
+        "Theme is the entity undergoing the event's primary effect."
+      ],
+      "gold_ids": [
+        "T26",
+        "T53",
+        "E18"
+      ],
+      "explanation": "The source supports disruption, and the trigger span exactly matches gold T53. Gold E18 is Breakdown:T53 Theme:T26, where T26 is the annotated 'mitochondrial membrane' span. The candidate relabels Breakdown as Negative_regulation and expands the participant beyond the public entity boundary to 'mitochondrial membrane potential'."
+    },
+    {
+      "event_id": "E-94edf9d8896d3f0729cb",
+      "labels": [
+        "WRONG_PARTICIPANT",
+        "WRONG_ROLE",
+        "WRONG_NESTING"
+      ],
+      "benchmark_fidelity": "MISMATCH",
+      "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT",
+      "exact_evidence": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+      "rules": [
+        "Preserve an event-to-event argument when the affected object is itself an event.",
+        "Do not flatten a nested event into one of that event's entities.",
+        "Theme is the entity or event undergoing the primary effect; Cause is causally active; Participant is only for involvement without a supported specific role."
+      ],
+      "gold_ids": [
+        "T20",
+        "T21",
+        "T50",
+        "T51",
+        "E15",
+        "E16"
+      ],
+      "explanation": "The increase trigger and Positive_regulation type match gold E15, but E15 has Theme:E16. E16 is the nested sensitivity event with Cause:T20 (VLB) and Theme:T21 (LoVo-mycANS cells). The candidate flattens E16 into direct VLB and cell arguments, assigns VLB the generic Participant role, and therefore does not preserve the complete typed event."
+    },
+    {
+      "event_id": "E-9b071863693a57dae92b",
+      "labels": [
+        "WRONG_TRIGGER",
+        "WRONG_PARTICIPANT",
+        "WRONG_ROLE",
+        "WRONG_NESTING"
+      ],
+      "benchmark_fidelity": "MISMATCH",
+      "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT",
+      "exact_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "rules": [
+        "Every event requires a minimal contiguous trigger governed by the public annotation policy.",
+        "Preserve an event-to-event argument when the affected object is itself an event.",
+        "Do not flatten a nested event into one of that event's entities."
+      ],
+      "gold_ids": [
+        "E23",
+        "E24",
+        "T60",
+        "E25",
+        "E26"
+      ],
+      "explanation": "The sentence supports the general proposition that decreased c-Myc expression enhanced VLB sensitivity, but the public gold does not annotate 'enhanced' as this event trigger. Its annotated regulation is E25 at 'triggering', with Cause:E23 and Theme:E26 (apoptosis). Even as a source-valid extra, the candidate makes bare VLB the Theme rather than representing the sensitivity proposition as an event, so its participant, role, and nesting structure is incomplete."
+    },
+    {
+      "event_id": "E-a699191e71c887b4c5b8",
+      "labels": [
+        "WRONG_EVENT_TYPE",
+        "WRONG_PARTICIPANT",
+        "WRONG_ROLE",
+        "WRONG_NESTING",
+        "WRONG_MODIFIER"
+      ],
+      "benchmark_fidelity": "MISMATCH",
+      "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT",
+      "exact_evidence": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+      "rules": [
+        "Use Regulation when direction is not explicitly encoded under the public event policy.",
+        "Theme is affected; Cause is causally active; Instrument is used to carry out a Planned_process.",
+        "Preserve event-to-event arguments and do not flatten or reverse their roles.",
+        "Modifiers are event-local and benchmark fidelity requires the public modifier annotation."
+      ],
+      "gold_ids": [
+        "T34",
+        "T36",
+        "T63",
+        "T64",
+        "E28",
+        "E29"
+      ],
+      "explanation": "Gold E28 is Regulation:T63 Cause:E29 Theme:T34, and E29 is Planned_process:T64 Instrument:T36. The candidate changes Regulation to Positive_regulation, substitutes a separate low-c-Myc event as Cause, and demotes the treatment event to Participant instead of preserving it as the nested Cause. The source wording supports uncertainty, but the public gold does not attach a speculation modifier to E28, so the candidate's modifier is source-plausible but not benchmark-faithful."
+    },
+    {
+      "event_id": "E-d96f3f94563f9fce3286",
+      "labels": [
+        "WRONG_ROLE",
+        "WRONG_NESTING"
+      ],
+      "benchmark_fidelity": "MISMATCH",
+      "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT",
+      "exact_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "rules": [
+        "Theme is the entity or event undergoing the event's primary effect.",
+        "Do not add an argument merely because an entity or event appears in the same sentence.",
+        "Preserve the direction of event-to-event nesting supported by the source."
+      ],
+      "gold_ids": [],
+      "explanation": "The source supports the existence and mechanistic relevance of the intrinsic pathway, so this is not hallucinated. However, no matching Pathway event appears in the public gold, and the candidate makes apoptosis the Theme of the pathway. The sentence instead says apoptosis is triggered through induction of the pathway; it does not state that apoptosis undergoes a Pathway event. The event-valued Theme therefore reverses or invents the typed nesting relation."
+    },
+    {
+      "event_id": "E-dc2596d35c7a939787a6",
+      "labels": [
+        "WRONG_EVENT_TYPE",
+        "WRONG_TRIGGER",
+        "WRONG_PARTICIPANT",
+        "WRONG_ROLE",
+        "WRONG_NESTING"
+      ],
+      "benchmark_fidelity": "MISMATCH",
+      "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT",
+      "exact_evidence": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+      "rules": [
+        "Every event is a complete typed structure with its public source event type and minimal contiguous trigger.",
+        "Do not add arguments merely because entities occur in the same sentence.",
+        "Preserve event-to-event arguments only when the source and annotation policy support that nesting."
+      ],
+      "gold_ids": [
+        "T54",
+        "E19"
+      ],
+      "explanation": "The source supports an apoptotic signaling pathway involving mitochondria, but public gold E19 is the unary Cell_death event triggered by the full span 'apoptotic signaling pathway'. The candidate instead creates a Pathway event triggered only by 'pathway', adds mitochondria as Participant, and nests a separate apoptotic event as Theme. Those additions and the shortened trigger do not reproduce the public typed structure."
+    }
+  ],
+  "counts": {
+    "reviewed": 6,
+    "exact_gold_events": 0,
+    "valid_extras_outside_gold_policy": 0,
+    "benchmark_mismatches": 6,
+    "source_supported_complete": 0,
+    "source_supported_structurally_incorrect": 6,
+    "unsupported_by_source": 0,
+    "depends_on_rejected_event": 0,
+    "labels": {
+      "EXACT_GOLD_EVENT": 0,
+      "VALID_EXTRA_OUTSIDE_GOLD_POLICY": 0,
+      "WRONG_EVENT_TYPE": 3,
+      "WRONG_TRIGGER": 2,
+      "WRONG_PARTICIPANT": 5,
+      "WRONG_ROLE": 5,
+      "WRONG_NESTING": 5,
+      "WRONG_MODIFIER": 1,
+      "UNSUPPORTED_BY_SOURCE": 0,
+      "DEPENDS_ON_REJECTED_EVENT": 0
+    }
+  }
+}

@@ -1,0 +1,245 @@
+{
+  "schema_version": "staged-event-v2-independent-review-v1",
+  "reviewer": "A",
+  "review_mode": "BLINDED_OFFLINE_SOURCE_AND_PUBLIC_GOLD",
+  "v2_terminal_status_preserved": "INVALID_EXPERIMENT",
+  "source_document_id": "PMID-16428936",
+  "candidate_population": {"verdict": "ENTAILED", "count": 32},
+  "rule_catalog": {
+    "R1_COMPLETE_EVENT": "An event is a complete typed structure: minimal contiguous trigger, typed arguments, required nesting, and event-local modifiers.",
+    "R2_CLOSED_TYPES": "Use only the published Cancer Genetics source event types and preserve their exact type.",
+    "R3_DIRECTION": "Positive_regulation and Negative_regulation require explicit direction; otherwise use Regulation.",
+    "R4_ROLES": "Theme undergoes the primary effect; Cause is causally active; Participant is involved without a more specific supported role; Instrument carries out a Planned_process.",
+    "R5_NESTING": "When an affected or causing object is itself an event, preserve the event-to-event argument and do not flatten it into an entity.",
+    "R6_ARGUMENT_MINIMALITY": "Do not add an argument merely because an entity appears in the same sentence.",
+    "R7_MODIFIER_SCOPE": "NEGATED or SPECULATIVE applies only when wording modifies that exact event.",
+    "R8_ALL_AXES": "ENTAILED requires event type, trigger, participants, roles, nesting, modifier, and evidence all to pass.",
+    "R9_GOLD_FIDELITY": "Benchmark credit requires equality with a complete public-gold event, not general source plausibility."
+  },
+  "reviews": [
+    {
+      "event_id": "E-60b0d54816b0585893d1", "labels": ["EXACT_GOLD_EVENT"],
+      "benchmark_fidelity": "EXACT", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": ["E1"],
+      "exact_source_evidence": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+      "applicable_rules": [{"id": "R1_COMPLETE_EVENT", "text": "Negative_regulation with trigger Decrease and c-Myc as Theme is complete."}, {"id": "R9_GOLD_FIDELITY", "text": "The type, trigger, Theme, and absent modifier equal gold E1."}],
+      "explanation": "This exactly reproduces gold E1."
+    },
+    {
+      "event_id": "E-e2a89e97c05e2b8d93d2", "labels": ["WRONG_PARTICIPANT", "WRONG_ROLE", "WRONG_NESTING"],
+      "benchmark_fidelity": "MISMATCH", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+      "applicable_rules": [{"id": "R5_NESTING", "text": "Gold E2 takes the sensitivity event E3 as Theme and decrease event E1 as Cause."}, {"id": "R4_ROLES", "text": "Cancer cell and vinblastine belong inside the nested sensitivity event, not directly on enhances."}],
+      "explanation": "The positive effect is supported, but V2 flattened gold E3 into a cell Theme and drug Participant."
+    },
+    {
+      "event_id": "E-7febe5b8f644b3cb69c9", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": [],
+      "exact_source_evidence": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+      "applicable_rules": [{"id": "R1_COMPLETE_EVENT", "text": "The source explicitly states the encoding event and both participants."}, {"id": "R9_GOLD_FIDELITY", "text": "No corresponding public-gold event exists."}],
+      "explanation": "A source-supported encoding claim omitted by the benchmark."
+    },
+    {
+      "event_id": "E-66488a62883bb758e80b", "labels": ["WRONG_PARTICIPANT", "WRONG_ROLE"],
+      "benchmark_fidelity": "MISMATCH", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+      "applicable_rules": [{"id": "R4_ROLES", "text": "Gold E7 assigns cellular T5 as Theme of proliferation."}, {"id": "R6_ARGUMENT_MINIMALITY", "text": "The transcriptional factor is not the entity undergoing proliferation."}],
+      "explanation": "V2 used transcriptional factor as Participant instead of the gold cellular Theme."
+    },
+    {
+      "event_id": "E-8498b84a9b3bb3e93c2f", "labels": ["WRONG_PARTICIPANT", "WRONG_ROLE"],
+      "benchmark_fidelity": "MISMATCH", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+      "applicable_rules": [{"id": "R4_ROLES", "text": "Gold E8 assigns cellular T5 as Theme of differentiation."}, {"id": "R6_ARGUMENT_MINIMALITY", "text": "The transcriptional factor is not the entity undergoing differentiation."}],
+      "explanation": "V2 used transcriptional factor as Participant instead of the gold cellular Theme."
+    },
+    {
+      "event_id": "E-544748ccc8e6c17eb290", "labels": ["WRONG_PARTICIPANT", "WRONG_ROLE"],
+      "benchmark_fidelity": "MISMATCH", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+      "applicable_rules": [{"id": "R4_ROLES", "text": "Gold E9 assigns cellular T5 as Theme of apoptosis."}, {"id": "R6_ARGUMENT_MINIMALITY", "text": "The transcriptional factor is not the entity undergoing apoptosis."}],
+      "explanation": "V2 attached the upstream factor rather than the affected cellular entity."
+    },
+    {
+      "event_id": "E-bc37a2c8e84b25cc8803", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": [],
+      "exact_source_evidence": "We defined the role of c-Myc in cancer cell sensitivity to vinblastine (VLB) using human colon cancer cells: LoVo wild-type or transfected with a plasmid containing the human c-myc gene in antisense orientation (LoVo-mycANS).",
+      "applicable_rules": [{"id": "R4_ROLES", "text": "The contained gene is Theme and plasmid is its explicit location."}, {"id": "R9_GOLD_FIDELITY", "text": "The public gold does not annotate containing as an event."}],
+      "explanation": "The localization is source-supported but outside the gold inventory."
+    },
+    {
+      "event_id": "E-ee60503275d45044215a", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": [],
+      "exact_source_evidence": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+      "applicable_rules": [{"id": "R5_NESTING", "text": "The explicitly analyzed cytotoxicity event is preserved as Theme."}, {"id": "R9_GOLD_FIDELITY", "text": "The analysis process is omitted from public gold."}],
+      "explanation": "A complete methodological event outside the benchmark annotation."
+    },
+    {
+      "event_id": "E-b43186fccd287bbb1cd5", "labels": ["WRONG_PARTICIPANT", "WRONG_ROLE"],
+      "benchmark_fidelity": "MISMATCH", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+      "applicable_rules": [{"id": "R4_ROLES", "text": "Gold E13 has LoVo-mycANS cells as Theme and no VLB argument."}, {"id": "R6_ARGUMENT_MINIMALITY", "text": "VLB is adjacent to cytotoxicity but is not a gold event argument."}],
+      "explanation": "The cell-death event is supported, but V2 added VLB as an unsupported direct Participant."
+    },
+    {
+      "event_id": "E-94edf9d8896d3f0729cb", "labels": ["WRONG_EVENT_TYPE", "WRONG_PARTICIPANT", "WRONG_ROLE", "WRONG_NESTING"],
+      "benchmark_fidelity": "MISMATCH", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+      "applicable_rules": [{"id": "R5_NESTING", "text": "Gold E15 regulates the nested sensitivity event E16 rather than directly regulating cells."}, {"id": "R1_COMPLETE_EVENT", "text": "The trigger increase is incomplete without the nested Regulation sensitivity event."}],
+      "explanation": "V2 collapsed the regulated sensitivity event into direct cell and drug arguments."
+    },
+    {
+      "event_id": "E-0fb21d34ef7c813be59c", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": [],
+      "exact_source_evidence": "Comparison between cells revealed different apoptosis kinetics: accumulation of cells in sub-G1 phase and poly(ADP-ribose) polymerase cleavage occurred earlier in LoVo-mycANS.",
+      "applicable_rules": [{"id": "R1_COMPLETE_EVENT", "text": "Comparison explicitly denotes the stated methodological process over cells."}, {"id": "R9_GOLD_FIDELITY", "text": "No comparison event is present in public gold."}],
+      "explanation": "Source-supported comparison method omitted from gold."
+    },
+    {
+      "event_id": "E-4f529edc0c9ff43a7289", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": [],
+      "exact_source_evidence": "Comparison between cells revealed different apoptosis kinetics: accumulation of cells in sub-G1 phase and poly(ADP-ribose) polymerase cleavage occurred earlier in LoVo-mycANS.",
+      "applicable_rules": [{"id": "R4_ROLES", "text": "Cells accumulate into sub-G1 phase in the LoVo-mycANS context."}, {"id": "R9_GOLD_FIDELITY", "text": "The public gold omits this localization event."}],
+      "explanation": "The localization structure is supported but receives no benchmark credit."
+    },
+    {
+      "event_id": "E-8909bcc79d88a8279fd1", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": [],
+      "exact_source_evidence": "Comparison between cells revealed different apoptosis kinetics: accumulation of cells in sub-G1 phase and poly(ADP-ribose) polymerase cleavage occurred earlier in LoVo-mycANS.",
+      "applicable_rules": [{"id": "R4_ROLES", "text": "Poly(ADP-ribose) polymerase is Theme of cleavage and LoVo-mycANS is the explicit context."}, {"id": "R9_GOLD_FIDELITY", "text": "The cleavage event is absent from public gold."}],
+      "explanation": "A complete source-supported protein-processing event omitted by gold."
+    },
+    {
+      "event_id": "E-6a75a0999b748f2fe913", "labels": ["WRONG_EVENT_TYPE", "WRONG_PARTICIPANT"],
+      "benchmark_fidelity": "MISMATCH", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+      "applicable_rules": [{"id": "R2_CLOSED_TYPES", "text": "Gold E18 types disruption as Breakdown, not Negative_regulation."}, {"id": "R9_GOLD_FIDELITY", "text": "Gold Theme T26 is mitochondrial membrane, while V2 uses mitochondrial membrane potential."}],
+      "explanation": "The phenomenon is supported but its task type and participant span differ from gold E18."
+    },
+    {
+      "event_id": "E-c1c8f47ea535c511fb62", "labels": ["WRONG_TRIGGER", "WRONG_PARTICIPANT", "WRONG_ROLE"],
+      "benchmark_fidelity": "MISMATCH", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+      "applicable_rules": [{"id": "R1_COMPLETE_EVENT", "text": "Gold E19 uses the full minimal trigger apoptotic signaling pathway and has no arguments."}, {"id": "R6_ARGUMENT_MINIMALITY", "text": "Mitochondria are involved in the pathway, not a direct Participant of a separate apoptotic event."}],
+      "explanation": "V2 split a gold trigger and attached mitochondria to the resulting fragment."
+    },
+    {
+      "event_id": "E-dc2596d35c7a939787a6", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY", "WRONG_PARTICIPANT", "WRONG_ROLE", "WRONG_NESTING"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+      "applicable_rules": [{"id": "R5_NESTING", "text": "The V2 Theme points to an artificial apoptotic fragment rather than a source-established event argument."}, {"id": "R4_ROLES", "text": "Mitochondria involvement is supported, but the asserted Theme nesting is not."}],
+      "explanation": "A pathway concept is source-supported, but its complete V2 typed structure is not."
+    },
+    {
+      "event_id": "E-517799827c6f5744a01f", "labels": ["EXACT_GOLD_EVENT"],
+      "benchmark_fidelity": "EXACT", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": ["E20"],
+      "exact_source_evidence": "This earlier apoptosis was accompanied by a Bcl-2 decrease and a p53 increase.",
+      "applicable_rules": [{"id": "R9_GOLD_FIDELITY", "text": "Cell_death trigger apoptosis with no arguments or modifiers equals gold E20."}],
+      "explanation": "Exact public-gold event."
+    },
+    {
+      "event_id": "E-c90e03d4ddefcce735ec", "labels": ["EXACT_GOLD_EVENT"],
+      "benchmark_fidelity": "EXACT", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": ["E21"],
+      "exact_source_evidence": "This earlier apoptosis was accompanied by a Bcl-2 decrease and a p53 increase.",
+      "applicable_rules": [{"id": "R9_GOLD_FIDELITY", "text": "Negative_regulation trigger decrease with Bcl-2 Theme equals gold E21."}],
+      "explanation": "Exact public-gold event."
+    },
+    {
+      "event_id": "E-2d5bd3d8506d519d2d69", "labels": ["EXACT_GOLD_EVENT"],
+      "benchmark_fidelity": "EXACT", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": ["E22"],
+      "exact_source_evidence": "This earlier apoptosis was accompanied by a Bcl-2 decrease and a p53 increase.",
+      "applicable_rules": [{"id": "R9_GOLD_FIDELITY", "text": "Positive_regulation trigger increase with p53 Theme equals gold E22."}],
+      "explanation": "Exact public-gold event."
+    },
+    {
+      "event_id": "E-0effc9409e12ed77b198", "labels": ["EXACT_GOLD_EVENT"],
+      "benchmark_fidelity": "EXACT", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": ["E23"],
+      "exact_source_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "applicable_rules": [{"id": "R5_NESTING", "text": "The decrease preserves c-Myc expression as its nested Theme."}, {"id": "R9_GOLD_FIDELITY", "text": "The complete structure equals gold E23."}],
+      "explanation": "Exact public-gold nested event."
+    },
+    {
+      "event_id": "E-fd23ca8aac731381622e", "labels": ["EXACT_GOLD_EVENT"],
+      "benchmark_fidelity": "EXACT", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": ["E24"],
+      "exact_source_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "applicable_rules": [{"id": "R9_GOLD_FIDELITY", "text": "Gene_expression trigger expression with c-Myc Theme equals gold E24."}],
+      "explanation": "Exact public-gold event."
+    },
+    {
+      "event_id": "E-9b071863693a57dae92b", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY", "WRONG_PARTICIPANT", "WRONG_ROLE", "WRONG_NESTING"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "applicable_rules": [{"id": "R5_NESTING", "text": "The affected object is VLB sensitivity, not the chemical VLB alone."}, {"id": "R4_ROLES", "text": "VLB cannot substitute as Theme for the missing sensitivity event."}],
+      "explanation": "Enhancement is explicit, but V2 does not represent the complete sensitivity structure."
+    },
+    {
+      "event_id": "E-a00865ea42e6f577581d", "labels": ["WRONG_PARTICIPANT", "WRONG_ROLE", "WRONG_NESTING"],
+      "benchmark_fidelity": "MISMATCH", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "applicable_rules": [{"id": "R5_NESTING", "text": "Gold E25 has decrease event E23 as Cause and apoptosis E26 as Theme."}, {"id": "R6_ARGUMENT_MINIMALITY", "text": "The induction event is not a gold Participant of triggering."}],
+      "explanation": "V2 substituted its non-gold enhancement event for the gold Cause and added an unsupported direct Participant."
+    },
+    {
+      "event_id": "E-205f021ad42236e5f142", "labels": ["EXACT_GOLD_EVENT"],
+      "benchmark_fidelity": "EXACT", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": ["E26"],
+      "exact_source_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "applicable_rules": [{"id": "R9_GOLD_FIDELITY", "text": "Cell_death trigger apoptosis with no arguments or modifiers equals gold E26."}],
+      "explanation": "Exact public-gold event."
+    },
+    {
+      "event_id": "E-cf483c0e6ea43235f767", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": [],
+      "exact_source_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "applicable_rules": [{"id": "R5_NESTING", "text": "The text explicitly states induction of the intrinsic pathway and V2 preserves the pathway event as Theme."}, {"id": "R9_GOLD_FIDELITY", "text": "This induction is absent from public gold."}],
+      "explanation": "A complete source-supported nested event omitted by gold."
+    },
+    {
+      "event_id": "E-d96f3f94563f9fce3286", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY", "WRONG_ROLE", "WRONG_NESTING"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "applicable_rules": [{"id": "R4_ROLES", "text": "The pathway is the mechanism through which apoptosis is triggered; apoptosis is not stated as a Theme undergoing Pathway."}, {"id": "R5_NESTING", "text": "The event-to-event direction asserted by V2 is not licensed by the wording."}],
+      "explanation": "The pathway exists, but V2's Theme edge to apoptosis reverses the supported mechanistic relation."
+    },
+    {
+      "event_id": "E-dca78c9bf714ce8a0349", "labels": ["EXACT_GOLD_EVENT"],
+      "benchmark_fidelity": "EXACT", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": ["E27"],
+      "exact_source_evidence": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+      "applicable_rules": [{"id": "R9_GOLD_FIDELITY", "text": "Positive_regulation trigger induction with c-myc Theme equals gold E27."}],
+      "explanation": "Exact public-gold event."
+    },
+    {
+      "event_id": "E-bcb6ce67e9169dfcd807", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": [],
+      "exact_source_evidence": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+      "applicable_rules": [{"id": "R7_MODIFIER_SCOPE", "text": "Low c-Myc levels occur inside the proposition introduced by suggest and could."}, {"id": "R9_GOLD_FIDELITY", "text": "The public gold does not annotate low as an event."}],
+      "explanation": "The low-level event and speculative scope are source-supported but outside gold."
+    },
+    {
+      "event_id": "E-a699191e71c887b4c5b8", "labels": ["WRONG_TRIGGER", "WRONG_ROLE", "WRONG_NESTING", "WRONG_MODIFIER"],
+      "benchmark_fidelity": "MISMATCH", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": [],
+      "exact_source_evidence": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+      "applicable_rules": [{"id": "R9_GOLD_FIDELITY", "text": "Gold E28 uses trigger responsive, Theme tumors, and Cause treatment event E29, with no modifier."}, {"id": "R7_MODIFIER_SCOPE", "text": "Source wording suggest and could supports V2's speculative source interpretation even though gold omits it."}],
+      "explanation": "The complete V2 claim is source-supported, but differs from gold in trigger boundary, Cause, added nesting, and modifier."
+    },
+    {
+      "event_id": "E-11f3a0578efc0b883103", "labels": ["WRONG_PARTICIPANT", "WRONG_ROLE"],
+      "benchmark_fidelity": "MISMATCH", "source_validity": "SUPPORTED_STRUCTURALLY_INCORRECT", "gold_event_ids": [],
+      "exact_source_evidence": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+      "applicable_rules": [{"id": "R4_ROLES", "text": "Gold E29 contains Instrument vinca alkaloids and no Theme."}, {"id": "R6_ARGUMENT_MINIMALITY", "text": "Tumors occur in the responsiveness claim but are not a direct gold argument of treatment."}],
+      "explanation": "V2 correctly captures the Instrument but adds tumors as Theme."
+    },
+    {
+      "event_id": "E-7c96d5ccc6b62c1f4602", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": [],
+      "exact_source_evidence": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+      "applicable_rules": [{"id": "R1_COMPLETE_EVENT", "text": "A zero-argument Planned_process is permitted and antisense strategy explicitly names the method."}, {"id": "R9_GOLD_FIDELITY", "text": "The strategy process is absent from public gold."}],
+      "explanation": "A source-supported method event outside the benchmark."
+    },
+    {
+      "event_id": "E-faf304d73050cfefee5c", "labels": ["VALID_EXTRA_OUTSIDE_GOLD_POLICY", "DEPENDS_ON_REJECTED_EVENT"],
+      "benchmark_fidelity": "OUTSIDE_GOLD_POLICY", "source_validity": "SUPPORTED_COMPLETE", "gold_event_ids": [],
+      "exact_source_evidence": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+      "applicable_rules": [{"id": "R5_NESTING", "text": "V2 assigns rejected event E-2773996d557442a07d58 as Cause of improving."}, {"id": "R7_MODIFIER_SCOPE", "text": "The proposed efficacy improvement is within might represent a useful goal."}],
+      "explanation": "The improvement claim is source-supported, but its preserved V2 structure directly depends on a CONTRADICTED child event."
+    }
+  ]
+}

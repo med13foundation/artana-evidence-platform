@@ -1,0 +1,389 @@
+{
+  "custody": {
+    "receipt_sha256": "d85b1c2aa316a33da2fce4deb36777f96165edf87a4304c72f328378e34924d9",
+    "result_sha256": "f136f6bf439704991db13d72d2691323ac601212ee40e4cab0a19235a9abbb58",
+    "source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+    "verified_receipts": 5
+  },
+  "projection": {
+    "candidate_count": 39,
+    "dependency_exclusion_count": 1,
+    "direct_exclusion_count": 7,
+    "quarantined_events": [
+      {
+        "dependency_path": [
+          "E-142d96a6127befa7a558"
+        ],
+        "event_id": "E-142d96a6127befa7a558",
+        "terminal_reason": "verification:CONTRADICTED",
+        "terminal_state": "REVIEW_ONLY"
+      },
+      {
+        "dependency_path": [
+          "E-2773996d557442a07d58"
+        ],
+        "event_id": "E-2773996d557442a07d58",
+        "terminal_reason": "verification:CONTRADICTED",
+        "terminal_state": "REVIEW_ONLY"
+      },
+      {
+        "dependency_path": [
+          "E-81595271d3236055d068"
+        ],
+        "event_id": "E-81595271d3236055d068",
+        "terminal_reason": "verification:CONTRADICTED",
+        "terminal_state": "REVIEW_ONLY"
+      },
+      {
+        "dependency_path": [
+          "E-b98c681634a09b75e298"
+        ],
+        "event_id": "E-b98c681634a09b75e298",
+        "terminal_reason": "verification:CONTRADICTED",
+        "terminal_state": "REVIEW_ONLY"
+      },
+      {
+        "dependency_path": [
+          "E-c30f1062b5528fce8cc2"
+        ],
+        "event_id": "E-c30f1062b5528fce8cc2",
+        "terminal_reason": "verification:CONTRADICTED",
+        "terminal_state": "REVIEW_ONLY"
+      },
+      {
+        "dependency_path": [
+          "E-d7ef029df22fe0516c7d"
+        ],
+        "event_id": "E-d7ef029df22fe0516c7d",
+        "terminal_reason": "verification:CONTRADICTED",
+        "terminal_state": "REVIEW_ONLY"
+      },
+      {
+        "dependency_path": [
+          "E-faf304d73050cfefee5c",
+          "E-2773996d557442a07d58"
+        ],
+        "event_id": "E-faf304d73050cfefee5c",
+        "terminal_reason": "depends_on_rejected_event:E-2773996d557442a07d58",
+        "terminal_state": "REVIEW_ONLY"
+      },
+      {
+        "dependency_path": [
+          "E-fd54232743ba4d07aba2"
+        ],
+        "event_id": "E-fd54232743ba4d07aba2",
+        "terminal_reason": "verification:CONTRADICTED",
+        "terminal_state": "REVIEW_ONLY"
+      }
+    ],
+    "retained_closed_subgraph_size": 31,
+    "retained_event_ids": [
+      "E-0effc9409e12ed77b198",
+      "E-0fb21d34ef7c813be59c",
+      "E-11f3a0578efc0b883103",
+      "E-205f021ad42236e5f142",
+      "E-2d5bd3d8506d519d2d69",
+      "E-4f529edc0c9ff43a7289",
+      "E-517799827c6f5744a01f",
+      "E-544748ccc8e6c17eb290",
+      "E-60b0d54816b0585893d1",
+      "E-66488a62883bb758e80b",
+      "E-6a75a0999b748f2fe913",
+      "E-7c96d5ccc6b62c1f4602",
+      "E-7febe5b8f644b3cb69c9",
+      "E-8498b84a9b3bb3e93c2f",
+      "E-8909bcc79d88a8279fd1",
+      "E-94edf9d8896d3f0729cb",
+      "E-9b071863693a57dae92b",
+      "E-a00865ea42e6f577581d",
+      "E-a699191e71c887b4c5b8",
+      "E-b43186fccd287bbb1cd5",
+      "E-bc37a2c8e84b25cc8803",
+      "E-bcb6ce67e9169dfcd807",
+      "E-c1c8f47ea535c511fb62",
+      "E-c90e03d4ddefcce735ec",
+      "E-cf483c0e6ea43235f767",
+      "E-d96f3f94563f9fce3286",
+      "E-dc2596d35c7a939787a6",
+      "E-dca78c9bf714ce8a0349",
+      "E-e2a89e97c05e2b8d93d2",
+      "E-ee60503275d45044215a",
+      "E-fd23ca8aac731381622e"
+    ]
+  },
+  "qualification_status": "NON_QUALIFYING_DIAGNOSTIC_REVIEW_ONLY",
+  "schema_version": "artana.public_gold.staged_event_offline_diagnostic.v1",
+  "score": {
+    "complete_events": {
+      "gold": 30,
+      "matched": 8,
+      "precision": 0.25806451612903225,
+      "predicted": 31,
+      "recall": 0.26666666666666666
+    },
+    "cycles": 0,
+    "invalid_offsets": 0,
+    "mismatches": [
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":1038,\"exact_text\":\"apoptotic signaling pathway\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":1011}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":732,\"exact_text\":\"apoptosis\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":723}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"arguments\":[{\"source_role\":\"Instrument\",\"target\":{\"end\":1432,\"exact_text\":\"vinca alkaloids\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":1417},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Planned_process\",\"trigger\":{\"end\":1442,\"exact_text\":\"treatment\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Planned_process\",\"start\":1433}},\"target_kind\":\"EVENT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":1351,\"exact_text\":\"tumors\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cancer\",\"start\":1345},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Regulation\",\"trigger\":{\"end\":1413,\"exact_text\":\"responsive\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Regulation\",\"start\":1403}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":1155,\"exact_text\":\"c-Myc\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":1150},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Gene_expression\",\"trigger\":{\"end\":1166,\"exact_text\":\"expression\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Gene_expression\",\"start\":1156}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Negative_regulation\",\"trigger\":{\"end\":1146,\"exact_text\":\"decrease\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Negative_regulation\",\"start\":1138}},\"target_kind\":\"EVENT\"},{\"source_role\":\"Theme\",\"target\":{\"arguments\":[],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":1225,\"exact_text\":\"apoptosis\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":1216}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Positive_regulation\",\"trigger\":{\"end\":1207,\"exact_text\":\"triggering\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Positive_regulation\",\"start\":1197}}",
+        "root_cause": "typed arguments, nested structure, modifiers, or family differ"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":17,\"exact_text\":\"c-Myc\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":12},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Negative_regulation\",\"trigger\":{\"end\":8,\"exact_text\":\"Decrease\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Negative_regulation\",\"start\":0}},\"target_kind\":\"EVENT\"},{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"end\":74,\"exact_text\":\"vinblastine\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":63},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":47,\"exact_text\":\"cancer cell\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":36},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Regulation\",\"trigger\":{\"end\":59,\"exact_text\":\"sensitivity\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Regulation\",\"start\":48}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Positive_regulation\",\"trigger\":{\"end\":35,\"exact_text\":\"enhances\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Positive_regulation\",\"start\":27}}",
+        "root_cause": "typed arguments, nested structure, modifiers, or family differ"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"end\":380,\"exact_text\":\"c-Myc\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":375},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"end\":422,\"exact_text\":\"vinblastine\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":411},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":395,\"exact_text\":\"cancer cell\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":384},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Regulation\",\"trigger\":{\"end\":407,\"exact_text\":\"sensitivity\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Regulation\",\"start\":396}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[\"Speculation\"],\"source_event_type\":\"Regulation\",\"trigger\":{\"end\":371,\"exact_text\":\"role\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Regulation\",\"start\":367}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"end\":422,\"exact_text\":\"vinblastine\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":411},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":395,\"exact_text\":\"cancer cell\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":384},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Regulation\",\"trigger\":{\"end\":407,\"exact_text\":\"sensitivity\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Regulation\",\"start\":396}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"end\":593,\"exact_text\":\"VLB\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":590},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":677,\"exact_text\":\"LoVo-mycANS cells\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":660},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":606,\"exact_text\":\"cytotoxicity\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":594}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[\"Speculation\"],\"source_event_type\":\"Positive_regulation\",\"trigger\":{\"end\":606,\"exact_text\":\"cytotoxicity\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Positive_regulation\",\"start\":594}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"end\":644,\"exact_text\":\"VLB\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":641},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":677,\"exact_text\":\"LoVo-mycANS cells\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":660},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Regulation\",\"trigger\":{\"end\":656,\"exact_text\":\"sensitivity\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Regulation\",\"start\":645}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"end\":74,\"exact_text\":\"vinblastine\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":63},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":47,\"exact_text\":\"cancer cell\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":36},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Regulation\",\"trigger\":{\"end\":59,\"exact_text\":\"sensitivity\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Regulation\",\"start\":48}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"end\":86,\"exact_text\":\"c-myc\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":81},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":158,\"exact_text\":\"cellular\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":150},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":221,\"exact_text\":\"apoptosis\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":212}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Regulation\",\"trigger\":{\"end\":141,\"exact_text\":\"involved\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Regulation\",\"start\":133}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"end\":86,\"exact_text\":\"c-myc\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":81},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":158,\"exact_text\":\"cellular\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":150},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_differentiation\",\"trigger\":{\"end\":207,\"exact_text\":\"differentiation\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_differentiation\",\"start\":192}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Regulation\",\"trigger\":{\"end\":141,\"exact_text\":\"involved\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Regulation\",\"start\":133}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"end\":86,\"exact_text\":\"c-myc\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":81},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":158,\"exact_text\":\"cellular\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":150},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_proliferation\",\"trigger\":{\"end\":190,\"exact_text\":\"proliferation\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_proliferation\",\"start\":177}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Regulation\",\"trigger\":{\"end\":141,\"exact_text\":\"involved\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Regulation\",\"start\":133}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Instrument\",\"target\":{\"end\":1432,\"exact_text\":\"vinca alkaloids\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":1417},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Planned_process\",\"trigger\":{\"end\":1442,\"exact_text\":\"treatment\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Planned_process\",\"start\":1433}}",
+        "root_cause": "typed arguments, nested structure, modifiers, or family differ"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"end\":644,\"exact_text\":\"VLB\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":641},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":677,\"exact_text\":\"LoVo-mycANS cells\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":660},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Regulation\",\"trigger\":{\"end\":656,\"exact_text\":\"sensitivity\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Regulation\",\"start\":645}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Positive_regulation\",\"trigger\":{\"end\":637,\"exact_text\":\"increase\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Positive_regulation\",\"start\":629}}",
+        "root_cause": "typed arguments, nested structure, modifiers, or family differ"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":1481,\"exact_text\":\"c-myc\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":1476},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Negative_regulation\",\"trigger\":{\"end\":1472,\"exact_text\":\"downregulation\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Negative_regulation\",\"start\":1458}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":158,\"exact_text\":\"cellular\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":150},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":221,\"exact_text\":\"apoptosis\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":212}}",
+        "root_cause": "typed arguments, nested structure, modifiers, or family differ"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":158,\"exact_text\":\"cellular\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":150},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_differentiation\",\"trigger\":{\"end\":207,\"exact_text\":\"differentiation\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_differentiation\",\"start\":192}}",
+        "root_cause": "typed arguments, nested structure, modifiers, or family differ"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":158,\"exact_text\":\"cellular\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":150},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_proliferation\",\"trigger\":{\"end\":190,\"exact_text\":\"proliferation\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_proliferation\",\"start\":177}}",
+        "root_cause": "typed arguments, nested structure, modifiers, or family differ"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":575,\"exact_text\":\"LoVo-mycANS\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":564},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Planned_process\",\"trigger\":{\"end\":490,\"exact_text\":\"transfected\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Planned_process\",\"start\":479}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":677,\"exact_text\":\"LoVo-mycANS cells\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":660},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":606,\"exact_text\":\"cytotoxicity\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":594}}",
+        "root_cause": "typed arguments, nested structure, modifiers, or family differ"
+      },
+      {
+        "category": "MISSING_GOLD_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":901,\"exact_text\":\"mitochondrial membrane\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cellular_component\",\"start\":879},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Breakdown\",\"trigger\":{\"end\":922,\"exact_text\":\"disruption\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Breakdown\",\"start\":912}}",
+        "root_cause": "trigger or complete event was not recovered"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Planned_process\",\"trigger\":{\"end\":1515,\"exact_text\":\"strategy\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Planned_process\",\"start\":1507}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"AtLoc\",\"target\":{\"end\":1351,\"exact_text\":\"tumors\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cancer\",\"start\":1345},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":1388,\"exact_text\":\"c-Myc protein\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":1375},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[\"Speculation\"],\"source_event_type\":\"Negative_regulation\",\"trigger\":{\"end\":1364,\"exact_text\":\"low\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Negative_regulation\",\"start\":1361}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"AtLoc\",\"target\":{\"end\":505,\"exact_text\":\"plasmid\",\"mention_kind\":\"ENTITY\",\"source_type\":\"DNA_domain_or_region\",\"start\":498},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":537,\"exact_text\":\"human c-myc gene\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":521},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Localization\",\"trigger\":{\"end\":516,\"exact_text\":\"containing\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Localization\",\"start\":506}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"AtLoc\",\"target\":{\"end\":853,\"exact_text\":\"LoVo-mycANS\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":842},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":764,\"exact_text\":\"cells\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":759},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"ToLoc\",\"target\":{\"end\":780,\"exact_text\":\"sub-G1 phase\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Immaterial_anatomical_entity\",\"start\":768},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Localization\",\"trigger\":{\"end\":755,\"exact_text\":\"accumulation\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Localization\",\"start\":743}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"AtLoc\",\"target\":{\"end\":853,\"exact_text\":\"LoVo-mycANS\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":842},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":812,\"exact_text\":\"poly(ADP-ribose) polymerase\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":785},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Protein_processing\",\"trigger\":{\"end\":821,\"exact_text\":\"cleavage\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Protein_processing\",\"start\":813}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"arguments\":[{\"source_role\":\"AtLoc\",\"target\":{\"end\":1351,\"exact_text\":\"tumors\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cancer\",\"start\":1345},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":1388,\"exact_text\":\"c-Myc protein\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":1375},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[\"Speculation\"],\"source_event_type\":\"Negative_regulation\",\"trigger\":{\"end\":1364,\"exact_text\":\"low\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Negative_regulation\",\"start\":1361}},\"target_kind\":\"EVENT\"},{\"source_role\":\"Participant\",\"target\":{\"arguments\":[{\"source_role\":\"Instrument\",\"target\":{\"end\":1432,\"exact_text\":\"vinca alkaloids\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":1417},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":1351,\"exact_text\":\"tumors\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cancer\",\"start\":1345},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Planned_process\",\"trigger\":{\"end\":1442,\"exact_text\":\"treatment\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Planned_process\",\"start\":1433}},\"target_kind\":\"EVENT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":1351,\"exact_text\":\"tumors\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cancer\",\"start\":1345},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[\"Speculation\"],\"source_event_type\":\"Positive_regulation\",\"trigger\":{\"end\":1413,\"exact_text\":\"more responsive\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Positive_regulation\",\"start\":1398}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":1155,\"exact_text\":\"c-Myc\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":1150},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Gene_expression\",\"trigger\":{\"end\":1166,\"exact_text\":\"expression\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Gene_expression\",\"start\":1156}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Negative_regulation\",\"trigger\":{\"end\":1146,\"exact_text\":\"decrease\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Negative_regulation\",\"start\":1138}},\"target_kind\":\"EVENT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":1183,\"exact_text\":\"VLB\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":1180},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Positive_regulation\",\"trigger\":{\"end\":1175,\"exact_text\":\"enhanced\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Positive_regulation\",\"start\":1167}},\"target_kind\":\"EVENT\"},{\"source_role\":\"Participant\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"arguments\":[],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":1225,\"exact_text\":\"apoptosis\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":1216}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Pathway\",\"trigger\":{\"end\":1268,\"exact_text\":\"pathway\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Pathway\",\"start\":1261}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Positive_regulation\",\"trigger\":{\"end\":1243,\"exact_text\":\"induction\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Positive_regulation\",\"start\":1234}},\"target_kind\":\"EVENT\"},{\"source_role\":\"Theme\",\"target\":{\"arguments\":[],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":1225,\"exact_text\":\"apoptosis\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":1216}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Positive_regulation\",\"trigger\":{\"end\":1207,\"exact_text\":\"triggering\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Positive_regulation\",\"start\":1197}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":1155,\"exact_text\":\"c-Myc\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":1150},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Gene_expression\",\"trigger\":{\"end\":1166,\"exact_text\":\"expression\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Gene_expression\",\"start\":1156}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Negative_regulation\",\"trigger\":{\"end\":1146,\"exact_text\":\"decrease\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Negative_regulation\",\"start\":1138}},\"target_kind\":\"EVENT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":1183,\"exact_text\":\"VLB\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":1180},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Positive_regulation\",\"trigger\":{\"end\":1175,\"exact_text\":\"enhanced\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Positive_regulation\",\"start\":1167}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Cause\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":17,\"exact_text\":\"c-Myc\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":12},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Negative_regulation\",\"trigger\":{\"end\":8,\"exact_text\":\"Decrease\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Negative_regulation\",\"start\":0}},\"target_kind\":\"EVENT\"},{\"source_role\":\"Participant\",\"target\":{\"end\":74,\"exact_text\":\"vinblastine\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":63},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":47,\"exact_text\":\"cancer cell\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":36},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Positive_regulation\",\"trigger\":{\"end\":35,\"exact_text\":\"enhances\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Positive_regulation\",\"start\":27}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Instrument\",\"target\":{\"end\":1432,\"exact_text\":\"vinca alkaloids\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":1417},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":1351,\"exact_text\":\"tumors\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cancer\",\"start\":1345},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Planned_process\",\"trigger\":{\"end\":1442,\"exact_text\":\"treatment\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Planned_process\",\"start\":1433}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Participant\",\"target\":{\"end\":132,\"exact_text\":\"transcriptional factor\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":110},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":221,\"exact_text\":\"apoptosis\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":212}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Participant\",\"target\":{\"end\":132,\"exact_text\":\"transcriptional factor\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":110},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_differentiation\",\"trigger\":{\"end\":207,\"exact_text\":\"differentiation\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_differentiation\",\"start\":192}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Participant\",\"target\":{\"end\":132,\"exact_text\":\"transcriptional factor\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":110},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_proliferation\",\"trigger\":{\"end\":190,\"exact_text\":\"proliferation\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_proliferation\",\"start\":177}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Participant\",\"target\":{\"end\":593,\"exact_text\":\"VLB\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":590},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":677,\"exact_text\":\"LoVo-mycANS cells\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":660},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":606,\"exact_text\":\"cytotoxicity\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":594}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Participant\",\"target\":{\"end\":644,\"exact_text\":\"VLB\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":641},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":677,\"exact_text\":\"LoVo-mycANS cells\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":660},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Positive_regulation\",\"trigger\":{\"end\":637,\"exact_text\":\"increase\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Positive_regulation\",\"start\":629}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Participant\",\"target\":{\"end\":891,\"exact_text\":\"mitochondria\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cellular_component\",\"start\":879},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Participant\",\"target\":{\"end\":891,\"exact_text\":\"mitochondria\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cellular_component\",\"start\":879},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":1020,\"exact_text\":\"apoptotic\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":1011}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Pathway\",\"trigger\":{\"end\":1038,\"exact_text\":\"pathway\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Pathway\",\"start\":1031}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Participant\",\"target\":{\"end\":891,\"exact_text\":\"mitochondria\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cellular_component\",\"start\":879},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":1020,\"exact_text\":\"apoptotic\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":1011}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Participant\",\"target\":{\"end\":95,\"exact_text\":\"c-myc oncogene\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":81},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":132,\"exact_text\":\"transcriptional factor\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Gene_or_gene_product\",\"start\":110},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Gene_expression\",\"trigger\":{\"end\":103,\"exact_text\":\"encodes\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Gene_expression\",\"start\":96}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"arguments\":[],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":1225,\"exact_text\":\"apoptosis\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":1216}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Pathway\",\"trigger\":{\"end\":1268,\"exact_text\":\"pathway\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Pathway\",\"start\":1261}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Participant\",\"target\":{\"end\":593,\"exact_text\":\"VLB\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Simple_chemical\",\"start\":590},\"target_kind\":\"PARTICIPANT\"},{\"source_role\":\"Theme\",\"target\":{\"end\":677,\"exact_text\":\"LoVo-mycANS cells\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":660},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":606,\"exact_text\":\"cytotoxicity\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":594}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Planned_process\",\"trigger\":{\"end\":586,\"exact_text\":\"Analysis\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Planned_process\",\"start\":578}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"arguments\":[],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Cell_death\",\"trigger\":{\"end\":1225,\"exact_text\":\"apoptosis\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Cell_death\",\"start\":1216}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Pathway\",\"trigger\":{\"end\":1268,\"exact_text\":\"pathway\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Pathway\",\"start\":1261}},\"target_kind\":\"EVENT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Positive_regulation\",\"trigger\":{\"end\":1243,\"exact_text\":\"induction\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Positive_regulation\",\"start\":1234}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":703,\"exact_text\":\"cells\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cell\",\"start\":698},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Planned_process\",\"trigger\":{\"end\":689,\"exact_text\":\"Comparison\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Planned_process\",\"start\":679}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      },
+      {
+        "category": "UNMATCHED_PREDICTED_EVENT",
+        "event": "{\"arguments\":[{\"source_role\":\"Theme\",\"target\":{\"end\":911,\"exact_text\":\"mitochondrial membrane potential\",\"mention_kind\":\"ENTITY\",\"source_type\":\"Cellular_component\",\"start\":879},\"target_kind\":\"PARTICIPANT\"}],\"artana_event_family\":null,\"modifiers\":[],\"source_event_type\":\"Negative_regulation\",\"trigger\":{\"end\":922,\"exact_text\":\"disruption\",\"mention_kind\":\"TRIGGER\",\"source_type\":\"Negative_regulation\",\"start\":912}}",
+        "root_cause": "prediction does not exactly match a source annotation"
+      }
+    ],
+    "modifiers": {
+      "gold": 2,
+      "matched": 0,
+      "precision": 0.0,
+      "predicted": 2,
+      "recall": 0.0
+    },
+    "nested_arguments": {
+      "gold": 12,
+      "matched": 3,
+      "precision": 0.25,
+      "predicted": 12,
+      "recall": 0.25
+    },
+    "scientific_gate_passed": false,
+    "triggers": {
+      "gold": 30,
+      "matched": 16,
+      "precision": 0.5161290322580645,
+      "predicted": 31,
+      "recall": 0.5333333333333333
+    },
+    "typed_arguments": {
+      "gold": 37,
+      "matched": 10,
+      "precision": 0.2222222222222222,
+      "predicted": 45,
+      "recall": 0.2702702702702703
+    },
+    "unauthorized_semantic_mappings": 0,
+    "unresolved_references": 0,
+    "unsupported_or_invented_events": 23
+  },
+  "status": "OFFLINE_PROJECTION_VALID",
+  "trusted_promotion": false,
+  "v2_terminal_decision": "INVALID_EXPERIMENT"
+}
