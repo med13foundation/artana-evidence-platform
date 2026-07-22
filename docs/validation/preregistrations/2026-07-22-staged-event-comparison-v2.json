@@ -1,0 +1,224 @@
+{
+  "acceptance": {
+    "complete_events_minimum": 10,
+    "completion_unsupported_increase_maximum": 0,
+    "nested_arguments_minimum": 5,
+    "triggers_minimum": 24,
+    "typed_arguments_minimum": 15,
+    "unsupported_or_invented_events_maximum": 15,
+    "valid_receipts_required": true
+  },
+  "baseline": {
+    "classification": "PRESERVED_V6_DIAGNOSTIC",
+    "complete_events": {
+      "gold": 30,
+      "matched": 2
+    },
+    "modifiers": {
+      "gold": 2,
+      "matched": 0
+    },
+    "nested_arguments": {
+      "gold": 12,
+      "matched": 1
+    },
+    "triggers": {
+      "gold": 30,
+      "matched": 21
+    },
+    "typed_arguments": {
+      "gold": 37,
+      "matched": 1
+    },
+    "unauthorized_semantic_mappings": 19,
+    "unsupported_or_invented_events": 31
+  },
+  "budgets": {
+    "acknowledgement_timeout_seconds": 30.0,
+    "alternate_models": 0,
+    "fallbacks": 0,
+    "max_agent_calls": 6,
+    "max_output_tokens_per_call": 200000,
+    "max_polling_seconds_per_call": 600.0,
+    "max_total_cost_usd": 12.0,
+    "max_total_latency_seconds": 1800.0,
+    "max_total_tokens": 400000,
+    "per_call_output_token_basis": "staged V1 observed maximum 184663 plus bounded headroom",
+    "polling_interval_seconds": 5.0,
+    "pricing_usd_per_token": {
+      "cached_input": 5e-07,
+      "input": 5e-06,
+      "output": 3e-05
+    },
+    "provider_retries": 0
+  },
+  "execution_authorized": true,
+  "frozen_state": {
+    "annotation_guidelines": {
+      "path": "docs/validation/prompts/bionlp-cg-ontology-and-role-guidelines.md",
+      "sha256": "0f3a6e79e2cc39ab20a8b18426af1818bd71e45dc08c5761c2d826c28f1d6a5c"
+    },
+    "dependencies": {
+      "bundle_sha256": "b820d99460b5c5c95239b9f258b53026733598506bc272fd0d06f0d6960d7de8",
+      "packages": {
+        "openai": "2.44.0",
+        "pydantic": "2.13.4"
+      },
+      "pyproject_sha256": "991632643e70dfbdc049a6211b69bc614c6f84d6625adcff96ab0ba1bc362fab",
+      "python": "3.13.12"
+    },
+    "discovery_input_sha256": "c1d589456c56289a4e52fc2a47a6c44ef50177c4b5d4dc42be6f59fe61b6e3fa",
+    "gold_isolation": {
+      "annotations_in_agent_input": false,
+      "event_counts_in_agent_input": false,
+      "event_ids_in_agent_input": false,
+      "gold_phrases_in_agent_input": false,
+      "roles_in_agent_input": false,
+      "triggers_in_agent_input": false
+    },
+    "implementation": {
+      "code_bundle_sha256": "6385e3a86e47da09b5b637a29e1769f5be4156b1a1f8d7b421a9b2e2745fd040",
+      "code_files": {
+        "scripts/validation/provider_receipt_boundary/background/contracts.py": "4541a3d188bff44e0799ccd8d989314ddbf64e1a1ce7df7aa07e28271e6065ae",
+        "scripts/validation/provider_receipt_boundary/background/execution.py": "14a445aef4d23421459bc462fa3c6495f2a39871aa87df1f22ca0a94ddde70b2",
+        "scripts/validation/provider_receipt_boundary/background/polling.py": "b382aac66ab0b00b545a5385667a88e60d37a80253ef914b0b5988d311cec321",
+        "scripts/validation/provider_receipt_boundary/background/states.py": "958a34fa0ab25fd7fb9f877c23bedbd83a1b00e59836b8799f3659b5fc60f2ba",
+        "scripts/validation/provider_receipt_boundary/canonical_payload.py": "61294b3278b3d7bb6c8ba9127404658ca4c24fe30234e46a989931206f50f908",
+        "scripts/validation/provider_receipt_boundary/contracts.py": "4ab68deed23135d1feeb26ece321254573f02ce0b4139037f63e2a303ab8d054",
+        "scripts/validation/provider_receipt_boundary/identity.py": "a07f468ae572ab07ef4b70e7661dcdb416860a71fc1be1b509518aeda1ad8d30",
+        "scripts/validation/provider_receipt_boundary/structural_diff.py": "46e778decc1d15172cfaaa898ae53f693846b779bc9cf84a0ed2415cd2da2e55",
+        "scripts/validation/provider_receipt_boundary/validation.py": "bd8ada04350eea9fdc121ec9876fe159362e315fc60f9a3b656760d15d6f0ecc",
+        "scripts/validation/public_gold/bionlp_cg_adapter.py": "083f20b1ecf06e66f29163fc5ccf5a30b7030184ceca594d4657e92b73e0bd3c",
+        "scripts/validation/public_gold/bionlp_cg_event_projection.py": "c7887203169d6b72d019e91eaacc99edfe9851c3a84d3f331aa363369c1235b7",
+        "scripts/validation/public_gold/lossless_event_experiment_contracts.py": "94b11628ffe4a983023ab071e43f3294a530a4482df1d5932027705c857268e7",
+        "scripts/validation/public_gold/lossless_event_offset_resolution.py": "0b533c22860b91c6cc07cb6c419002562f52341a925c3271fd481114f683d195",
+        "scripts/validation/public_gold/lossless_event_provider.py": "7d7caaf0dbb1ad539335e16461bc8d1e1dd58fb9514c5d3093ffbe0274e86d9a",
+        "scripts/validation/public_gold/lossless_event_scoring.py": "23c0de70726329b1d994a47e98f19c449a0d26850bd9fc6f906972e953b4486d",
+        "scripts/validation/public_gold/source_selection.py": "82ccbd5a9d152223c8f9b0e453820102b1a96f94849e1d4450259d25508615c4",
+        "scripts/validation/public_gold/staged_event/assembly.py": "f281daeab482893d135789463e25039314c549aa0daf0fdce8b6b0cdc91e0ab1",
+        "scripts/validation/public_gold/staged_event/contracts.py": "c27d6b8b4627d8eb7f882701721547c9138573919c4308413323ae591fbbde94",
+        "scripts/validation/public_gold/staged_event/live_execution.py": "feab6cd73db540c4f2c7a7cc0a632710159461873abfd44cef7aaa5012388cd0",
+        "scripts/validation/public_gold/staged_event/paths.py": "f483f57a0e2e5d757c86e26a92c300ff9c853e990dee4255d189b54645a8c8df",
+        "scripts/validation/public_gold/staged_event/preflight.py": "839066c2743502d19631fceed5cb13f4609054b7034f137f6a959bf90e8ba09c",
+        "scripts/validation/public_gold/staged_event/prompting.py": "0d540865090c328a6ca6e9e65bbc43e99827867d91bbfae92d9c564093baf1d6",
+        "scripts/validation/public_gold/staged_event/registry.py": "4d5dd91c10402c23fcc538f70190c167ca565dc721253de4324d37b494f20b5a",
+        "services/artana_evidence_api/document_extraction_support/scientific_events/contracts.py": "3590fb5b5a3f7d05fb0632f01ea1e9be95264fad56826e29018e27644044805c",
+        "services/artana_evidence_api/document_extraction_support/scientific_events/validation.py": "87fd91991ec432d9bb5367fd35efb9ce41c700c8a5d04fef492070394e5db2c5"
+      }
+    },
+    "model": {
+      "identity": "openai:gpt-5.6-sol",
+      "provider_model_id": "gpt-5.6-sol",
+      "reasoning_effort": "high",
+      "temperature": "provider_default_not_set"
+    },
+    "optional_stage": "completion",
+    "prompts": {
+      "completion": {
+        "effective_prompt_sha256": "a23c06c79dd82bb9cfe91c0136535f937314ae9dc173ebe1abea96e1f60638ae",
+        "path": "docs/validation/prompts/2026-07-22-staged-event-completion.md",
+        "stage_file_sha256": "a5006ea132472e13e07a273b5858914e6e9c852458c54a3a2f373f13511b967d"
+      },
+      "discovery": {
+        "effective_prompt_sha256": "f241f6ac76d3bd93e15434ffc5d8cfb8e7d656919d337922db59d86cfb35f3f4",
+        "path": "docs/validation/prompts/2026-07-22-staged-event-discovery.md",
+        "stage_file_sha256": "f15bdce6497de5572ffe81edc85b460e2444c03625aa98c15361c6c221785243"
+      },
+      "modifiers": {
+        "effective_prompt_sha256": "7de0f96252038a91317e794c6794015736a743b3905c7e0074ae3622c1b70c19",
+        "path": "docs/validation/prompts/2026-07-22-staged-event-modifiers.md",
+        "stage_file_sha256": "f615adf26d5adb9548b1d2c9d7ffe9095829f8190fe3093f08a4c2b81c742bc6"
+      },
+      "participants": {
+        "effective_prompt_sha256": "97ebc6a3e623f7ee98f93cb97ec1c15f3be73ada597d5960071a0507bc27d7e1",
+        "path": "docs/validation/prompts/2026-07-22-staged-event-participants.md",
+        "stage_file_sha256": "476c294c85beb7403d2b1c0afa3c865ada701c47728f0e0c5ebd093498b5b260"
+      },
+      "roles": {
+        "effective_prompt_sha256": "10a8035774956dd8812cd6b2ec0e08ead2d63fb99e11df85c802849e44956178",
+        "path": "docs/validation/prompts/2026-07-22-staged-event-roles.md",
+        "stage_file_sha256": "276b33dc906b83c0ab3f50da57b1a5dea0b76af92fa3cd13499b99b1f4edeead"
+      },
+      "verification": {
+        "effective_prompt_sha256": "c618a49fc9f6dc8644d96846ded75ab6c2f3f2b0d2a3bf29512b04cd903a23ad",
+        "path": "docs/validation/prompts/2026-07-22-staged-event-verification.md",
+        "stage_file_sha256": "f4617db548618469e1f959a4c65a490faccfbd9a94f280f4c5e2c34e3ad34d75"
+      }
+    },
+    "provider_formats": {
+      "completion": "9c76058b075193076e4c6368305750c9a79566af364d61d5c0dba9b9741279db",
+      "discovery": "8d872edecdea1a757f85b00eb14dd42e4a156bc9ce837150c132773d05d70a5b",
+      "modifiers": "044dc407b97b0b0e1ab3952cb5e339a451dfac21aec1d50b23a8819f1c237fd7",
+      "participants": "f859ddd48ccc39fdd67b20a6b751c95a323cfc95dd306242aafba74241c29dcf",
+      "roles": "c89cdf6bbdf4dc1b5af1a1d848059ffedcd4c135e7eaf887195224f3913dabcc",
+      "verification": "da149583a0595d972102aca4565bc7151caa80c1f850de6b41e1ff81c14031c7"
+    },
+    "schemas": {
+      "completion": "d6d34e8a3c693102b25348d0f1526602400b5058f78862afbe5192f3b3b9b983",
+      "discovery": "1526ef0d649fbdd3e6e42be78b19869d5949bf9715e9bf2d1d43a7a18977a5e0",
+      "modifiers": "f13518cfd21c001a504e46e24c682c1015864cbf87eb5ebe0a82a0262d8e1b58",
+      "participants": "887f72b150b8bb960d41c6fbd62b2b60cd491a802ff0d98041b8528c61c23ae4",
+      "roles": "7f59eee54ffff882994e4b65aca9721be43cab98eb7649b65668d5a4dbfc206e",
+      "verification": "cc80365e089792c102739d524fb87a69105f7210eee99cd7a8629b6735215cf3"
+    },
+    "source": {
+      "archive_sha256": "7da78deacb2d567875cc0db7af5af3dca0d54197d904ef36701eccedaf56c07c",
+      "development_documents": 100,
+      "development_tree_sha256": "6b9480ad79eab31be9b3a769bc21e1033bfb482ea14c47ab639e18e08778040d",
+      "selected_document_id": "PMID-16428936",
+      "selected_source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+      "selection_rule": "minimum (source_sha256, document_id)",
+      "source_inventory_sha256": "77e267c30d4f74875d816f28b4b43b7ae861f8d87c9331a9f2e237fef440b4bf",
+      "test_access": "SEALED_NOT_READ"
+    },
+    "stage_order": [
+      "discovery",
+      "participants",
+      "roles",
+      "modifiers",
+      "verification"
+    ]
+  },
+  "post_run_adjudication": {
+    "axes": [
+      "event_type",
+      "trigger",
+      "participants",
+      "roles",
+      "nesting",
+      "modifier",
+      "evidence"
+    ],
+    "final_false_accept_rate_must_be_less_than": 0.46875,
+    "required_before_advance": true,
+    "v1_verifier_false_accept_rate": 0.46875,
+    "valid_extras_receive_benchmark_credit": false,
+    "valid_extras_terminal_state": "REVIEW_ONLY"
+  },
+  "qualification_status": "EXPOSED_DEVELOPMENT_NON_QUALIFYING",
+  "rules": {
+    "alternate_model_allowed": false,
+    "deterministic_semantic_inference_allowed": false,
+    "fallback_allowed": false,
+    "graph_write_allowed": false,
+    "maximum_completion_passes": 1,
+    "one_execution_per_required_stage": true,
+    "one_shot_baseline_rerun_allowed": false,
+    "promotion_allowed": false,
+    "prompt_or_schema_change_after_freeze_allowed": false,
+    "provider_retry_allowed": false,
+    "sealed_test_access_allowed": false
+  },
+  "schema_version": "artana.public_gold.staged_event_comparison.v2",
+  "status": "FROZEN_AUTHORIZED_FOR_ONE_EXECUTION",
+  "stop_rules": [
+    "stop before calls on custody or hash mismatch",
+    "stop at the first provider receipt or schema failure",
+    "stop on a missing required stage",
+    "stop on ambiguous offsets, unresolved references, or cycles",
+    "stop when aggregate calls, tokens, latency, or cost exceed budget",
+    "never retry, fallback, change model, or patch during execution",
+    "stop after one optional completion pass",
+    "never access sealed sources, write to graph, or promote"
+  ]
+}
