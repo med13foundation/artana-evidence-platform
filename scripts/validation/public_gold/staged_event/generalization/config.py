@@ -6,6 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[5]
+EXPERIMENT_VERSION = "v4"
+EXPERIMENT_ID = f"staged-generalization-{EXPERIMENT_VERSION}"
+PROMPT_SOURCE_EXPERIMENT = "staged-generalization-v3"
 MODEL = "gpt-5.6-luna"
 REASONING_EFFORT = "high"
 MAX_OUTPUT_TOKENS = 20_000
@@ -34,7 +37,7 @@ class ExperimentPaths:
     raw_outputs: Path
 
     def case(self, case_id: str) -> CaseArtifactPaths:
-        stem = f"2026-07-22-staged-generalization-v3-{case_id}"
+        stem = f"2026-07-22-{EXPERIMENT_ID}-{case_id}"
         return CaseArtifactPaths(
             attempt=self.receipts / f"{stem}-attempt.json",
             bundle=self.receipts / f"{stem}-custody.json",
@@ -45,11 +48,12 @@ class ExperimentPaths:
 
 DEFAULT_PATHS = ExperimentPaths(
     panel=REPO
-    / "docs/validation/fixtures/2026-07-22-staged-generalization-panel-v3.json",
+    / "docs/validation/fixtures/2026-07-22-staged-generalization-panel-v4.json",
+    # V4 changes deterministic identity only; agent instructions stay byte-identical.
     prompt=REPO / "docs/validation/prompts/2026-07-22-staged-generalization-v3.md",
     preregistration=REPO
-    / "docs/validation/preregistrations/2026-07-22-staged-generalization-v3.json",
-    result=REPO / "docs/validation/results/2026-07-22-staged-generalization-v3.json",
+    / "docs/validation/preregistrations/2026-07-22-staged-generalization-v4.json",
+    result=REPO / "docs/validation/results/2026-07-22-staged-generalization-v4.json",
     receipts=REPO / "docs/validation/receipts",
     raw_outputs=REPO / "docs/validation/results",
 )
@@ -57,6 +61,8 @@ DEFAULT_PATHS = ExperimentPaths(
 
 __all__ = [
     "DEFAULT_PATHS",
+    "EXPERIMENT_ID",
+    "EXPERIMENT_VERSION",
     "GLOBAL_MAX_CALLS",
     "GLOBAL_MAX_COST_USD",
     "MAX_COST_USD",
@@ -64,6 +70,7 @@ __all__ = [
     "MAX_OUTPUT_TOKENS",
     "MAX_TOTAL_TOKENS",
     "MODEL",
+    "PROMPT_SOURCE_EXPERIMENT",
     "REASONING_EFFORT",
     "CaseArtifactPaths",
     "ExperimentPaths",

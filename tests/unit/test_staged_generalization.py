@@ -34,6 +34,9 @@ from scripts.validation.public_gold.staged_event.generalization.evaluation impor
     aggregate,
     evaluate_case,
 )
+from scripts.validation.public_gold.staged_event.generalization.offline_replay import (
+    replay_v3_diagnostics,
+)
 from scripts.validation.public_gold.staged_event.generalization.panel import (
     GeneralizationCase,
     agent_case,
@@ -45,6 +48,10 @@ from scripts.validation.public_gold.staged_event.generalization.preflight import
     verify,
     write_candidate,
 )
+from scripts.validation.public_gold.staged_event.generalization.span_identity import (
+    source_spans_equivalent,
+    token_bounded_spans,
+)
 
 
 def _evidence(case: GeneralizationCase, exact_text: str) -> str:
@@ -54,6 +61,7 @@ def _evidence(case: GeneralizationCase, exact_text: str) -> str:
         "OS": "no difference in OS",
         "comorbidities": "had more comorbidities than",
         "Patients with RA": "Patients with RA were more likely to be female",
+        "RA": "There was no difference in OS between the RA and non-RA NSCLC",
         "patients without RA": "comorbidities than patients without RA",
         "947 variants": "A total of 947 variants were detected in the SLC12A3 gene",
         "SLC12A3 gene": "947 variants were detected in the SLC12A3 gene",
@@ -270,6 +278,68 @@ def test_anchor_resolution_requires_unique_evidence_and_child() -> None:
         )
 
 
+def test_token_boundaries_do_not_count_ra_inside_non_ra_as_a_second_mention() -> None:
+    source = "There was no difference between the RA and non-RA NSCLC cohorts."
+
+    matches = token_bounded_spans(
+        source=source,
+        scope_start=0,
+        scope_end=len(source),
+        exact_text="RA",
+    )
+
+    assert len(matches) == 1
+    assert source[matches[0].start : matches[0].end] == "RA"
+    assert source[matches[0].start - 1] == " "
+
+
+def test_containing_source_spans_preserve_exact_statistical_value() -> None:
+    source = "The curves were similar (log-rank P = 0.08)."
+
+    assert source_spans_equivalent(
+        source=source,
+        scope_start=0,
+        scope_end=len(source),
+        actual_text="log-rank P = 0.08",
+        expected_text="P = 0.08",
+    )
+    assert not source_spans_equivalent(
+        source=source,
+        scope_start=0,
+        scope_end=len(source),
+        actual_text="log-rank P = 0.08",
+        expected_text="P = 0.05",
+    )
+
+
+def test_every_v4_reference_alias_is_a_literal_source_span() -> None:
+    for case in build_panel():
+        for event in case.reference.events:
+            for trigger in event.acceptable_triggers:
+                assert token_bounded_spans(
+                    source=case.source,
+                    scope_start=case.context_start,
+                    scope_end=case.context_end,
+                    exact_text=trigger,
+                )
+        for participant in case.reference.participants:
+            for acceptable_text in participant.acceptable_texts:
+                assert token_bounded_spans(
+                    source=case.source,
+                    scope_start=case.context_start,
+                    scope_end=case.context_end,
+                    exact_text=acceptable_text,
+                )
+        for axes in case.reference.axes:
+            for acceptable_text in axes.acceptable_statistical_texts:
+                assert token_bounded_spans(
+                    source=case.source,
+                    scope_start=case.context_start,
+                    scope_end=case.context_end,
+                    exact_text=acceptable_text,
+                )
+
+
 def test_all_frozen_references_pass_without_semantic_inference() -> None:
     metrics = tuple(evaluate_case(case, _output(case)) for case in build_panel())
     result = aggregate(metrics)
@@ -283,6 +353,53 @@ def test_all_frozen_references_pass_without_semantic_inference() -> None:
     assert sensitivity.benchmark_fidelity_before_projection == "0/1"
     assert sensitivity.benchmark_fidelity_after_projection == "1/1"
     assert sensitivity.projection_review_only is True
+
+
+def test_v3_valid_outputs_pass_v4_identity_only_as_offline_diagnostics() -> None:
+    replay = replay_v3_diagnostics()
+    metrics = replay["replay_metrics"]
+
+    assert replay["decision"] == "OFFLINE_IDENTITY_HARDENING_PASS"
+    assert replay["historical_result_changed"] is False
+    assert replay["qualification_credit"] is False
+    assert replay["provider_calls"] == 0
+    assert isinstance(metrics, dict)
+    assert metrics["passed_case_count"] == 2
+    assert metrics["exact_evidence_grounding"] == "2/2"
+    assert metrics["statistical_fidelity"] == "2/2"
+
+
+def test_broad_participant_span_cannot_collapse_two_cohorts() -> None:
+    case = build_panel()[1]
+    output = _output(case)
+    broad = output.participants[0].model_copy(
+        update={"exact_text": "RA and non-RA NSCLC"}
+    )
+    invalid = output.model_copy(
+        update={"participants": (broad, *output.participants[1:])}
+    )
+
+    metrics = evaluate_case(case, invalid)
+
+    assert metrics.passed is False
+    assert metrics.participant_role_fidelity is False
+    assert metrics.unsupported_claim_count > 0
+
+
+def test_span_equivalence_never_changes_author_interpretation() -> None:
+    case = build_panel()[1]
+    output = _output(case)
+    changed_axes = output.semantic_axes[0].model_copy(
+        update={"author_interpretation": "SIGNIFICANT"}
+    )
+
+    metrics = evaluate_case(
+        case,
+        output.model_copy(update={"semantic_axes": (changed_axes,)}),
+    )
+
+    assert metrics.passed is False
+    assert metrics.statistical_fidelity is False
 
 
 def test_broader_source_trigger_and_unique_containing_sentence_are_accepted() -> None:
@@ -391,7 +508,10 @@ def test_preregistration_recomputes_and_fails_on_prompt_drift(tmp_path: Path) ->
     paths = _paths(tmp_path)
     write_candidate(paths)
 
-    assert verify(paths)["authorization"] == "EXPOSED_DEVELOPMENT_ONLY"
+    preregistration = verify(paths)
+    assert preregistration["authorization"] == "EXPOSED_DEVELOPMENT_ONLY"
+    assert preregistration["experiment_id"] == "staged-generalization-v4"
+    assert preregistration["rules"]["historical_v3_rescored"] is False
     paths.prompt.write_text(paths.prompt.read_text() + "changed\n")
     with pytest.raises(GeneralizationPreflightError, match="recomputed"):
         verify(paths)

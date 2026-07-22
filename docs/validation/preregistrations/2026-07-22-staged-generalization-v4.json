@@ -1,0 +1,97 @@
+{
+  "acceptance": {
+    "all_cases_pass": true,
+    "contradiction_count": 0,
+    "receipt_and_budget_validity": "ALL_CALLS",
+    "source_meaning_preserved": true,
+    "unsupported_claim_count": 0
+  },
+  "authorization": "EXPOSED_DEVELOPMENT_ONLY",
+  "experiment_id": "staged-generalization-v4",
+  "frozen_state": {
+    "budgets": {
+      "global_max_cost_usd": 0.9,
+      "global_max_creation_calls": 6,
+      "per_call_max_cost_usd": 0.15,
+      "per_call_max_latency_seconds": 900.0,
+      "per_call_max_output_tokens": 20000,
+      "per_call_max_total_tokens": 24000,
+      "provider_retries": 0
+    },
+    "canary_case_id": "generalization-comparison-canary",
+    "case_order": [
+      "generalization-comparison-canary",
+      "generalization-null-statistics",
+      "generalization-negated-association",
+      "generalization-uncertainty",
+      "generalization-drug-sensitivity",
+      "generalization-explicit-nested-cause"
+    ],
+    "code_sha256": {
+      "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/policy.py": "8d1ea3a8ea64f53f25e99d3130c13939931b620247d515944dabdb00e8c9bb62",
+      "scripts/validation/public_gold/staged_event/generalization/anchors.py": "abecbd8b816e0e927d0ce490a54066e42adff42666810294babf6d1adbd76ab6",
+      "scripts/validation/public_gold/staged_event/generalization/config.py": "2b6ca453134f46af29be337aaa4ee72010fb4549a9af18a1d3d7525fc65fa098",
+      "scripts/validation/public_gold/staged_event/generalization/contracts.py": "94127ba08dbc8d4efbb1d57ebfb90ba0e4f36c5a22369031ec903fa149431bac",
+      "scripts/validation/public_gold/staged_event/generalization/evaluation.py": "a8d33dd3a220879e804c4e4b5084d1c1ee27dfc4ee9c6e1089305665848a52ef",
+      "scripts/validation/public_gold/staged_event/generalization/offline_replay.py": "588d518bf1ff788aaaed631923f8e9ab34fb9aed61e43ba32a3d4123c6ee1104",
+      "scripts/validation/public_gold/staged_event/generalization/panel.py": "299ab554981194720e7e86cb8a16688cfd7eaa180682d916a499324ee5f2dde2",
+      "scripts/validation/public_gold/staged_event/generalization/preflight.py": "e97267ae1111a232ff4cd48c7bbafe18358e14b7e717a6898dfb6ede24e9d756",
+      "scripts/validation/public_gold/staged_event/generalization/provider.py": "8189305ae9f615bd1d0ceffe05b47b9213534365d9fff2794d883dda82882456",
+      "scripts/validation/public_gold/staged_event/generalization/runner.py": "205fe6d38878c2aac7bcf994672c08155b2f268116cb473d3f5e3ead8f6456a3",
+      "scripts/validation/public_gold/staged_event/generalization/span_identity.py": "b9d21433557c763e8f905827e31f450e1141677d827384b532bd9b49940e541e"
+    },
+    "model": "openai:gpt-5.6-luna",
+    "panel_sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+    "pivot_basis_sha256": {
+      "docs/validation/reports/2026-07-22-staged-generalization-v3-final.md": "af5581e1d8873e86a2c9e9d163d767f2f5c77c7e9bdd2de32c96288768407c3e",
+      "docs/validation/results/2026-07-22-staged-generalization-v3-generalization-null-statistics-raw.json": "dafafca1d9be62d7e207384a2d00ef669bd28b959a62d78a7195c157cdb8a9f7",
+      "docs/validation/results/2026-07-22-staged-generalization-v3.json": "69097fe1f373f764908724a7f09e449d3172f3e54839d9f51da2bb40e9a70a7a",
+      "docs/validation/results/2026-07-22-staged-generalization-v4-offline-replay.json": "0ccd5d3d28784b8fa4115ac6d2e010dc0e610fbc92d9793e47e9c430fa8e6785"
+    },
+    "prompt_sha256": "ab04f31e546e0bbc0e70d5b7763cf1224e91e9dd5e03304aa6aa9c24fd1b0d6b",
+    "prompt_source_experiment": "staged-generalization-v3",
+    "provider_format_sha256": "20738510ef96bec775c6268a5056ff3b385897426d43f9aac0781759011a376b",
+    "provider_input_sha256_by_case": {
+      "generalization-comparison-canary": "43b66a246c99db9d597618ce8c1f6878f8216e59c65716309772ac314a5eac00",
+      "generalization-drug-sensitivity": "1f3ed81091c0fd4737622dd88773aeab30cae87a2744c70cb2dde55a9b96a8b6",
+      "generalization-explicit-nested-cause": "44e43cdd5e37d8abd6c20ecd123758d569634ddc11d387c89cbe196a770e2ec2",
+      "generalization-negated-association": "6e39bebf162bc058d5587616698045f8e3dbcb73030a57b0259a1ac6089887ad",
+      "generalization-null-statistics": "9a452da868f0a1825ccf9a79d6e546044c45ff33c8d9c0999eec5513dc8111d5",
+      "generalization-uncertainty": "47aa2a3fc59f0f02478207452010d87fb690d172e047217e96da84483fda4e50"
+    },
+    "reasoning_effort": "high",
+    "schema_sha256": "d9878b31de38f44c9cb0864bd73e9b72b1ecf919f72c8a7e74c0bf23dd36236a",
+    "source_sha256_by_case": {
+      "generalization-comparison-canary": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-drug-sensitivity": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880",
+      "generalization-explicit-nested-cause": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+      "generalization-negated-association": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-null-statistics": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-uncertainty": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b"
+    }
+  },
+  "rules": {
+    "agent_inputs_exclude": [
+      "expected roles",
+      "event counts",
+      "gold labels",
+      "benchmark projections"
+    ],
+    "benchmark_projection": "EVALUATION_ONLY_REVIEW_ONLY",
+    "canary_first": true,
+    "fallback": false,
+    "graph_writes": false,
+    "historical_v3_rescored": false,
+    "one_creation_call_per_case": true,
+    "permitted_change": "Deterministic exact-offset identity now uses biomedical token boundaries and uniquely grounded containing-span equivalence.",
+    "promotion": false,
+    "silent_retries": 0,
+    "terminal_decisions": [
+      "ADVANCE_STAGED_GENERALIZATION",
+      "PIVOT_WITH_EVIDENCE"
+    ],
+    "untouched_sources": false
+  },
+  "schema_version": "artana.staged_generalization.v4",
+  "supersedes_terminal": "PIVOT_WITH_EVIDENCE"
+}

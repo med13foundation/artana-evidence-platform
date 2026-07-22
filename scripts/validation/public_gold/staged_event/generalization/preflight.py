@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 
 from scripts.validation.public_gold.staged_event.generalization.config import (
+    EXPERIMENT_ID,
+    EXPERIMENT_VERSION,
     GLOBAL_MAX_CALLS,
     GLOBAL_MAX_COST_USD,
     MAX_COST_USD,
@@ -14,6 +16,7 @@ from scripts.validation.public_gold.staged_event.generalization.config import (
     MAX_OUTPUT_TOKENS,
     MAX_TOTAL_TOKENS,
     MODEL,
+    PROMPT_SOURCE_EXPERIMENT,
     REASONING_EFFORT,
     ExperimentPaths,
 )
@@ -34,11 +37,20 @@ CODE_FILES = (
     "scripts/validation/public_gold/staged_event/generalization/config.py",
     "scripts/validation/public_gold/staged_event/generalization/contracts.py",
     "scripts/validation/public_gold/staged_event/generalization/evaluation.py",
+    "scripts/validation/public_gold/staged_event/generalization/offline_replay.py",
     "scripts/validation/public_gold/staged_event/generalization/panel.py",
     "scripts/validation/public_gold/staged_event/generalization/preflight.py",
     "scripts/validation/public_gold/staged_event/generalization/provider.py",
     "scripts/validation/public_gold/staged_event/generalization/runner.py",
+    "scripts/validation/public_gold/staged_event/generalization/span_identity.py",
     "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/policy.py",
+)
+PIVOT_BASIS_FILES = (
+    "docs/validation/reports/2026-07-22-staged-generalization-v3-final.md",
+    "docs/validation/results/2026-07-22-staged-generalization-v3.json",
+    "docs/validation/results/"
+    "2026-07-22-staged-generalization-v3-generalization-null-statistics-raw.json",
+    "docs/validation/results/2026-07-22-staged-generalization-v4-offline-replay.json",
 )
 
 
@@ -63,7 +75,9 @@ def build_preregistration(paths: ExperimentPaths) -> dict[str, object]:
     cases = build_panel()
     root = _repo_root()
     return {
-        "schema_version": "artana.staged_generalization.v3",
+        "schema_version": f"artana.staged_generalization.{EXPERIMENT_VERSION}",
+        "experiment_id": EXPERIMENT_ID,
+        "supersedes_terminal": "PIVOT_WITH_EVIDENCE",
         "authorization": "EXPOSED_DEVELOPMENT_ONLY",
         "frozen_state": {
             "panel_sha256": _file_sha256(paths.panel),
@@ -85,6 +99,11 @@ def build_preregistration(paths: ExperimentPaths) -> dict[str, object]:
             "canary_case_id": cases[0].case_id,
             "model": f"openai:{MODEL}",
             "reasoning_effort": REASONING_EFFORT,
+            "prompt_source_experiment": PROMPT_SOURCE_EXPERIMENT,
+            "pivot_basis_sha256": {
+                relative: _file_sha256(root / relative)
+                for relative in PIVOT_BASIS_FILES
+            },
             "budgets": {
                 "global_max_creation_calls": GLOBAL_MAX_CALLS,
                 "global_max_cost_usd": GLOBAL_MAX_COST_USD,
@@ -99,6 +118,11 @@ def build_preregistration(paths: ExperimentPaths) -> dict[str, object]:
             },
         },
         "rules": {
+            "permitted_change": (
+                "Deterministic exact-offset identity now uses biomedical token "
+                "boundaries and uniquely grounded containing-span equivalence."
+            ),
+            "historical_v3_rescored": False,
             "agent_inputs_exclude": [
                 "expected roles",
                 "event counts",

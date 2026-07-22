@@ -352,7 +352,7 @@ def _null_reference() -> GeneralizationReference:
     return GeneralizationReference(
         events=(ExpectedEvent("null_os", "COMPARISON", ("no difference",)),),
         participants=(
-            ExpectedParticipant("ra", "POPULATION", ("RA NSCLC",)),
+            ExpectedParticipant("ra", "POPULATION", ("RA",)),
             ExpectedParticipant("non_ra", "POPULATION", ("non-RA NSCLC",)),
             ExpectedParticipant("os", "OUTCOME", ("OS",)),
         ),
@@ -374,7 +374,10 @@ def _null_reference() -> GeneralizationReference:
             ),
         ),
         root_event_key="null_os",
-        reference_basis="literal exposed null result and statistical observation",
+        reference_basis=(
+            "literal exposed null result, coordinated-ellipsis cohort spans, and "
+            "statistical observation"
+        ),
     )
 
 

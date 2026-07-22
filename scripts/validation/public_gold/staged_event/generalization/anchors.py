@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from scripts.validation.public_gold.staged_event.generalization.span_identity import (
+    ExactSpan,
+    SpanIdentityError,
+    resolve_unique_span,
+)
 
 
 class GeneralizationAnchorError(ValueError):
     """An evidence or child span cannot be resolved unambiguously."""
 
 
-@dataclass(frozen=True, slots=True)
-class ResolvedText:
-    start: int
-    end: int
-    exact_text: str
+ResolvedText = ExactSpan
 
 
 def resolve_in_context(
@@ -24,36 +24,45 @@ def resolve_in_context(
     exact_evidence: str,
     exact_text: str,
 ) -> tuple[ResolvedText, ResolvedText]:
-    if source[context_start:context_end].count(exact_evidence) != 1:
-        raise GeneralizationAnchorError("evidence is absent or ambiguous in context")
-    evidence_local = source[context_start:context_end].find(exact_evidence)
-    evidence_start = context_start + evidence_local
-    if exact_evidence.count(exact_text) != 1:
-        raise GeneralizationAnchorError("child text is absent or ambiguous in evidence")
-    child_start = evidence_start + exact_evidence.find(exact_text)
-    evidence = ResolvedText(
-        evidence_start,
-        evidence_start + len(exact_evidence),
-        exact_evidence,
-    )
-    child = ResolvedText(child_start, child_start + len(exact_text), exact_text)
-    if source[evidence.start : evidence.end] != evidence.exact_text:
-        raise GeneralizationAnchorError("evidence does not match source offsets")
-    if source[child.start : child.end] != child.exact_text:
-        raise GeneralizationAnchorError("child text does not match source offsets")
+    try:
+        evidence = resolve_unique_span(
+            source=source,
+            scope_start=context_start,
+            scope_end=context_end,
+            exact_text=exact_evidence,
+        )
+    except SpanIdentityError as exc:
+        raise GeneralizationAnchorError(
+            "evidence is absent or ambiguous in context"
+        ) from exc
+    try:
+        child = resolve_unique_span(
+            source=source,
+            scope_start=evidence.start,
+            scope_end=evidence.end,
+            exact_text=exact_text,
+        )
+    except SpanIdentityError as exc:
+        raise GeneralizationAnchorError(
+            "child text is absent or ambiguous in evidence"
+        ) from exc
     return evidence, child
 
 
 def resolve_evidence(
     *, source: str, context_start: int, context_end: int, exact_text: str
 ) -> ResolvedText:
-    context = source[context_start:context_end]
-    if context.count(exact_text) != 1:
+    try:
+        return resolve_unique_span(
+            source=source,
+            scope_start=context_start,
+            scope_end=context_end,
+            exact_text=exact_text,
+        )
+    except SpanIdentityError as exc:
         raise GeneralizationAnchorError(
             "evidence item is absent or ambiguous in context"
-        )
-    start = context_start + context.find(exact_text)
-    return ResolvedText(start, start + len(exact_text), exact_text)
+        ) from exc
 
 
 __all__ = [

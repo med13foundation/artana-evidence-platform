@@ -28,6 +28,7 @@ from scripts.validation.public_gold.staged_event.context_experiment.source_first
 )
 from scripts.validation.public_gold.staged_event.generalization.config import (
     DEFAULT_PATHS,
+    EXPERIMENT_ID,
     GLOBAL_MAX_CALLS,
     GLOBAL_MAX_COST_USD,
     MAX_COST_USD,
@@ -296,7 +297,7 @@ def _require_unused(paths: ExperimentPaths) -> None:
         item = paths.case(case.case_id)
         candidates.extend((item.attempt, item.bundle, item.receipt, item.raw_output))
     if any(path.exists() for path in candidates):
-        raise GeneralizationExecutionError("generalization V1 already started")
+        raise GeneralizationExecutionError(f"{EXPERIMENT_ID} already started")
 
 
 def _attempt_response_id(path: Path) -> str | None:

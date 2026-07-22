@@ -17,6 +17,7 @@ from scripts.validation.public_gold.staged_event.context_experiment.source_first
     acknowledge_attempt,
 )
 from scripts.validation.public_gold.staged_event.generalization.config import (
+    EXPERIMENT_ID,
     MAX_COST_USD,
     MAX_LATENCY_SECONDS,
     MAX_OUTPUT_TOKENS,
@@ -60,7 +61,7 @@ def execute_case(
         max_latency_seconds=MAX_LATENCY_SECONDS,
         pricing={"input": 0.000001, "cached_input": 0.0000001, "output": 0.000006},
         metadata={
-            "artana_experiment": "staged-generalization-v3",
+            "artana_experiment": EXPERIMENT_ID,
             "artana_preregistration_sha256": preregistration_sha256,
             "artana_case_id": case_id,
         },

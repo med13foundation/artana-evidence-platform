@@ -13,6 +13,9 @@ from scripts.validation.public_gold.staged_event.generalization.anchors import (
     resolve_evidence,
     resolve_in_context,
 )
+from scripts.validation.public_gold.staged_event.generalization.span_identity import (
+    source_spans_equivalent,
+)
 
 if TYPE_CHECKING:
     from scripts.validation.public_gold.staged_event.generalization.contracts import (
@@ -211,7 +214,13 @@ def _event_mapping(
             for expected in case.reference.events
             if actual.event_type == expected.event_type
             and any(
-                trigger == actual.trigger_text or trigger in actual.trigger_text
+                source_spans_equivalent(
+                    source=actual.exact_evidence,
+                    scope_start=0,
+                    scope_end=len(actual.exact_evidence),
+                    actual_text=actual.trigger_text,
+                    expected_text=trigger,
+                )
                 for trigger in expected.acceptable_triggers
             )
         ]
@@ -240,7 +249,16 @@ def _participant_mapping(
             expected
             for expected in case.reference.participants
             if actual.entity_type == expected.entity_type
-            and actual.exact_text in expected.acceptable_texts
+            and any(
+                source_spans_equivalent(
+                    source=actual.exact_evidence,
+                    scope_start=0,
+                    scope_end=len(actual.exact_evidence),
+                    actual_text=actual.exact_text,
+                    expected_text=acceptable_text,
+                )
+                for acceptable_text in expected.acceptable_texts
+            )
         ]
         if len(matches) != 1 or matches[0].participant_key in mapping.values():
             unsupported += 1
@@ -329,9 +347,24 @@ def _axes(
             for observation in item.statistical_observations
             if observation.exact_text is not None
         )
+        statistical_spans_match = (
+            not observation_texts and not expected.acceptable_statistical_texts
+        ) or (
+            len(observation_texts) == 1
+            and any(
+                source_spans_equivalent(
+                    source=case.source,
+                    scope_start=case.context_start,
+                    scope_end=case.context_end,
+                    actual_text=observation_texts[0],
+                    expected_text=acceptable_text,
+                )
+                for acceptable_text in expected.acceptable_statistical_texts
+            )
+        )
         fidelity["statistics"] &= (
             observation_types == (expected.statistical_type,)
-            and observation_texts == expected.acceptable_statistical_texts
+            and statistical_spans_match
             and item.author_interpretation == expected.author_interpretation
         )
     for axis, passed in fidelity.items():
