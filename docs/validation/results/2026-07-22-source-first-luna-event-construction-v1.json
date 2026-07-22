@@ -1,0 +1,104 @@
+{
+  "cases": [
+    {
+      "comparison": null,
+      "output": {
+        "events": [
+          {
+            "arguments": [
+              {
+                "role": "THEME",
+                "target_id": "p1",
+                "target_kind": "PARTICIPANT"
+              }
+            ],
+            "event_id": "e1",
+            "event_type": "Negative_regulation",
+            "short_explanation": "The decrease affects c-Myc activity.",
+            "trigger": {
+              "end": 7,
+              "exact_text": "Decrease",
+              "start": 0
+            }
+          },
+          {
+            "arguments": [
+              {
+                "role": "CAUSE",
+                "target_id": "e1",
+                "target_kind": "EVENT"
+              },
+              {
+                "role": "THEME",
+                "target_id": "p2",
+                "target_kind": "PARTICIPANT"
+              },
+              {
+                "role": "OTHER_EXPLICIT",
+                "target_id": "p3",
+                "target_kind": "PARTICIPANT"
+              }
+            ],
+            "event_id": "e2",
+            "event_type": "Positive_regulation",
+            "short_explanation": "The decrease in c-Myc activity enhances cancer cell sensitivity in relation to vinblastine.",
+            "trigger": {
+              "end": 34,
+              "exact_text": "enhances",
+              "start": 26
+            }
+          }
+        ],
+        "packet_id": "source-first-primary-nested-v1",
+        "participants": [
+          {
+            "entity_type": "Gene_or_gene_product",
+            "evidence": {
+              "end": 16,
+              "exact_text": "c-Myc",
+              "start": 11
+            },
+            "participant_id": "p1"
+          },
+          {
+            "entity_type": "Cell",
+            "evidence": {
+              "end": 46,
+              "exact_text": "cancer cell",
+              "start": 35
+            },
+            "participant_id": "p2"
+          },
+          {
+            "entity_type": "Simple_chemical",
+            "evidence": {
+              "end": 73,
+              "exact_text": "vinblastine",
+              "start": 62
+            },
+            "participant_id": "p3"
+          }
+        ],
+        "root_event_id": "e2",
+        "structure_assessment": "COMPLETE",
+        "structure_explanation": "The highlighted finding is represented by a nested decrease event serving as the cause of an enhancement event. Cancer cell and vinblastine are retained as the explicit entities involved in the enhanced sensitivity."
+      },
+      "packet_id": "source-first-primary-nested-v1",
+      "passed": false,
+      "receipt_status": "VERIFIED_LIVE",
+      "structural_error": "evidence text does not match source offsets",
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 0.063579,
+        "input_tokens": 1371,
+        "latency_seconds": 30.20259279201855,
+        "output_tokens": 10368,
+        "reasoning_tokens": 2418,
+        "total_tokens": 11739
+      }
+    }
+  ],
+  "decision": "STOP_SOURCE_FIRST_LUNA_SCIENTIFIC_FAILURE",
+  "provider_call_count": 1,
+  "trusted_promotion": false
+}

@@ -1,0 +1,74 @@
+{
+  "receipts": [
+    {
+      "acknowledgement_envelope_sha256": "40a50a816c19d656d6d2e73abd8fbada7f98bce62f32df6e43cbdd849cfff75d",
+      "acknowledgement_seconds": 1.5816337919968646,
+      "confirmation_retrieval_requests": 1,
+      "creation_envelope_sha256": "e2f3f427c45d9b6b971fbb93f95ad9549c39a2bcefda0e5c53fa1fa8abc92670",
+      "differences": [],
+      "duplicate_creation_calls": 0,
+      "identity": {
+        "created_at": 1784722871.0,
+        "model": "gpt-5.6-luna",
+        "object_type": "response",
+        "output_items": [
+          [
+            "reasoning",
+            "rs_0759f633f466358b006a60b5b90034819bb61bee4b0fac51f5"
+          ],
+          [
+            "reasoning",
+            "rs_0759f633f466358b006a60b5bd4a90819badc7042210de8ffc"
+          ],
+          [
+            "reasoning",
+            "rs_0759f633f466358b006a60b5c1a5ec819ba409eb6957b5917c"
+          ],
+          [
+            "reasoning",
+            "rs_0759f633f466358b006a60b5c60468819b9844587dd26a628a"
+          ],
+          [
+            "reasoning",
+            "rs_0759f633f466358b006a60b5ca0b84819b919887b63c9c1735"
+          ],
+          [
+            "message",
+            "msg_0759f633f466358b006a60b5cd511c819b9d39c0fdef3721dd"
+          ]
+        ],
+        "response_id": "resp_0759f633f466358b006a60b5b75230819b881046552a23b33d",
+        "status": "completed"
+      },
+      "input_item_retrieval_requests": 1,
+      "model_generation_calls": 1,
+      "polling_does_not_count_as_model_generation": true,
+      "polling_retrieval_requests": 5,
+      "polling_seconds": 28.229710750019876,
+      "provider_creation_calls": 1,
+      "provider_input_sha256": "21da582607dcfe5dbf4ad82a2a182025d0350f5de4881e0abdff092a3462248d",
+      "provider_retries": 0,
+      "provider_schema_sha256": "2a4afb755e7cb80954e665a372baafc10a88a6f21486aa5cf200b8a1038e933a",
+      "retrieval_envelope_sha256": "e2f3f427c45d9b6b971fbb93f95ad9549c39a2bcefda0e5c53fa1fa8abc92670",
+      "scientific_payload_sha256": "42ab72b0fd4c983cba47cb71bb503737a5459ffd8d8002328423babfa7cd1a07",
+      "status": "VERIFIED_LIVE",
+      "status_history": [
+        "queued",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "completed"
+      ],
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 0.063579,
+        "input_tokens": 1371,
+        "latency_seconds": 30.20259279201855,
+        "output_tokens": 10368,
+        "reasoning_tokens": 2418,
+        "total_tokens": 11739
+      }
+    }
+  ]
+}

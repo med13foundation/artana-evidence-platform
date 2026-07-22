@@ -1,0 +1,75 @@
+{
+  "schema_version": "source-first-luna-event-construction-v1",
+  "status": "FROZEN_AUTHORIZED_CONDITIONAL",
+  "qualification_status": "EXPOSED_REVIEW_ONLY",
+  "frozen_state": {
+    "source": {
+      "document_id": "PMID-16428936",
+      "sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab"
+    },
+    "permitted_contexts": {
+      "source-first-primary-nested-v1": [0, 222],
+      "source-first-sensitivity-v1": [352, 854],
+      "source-first-conclusion-v1": [1040, 1443],
+      "source-first-simple-control-v1": [0, 222]
+    },
+    "deep_event_mine_normalized_output_sha256": "db173cb06f780ceec7ef62f457089211fd521ae1698952b3c934e6871d41b4e7",
+    "specialist_hint_sha256": "3a301767bf0a9ac5e328d24f70fc11052c2c51a0e09f3ad3ec548db91b825031",
+    "prompt_sha256": "654453fe61a4bc919c8e4fd9439e1ed02728687b369b6e69661379d6ede0412d",
+    "few_shot_examples": [
+      "simple-binding-event",
+      "nested-causal-regulation-event"
+    ],
+    "schema_sha256": "b4193ccf58449bd0b76dd86e0fb71f2c0687946519136a07697635fa314dacbd",
+    "provider_format_sha256": "2a4afb755e7cb80954e665a372baafc10a88a6f21486aa5cf200b8a1038e933a",
+    "provider_input_sha256": {
+      "source-first-primary-nested-v1": "21da582607dcfe5dbf4ad82a2a182025d0350f5de4881e0abdff092a3462248d",
+      "source-first-sensitivity-v1": "047d3045f53558e18230de1447ceeead9730e491a7dc503ded8e40fc3352752c",
+      "source-first-conclusion-v1": "f719ebd1d9e5527b3f67064418cf56ac4c5abe8afa5c3ba0d719168eea841421",
+      "source-first-simple-control-v1": "cc8973fdfbcfbb3261e89caa53199b44e33e5183b158d5ce07d89da1ee84ac95"
+    },
+    "code_sha256": {
+      "scripts/validation/public_gold/staged_event/context_experiment/run_source_first_luna.py": "dbb119f09ce492c5f1a985ed0cad3a5211c58c8cea66e3e0f57053d6fa1e6a74",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first_contracts.py": "e1b43b21a8a499df7b9103ee854d689d22385524177f45d426b54c37dcfa1d97",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first_validation.py": "720b96aca2557cd5834e6d450d7e6b0a76bb0ebb60b15dc00b71a7591de5aa89"
+    },
+    "model": "openai:gpt-5.6-luna",
+    "provider_model": "gpt-5.6-luna",
+    "reasoning_effort": "high"
+  },
+  "budgets": {
+    "maximum_conditional_creation_calls": 4,
+    "maximum_output_tokens_per_call": 8000,
+    "maximum_total_tokens_per_call": 20000,
+    "maximum_latency_seconds_per_call": 900,
+    "maximum_cost_usd_per_call": 1.0,
+    "provider_retries": 0,
+    "fallbacks": 0
+  },
+  "first_call_gate": {
+    "complete_explicit_event_graph": true,
+    "correct_root": true,
+    "separate_inner_and_outer_events": true,
+    "typed_event_arguments": true,
+    "participant_level_fidelity": true,
+    "exact_event_local_evidence": true,
+    "unsupported_nodes_maximum": 0,
+    "contradictions_maximum": 0,
+    "verified_receipt": true
+  },
+  "conditional_advance_gate": {
+    "minimum_corrected_previously_incorrect_events": 2,
+    "control_must_pass": true,
+    "completeness_must_exceed": "3/13",
+    "unsupported_claims_maximum": 0
+  },
+  "terminal_rules": {
+    "stop_after_first_failure": true,
+    "prompt_changes_after_call": 0,
+    "schema_changes_after_call": 0,
+    "retries": 0,
+    "untouched_source_access": 0,
+    "graph_writes": 0,
+    "promotion": 0
+  }
+}
