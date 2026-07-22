@@ -1,0 +1,27 @@
+{
+  "diagnostics": {
+    "actual_sha256": "d1749abfc06cdd258ebfd5dc36ed9114543b9ec3e7587d319e222580eea73c30",
+    "confirmation_retrieval_requests": 1,
+    "differences": [
+      {
+        "actual_sha256": "d1749abfc06cdd258ebfd5dc36ed9114543b9ec3e7587d319e222580eea73c30",
+        "difference": "VALUE_CHANGED",
+        "expected_sha256": "4948963369b682612d22b081bdc92c13d23fb921cdd44e50f45d7e86b4b52022",
+        "path": "$.usage.total_tokens"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "expected_sha256": "4948963369b682612d22b081bdc92c13d23fb921cdd44e50f45d7e86b4b52022",
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "polling_retrieval_requests": 42,
+    "provider_creation_calls": 1,
+    "provider_retries": 0,
+    "response_id": "resp_056d95ed70a099e4006a6012c3fbf88199be2601f0407ece84"
+  },
+  "failure_stage": "RECEIPT_BUDGET",
+  "provider_calls_attempted": 1,
+  "provider_retries": 0,
+  "root_cause": "total token ceiling exceeded",
+  "status": "UNVERIFIED"
+}
