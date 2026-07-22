@@ -1,0 +1,47 @@
+{
+  "accounting": {
+    "fallbacks": 0,
+    "provider_creation_calls": 1,
+    "provider_retries": 0,
+    "receipts": [],
+    "terminal_violation": "participants total token ceiling exceeded before receipt admission",
+    "total_cost_usd": "UNVERIFIED",
+    "total_latency_seconds": "UNVERIFIED",
+    "total_tokens": "UNVERIFIED"
+  },
+  "decision": "INVALID_EXPERIMENT",
+  "failure": {
+    "boundary": "RECEIPT_BUDGET",
+    "diagnostics": {
+      "actual_sha256": "7482a54b7032de7a7802a28dc4a6f5aebd60e09f656bb49d5702e5a1f6aa50a9",
+      "confirmation_retrieval_requests": 1,
+      "differences": [
+        {
+          "actual_sha256": "7482a54b7032de7a7802a28dc4a6f5aebd60e09f656bb49d5702e5a1f6aa50a9",
+          "difference": "VALUE_CHANGED",
+          "expected_sha256": "6ce318969619d1c360b6144be09e3d3a22674897c7cbfe995716ed8b7ff7c4cf",
+          "path": "$.usage.total_tokens"
+        }
+      ],
+      "duplicate_creation_calls": 0,
+      "expected_sha256": "6ce318969619d1c360b6144be09e3d3a22674897c7cbfe995716ed8b7ff7c4cf",
+      "input_item_retrieval_requests": 1,
+      "model_generation_calls": 1,
+      "polling_retrieval_requests": 19,
+      "provider_creation_calls": 1,
+      "provider_retries": 0,
+      "response_id": "resp_0899fdc890331ea0006a605966adcc81989ad977f88be5a9a2"
+    },
+    "root_cause": "total token ceiling exceeded",
+      "stage": "participants"
+  },
+  "preflight": {
+    "frozen_state_sha256": "ae32d24a35ac2161e5b5255a7c2e5fed1848ae556a32594a60a9e99852f7da88",
+    "preregistration_sha256": "4218bf2fd5002883ece740660417eee5463905db12f7b69e5d962a7512b83f49",
+    "status": "PREFLIGHT_PASSED"
+  },
+  "qualification_status": "EXPOSED_DEVELOPMENT_NON_QUALIFYING",
+  "schema_version": "artana.public_gold.luna_context_result.v1",
+  "stage_outputs": {},
+  "trusted_promotion": false
+}

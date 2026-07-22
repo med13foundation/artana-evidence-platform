@@ -1,0 +1,10 @@
+{
+  "fallbacks": 0,
+  "provider_creation_calls": 1,
+  "provider_retries": 0,
+  "receipts": [],
+  "terminal_violation": "participants total token ceiling exceeded before receipt admission",
+  "total_cost_usd": "UNVERIFIED",
+  "total_latency_seconds": "UNVERIFIED",
+  "total_tokens": "UNVERIFIED"
+}
