@@ -1,0 +1,9 @@
+{
+  "preregistration_sha256": "1b145ed37ce004a6811c84c3bb92837f129b73af0f2dbae2d68d18dea414fd2e",
+  "provider_creation_limit": 1,
+  "provider_input_sha256": "9a452da868f0a1825ccf9a79d6e546044c45ff33c8d9c0999eec5513dc8111d5",
+  "provider_retries": 0,
+  "response_id": "resp_032d62cec768d68d006a613b737b1c819a8850f7c4e0568702",
+  "stage": "GENERALIZATION_V5:generalization-null-statistics",
+  "state": "ACKNOWLEDGED"
+}

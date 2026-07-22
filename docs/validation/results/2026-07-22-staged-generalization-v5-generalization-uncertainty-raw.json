@@ -1,0 +1,57 @@
+{
+  "case_id": "generalization-uncertainty",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "E1",
+      "event_type": "CLASSIFICATION",
+      "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+      "explanation": "The highlighted finding states that the majority of the detected variants received an uncertain-significance classification.",
+      "trigger_text": "classified as of uncertain significance"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "The majority of variants are the entities classified as of uncertain significance.",
+          "role": "AFFECTED_ENTITY",
+          "target_id": "P1",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "E1"
+    }
+  ],
+  "participants": [
+    {
+      "entity_type": "VARIANT",
+      "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+      "exact_text": "the majority of which",
+      "explanation": "This relative phrase refers to the majority subset of the 947 detected variants and is the entity receiving the classification.",
+      "participant_id": "P1"
+    }
+  ],
+  "root_event_id": "E1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "NOT_APPLICABLE",
+      "event_id": "E1",
+      "evidence_items": [
+        "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance."
+      ],
+      "explanation": "The classification is explicitly asserted. The phrase \u201cuncertain significance\u201d is the classification label, not an explicit author claim about statistical significance.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    }
+  ],
+  "structure_explanation": "The atomic finding is fully represented by one classification event linked to the explicitly mentioned majority subset of variants."
+}

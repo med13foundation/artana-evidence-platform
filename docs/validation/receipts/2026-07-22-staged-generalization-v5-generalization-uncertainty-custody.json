@@ -1,0 +1,153 @@
+{
+  "output_sha256": "fe956360a98671116ba6d80a66d6861f7104a9322282cb5ded8846b511f9bde7",
+  "provider_input_sha256": "47aa2a3fc59f0f02478207452010d87fb690d172e047217e96da84483fda4e50",
+  "receipt": {
+    "acknowledgement_envelope_sha256": "741eceaf81733a47da97a2822f0cd4b4142365d8c0cd34076d695d94b92a8424",
+    "acknowledgement_seconds": 0.5077796669993404,
+    "budgets": {
+      "cost": "PASS",
+      "latency": "PASS",
+      "observed_cost_usd": 0.032287,
+      "observed_latency_seconds": 22.004093000000466,
+      "observed_output_tokens": 5072,
+      "observed_total_tokens": 6927,
+      "output_tokens": "PASS",
+      "requested_max_cost_usd": 0.15,
+      "requested_max_latency_seconds": 900.0,
+      "requested_max_output_tokens": 20000,
+      "requested_max_total_tokens": 24000,
+      "total_tokens": "PASS"
+    },
+    "confirmation_retrieval_requests": 1,
+    "creation_envelope_sha256": "716f936d1446360a1e7f69ebe7fd827591013ea7eb083871c2a2c632b550f4d6",
+    "differences": [],
+    "duplicate_creation_calls": 0,
+    "identity": {
+      "created_at": 1784757530.0,
+      "model": "gpt-5.6-luna",
+      "object_type": "response",
+      "output_items": [
+        [
+          "reasoning",
+          "rs_0fedf334e6631f5e006a613d1c80088199a4d4f182704fc7fd"
+        ],
+        [
+          "reasoning",
+          "rs_0fedf334e6631f5e006a613d2385188199879ddb18bd8371d3"
+        ],
+        [
+          "reasoning",
+          "rs_0fedf334e6631f5e006a613d2592cc8199bf795b8b85152b6c"
+        ],
+        [
+          "message",
+          "msg_0fedf334e6631f5e006a613d29a20481998eb35cc69bea7566"
+        ]
+      ],
+      "response_id": "resp_0fedf334e6631f5e006a613d1ae9188199b3ffc730474a7482",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "polling_does_not_count_as_model_generation": true,
+    "polling_retrieval_requests": 4,
+    "polling_seconds": 21.120578207999642,
+    "provider_creation_calls": 1,
+    "provider_input_sha256": "47aa2a3fc59f0f02478207452010d87fb690d172e047217e96da84483fda4e50",
+    "provider_retries": 0,
+    "provider_schema_sha256": "20738510ef96bec775c6268a5056ff3b385897426d43f9aac0781759011a376b",
+    "retrieval_envelope_sha256": "716f936d1446360a1e7f69ebe7fd827591013ea7eb083871c2a2c632b550f4d6",
+    "scientific_payload_sha256": "fe956360a98671116ba6d80a66d6861f7104a9322282cb5ded8846b511f9bde7",
+    "status": "VERIFIED_LIVE",
+    "status_history": [
+      "queued",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "completed"
+    ],
+    "usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.032287,
+      "input_tokens": 1855,
+      "latency_seconds": 22.004093000000466,
+      "output_tokens": 5072,
+      "reasoning_tokens": 1552,
+      "total_tokens": 6927
+    }
+  },
+  "requested_and_observed_budgets": {
+    "cost": "PASS",
+    "latency": "PASS",
+    "observed_cost_usd": 0.032287,
+    "observed_latency_seconds": 22.004093000000466,
+    "observed_output_tokens": 5072,
+    "observed_total_tokens": 6927,
+    "output_tokens": "PASS",
+    "requested_max_cost_usd": 0.15,
+    "requested_max_latency_seconds": 900.0,
+    "requested_max_output_tokens": 20000,
+    "requested_max_total_tokens": 24000,
+    "total_tokens": "PASS"
+  },
+  "response_id": "resp_0fedf334e6631f5e006a613d1ae9188199b3ffc730474a7482",
+  "schema_sha256": "d9878b31de38f44c9cb0864bd73e9b72b1ecf919f72c8a7e74c0bf23dd36236a",
+  "stage": "GENERALIZATION_V5:generalization-uncertainty",
+  "typed_output": {
+    "case_id": "generalization-uncertainty",
+    "completeness": "COMPLETE",
+    "inventory": [
+      {
+        "event_id": "E1",
+        "event_type": "CLASSIFICATION",
+        "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+        "explanation": "The highlighted finding states that the majority of the detected variants received an uncertain-significance classification.",
+        "trigger_text": "classified as of uncertain significance"
+      }
+    ],
+    "links": [
+      {
+        "arguments": [
+          {
+            "explanation": "The majority of variants are the entities classified as of uncertain significance.",
+            "role": "AFFECTED_ENTITY",
+            "target_id": "P1",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "E1"
+      }
+    ],
+    "participants": [
+      {
+        "entity_type": "VARIANT",
+        "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+        "exact_text": "the majority of which",
+        "explanation": "This relative phrase refers to the majority subset of the 947 detected variants and is the entity receiving the classification.",
+        "participant_id": "P1"
+      }
+    ],
+    "root_event_id": "E1",
+    "semantic_axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "NOT_APPLICABLE",
+        "event_id": "E1",
+        "evidence_items": [
+          "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance."
+        ],
+        "explanation": "The classification is explicitly asserted. The phrase \u201cuncertain significance\u201d is the classification label, not an explicit author claim about statistical significance.",
+        "polarity": "AFFIRMED",
+        "statistical_observations": [
+          {
+            "exact_text": null,
+            "observation_type": "NONE"
+          }
+        ],
+        "uncertainty": "ASSERTED"
+      }
+    ],
+    "structure_explanation": "The atomic finding is fully represented by one classification event linked to the explicitly mentioned majority subset of variants."
+  }
+}

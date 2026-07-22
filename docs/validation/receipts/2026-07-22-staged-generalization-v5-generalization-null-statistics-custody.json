@@ -1,0 +1,247 @@
+{
+  "output_sha256": "97b488be8bbde480ce93bb0eb143fc887a27ed9aae2417c5ebf9347f61975edc",
+  "provider_input_sha256": "9a452da868f0a1825ccf9a79d6e546044c45ff33c8d9c0999eec5513dc8111d5",
+  "receipt": {
+    "acknowledgement_envelope_sha256": "838a9ab9b799b191d28ef18078613a84263b4407426438aa7ba9b930ced1e71a",
+    "acknowledgement_seconds": 0.5346628749994125,
+    "budgets": {
+      "cost": "PASS",
+      "latency": "PASS",
+      "observed_cost_usd": 0.034345,
+      "observed_latency_seconds": 379.9169563330006,
+      "observed_output_tokens": 5424,
+      "observed_total_tokens": 7225,
+      "output_tokens": "PASS",
+      "requested_max_cost_usd": 0.15,
+      "requested_max_latency_seconds": 900.0,
+      "requested_max_output_tokens": 20000,
+      "requested_max_total_tokens": 24000,
+      "total_tokens": "PASS"
+    },
+    "confirmation_retrieval_requests": 1,
+    "creation_envelope_sha256": "94bd40a67405ca7b8c3083ffab259b0fe788181c994aecec3202894468a5f433",
+    "differences": [],
+    "duplicate_creation_calls": 0,
+    "identity": {
+      "created_at": 1784757107.0,
+      "model": "gpt-5.6-luna",
+      "object_type": "response",
+      "output_items": [
+        [
+          "reasoning",
+          "rs_032d62cec768d68d006a613b7d19f8819a804fa6fb8becfbe3"
+        ],
+        [
+          "reasoning",
+          "rs_032d62cec768d68d006a613bc4142c819a9e5495bcf930cd8d"
+        ],
+        [
+          "reasoning",
+          "rs_032d62cec768d68d006a613c1baec8819aac57970860027a06"
+        ],
+        [
+          "message",
+          "msg_032d62cec768d68d006a613c6ca70c819a9d084f111faf7c7e"
+        ]
+      ],
+      "response_id": "resp_032d62cec768d68d006a613b737b1c819a8850f7c4e0568702",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "polling_does_not_count_as_model_generation": true,
+    "polling_retrieval_requests": 72,
+    "polling_seconds": 378.88492937499996,
+    "provider_creation_calls": 1,
+    "provider_input_sha256": "9a452da868f0a1825ccf9a79d6e546044c45ff33c8d9c0999eec5513dc8111d5",
+    "provider_retries": 0,
+    "provider_schema_sha256": "20738510ef96bec775c6268a5056ff3b385897426d43f9aac0781759011a376b",
+    "retrieval_envelope_sha256": "94bd40a67405ca7b8c3083ffab259b0fe788181c994aecec3202894468a5f433",
+    "scientific_payload_sha256": "97b488be8bbde480ce93bb0eb143fc887a27ed9aae2417c5ebf9347f61975edc",
+    "status": "VERIFIED_LIVE",
+    "status_history": [
+      "queued",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "completed"
+    ],
+    "usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.034345,
+      "input_tokens": 1801,
+      "latency_seconds": 379.9169563330006,
+      "output_tokens": 5424,
+      "reasoning_tokens": 1552,
+      "total_tokens": 7225
+    }
+  },
+  "requested_and_observed_budgets": {
+    "cost": "PASS",
+    "latency": "PASS",
+    "observed_cost_usd": 0.034345,
+    "observed_latency_seconds": 379.9169563330006,
+    "observed_output_tokens": 5424,
+    "observed_total_tokens": 7225,
+    "output_tokens": "PASS",
+    "requested_max_cost_usd": 0.15,
+    "requested_max_latency_seconds": 900.0,
+    "requested_max_output_tokens": 20000,
+    "requested_max_total_tokens": 24000,
+    "total_tokens": "PASS"
+  },
+  "response_id": "resp_032d62cec768d68d006a613b737b1c819a8850f7c4e0568702",
+  "schema_sha256": "d9878b31de38f44c9cb0864bd73e9b72b1ecf919f72c8a7e74c0bf23dd36236a",
+  "stage": "GENERALIZATION_V5:generalization-null-statistics",
+  "typed_output": {
+    "case_id": "generalization-null-statistics",
+    "completeness": "COMPLETE",
+    "inventory": [
+      {
+        "event_id": "E1",
+        "event_type": "COMPARISON",
+        "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+        "explanation": "The finding explicitly reports no difference in overall survival between the RA and non-RA NSCLC groups.",
+        "trigger_text": "no difference"
+      }
+    ],
+    "links": [
+      {
+        "arguments": [
+          {
+            "explanation": "The RA cohort is the focal population.",
+            "role": "POPULATION",
+            "target_id": "P1",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "The non-RA NSCLC cohort is the comparator.",
+            "role": "COMPARATOR",
+            "target_id": "P2",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "OS is the outcome for which the cohorts are compared.",
+            "role": "OUTCOME",
+            "target_id": "P3",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "E1"
+      }
+    ],
+    "participants": [
+      {
+        "entity_type": "POPULATION",
+        "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+        "exact_text": "RA",
+        "explanation": "RA is the focal cohort in the comparison.",
+        "participant_id": "P1"
+      },
+      {
+        "entity_type": "POPULATION",
+        "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+        "exact_text": "non-RA NSCLC",
+        "explanation": "non-RA NSCLC is the comparison cohort.",
+        "participant_id": "P2"
+      },
+      {
+        "entity_type": "OUTCOME",
+        "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+        "exact_text": "OS",
+        "explanation": "OS is the survival outcome being compared.",
+        "participant_id": "P3"
+      }
+    ],
+    "root_event_id": "E1",
+    "semantic_axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NO_DIFFERENCE",
+        "direction": "NO_DIFFERENCE",
+        "event_id": "E1",
+        "evidence_items": [
+          "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09)."
+        ],
+        "explanation": "The source asserts no difference, yielding a null comparison. The reported log-rank P value is recorded independently, without inferring an author claim about statistical significance.",
+        "polarity": "NULL_RESULT",
+        "statistical_observations": [
+          {
+            "exact_text": "log-rank P = 0.08",
+            "observation_type": "P_VALUE"
+          }
+        ],
+        "uncertainty": "ASSERTED"
+      }
+    ],
+    "structure_explanation": "The comparison event is fully represented by the two cohorts, the OS outcome, and the reported log-rank P value. The adjusted-model result is surrounding context and is not part of the highlighted atomic finding."
+  }
+}

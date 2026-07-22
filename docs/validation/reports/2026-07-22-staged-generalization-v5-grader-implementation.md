@@ -9,14 +9,14 @@ Scope: exposed development sources only
 ## Outcome
 
 The source-science grader is implemented, independently reviewed against primary
-sources, frozen, replay-tested, and preregistered. It is ready for its one-shot
-V5 live checkpoint.
+sources, frozen, replay-tested, preregistered, and proven in one live fail-fast
+checkpoint.
 
-The scientific terminal remains **PIVOT_WITH_EVIDENCE**. The historical V4
-result is immutable, and its non-creditable replay through the new grader still
-fails. No V5 provider call was made because `OPENAI_API_KEY` is absent from the
-task environment. There are no V5 attempts, receipts, or raw outputs to
-reinterpret.
+The exact scientific terminal is **PIVOT_WITH_EVIDENCE**. Four valid Luna calls
+produced verified receipts and custody. Comparison, null statistics, and
+negation passed. The uncertainty case then exposed a reproducible source-general
+failure, so execution stopped before drug sensitivity and nested causation as
+preregistered. The historical V4 result remains immutable and non-creditable.
 
 ## Root cause addressed
 
@@ -111,6 +111,51 @@ Artifact hashes:
 - policy: `7d045ccca6398ca10d3dfc3b8136fa871c9b118bfc05ed19d43daa905e518649`
 - preregistration: `1b145ed37ce004a6811c84c3bb92837f129b73af0f2dbae2d68d18dea414fd2e`
 - immutable V4 replay: `78a25c46696cbd7a7cd4b96ffba8f6048ec930352988663ed284c6f62e749236`
+- live V5 result: `d60249165d26778a603f60c91ad8cf676907dfbc63246a49c8506fae0b574f10`
+
+## Live V5 checkpoint
+
+The private worktree credential was loaded without exposing it. The frozen
+`openai:gpt-5.6-luna` runner made four creation calls with no retries or
+duplicates. Every response completed with `VERIFIED_LIVE` custody and passed
+its output-token, total-token, latency, and cost budgets.
+
+Aggregate evidence:
+
+- terminal decision: `PIVOT_WITH_EVIDENCE`;
+- passed cases: 3/4 executed, from 6 planned;
+- complete-event recovery: 3/4;
+- participant-role fidelity: 3/4;
+- nested-event structure: 4/4;
+- direction, comparison, polarity, statistical fidelity, and exact grounding:
+  4/4;
+- uncertainty fidelity: 3/4;
+- unsupported claims: 2;
+- contradictions: 1;
+- calls: 4;
+- input/output/total tokens: 7,243 / 13,636 / 20,879;
+- latency: 457.867 seconds;
+- cost: USD 0.089059;
+- graph writes: 0;
+- qualification credit and trusted promotion: `false`.
+
+The first three cases recovered their required cores without permitted,
+ambiguous, or unsupported additions. The uncertainty output instead created a
+`VARIANT` participant from the anaphoric phrase `the majority of which`. That
+phrase refers back to `947 variants`; it is not itself the source entity. The
+output consequently omitted both required participants, `947 variants` and the
+`SLC12A3 gene`, and omitted their required links. It also labeled the
+uncertainty axis `ASSERTED`, reasoning that the classification statement was
+asserted, instead of preserving the explicit classification `uncertain
+significance` as `UNCERTAIN`.
+
+This identifies the next architecture/model capability precisely: event-local
+participant extraction must resolve anaphoric mentions to exact explicit
+antecedents while retaining source context, and the semantic-axis contract must
+distinguish assertion of a classification event from the uncertainty conveyed
+by the classification value. No grader relaxation can safely correct either
+failure. A future cycle should address that source-general capability, not add
+case-specific aliases or reinterpret this completed execution.
 
 ## Validation
 
@@ -118,10 +163,11 @@ Focused validation passed:
 
 - Ruff over the V5 CLI, grading package, and tests;
 - strict mypy over 14 source files;
-- 12 focused unit/regression tests, including artifact reproducibility,
+- 13 focused unit/regression tests, including artifact reproducibility,
   blinding, independent identities, field-level majority, policy drift,
   required-core preservation, forbidden and ambiguous context, immutable V4
-  replay, preregistration drift, and fail-fast canary behavior.
+  replay, preregistration drift, fail-fast canary behavior, and complete
+  recomputation of the live result and receipt/custody chain.
 
 The repository-wide `make service-checks` gate was run exactly once after the
 focused state was stable. All emitted lint, type, boundary, OpenAPI, generated
@@ -132,17 +178,11 @@ database-backed test work did not run. This is an environmental validation
 blocker, not a passing full-suite result and not a demonstrated code failure.
 The gate was not rerun, preserving the recovered exact-once instruction.
 
-## Live checkpoint blocker
-
-The live command is intentionally not run with Codex or a substitute model.
-Doing so would violate the frozen `openai:gpt-5.6-luna` provider and receipt
-contract. Once `OPENAI_API_KEY` is available in the task environment, the
-preregistered command is:
-
-```bash
-.venv/bin/python scripts/run_staged_generalization_v5.py execute
-```
-
-Until that call produces valid custody and scientific metrics, V5 is not
-qualification evidence and the correct terminal decision remains
-`PIVOT_WITH_EVIDENCE`.
+The Docker PostgreSQL container was subsequently recreated without removing its
+named volume, restoring the missing host-port publication. The exact
+database-backed `coverage-check` test selection was then run against an isolated
+migrated database, omitting only the XML writer to preserve the user's existing
+dirty `coverage.xml`. It passed at 87.62% coverage against the 86% threshold;
+the ephemeral database was dropped cleanly. Thus the previously unexecuted
+database-backed work is green, while the historical aggregate command remains
+honestly recorded as having stopped at its first PostgreSQL wait.
