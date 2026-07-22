@@ -113,7 +113,7 @@ def test_v6_preregistration_rejects_recovery_or_promotion_capability(
     tampered = tmp_path / "tampered.json"
     tampered.write_text(json.dumps(payload), encoding="utf-8")
 
-    with pytest.raises(ExperimentPreflightError, match="prohibited"):
+    with pytest.raises(ExperimentPreflightError, match="policy changed: rules"):
         verify_preregistration(ROOT, tampered, require_authorized=False)
 
 
@@ -124,7 +124,31 @@ def test_v6_preregistration_rejects_token_budget_basis_drift(tmp_path: Path) -> 
     tampered = tmp_path / "tampered.json"
     tampered.write_text(json.dumps(payload), encoding="utf-8")
 
-    with pytest.raises(ExperimentPreflightError, match="budget basis"):
+    with pytest.raises(ExperimentPreflightError, match="policy changed: budget_basis"):
+        verify_preregistration(ROOT, tampered, require_authorized=False)
+
+
+@pytest.mark.parametrize(
+    ("section", "key", "replacement"),
+    [
+        ("budgets", "max_cost_usd", 50.0),
+        ("budgets", "pricing_usd_per_token", {"output": 0.0}),
+        ("acceptance", "unsupported_or_invented_events_allowed", 1),
+    ],
+)
+def test_v6_preregistration_rejects_frozen_policy_drift(
+    tmp_path: Path,
+    section: str,
+    key: str,
+    replacement: object,
+) -> None:
+    payload = build_preregistration(ROOT)
+    policy_section = _required_dict(payload, section)
+    policy_section[key] = replacement
+    tampered = tmp_path / "tampered.json"
+    tampered.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ExperimentPreflightError, match=f"policy changed: {section}"):
         verify_preregistration(ROOT, tampered, require_authorized=False)
 
 

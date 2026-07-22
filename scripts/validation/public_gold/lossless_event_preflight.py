@@ -37,7 +37,6 @@ PROMPT_PATH = Path(
     "docs/validation/prompts/2026-07-21-lossless-scientific-event-development-prompt.md"
 )
 EXPECTED_DOCUMENTS = 100
-MINIMUM_STOP_RULES = 5
 MODEL_IDENTITY = "openai:gpt-5.6-sol"
 PROVIDER_MODEL_ID = "gpt-5.6-sol"
 REASONING_EFFORT = "high"
@@ -217,15 +216,27 @@ def build_preregistration(repository_root: Path) -> dict[str, object]:
     """Create a new candidate; callers freeze it as a new immutable file."""
 
     return {
+        **_experiment_policy(authorized=False),
+        "frozen_state": compute_frozen_state(repository_root),
+    }
+
+
+def _experiment_policy(*, authorized: bool) -> dict[str, object]:
+    """Return the complete non-source contract for exactly one V6 execution."""
+
+    return {
         "schema_version": "artana.public_gold.lossless_event_experiment.v6",
-        "status": "FROZEN_UNAUTHORIZED_AWAITING_EXPLICIT_AUTHORIZATION",
-        "execution_authorized": False,
+        "status": (
+            "FROZEN_AUTHORIZED_FOR_ONE_EXECUTION"
+            if authorized
+            else "FROZEN_UNAUTHORIZED_AWAITING_EXPLICIT_AUTHORIZATION"
+        ),
+        "execution_authorized": authorized,
         "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
         "invalid_predecessor": (
             "docs/validation/preregistrations/"
             "2026-07-21-lossless-event-ir-development-experiment-v5.json"
         ),
-        "frozen_state": compute_frozen_state(repository_root),
         "budgets": {
             "provider_calls": 1,
             "duplicate_creation_calls": 0,
@@ -301,60 +312,10 @@ def build_preregistration(repository_root: Path) -> dict[str, object]:
 def _verify_safety_contract(
     preregistration: dict[str, object], *, require_authorized: bool
 ) -> None:
-    if require_authorized and preregistration.get("execution_authorized") is not True:
-        raise ExperimentPreflightError(
-            "the new experiment is not explicitly authorized"
-        )
-    if (
-        not require_authorized
-        and preregistration.get("execution_authorized") is not False
-    ):
-        raise ExperimentPreflightError(
-            "unauthorized preregistration unexpectedly permits execution"
-        )
-    budgets = preregistration.get("budgets")
-    rules = preregistration.get("rules")
-    stop_rules = preregistration.get("stop_rules")
-    if not isinstance(budgets, dict) or not isinstance(rules, dict):
-        raise ExperimentPreflightError("budgets and safety rules must be explicit")
-    expected_budgets = {
-        "provider_calls": 1,
-        "duplicate_creation_calls": 0,
-        "provider_retries": 0,
-        "fallbacks": 0,
-        "repairs": 0,
-        "max_output_tokens": 20000,
-        "max_total_tokens": 200000,
-        "max_cost_usd": 5.0,
-    }
-    if any(budgets.get(key) != value for key, value in expected_budgets.items()):
-        raise ExperimentPreflightError("one-call budget or zero-recovery rules changed")
-    expected_budget_basis = {
-        "predecessor_experiment": "V5",
-        "observed_input_tokens": 1794,
-        "observed_output_tokens": 159372,
-        "observed_total_tokens": 161166,
-        "maximum_total_tokens": 200000,
-        "maximum_cost_usd_unchanged": 5.0,
-        "source": "read-only retrieval of the terminal V5 response",
-    }
-    if preregistration.get("budget_basis") != expected_budget_basis:
-        raise ExperimentPreflightError("total-token budget basis changed")
-    prohibited = (
-        "retry_allowed",
-        "fallback_allowed",
-        "repair_allowed",
-        "prompt_or_schema_change_after_freeze_allowed",
-        "graph_write_allowed",
-        "promotion_allowed",
-        "agent_numeric_metrics_allowed",
-        "sealed_test_access_allowed",
-        "creation_idempotency_claimed",
-    )
-    if any(rules.get(rule) is not False for rule in prohibited):
-        raise ExperimentPreflightError("a prohibited experiment capability is enabled")
-    if not isinstance(stop_rules, list) or len(stop_rules) < MINIMUM_STOP_RULES:
-        raise ExperimentPreflightError("experiment stop rules are incomplete")
+    expected = _experiment_policy(authorized=require_authorized)
+    for field, expected_value in expected.items():
+        if preregistration.get(field) != expected_value:
+            raise ExperimentPreflightError(f"experiment policy changed: {field}")
 
 
 def _prove_ir_accepts_output_contract(document_id: str, source_text: str) -> None:
