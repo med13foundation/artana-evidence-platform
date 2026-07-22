@@ -1,0 +1,27 @@
+{
+  "diagnostics": {
+    "actual_sha256": "9019403a291efbc63c8bedafae1b9d83b52089195308e9c372a679d84ab9f03b",
+    "confirmation_retrieval_requests": 1,
+    "differences": [
+      {
+        "actual_sha256": "9019403a291efbc63c8bedafae1b9d83b52089195308e9c372a679d84ab9f03b",
+        "difference": "VALUE_CHANGED",
+        "expected_sha256": "a19a1584344c1f3783bff51524a5a4b86f2cc09356c9dbfb6af9cd236e314362",
+        "path": "$.cost_usd"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "expected_sha256": "a19a1584344c1f3783bff51524a5a4b86f2cc09356c9dbfb6af9cd236e314362",
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "polling_retrieval_requests": 43,
+    "provider_creation_calls": 1,
+    "provider_retries": 0,
+    "response_id": "resp_0ee48be04b19c62a006a601f224098819a9b4e05f5f053ea0e"
+  },
+  "failure_stage": "RECEIPT_BUDGET",
+  "provider_calls_attempted": 1,
+  "provider_retries": 0,
+  "root_cause": "cost ceiling exceeded",
+  "status": "UNVERIFIED"
+}

@@ -1,0 +1,23 @@
+{
+  "decision": "INVALID_EXPERIMENT",
+  "failure": {
+    "root_cause": "cost ceiling exceeded",
+    "stage": "RECEIPT_BUDGET"
+  },
+  "preflight": {
+    "frozen_state_sha256": "2991ad1bea74c8e026cb249a4ec839ffc6bb8292a944ed4a54b5d6e755ee5524",
+    "preregistration_sha256": "f022cd940fe8f1c6cbe6eedc0cd0822f4a626200a7db61f8e780745a0bfa2174",
+    "status": "PREFLIGHT_PASSED"
+  },
+  "preregistration_sha256": "f022cd940fe8f1c6cbe6eedc0cd0822f4a626200a7db61f8e780745a0bfa2174",
+  "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
+  "schema_version": "artana.public_gold.lossless_event_result.v5",
+  "terminal_rules": {
+    "fallbacks": 0,
+    "graph_writes": 0,
+    "promotions": 0,
+    "provider_retries": 0,
+    "repairs": 0,
+    "sealed_test_sources_accessed": 0
+  }
+}
