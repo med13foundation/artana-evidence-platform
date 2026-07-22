@@ -1,0 +1,109 @@
+{
+  "case_id": "generalization-null-statistics",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "ev1",
+      "event_type": "COMPARISON",
+      "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "explanation": "The highlighted finding explicitly compares overall survival between RA and non-RA NSCLC cohorts and reports no difference.",
+      "trigger_text": "no difference"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "RA is the focal cohort.",
+          "role": "POPULATION",
+          "target_id": "p1",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "non-RA NSCLC is the comparison cohort.",
+          "role": "COMPARATOR",
+          "target_id": "p2",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "OS is the outcome compared between cohorts.",
+          "role": "OUTCOME",
+          "target_id": "p3",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "NSCLC identifies the cancer context of the cohorts.",
+          "role": "CONTEXTUAL_PARTICIPANT",
+          "target_id": "p4",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "The comparison is stated in terms of Kaplan-Meier survival curves.",
+          "role": "MEASUREMENT",
+          "target_id": "p5",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "ev1"
+    }
+  ],
+  "participants": [
+    {
+      "entity_type": "POPULATION",
+      "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "exact_text": "RA",
+      "explanation": "RA is the focal cohort in the comparison.",
+      "participant_id": "p1"
+    },
+    {
+      "entity_type": "POPULATION",
+      "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "exact_text": "non-RA NSCLC",
+      "explanation": "non-RA NSCLC is the comparison cohort.",
+      "participant_id": "p2"
+    },
+    {
+      "entity_type": "OUTCOME",
+      "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "exact_text": "OS",
+      "explanation": "OS is the survival outcome being compared.",
+      "participant_id": "p3"
+    },
+    {
+      "entity_type": "CANCER",
+      "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "exact_text": "NSCLC",
+      "explanation": "NSCLC specifies the cancer population represented by the cohorts.",
+      "participant_id": "p4"
+    },
+    {
+      "entity_type": "MEASUREMENT",
+      "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "exact_text": "Kaplan-Meier survival curves",
+      "explanation": "Kaplan-Meier survival curves are the stated measurement representation used for the OS comparison.",
+      "participant_id": "p5"
+    }
+  ],
+  "root_event_id": "ev1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NO_DIFFERENCE",
+      "direction": "NO_DIFFERENCE",
+      "event_id": "ev1",
+      "evidence_items": [
+        "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09)."
+      ],
+      "explanation": "The source asserts no difference, so the result is a null comparison. The P value is recorded independently, but the source does not explicitly characterize statistical significance.",
+      "polarity": "NULL_RESULT",
+      "statistical_observations": [
+        {
+          "exact_text": "log-rank P = 0.08",
+          "observation_type": "P_VALUE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    }
+  ],
+  "structure_explanation": "The highlighted atomic finding is fully represented by one comparison event linked to the two cohorts, OS outcome, cancer context, and Kaplan-Meier measurement. The adjusted-model statement is included only within the required complete source-sentence evidence and is not inventoried as a separate event."
+}
