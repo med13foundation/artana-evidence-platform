@@ -14,8 +14,19 @@ from scripts.validation.public_gold.staged_event.generalization.contracts import
     SemanticAxes,
     StagedGeneralizationOutput,
 )
+from scripts.validation.public_gold.staged_event.generalization.grading.artifacts import (
+    verify_frozen_policy,
+)
 from scripts.validation.public_gold.staged_event.generalization.grading.config import (
     DEFAULT_PATHS as V5_PATHS,
+)
+from scripts.validation.public_gold.staged_event.generalization.grading.evaluation import (
+    aggregate,
+    evaluate_case,
+)
+from scripts.validation.public_gold.staged_event.generalization.grading.policy import (
+    case_policy,
+    policy_sha256,
 )
 from scripts.validation.public_gold.staged_event.generalization.panel import (
     build_panel,
@@ -283,3 +294,90 @@ def test_v8_runner_stops_on_scientific_canary_with_separate_custody(
     assert result["graph_writes"] == 0
     assert paths.case(calls[0]).raw_output.exists()
     assert not V5_PATHS.case(calls[0]).attempt.samefile(paths.case(calls[0]).attempt)
+
+
+def test_checked_in_v8_result_recomputes_and_preserves_fail_fast_custody() -> None:
+    result = json.loads(DEFAULT_PATHS.result.read_text(encoding="utf-8"))
+    panel = {case.case_id: case for case in build_panel()}
+    policy = verify_frozen_policy(DEFAULT_PATHS.grading)
+    case_ids = [item["case_id"] for item in result["cases"]]
+    outputs = [
+        V8StagedGeneralizationOutput.model_validate_json(
+            DEFAULT_PATHS.case(case_id).raw_output.read_text(encoding="utf-8")
+        )
+        for case_id in case_ids
+    ]
+    metrics = tuple(
+        evaluate_case(
+            panel[output.case_id],
+            output,
+            case_policy(policy, output.case_id),
+        )
+        for output in outputs
+    )
+    recomputed = json.loads(json.dumps(aggregate(metrics)))
+
+    assert all(result[key] == value for key, value in recomputed.items())
+    assert result["decision"] == "PIVOT_WITH_EVIDENCE"
+    assert result["stopped_after_case_id"] == "generalization-uncertainty"
+    assert result["provider_calls"] == len(case_ids) == 4
+    assert result["grading_policy_sha256"] == policy_sha256(policy)
+    assert result["polarity_fidelity"] == "4/4"
+    assert result["uncertainty_fidelity"] == "4/4"
+    assert result["unsupported_claim_count"] == 2
+    assert result["all_receipts_valid"] is True
+    assert result["qualification_credit"] is False
+    assert result["trusted_promotion"] is False
+    assert result["graph_writes"] == 0
+
+    preregistration_sha256 = hashlib.sha256(
+        DEFAULT_PATHS.preregistration.read_bytes()
+    ).hexdigest()
+    schema_sha256 = hashlib.sha256(
+        json.dumps(
+            V8StagedGeneralizationOutput.model_json_schema(),
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+    response_ids: list[str] = []
+    for case_id in case_ids:
+        paths = DEFAULT_PATHS.case(case_id)
+        attempt = json.loads(paths.attempt.read_text(encoding="utf-8"))
+        bundle = json.loads(paths.bundle.read_text(encoding="utf-8"))
+        receipt = json.loads(paths.receipt.read_text(encoding="utf-8"))
+        raw = json.loads(paths.raw_output.read_text(encoding="utf-8"))
+        response_id = receipt["identity"]["response_id"]
+        expected_input_sha256 = hashlib.sha256(
+            provider_input(DEFAULT_PATHS, case_id).encode()
+        ).hexdigest()
+
+        assert attempt["preregistration_sha256"] == preregistration_sha256
+        assert attempt["provider_creation_limit"] == 1
+        assert attempt["provider_retries"] == 0
+        assert attempt["response_id"] == response_id
+        assert bundle["response_id"] == response_id
+        assert bundle["provider_input_sha256"] == expected_input_sha256
+        assert bundle["schema_sha256"] == schema_sha256
+        assert bundle["typed_output"] == raw
+        assert bundle["receipt"] == receipt
+        assert receipt["status"] == "VERIFIED_LIVE"
+        assert receipt["provider_creation_calls"] == 1
+        assert receipt["duplicate_creation_calls"] == 0
+        assert receipt["provider_retries"] == 0
+        assert all(
+            receipt["budgets"][key] == "PASS"
+            for key in ("output_tokens", "total_tokens", "latency", "cost")
+        )
+        response_ids.append(response_id)
+
+    assert result["response_ids"] == response_ids
+    for case_id in (
+        "generalization-drug-sensitivity",
+        "generalization-explicit-nested-cause",
+    ):
+        paths = DEFAULT_PATHS.case(case_id)
+        assert not any(
+            path.exists()
+            for path in (paths.attempt, paths.bundle, paths.receipt, paths.raw_output)
+        )

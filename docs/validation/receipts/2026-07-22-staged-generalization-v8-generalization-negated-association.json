@@ -1,0 +1,76 @@
+{
+  "acknowledgement_envelope_sha256": "ea4b1ae3f96101aaa275fb93e6e4a0e399bacd6c1f5872648b06b77c72f9e08f",
+  "acknowledgement_seconds": 0.48001333399952273,
+  "budgets": {
+    "cost": "PASS",
+    "latency": "PASS",
+    "observed_cost_usd": 0.02999,
+    "observed_latency_seconds": 27.12974770800065,
+    "observed_output_tokens": 4603,
+    "observed_total_tokens": 6975,
+    "output_tokens": "PASS",
+    "requested_max_cost_usd": 0.15,
+    "requested_max_latency_seconds": 900.0,
+    "requested_max_output_tokens": 20000,
+    "requested_max_total_tokens": 24000,
+    "total_tokens": "PASS"
+  },
+  "confirmation_retrieval_requests": 1,
+  "creation_envelope_sha256": "2f309308b2eafe61dc43547493b657fcdfc9845dbc5f895f77d48a6bdb7a5c9e",
+  "differences": [],
+  "duplicate_creation_calls": 0,
+  "identity": {
+    "created_at": 1784762117.0,
+    "model": "gpt-5.6-luna",
+    "object_type": "response",
+    "output_items": [
+      [
+        "reasoning",
+        "rs_06f8aba9d35b015b006a614f06c310819a8caafa369138490a"
+      ],
+      [
+        "reasoning",
+        "rs_06f8aba9d35b015b006a614f0c6a44819a84ab70d0e1a86da7"
+      ],
+      [
+        "reasoning",
+        "rs_06f8aba9d35b015b006a614f14a6f8819a807b785880d84142"
+      ],
+      [
+        "message",
+        "msg_06f8aba9d35b015b006a614f193e64819aaecb157f18968ff0"
+      ]
+    ],
+    "response_id": "resp_06f8aba9d35b015b006a614f05585c819ab530f31022be5e7c",
+    "status": "completed"
+  },
+  "input_item_retrieval_requests": 1,
+  "model_generation_calls": 1,
+  "polling_does_not_count_as_model_generation": true,
+  "polling_retrieval_requests": 5,
+  "polling_seconds": 26.260476625000592,
+  "provider_creation_calls": 1,
+  "provider_input_sha256": "88bd1509b7ee7fe24257cb9f511d728a859eb2f8ce44cdb41d30fa31259e57fb",
+  "provider_retries": 0,
+  "provider_schema_sha256": "10fcac21657e10ca375a8b98f3a399cb94b267e347c244627cb9f0f9cfdf92c0",
+  "retrieval_envelope_sha256": "2f309308b2eafe61dc43547493b657fcdfc9845dbc5f895f77d48a6bdb7a5c9e",
+  "scientific_payload_sha256": "e4459e1c4015f2465054f687c8b81f5640c0f7938eef104a64248060e351b94e",
+  "status": "VERIFIED_LIVE",
+  "status_history": [
+    "queued",
+    "in_progress",
+    "in_progress",
+    "in_progress",
+    "in_progress",
+    "completed"
+  ],
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.02999,
+    "input_tokens": 2372,
+    "latency_seconds": 27.12974770800065,
+    "output_tokens": 4603,
+    "reasoning_tokens": 1254,
+    "total_tokens": 6975
+  }
+}
