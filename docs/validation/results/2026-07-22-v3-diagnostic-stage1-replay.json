@@ -1,0 +1,48 @@
+{
+  "budget_results": {
+    "cost": "PASS",
+    "latency": "PASS",
+    "output_tokens": "PASS",
+    "total_tokens": "PASS"
+  },
+  "inventory_gate": {
+    "intermediate_event_present": true,
+    "missing": [],
+    "passed": true,
+    "unsupported": []
+  },
+  "inventory_prompt_sha256": "5b73195e8aa20993680db7fff3c73361f08f6b844236b4ea4c094c30f710b9a0",
+  "inventory_schema_sha256": "ce5d8cdd1ae3f3d5c03d71c77f7a3a8538dc82c8ef730f52ee4c9a6674873189",
+  "provider_input_sha256": "ccdff022e73b8f9f7137b82c88b6e7efdd0d429ef430853435f70b0752f2ce7e",
+  "qualification_credit": false,
+  "receipt_status": "VERIFIED_LIVE",
+  "recomputed_payload_sha256": "0b6124d935a0708961a8cb9515341365c2eaae4486c4a932fb1d02c86adc6356",
+  "recorded_payload_sha256": "0b6124d935a0708961a8cb9515341365c2eaae4486c4a932fb1d02c86adc6356",
+  "resolved_events": [
+    {
+      "event_id": "evt_decrease_c_myc_activity",
+      "event_type": "Negative_regulation",
+      "explanation": "The explicit decrease denotes negative regulation of c-Myc activity.",
+      "structural_position": "NESTED_EVENT",
+      "trigger": {"start": 0, "end": 8, "exact_text": "Decrease", "evidence_start": 0, "evidence_end": 75, "exact_evidence": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine."}
+    },
+    {
+      "event_id": "evt_cancer_cell_sensitivity",
+      "event_type": "Regulation",
+      "explanation": "Sensitivity is an explicit regulated response state involving cancer cells and vinblastine.",
+      "structural_position": "NESTED_EVENT",
+      "trigger": {"start": 48, "end": 59, "exact_text": "sensitivity", "evidence_start": 0, "evidence_end": 75, "exact_evidence": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine."}
+    },
+    {
+      "event_id": "evt_enhances_sensitivity",
+      "event_type": "Positive_regulation",
+      "explanation": "Enhances explicitly denotes positive regulation of the sensitivity state.",
+      "structural_position": "ROOT_CANDIDATE",
+      "trigger": {"start": 27, "end": 35, "exact_text": "enhances", "evidence_start": 0, "evidence_end": 75, "exact_evidence": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine."}
+    }
+  ],
+  "response_id": "resp_0318bce8f23c6172006a60f02ae04881998ef9903dab5b0548",
+  "source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+  "status": "NONCREDITABLE_DIAGNOSTIC_STAGE1_PASS",
+  "trusted_promotion": false
+}

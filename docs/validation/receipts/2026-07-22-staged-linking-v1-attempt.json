@@ -1,0 +1,9 @@
+{
+  "preregistration_sha256": "4e9cf3b37b2423f14c67e2d0ccf01df78b849a8ad06e1260027a17c5d40696a6",
+  "provider_creation_limit": 1,
+  "provider_input_sha256": "ef766412da611841b3d876336cd755126ad0e7579de33db944e369785e357151",
+  "provider_retries": 0,
+  "response_id": "resp_063763339a6a1e71006a60fd95a758819997228d5e74ad77af",
+  "stage": "PARTICIPANT_EVENT_LINKING",
+  "state": "ACKNOWLEDGED"
+}

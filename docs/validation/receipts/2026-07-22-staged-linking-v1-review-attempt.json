@@ -1,0 +1,9 @@
+{
+  "preregistration_sha256": "4e9cf3b37b2423f14c67e2d0ccf01df78b849a8ad06e1260027a17c5d40696a6",
+  "provider_creation_limit": 1,
+  "provider_input_sha256": "215c21c0e24efc37602a3a32b05c276e786e8a8494c7b49774d3d21e813598d7",
+  "provider_retries": 0,
+  "response_id": "resp_08c8d9a59c15986f006a60fead99d48199b16de9d88c9ec1d2",
+  "stage": "SOURCE_ONLY_LINKING_REVIEW",
+  "state": "ACKNOWLEDGED"
+}

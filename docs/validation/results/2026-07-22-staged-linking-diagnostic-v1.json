@@ -1,0 +1,16 @@
+{
+  "decision": "STOP_EVENT_LINKING_SCIENTIFIC_FAILURE",
+  "graph_comparison": {
+    "exact": false,
+    "mismatch": "typed event graph differs from exposed public gold",
+    "nesting_correct": false,
+    "participant_fidelity": true,
+    "root_correct": true,
+    "unsupported_node_count": 0
+  },
+  "provider_calls": 2,
+  "qualification_credit": false,
+  "source_only_review": null,
+  "structural_error": "source-only review evidence: evidence text is absent from permitted scope",
+  "trusted_promotion": false
+}

@@ -25,14 +25,16 @@ from scripts.validation.public_gold.lossless_event_provider import (
 from scripts.validation.public_gold.staged_event.context_experiment.source_first.anchors import (
     AnchorResolutionError,
 )
+from scripts.validation.public_gold.staged_event.context_experiment.source_first.attempts import (
+    acknowledge_attempt,
+    reserve_attempt,
+)
 from scripts.validation.public_gold.staged_event.context_experiment.source_first.custody import (
-    CustodyPersistenceError,
     StageCustodyInput,
     StageCustodyPaths,
     StageCustodyRecord,
     persist_stage_custody,
     write_json_atomic,
-    write_json_exclusive,
 )
 from scripts.validation.public_gold.staged_event.context_experiment.source_first.inventory import (
     EventInventoryOutput,
@@ -246,7 +248,7 @@ def _inventory_provider_call(
             preregistration_sha256=preregistration_sha256,
         ),
         runtime=BackgroundExecutionRuntime(
-            on_acknowledged=lambda response_id: _acknowledge_attempt(
+            on_acknowledged=lambda response_id: acknowledge_attempt(
                 INVENTORY_ATTEMPT, response_id=response_id
             )
         ),
@@ -270,7 +272,7 @@ def _linking_provider_call(
             preregistration_sha256=preregistration_sha256,
         ),
         runtime=BackgroundExecutionRuntime(
-            on_acknowledged=lambda response_id: _acknowledge_attempt(
+            on_acknowledged=lambda response_id: acknowledge_attempt(
                 LINKING_ATTEMPT, response_id=response_id
             )
         ),
@@ -368,10 +370,10 @@ def execute(runtime: StagedRuntime | None = None) -> str:
         after_linking_persist=_noop,
     )
     inventory_provider_input = inventory_input(source)
-    _reserve_attempt(
+    reserve_attempt(
         INVENTORY_ATTEMPT,
         stage="EVENT_INVENTORY",
-        provider_input_value=inventory_provider_input,
+        provider_input=inventory_provider_input,
         preregistration_sha256=preregistration_sha256,
     )
     try:
@@ -404,10 +406,10 @@ def execute(runtime: StagedRuntime | None = None) -> str:
     comparison: ExposedGraphComparison | None
     structural_error: str | None
     try:
-        _reserve_attempt(
+        reserve_attempt(
             LINKING_ATTEMPT,
             stage="PARTICIPANT_EVENT_LINKING",
-            provider_input_value=linking_provider_input,
+            provider_input=linking_provider_input,
             preregistration_sha256=preregistration_sha256,
         )
         linking_execution = active_runtime.linking_call(
@@ -568,47 +570,6 @@ def _custody_paths(paths: StageCustodyPaths) -> dict[str, str]:
         "receipt": str(paths.receipt.relative_to(REPO)),
         "raw_output": str(paths.raw_output.relative_to(REPO)),
     }
-
-
-def _reserve_attempt(
-    path: Path,
-    *,
-    stage: str,
-    provider_input_value: str,
-    preregistration_sha256: str,
-) -> None:
-    try:
-        write_json_exclusive(
-            path,
-            {
-                "state": "CREATION_RESERVED",
-                "stage": stage,
-                "provider_input_sha256": hashlib.sha256(
-                    provider_input_value.encode()
-                ).hexdigest(),
-                "preregistration_sha256": preregistration_sha256,
-                "provider_creation_limit": 1,
-                "provider_retries": 0,
-            },
-        )
-    except CustodyPersistenceError as exc:
-        raise StagedExperimentStateError(
-            f"{stage} creation is already reserved and cannot be repeated"
-        ) from exc
-
-
-def _acknowledge_attempt(path: Path, *, response_id: str) -> None:
-    loaded: object = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(loaded, dict) or loaded.get("state") != "CREATION_RESERVED":
-        raise StagedExperimentStateError("provider attempt reservation is invalid")
-    write_json_atomic(
-        path,
-        {
-            **loaded,
-            "state": "ACKNOWLEDGED",
-            "response_id": response_id,
-        },
-    )
 
 
 def _write(path: Path, value: object) -> None:

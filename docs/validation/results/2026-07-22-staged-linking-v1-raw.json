@@ -1,0 +1,81 @@
+{
+  "event_links": [
+    {
+      "arguments": [
+        {
+          "explanation": "The decrease applies to c-Myc activity.",
+          "role": "THEME",
+          "target_id": "p_c_myc",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "evt_decrease_c_myc_activity"
+    },
+    {
+      "arguments": [
+        {
+          "explanation": "The sensitivity state is attributed to the cancer cell.",
+          "role": "THEME",
+          "target_id": "p_cancer_cell",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "Vinblastine is explicitly linked to the sensitivity state by the phrase 'sensitivity to vinblastine'; the passage does not state that it is a cause or instrument.",
+          "role": "OTHER_EXPLICIT",
+          "target_id": "p_vinblastine",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "evt_cancer_cell_sensitivity"
+    },
+    {
+      "arguments": [
+        {
+          "explanation": "The decrease is the event that enhances the sensitivity state.",
+          "role": "CAUSE",
+          "target_id": "evt_decrease_c_myc_activity",
+          "target_kind": "EVENT"
+        },
+        {
+          "explanation": "The enhanced target is the cancer cell sensitivity event.",
+          "role": "THEME",
+          "target_id": "evt_cancer_cell_sensitivity",
+          "target_kind": "EVENT"
+        }
+      ],
+      "event_id": "evt_enhances_sensitivity"
+    }
+  ],
+  "frozen_event_ids": [
+    "evt_decrease_c_myc_activity",
+    "evt_cancer_cell_sensitivity",
+    "evt_enhances_sensitivity"
+  ],
+  "packet_id": "staged-linking-diagnostic-v1",
+  "participants": [
+    {
+      "entity_type": "Gene_or_gene_product",
+      "exact_evidence": "c-Myc activity",
+      "exact_text": "c-Myc",
+      "explanation": "c-Myc is the gene or gene product whose activity is explicitly decreased.",
+      "participant_id": "p_c_myc"
+    },
+    {
+      "entity_type": "Cell",
+      "exact_evidence": "cancer cell sensitivity to vinblastine",
+      "exact_text": "cancer cell",
+      "explanation": "The cancer cell is the cellular entity bearing the explicit sensitivity state.",
+      "participant_id": "p_cancer_cell"
+    },
+    {
+      "entity_type": "Simple_chemical",
+      "exact_evidence": "sensitivity to vinblastine",
+      "exact_text": "vinblastine",
+      "explanation": "Vinblastine is the explicitly stated chemical object of the sensitivity relation.",
+      "participant_id": "p_vinblastine"
+    }
+  ],
+  "root_event_id": "evt_enhances_sensitivity",
+  "structure_assessment": "COMPLETE",
+  "structure_explanation": "The passage explicitly supports two nested events\u2014decrease of c-Myc activity and cancer cell sensitivity to vinblastine\u2014connected by the outer positive-regulation event 'enhances'."
+}

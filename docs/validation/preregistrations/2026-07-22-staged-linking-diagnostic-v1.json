@@ -1,0 +1,64 @@
+{
+  "authorized": true,
+  "frozen_state": {
+    "budgets": {
+      "global_max_cost_usd": 1.0,
+      "global_max_creation_calls": 3,
+      "per_call_max_cost_usd": 0.35,
+      "per_call_max_latency_seconds": 900.0,
+      "per_call_max_output_tokens": 32000,
+      "per_call_max_total_tokens": 40000,
+      "retries": 0
+    },
+    "code_sha256": {
+      "scripts/validation/provider_receipt_boundary/background/execution.py": "c84f2c67cce1a1bed25190592e8b2cd1716dec73142283e97a152af90d79783d",
+      "scripts/validation/provider_receipt_boundary/validation.py": "a0f21c6a6a882a2647763cd13f23ef4eb19518ac03ef409d23caf17b5b2b708a",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/anchors.py": "9f0b021f88c3edbd8f5d9d21bbfa2e9b5ef0e824a42e65c7820c5fb7c4702b7c",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/attempts.py": "c579a40c0d6739a090e2ce673e5ffcb1c5833c97d36341f7ed310ad3c809f7de",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/contracts.py": "e1b43b21a8a499df7b9103ee854d689d22385524177f45d426b54c37dcfa1d97",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/custody.py": "8a569b13078af044fa7399c2f237c2a340e76553849d6c0d0fa38d3d6f8bcfb6",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/diagnostic_replay.py": "4958a6f18d02b7a88bde8a465f3193d11c2bee706d0667523e7c7910de28f812",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/inventory.py": "49156a14afd981a37da275b0eb17bb3c4811449a0e26cef0685bb186a6391192",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/linking.py": "63861b66f888ea63a493ab11282d2fc51291982cb514157e428dd37972088205",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/linking_diagnostic_runner.py": "f24292252e6bcf299bb8233484280d636d867a5918dbf5e71b248ba2a71c6211",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/linking_review.py": "3c62e3f91cead4d530a342a8d957d852601ed1c9c05c3f31cf14e244f71fcf32",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/staged_runner.py": "5835e86475aecf9b6f63fb948cbbc39c086439bfcf7c65814d8c8487272dc526",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/validation.py": "be9381779dd5209bb046e752c2d4b412c5d761f677fa304c7036d61a4756f662"
+    },
+    "diagnostic_inventory_sha256": "a613f133689cad68c0d2f02efb073614003a99e380b5a2c642c8d54da97ac166",
+    "diagnostic_inventory_status": "NONCREDITABLE_DIAGNOSTIC_STAGE1_PASS",
+    "linking_prompt_sha256": "f5c300bf395d85a22fc5a7d91df1227619e76efa7bc0ba4cbdc7c51510353bfb",
+    "linking_provider_format_sha256": "0b0c9a19156867bece323d8c29713dbdeb01cf80d4371d1b58dc099a445daa35",
+    "linking_provider_input_sha256": "ef766412da611841b3d876336cd755126ad0e7579de33db944e369785e357151",
+    "linking_schema_sha256": "bc31c8e8412f0a436cc0087f99275675f091b7f881837bb9bc0a0dc334b8e36b",
+    "model": "openai:gpt-5.6-luna",
+    "provider_model_id": "gpt-5.6-luna",
+    "reasoning_effort": "high",
+    "review_prompt_sha256": "8849c604fb823e94f949be8f1847ea9cefd5a71c0e902f44434f2f1d3e9d934c",
+    "review_provider_format_sha256": "d65afd792f3f89fdb7ec2230ee2e2a1f879fee2d12ae2ca882f0194882ad65e7",
+    "review_schema_sha256": "9872617942518c4f21630cee855f955763b49ee34a2a7451af8fee3757dc668e",
+    "scope": {
+      "end": 222,
+      "sha256": "06a93c5187d68a60e379ee9341889102b47e398e6ff973c2479e2de2795dda26",
+      "start": 0
+    },
+    "source_id": "PMID-16428936",
+    "source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab"
+  },
+  "purpose": "Non-creditable exposed-development Stage 2 diagnostic using immutable verified V3 inventory replay.",
+  "rules": {
+    "all_outputs_review_only": true,
+    "fallbacks": 0,
+    "graph_writes": 0,
+    "promotion": false,
+    "reviewer_may_override_gold_comparison": false,
+    "stage1_provider_calls": 0,
+    "untouched_sources": false
+  },
+  "stop_decisions": [
+    "ADVANCE_STAGED_LINKING_DIAGNOSTIC",
+    "STOP_EVENT_LINKING_SCIENTIFIC_FAILURE",
+    "STOP_OPERATIONAL_BLOCKER"
+  ],
+  "version": "staged-linking-diagnostic-v1"
+}

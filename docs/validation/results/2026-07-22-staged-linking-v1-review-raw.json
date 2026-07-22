@@ -1,0 +1,5 @@
+{
+  "exact_evidence": "\"Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.\" \"The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.\"",
+  "explanation": "The source directly states the decrease in c-Myc activity, the cancer cell's sensitivity to vinblastine, and that the decrease enhances that sensitivity. It also identifies c-myc as an oncogene encoding a transcriptional factor, supporting the Gene_or_gene_product type; cancer cell and vinblastine support the Cell and Simple_chemical types. The event nesting, participant links, root event, and complete structure are consistent with the passage.",
+  "verdict": "SUPPORTED"
+}

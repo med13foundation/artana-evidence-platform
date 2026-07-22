@@ -66,7 +66,9 @@ def validate_structure(
             scope_end=scope_end,
         )
         for argument in event.arguments:
-            expected = participant_set if argument.target_kind == "PARTICIPANT" else event_set
+            expected = (
+                participant_set if argument.target_kind == "PARTICIPANT" else event_set
+            )
             if argument.target_id not in expected:
                 raise SourceFirstValidationError(
                     f"unknown or kind-mismatched target: {argument.target_id}"
@@ -75,7 +77,9 @@ def validate_structure(
     if reachable_events != event_set:
         raise SourceFirstValidationError("disconnected event outside root finding")
     if reachable_participants != participant_set:
-        raise SourceFirstValidationError("disconnected participant outside root finding")
+        raise SourceFirstValidationError(
+            "disconnected participant outside root finding"
+        )
     if output.structure_assessment == "COMPLETE" and not output.events:
         raise SourceFirstValidationError("self-reported COMPLETE graph is empty")
 
@@ -119,13 +123,18 @@ def _reachable(output: CompleteEventOutput) -> tuple[set[str], set[str]]:
 def compare_exposed_nested_graph(output: CompleteEventOutput) -> ExposedGraphComparison:
     """Compare the validated graph with the exposed public-gold event projection."""
     participants = {
-        (item.evidence.start, item.evidence.end, item.evidence.exact_text): item
+        (
+            item.entity_type.value,
+            item.evidence.start,
+            item.evidence.end,
+            item.evidence.exact_text,
+        ): item
         for item in output.participants
     }
     expected_participants = {
-        (12, 17, "c-Myc"),
-        (36, 47, "cancer cell"),
-        (63, 74, "vinblastine"),
+        ("Gene_or_gene_product", 12, 17, "c-Myc"),
+        ("Cell", 36, 47, "cancer cell"),
+        ("Simple_chemical", 63, 74, "vinblastine"),
     }
     participant_fidelity = set(participants) == expected_participants
     events_by_trigger = {
@@ -166,18 +175,22 @@ def compare_exposed_nested_graph(output: CompleteEventOutput) -> ExposedGraphCom
             ("THEME", "EVENT", sensitivity.event_id),
         },
         decrease.event_id: {
-            ("THEME", "PARTICIPANT", participants[(12, 17, "c-Myc")].participant_id)
+            (
+                "THEME",
+                "PARTICIPANT",
+                participants[("Gene_or_gene_product", 12, 17, "c-Myc")].participant_id,
+            )
         },
         sensitivity.event_id: {
             (
                 "THEME",
                 "PARTICIPANT",
-                participants[(36, 47, "cancer cell")].participant_id,
+                participants[("Cell", 36, 47, "cancer cell")].participant_id,
             ),
             (
                 "CAUSE",
                 "PARTICIPANT",
-                participants[(63, 74, "vinblastine")].participant_id,
+                participants[("Simple_chemical", 63, 74, "vinblastine")].participant_id,
             ),
         },
     }
@@ -202,7 +215,9 @@ def compare_exposed_nested_graph(output: CompleteEventOutput) -> ExposedGraphCom
         participant_fidelity=participant_fidelity,
         nesting_correct=nesting_correct,
         unsupported_node_count=unsupported,
-        mismatch=None if exact else "typed event graph differs from exposed public gold",
+        mismatch=None
+        if exact
+        else "typed event graph differs from exposed public gold",
     )
 
 
@@ -277,9 +292,9 @@ def compare_to_exposed_gold_root(
     event_fidelity = set(predicted_event_keys.values()) == set(
         expected_event_keys.values()
     )
-    unsupported = max(
-        0, len(predicted_event_keys) - len(expected_event_keys)
-    ) + max(0, len(predicted_participant_keys) - len(expected_participant_keys))
+    unsupported = max(0, len(predicted_event_keys) - len(expected_event_keys)) + max(
+        0, len(predicted_participant_keys) - len(expected_participant_keys)
+    )
     predicted_root_key = (
         predicted_event_keys.get(output.root_event_id)
         if output.root_event_id is not None
@@ -339,5 +354,7 @@ def compare_to_exposed_gold_root(
         participant_fidelity=participant_fidelity,
         nesting_correct=nesting_correct,
         unsupported_node_count=unsupported,
-        mismatch=None if exact else "typed event graph differs from exposed public gold",
+        mismatch=None
+        if exact
+        else "typed event graph differs from exposed public gold",
     )

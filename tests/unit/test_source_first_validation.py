@@ -53,7 +53,11 @@ def valid_output() -> CompleteEventOutput:
             event_id="event-decrease",
             event_type=SourceEventType.NEGATIVE_REGULATION,
             trigger=span(0, 8),
-            arguments=(EventArgument(role="THEME", target_kind="PARTICIPANT", target_id="p-myc"),),
+            arguments=(
+                EventArgument(
+                    role="THEME", target_kind="PARTICIPANT", target_id="p-myc"
+                ),
+            ),
             short_explanation="The source decreases c-Myc activity.",
         ),
         EventNode(
@@ -61,8 +65,12 @@ def valid_output() -> CompleteEventOutput:
             event_type=SourceEventType.REGULATION,
             trigger=span(48, 59),
             arguments=(
-                EventArgument(role="THEME", target_kind="PARTICIPANT", target_id="p-cell"),
-                EventArgument(role="CAUSE", target_kind="PARTICIPANT", target_id="p-drug"),
+                EventArgument(
+                    role="THEME", target_kind="PARTICIPANT", target_id="p-cell"
+                ),
+                EventArgument(
+                    role="CAUSE", target_kind="PARTICIPANT", target_id="p-drug"
+                ),
             ),
             short_explanation="The cancer cell has sensitivity to vinblastine.",
         ),
@@ -71,8 +79,12 @@ def valid_output() -> CompleteEventOutput:
             event_type=SourceEventType.POSITIVE_REGULATION,
             trigger=span(27, 35),
             arguments=(
-                EventArgument(role="CAUSE", target_kind="EVENT", target_id="event-decrease"),
-                EventArgument(role="THEME", target_kind="EVENT", target_id="event-sensitivity"),
+                EventArgument(
+                    role="CAUSE", target_kind="EVENT", target_id="event-decrease"
+                ),
+                EventArgument(
+                    role="THEME", target_kind="EVENT", target_id="event-sensitivity"
+                ),
             ),
             short_explanation="The decrease enhances the sensitivity event.",
         ),
@@ -92,6 +104,21 @@ def test_valid_complete_nested_graph_passes() -> None:
 
     validate_structure(output, source=SOURCE)
     assert compare_exposed_nested_graph(output).exact
+
+
+def test_exact_comparison_rejects_wrong_participant_entity_type() -> None:
+    output = valid_output()
+    wrong_type = output.participants[0].model_copy(
+        update={"entity_type": SourceEntityType.CELL}
+    )
+    comparison = compare_exposed_nested_graph(
+        output.model_copy(
+            update={"participants": (wrong_type, *output.participants[1:])}
+        )
+    )
+
+    assert comparison.exact is False
+    assert comparison.participant_fidelity is False
 
 
 def test_rejects_missing_or_unknown_root() -> None:
@@ -162,9 +189,7 @@ def test_rejects_invalid_cross_scope_or_unsupported_evidence() -> None:
 
 def test_rejects_duplicate_ids_and_disconnected_events() -> None:
     output = valid_output()
-    duplicate = output.participants[1].model_copy(
-        update={"participant_id": "p-myc"}
-    )
+    duplicate = output.participants[1].model_copy(update={"participant_id": "p-myc"})
     with pytest.raises(SourceFirstValidationError, match="duplicate"):
         validate_structure(
             output.model_copy(

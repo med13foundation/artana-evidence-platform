@@ -1,0 +1,229 @@
+{
+  "output_sha256": "eefbae4de484230b8cd48bb21935896568605913f6ce83a3202eef1137c66f8e",
+  "provider_input_sha256": "ef766412da611841b3d876336cd755126ad0e7579de33db944e369785e357151",
+  "receipt": {
+    "acknowledgement_envelope_sha256": "c635975b9e4b9d5690ed0531217320af7b05a767efdc4e50a5b879840cebe287",
+    "acknowledgement_seconds": 1.2824827919830568,
+    "budgets": {
+      "cost": "PASS",
+      "latency": "PASS",
+      "observed_cost_usd": 0.04778,
+      "observed_latency_seconds": 280.6838729160081,
+      "observed_output_tokens": 7764,
+      "observed_total_tokens": 8960,
+      "output_tokens": "PASS",
+      "requested_max_cost_usd": 0.35,
+      "requested_max_latency_seconds": 900.0,
+      "requested_max_output_tokens": 32000,
+      "requested_max_total_tokens": 40000,
+      "total_tokens": "PASS"
+    },
+    "confirmation_retrieval_requests": 1,
+    "creation_envelope_sha256": "3578fc896a706d3f2a941243ba7006b4c2ea520889262ed826846a23424d054c",
+    "differences": [],
+    "duplicate_creation_calls": 0,
+    "identity": {
+      "created_at": 1784741269.0,
+      "model": "gpt-5.6-luna",
+      "object_type": "response",
+      "output_items": [
+        [
+          "reasoning",
+          "rs_063763339a6a1e71006a60fd9bb87881999870f19efb03962d"
+        ],
+        [
+          "reasoning",
+          "rs_063763339a6a1e71006a60fdcbfc40819995c884b90b407a49"
+        ],
+        [
+          "reasoning",
+          "rs_063763339a6a1e71006a60fe1e8e8c81999ecff0b8ea9ce98f"
+        ],
+        [
+          "reasoning",
+          "rs_063763339a6a1e71006a60fe568aa08199b6c31944396c8ef8"
+        ],
+        [
+          "message",
+          "msg_063763339a6a1e71006a60fe81cf2c81999eb77e6bbb7be656"
+        ]
+      ],
+      "response_id": "resp_063763339a6a1e71006a60fd95a758819997228d5e74ad77af",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "polling_does_not_count_as_model_generation": true,
+    "polling_retrieval_requests": 52,
+    "polling_seconds": 278.9004445419996,
+    "provider_creation_calls": 1,
+    "provider_input_sha256": "ef766412da611841b3d876336cd755126ad0e7579de33db944e369785e357151",
+    "provider_retries": 0,
+    "provider_schema_sha256": "0b0c9a19156867bece323d8c29713dbdeb01cf80d4371d1b58dc099a445daa35",
+    "retrieval_envelope_sha256": "3578fc896a706d3f2a941243ba7006b4c2ea520889262ed826846a23424d054c",
+    "scientific_payload_sha256": "eefbae4de484230b8cd48bb21935896568605913f6ce83a3202eef1137c66f8e",
+    "status": "VERIFIED_LIVE",
+    "status_history": [
+      "queued",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "completed"
+    ],
+    "usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.04778,
+      "input_tokens": 1196,
+      "latency_seconds": 280.6838729160081,
+      "output_tokens": 7764,
+      "reasoning_tokens": 2070,
+      "total_tokens": 8960
+    }
+  },
+  "requested_and_observed_budgets": {
+    "cost": "PASS",
+    "latency": "PASS",
+    "observed_cost_usd": 0.04778,
+    "observed_latency_seconds": 280.6838729160081,
+    "observed_output_tokens": 7764,
+    "observed_total_tokens": 8960,
+    "output_tokens": "PASS",
+    "requested_max_cost_usd": 0.35,
+    "requested_max_latency_seconds": 900.0,
+    "requested_max_output_tokens": 32000,
+    "requested_max_total_tokens": 40000,
+    "total_tokens": "PASS"
+  },
+  "response_id": "resp_063763339a6a1e71006a60fd95a758819997228d5e74ad77af",
+  "schema_sha256": "bc31c8e8412f0a436cc0087f99275675f091b7f881837bb9bc0a0dc334b8e36b",
+  "stage": "PARTICIPANT_EVENT_LINKING",
+  "typed_output": {
+    "event_links": [
+      {
+        "arguments": [
+          {
+            "explanation": "The decrease applies to c-Myc activity.",
+            "role": "THEME",
+            "target_id": "p_c_myc",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "evt_decrease_c_myc_activity"
+      },
+      {
+        "arguments": [
+          {
+            "explanation": "The sensitivity state is attributed to the cancer cell.",
+            "role": "THEME",
+            "target_id": "p_cancer_cell",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "Vinblastine is explicitly linked to the sensitivity state by the phrase 'sensitivity to vinblastine'; the passage does not state that it is a cause or instrument.",
+            "role": "OTHER_EXPLICIT",
+            "target_id": "p_vinblastine",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "evt_cancer_cell_sensitivity"
+      },
+      {
+        "arguments": [
+          {
+            "explanation": "The decrease is the event that enhances the sensitivity state.",
+            "role": "CAUSE",
+            "target_id": "evt_decrease_c_myc_activity",
+            "target_kind": "EVENT"
+          },
+          {
+            "explanation": "The enhanced target is the cancer cell sensitivity event.",
+            "role": "THEME",
+            "target_id": "evt_cancer_cell_sensitivity",
+            "target_kind": "EVENT"
+          }
+        ],
+        "event_id": "evt_enhances_sensitivity"
+      }
+    ],
+    "frozen_event_ids": [
+      "evt_decrease_c_myc_activity",
+      "evt_cancer_cell_sensitivity",
+      "evt_enhances_sensitivity"
+    ],
+    "packet_id": "staged-linking-diagnostic-v1",
+    "participants": [
+      {
+        "entity_type": "Gene_or_gene_product",
+        "exact_evidence": "c-Myc activity",
+        "exact_text": "c-Myc",
+        "explanation": "c-Myc is the gene or gene product whose activity is explicitly decreased.",
+        "participant_id": "p_c_myc"
+      },
+      {
+        "entity_type": "Cell",
+        "exact_evidence": "cancer cell sensitivity to vinblastine",
+        "exact_text": "cancer cell",
+        "explanation": "The cancer cell is the cellular entity bearing the explicit sensitivity state.",
+        "participant_id": "p_cancer_cell"
+      },
+      {
+        "entity_type": "Simple_chemical",
+        "exact_evidence": "sensitivity to vinblastine",
+        "exact_text": "vinblastine",
+        "explanation": "Vinblastine is the explicitly stated chemical object of the sensitivity relation.",
+        "participant_id": "p_vinblastine"
+      }
+    ],
+    "root_event_id": "evt_enhances_sensitivity",
+    "structure_assessment": "COMPLETE",
+    "structure_explanation": "The passage explicitly supports two nested events\u2014decrease of c-Myc activity and cancer cell sensitivity to vinblastine\u2014connected by the outer positive-regulation event 'enhances'."
+  }
+}
