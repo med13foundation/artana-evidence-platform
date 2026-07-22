@@ -1,0 +1,4293 @@
+# Staged Scientific Event Exposed Comparison
+
+**Decision:** `INVALID_EXPERIMENT`
+
+This comparison uses only the exposed PMID-16428936 development source. It does not qualify sealed data, graph writes, or promotion.
+
+## Accounting
+
+```json
+{
+  "fallbacks": 0,
+  "provider_creation_calls": 5,
+  "provider_retries": 0,
+  "receipts": [
+    {
+      "acknowledgement_envelope_sha256": "e322ca3efea59f71cb639a2c57536cf71694c8b58f74abf82baa7644de174b03",
+      "acknowledgement_seconds": 0.8633154589915648,
+      "confirmation_retrieval_requests": 1,
+      "creation_envelope_sha256": "d256c96259275f0d119da03e04d2047ac0ce4d39f1139630a42b13b2b141c432",
+      "differences": [],
+      "duplicate_creation_calls": 0,
+      "identity": {
+        "created_at": 1784693996.0,
+        "model": "gpt-5.6-sol",
+        "object_type": "response",
+        "output_items": [
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60450560ec819a896271196c4bc144"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60450d18ac819a85da4ad92297a23b"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a604510d298819abf0384a5a890ac9d"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60451dcba4819a82353d1152f27502"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60452a1df0819ab27f0ec9fac1d296"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60453999a0819abdc1a117ad38f938"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60453f8a84819a9b9f4f88577ede29"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60454a5230819abac2720604ef72cc"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a6045591104819ab46b9c27efcff0e5"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a604568d5c4819aa7791cc9a63e4e54"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60457aa9f4819aaf34c5e78c4b39ef"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a6045865800819aa8eb8c61ac99ee45"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a6045900f44819aa8a363e2154b9905"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60459791c4819a9bef1670fcb76265"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a604598986c819a98d7b0c79da7a310"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a604599a508819a8b0dd063150036bf"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60459aa410819a905a7434688a3544"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60459b9698819a884fee263d988330"
+          ],
+          [
+            "message",
+            "msg_0a67e8e88bb6f8bc006a60459cf79c819aa91916a11d3cc76b"
+          ]
+        ],
+        "response_id": "resp_0a67e8e88bb6f8bc006a6044ec2454819a892e6a9f394b48dc",
+        "status": "completed"
+      },
+      "input_item_retrieval_requests": 1,
+      "model_generation_calls": 1,
+      "polling_does_not_count_as_model_generation": true,
+      "polling_retrieval_requests": 46,
+      "polling_seconds": 244.7105497920129,
+      "provider_creation_calls": 1,
+      "provider_input_sha256": "c1d589456c56289a4e52fc2a47a6c44ef50177c4b5d4dc42be6f59fe61b6e3fa",
+      "provider_retries": 0,
+      "provider_schema_sha256": "8d872edecdea1a757f85b00eb14dd42e4a156bc9ce837150c132773d05d70a5b",
+      "retrieval_envelope_sha256": "d256c96259275f0d119da03e04d2047ac0ce4d39f1139630a42b13b2b141c432",
+      "scientific_payload_sha256": "83512bc42276ba78b823cd06ad2b367132c66ba056eec8db74e7e0df0fbd743d",
+      "stage": "discovery",
+      "stage_output_sha256": "83512bc42276ba78b823cd06ad2b367132c66ba056eec8db74e7e0df0fbd743d",
+      "status": "VERIFIED_LIVE",
+      "status_history": [
+        "queued",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "completed"
+      ],
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 3.01439,
+        "input_tokens": 1600,
+        "latency_seconds": 245.96554291600478,
+        "output_tokens": 100213,
+        "reasoning_tokens": 9064,
+        "total_tokens": 101813
+      }
+    },
+    {
+      "acknowledgement_envelope_sha256": "9733e4dbaf6ccf5a4db0b891a279b11e7047343267c1d689b763bc329b09dcec",
+      "acknowledgement_seconds": 0.5436257910041604,
+      "confirmation_retrieval_requests": 1,
+      "creation_envelope_sha256": "bf5f0f160ab479d1fd192df721ec0f8b6477285d67d8651fb5bd21caeb49e6db",
+      "differences": [],
+      "duplicate_creation_calls": 0,
+      "identity": {
+        "created_at": 1784694241.0,
+        "model": "gpt-5.6-sol",
+        "object_type": "response",
+        "output_items": [
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a6045e377f0819abdccacf43bf8966c"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a6045ecdcec819aa39a6454d6b1032e"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a6045f89558819a8d273958cd0ddb7c"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a6046014948819ab530392c5ae6785b"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a604609f49c819a803adabf0e9ee8f8"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a604612699c819aa8a21e637019c426"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a60461b4f80819aad8dd20c3c28c9a7"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a604623c7b4819ab0aa7c94ab8bf85b"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a60462be7fc819aa3108dd31b6fe28d"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a604635b974819a973add495bda2a43"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a60463d8d98819a82ee311238898e13"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a6046462cf4819a956d4ac687760e1c"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a60464f1760819a8add917666563e68"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a60465705c4819ab51c4a2f524507a9"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a60465fa2f8819a95499b51b43564f9"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a604668a16c819ab0d2e27116ca8ab6"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a6046712ac8819a92ca9ea9c4d82e10"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a604679a428819aac9eaefbd5b3fb03"
+          ],
+          [
+            "message",
+            "msg_0c1649c3bf1f650b006a60467fd358819a95021adbd9e8174c"
+          ]
+        ],
+        "response_id": "resp_0c1649c3bf1f650b006a6045e1df48819a977fc415c3c7efa5",
+        "status": "completed"
+      },
+      "input_item_retrieval_requests": 1,
+      "model_generation_calls": 1,
+      "polling_does_not_count_as_model_generation": true,
+      "polling_retrieval_requests": 39,
+      "polling_seconds": 205.7243094590085,
+      "provider_creation_calls": 1,
+      "provider_input_sha256": "90fa7d300d5fd0d656c22a140ab05d3358810a528ce9f99f61b976d3dfee351f",
+      "provider_retries": 0,
+      "provider_schema_sha256": "f859ddd48ccc39fdd67b20a6b751c95a323cfc95dd306242aafba74241c29dcf",
+      "retrieval_envelope_sha256": "bf5f0f160ab479d1fd192df721ec0f8b6477285d67d8651fb5bd21caeb49e6db",
+      "scientific_payload_sha256": "db2230d712fc4e40b2e556f6742464658935b42374113aad2c01d4ff122d95df",
+      "stage": "participants",
+      "stage_output_sha256": "db2230d712fc4e40b2e556f6742464658935b42374113aad2c01d4ff122d95df",
+      "status": "VERIFIED_LIVE",
+      "status_history": [
+        "queued",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "completed"
+      ],
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 3.1250299999999998,
+        "input_tokens": 7126,
+        "latency_seconds": 207.02591604099143,
+        "output_tokens": 102980,
+        "reasoning_tokens": 9190,
+        "total_tokens": 110106
+      }
+    },
+    {
+      "acknowledgement_envelope_sha256": "76683cdde4390cc21cf5688c501eb66e0ee83a4d7de9641f61a359777d4e45c7",
+      "acknowledgement_seconds": 0.7182148749998305,
+      "confirmation_retrieval_requests": 1,
+      "creation_envelope_sha256": "7025e7e965ac339326b519176845f2adfa8cfc97b7035489cd03b5826113e23d",
+      "differences": [],
+      "duplicate_creation_calls": 0,
+      "identity": {
+        "created_at": 1784694449.0,
+        "model": "gpt-5.6-sol",
+        "object_type": "response",
+        "output_items": [
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046b499dc819994f29082b9427faf"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046c02260819990c815a9160f4bec"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046cfa3b4819983ab1b294c096bd4"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046d0ac7081999958dd16cd2f1f17"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046dde8448199ac18949154e8fd35"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046ec1b788199822bbad793f2a4ab"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046f0b8cc8199aed9d5009fdb7d49"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a604701442c8199b64e49e705396467"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a60471165a88199a2bd5ba5603db750"
+          ],
+          [
+            "message",
+            "msg_082f36ac7681b031006a604718b7108199bbc23e0c4fe7685d"
+          ]
+        ],
+        "response_id": "resp_082f36ac7681b031006a6046b0f32c8199880091229358a2fd",
+        "status": "completed"
+      },
+      "input_item_retrieval_requests": 1,
+      "model_generation_calls": 1,
+      "polling_does_not_count_as_model_generation": true,
+      "polling_retrieval_requests": 28,
+      "polling_seconds": 152.21297849999974,
+      "provider_creation_calls": 1,
+      "provider_input_sha256": "70a017231f264c9f9fb343235aee00bc4e8fc15a7d2bb786b4a2986f4e065190",
+      "provider_retries": 0,
+      "provider_schema_sha256": "c89cdf6bbdf4dc1b5af1a1d848059ffedcd4c135e7eaf887195224f3913dabcc",
+      "retrieval_envelope_sha256": "7025e7e965ac339326b519176845f2adfa8cfc97b7035489cd03b5826113e23d",
+      "scientific_payload_sha256": "7c43b26ad2cfcdf39318244f76f6a0f9c8793f1884efa49feb3710a1a8db158b",
+      "stage": "roles",
+      "stage_output_sha256": "7c43b26ad2cfcdf39318244f76f6a0f9c8793f1884efa49feb3710a1a8db158b",
+      "status": "VERIFIED_LIVE",
+      "status_history": [
+        "queued",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "completed"
+      ],
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 1.1541100000000002,
+        "input_tokens": 38744,
+        "latency_seconds": 153.71166741699562,
+        "output_tokens": 32013,
+        "reasoning_tokens": 4576,
+        "total_tokens": 70757
+      }
+    },
+    {
+      "acknowledgement_envelope_sha256": "d0803d3ea078ae67684a45a5d8988706ac1a0b853ac662d3682382befbde0c14",
+      "acknowledgement_seconds": 0.7022962500050198,
+      "confirmation_retrieval_requests": 1,
+      "creation_envelope_sha256": "6f7e7a52bede9deae07bd07ed3a1d7d691d7f7350cf299ca20823aaff75d5dc9",
+      "differences": [],
+      "duplicate_creation_calls": 0,
+      "identity": {
+        "created_at": 1784694602.0,
+        "model": "gpt-5.6-sol",
+        "object_type": "response",
+        "output_items": [
+          [
+            "reasoning",
+            "rs_0fa2eb2d1654ba29006a60474cba908199aea9f5a6a97dca1a"
+          ],
+          [
+            "reasoning",
+            "rs_0fa2eb2d1654ba29006a60475548308199ae698bb05f759853"
+          ],
+          [
+            "reasoning",
+            "rs_0fa2eb2d1654ba29006a60475e5c188199a21399f08363b5d5"
+          ],
+          [
+            "reasoning",
+            "rs_0fa2eb2d1654ba29006a60476630408199a38b1a9987fbcece"
+          ],
+          [
+            "reasoning",
+            "rs_0fa2eb2d1654ba29006a60476d1f208199826683373e725305"
+          ],
+          [
+            "reasoning",
+            "rs_0fa2eb2d1654ba29006a604774320481998eaaabe58ba762c3"
+          ],
+          [
+            "message",
+            "msg_0fa2eb2d1654ba29006a60477d22448199aa275c46e7f1da8a"
+          ]
+        ],
+        "response_id": "resp_0fa2eb2d1654ba29006a60474a997c81999be5f2948b8ed1cd",
+        "status": "completed"
+      },
+      "input_item_retrieval_requests": 1,
+      "model_generation_calls": 1,
+      "polling_does_not_count_as_model_generation": true,
+      "polling_retrieval_requests": 13,
+      "polling_seconds": 68.43482224998297,
+      "provider_creation_calls": 1,
+      "provider_input_sha256": "feccbd9577c5ff3a259584443568058abf34471af6d3cc0d30827f727e51120b",
+      "provider_retries": 0,
+      "provider_schema_sha256": "044dc407b97b0b0e1ab3952cb5e339a451dfac21aec1d50b23a8819f1c237fd7",
+      "retrieval_envelope_sha256": "6f7e7a52bede9deae07bd07ed3a1d7d691d7f7350cf299ca20823aaff75d5dc9",
+      "scientific_payload_sha256": "2eb257dff50ae5163e9b3b5e0019b152869ddc10203544e37381115099b3fa5d",
+      "stage": "modifiers",
+      "stage_output_sha256": "2eb257dff50ae5163e9b3b5e0019b152869ddc10203544e37381115099b3fa5d",
+      "status": "VERIFIED_LIVE",
+      "status_history": [
+        "queued",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "completed"
+      ],
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 0.49982000000000004,
+        "input_tokens": 6820,
+        "latency_seconds": 69.66748441700474,
+        "output_tokens": 15524,
+        "reasoning_tokens": 2983,
+        "total_tokens": 22344
+      }
+    },
+    {
+      "acknowledgement_envelope_sha256": "129035d3c24024cf019926438d6e16f132f2f1c18a72295a860cce3fc505e5ef",
+      "acknowledgement_seconds": 0.6763872499868739,
+      "confirmation_retrieval_requests": 1,
+      "creation_envelope_sha256": "9c9d164e851d822b18e2e757da8dae412bb720617e0907692aa14822016aa14b",
+      "differences": [],
+      "duplicate_creation_calls": 0,
+      "identity": {
+        "created_at": 1784694672.0,
+        "model": "gpt-5.6-sol",
+        "object_type": "response",
+        "output_items": [
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a60479223b08198b25bd361670c9dee"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a60479b6a9c8198a7f77d59f2f1ca24"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047a41ca88198959096e17dc8641b"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047ab7e0c819883092c3ca1b68ac1"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047b41a40819894fffbe84367c578"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047bd9e048198a2a0b8bc90fda030"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047c497e88198ac984ad93cca6bed"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047ce26388198a8f9400de121f229"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047d78dd8819897f295c3bc712662"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047e119848198ac77832e69128c84"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047ea2da88198abb40dafe9f94357"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047f17c508198ae0f439fccf483e8"
+          ],
+          [
+            "message",
+            "msg_025355cb90df765e006a6047f82f7881988e0979f262ca57dd"
+          ]
+        ],
+        "response_id": "resp_025355cb90df765e006a60479052a081988bcd5cf040c7f8da",
+        "status": "completed"
+      },
+      "input_item_retrieval_requests": 1,
+      "model_generation_calls": 1,
+      "polling_does_not_count_as_model_generation": true,
+      "polling_retrieval_requests": 47,
+      "polling_seconds": 248.59147845799453,
+      "provider_creation_calls": 1,
+      "provider_input_sha256": "253a2f2ecf71f5c0e4e11abb1d5c91f2a2557e73b5732bd377743a12e840fb4c",
+      "provider_retries": 0,
+      "provider_schema_sha256": "da149583a0595d972102aca4565bc7151caa80c1f850de6b41e1ff81c14031c7",
+      "retrieval_envelope_sha256": "9c9d164e851d822b18e2e757da8dae412bb720617e0907692aa14822016aa14b",
+      "scientific_payload_sha256": "cc11d3c22604a9553e5bcc4f763799f93a11af3bfa618dd529560620ec084f52",
+      "stage": "verification",
+      "stage_output_sha256": "cc11d3c22604a9553e5bcc4f763799f93a11af3bfa618dd529560620ec084f52",
+      "status": "VERIFIED_LIVE",
+      "status_history": [
+        "queued",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "completed"
+      ],
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 1.799055,
+        "input_tokens": 21069,
+        "latency_seconds": 249.61060250000446,
+        "output_tokens": 56457,
+        "reasoning_tokens": 6214,
+        "total_tokens": 77526
+      }
+    }
+  ],
+  "terminal_violation": null,
+  "total_cost_usd": 9.592405,
+  "total_latency_seconds": 925.981213291001,
+  "total_tokens": 382546
+}
+```
+
+## Invalidating Failure
+
+```json
+{
+  "boundary": "StagedAssemblyError",
+  "diagnostics": {},
+  "root_cause": "E-faf304d73050cfefee5c: nested target did not pass all stages",
+  "stage": "verification"
+}
+```
+
+## Stage Outputs And Abstentions
+
+The complete categorical outputs are preserved here so every stage can be audited without consulting raw provider envelopes.
+
+```json
+{
+  "abstentions": {},
+  "stage_outputs": {
+    "discovery": {
+      "abstention_reason": null,
+      "candidates": [
+        {
+          "event_passage": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+          "explanation": "\u201cDecrease\u201d explicitly denotes a directional reduction.",
+          "source_event_type": "Negative_regulation",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "Decrease"
+        },
+        {
+          "event_passage": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+          "explanation": "\u201cenhances\u201d explicitly states a positive effect.",
+          "source_event_type": "Positive_regulation",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "enhances"
+        },
+        {
+          "event_passage": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+          "explanation": "\u201cencodes\u201d explicitly denotes a gene-expression relationship.",
+          "source_event_type": "Gene_expression",
+          "statement_kind": "BACKGROUND",
+          "trigger_text": "encodes"
+        },
+        {
+          "event_passage": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+          "explanation": "\u201cproliferation\u201d explicitly names a cellular proliferation process.",
+          "source_event_type": "Cell_proliferation",
+          "statement_kind": "BACKGROUND",
+          "trigger_text": "proliferation"
+        },
+        {
+          "event_passage": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+          "explanation": "\u201cdifferentiation\u201d explicitly names a cellular differentiation process.",
+          "source_event_type": "Cell_differentiation",
+          "statement_kind": "BACKGROUND",
+          "trigger_text": "differentiation"
+        },
+        {
+          "event_passage": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+          "explanation": "\u201capoptosis\u201d explicitly names programmed cell death.",
+          "source_event_type": "Cell_death",
+          "statement_kind": "BACKGROUND",
+          "trigger_text": "apoptosis"
+        },
+        {
+          "event_passage": "We defined the role of c-Myc in cancer cell sensitivity to vinblastine (VLB) using human colon cancer cells: LoVo wild-type or transfected with a plasmid containing the human c-myc gene in antisense orientation (LoVo-mycANS).",
+          "explanation": "\u201cdefined\u201d describes an intentional study operation.",
+          "source_event_type": "Planned_process",
+          "statement_kind": "METHOD",
+          "trigger_text": "defined"
+        },
+        {
+          "event_passage": "We defined the role of c-Myc in cancer cell sensitivity to vinblastine (VLB) using human colon cancer cells: LoVo wild-type or transfected with a plasmid containing the human c-myc gene in antisense orientation (LoVo-mycANS).",
+          "explanation": "\u201cusing\u201d explicitly describes a methodological action.",
+          "source_event_type": "Planned_process",
+          "statement_kind": "METHOD",
+          "trigger_text": "using"
+        },
+        {
+          "event_passage": "We defined the role of c-Myc in cancer cell sensitivity to vinblastine (VLB) using human colon cancer cells: LoVo wild-type or transfected with a plasmid containing the human c-myc gene in antisense orientation (LoVo-mycANS).",
+          "explanation": "\u201ctransfected\u201d explicitly names an intentional experimental procedure.",
+          "source_event_type": "Planned_process",
+          "statement_kind": "METHOD",
+          "trigger_text": "transfected"
+        },
+        {
+          "event_passage": "We defined the role of c-Myc in cancer cell sensitivity to vinblastine (VLB) using human colon cancer cells: LoVo wild-type or transfected with a plasmid containing the human c-myc gene in antisense orientation (LoVo-mycANS).",
+          "explanation": "\u201ccontaining\u201d explicitly states physical inclusion within the experimental construct.",
+          "source_event_type": "Localization",
+          "statement_kind": "METHOD",
+          "trigger_text": "containing"
+        },
+        {
+          "event_passage": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+          "explanation": "\u201cAnalysis\u201d explicitly names the analytical procedure.",
+          "source_event_type": "Planned_process",
+          "statement_kind": "METHOD",
+          "trigger_text": "Analysis"
+        },
+        {
+          "event_passage": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+          "explanation": "\u201ccytotoxicity\u201d explicitly denotes a cell-killing effect being analyzed.",
+          "source_event_type": "Cell_death",
+          "statement_kind": "METHOD",
+          "trigger_text": "cytotoxicity"
+        },
+        {
+          "event_passage": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+          "explanation": "\u201cincrease\u201d explicitly reports a threefold positive change.",
+          "source_event_type": "Positive_regulation",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "increase"
+        },
+        {
+          "event_passage": "Comparison between cells revealed different apoptosis kinetics: accumulation of cells in sub-G1 phase and poly(ADP-ribose) polymerase cleavage occurred earlier in LoVo-mycANS.",
+          "explanation": "\u201cComparison\u201d explicitly names the comparative procedure.",
+          "source_event_type": "Planned_process",
+          "statement_kind": "METHOD",
+          "trigger_text": "Comparison"
+        },
+        {
+          "event_passage": "Comparison between cells revealed different apoptosis kinetics: accumulation of cells in sub-G1 phase and poly(ADP-ribose) polymerase cleavage occurred earlier in LoVo-mycANS.",
+          "explanation": "\u201capoptosis\u201d explicitly names the cell-death process whose kinetics differed.",
+          "source_event_type": "Cell_death",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "apoptosis"
+        },
+        {
+          "event_passage": "Comparison between cells revealed different apoptosis kinetics: accumulation of cells in sub-G1 phase and poly(ADP-ribose) polymerase cleavage occurred earlier in LoVo-mycANS.",
+          "explanation": "\u201caccumulation\u201d explicitly describes cells becoming concentrated in a specified phase.",
+          "source_event_type": "Localization",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "accumulation"
+        },
+        {
+          "event_passage": "Comparison between cells revealed different apoptosis kinetics: accumulation of cells in sub-G1 phase and poly(ADP-ribose) polymerase cleavage occurred earlier in LoVo-mycANS.",
+          "explanation": "\u201ccleavage\u201d explicitly denotes protein processing.",
+          "source_event_type": "Protein_processing",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "cleavage"
+        },
+        {
+          "event_passage": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+          "explanation": "\u201cdisruption\u201d explicitly denotes a negative effect on the stated potential.",
+          "source_event_type": "Negative_regulation",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "disruption"
+        },
+        {
+          "event_passage": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+          "explanation": "\u201crelease\u201d explicitly denotes movement away from an existing location.",
+          "source_event_type": "Localization",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "release"
+        },
+        {
+          "event_passage": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+          "explanation": "\u201capoptotic\u201d explicitly characterizes the signaling as part of a cell-death process.",
+          "source_event_type": "Cell_death",
+          "statement_kind": "MECHANISM",
+          "trigger_text": "apoptotic"
+        },
+        {
+          "event_passage": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+          "explanation": "\u201cpathway\u201d explicitly names the signaling process used in the mechanistic interpretation.",
+          "source_event_type": "Pathway",
+          "statement_kind": "MECHANISM",
+          "trigger_text": "pathway"
+        },
+        {
+          "event_passage": "This earlier apoptosis was accompanied by a Bcl-2 decrease and a p53 increase.",
+          "explanation": "\u201capoptosis\u201d explicitly names the observed cell-death process.",
+          "source_event_type": "Cell_death",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "apoptosis"
+        },
+        {
+          "event_passage": "This earlier apoptosis was accompanied by a Bcl-2 decrease and a p53 increase.",
+          "explanation": "\u201cdecrease\u201d explicitly reports a directional reduction.",
+          "source_event_type": "Negative_regulation",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "decrease"
+        },
+        {
+          "event_passage": "This earlier apoptosis was accompanied by a Bcl-2 decrease and a p53 increase.",
+          "explanation": "\u201cincrease\u201d explicitly reports a directional elevation.",
+          "source_event_type": "Positive_regulation",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "increase"
+        },
+        {
+          "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "\u201cdecrease\u201d explicitly states reduced expression in the study conclusion.",
+          "source_event_type": "Negative_regulation",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "decrease"
+        },
+        {
+          "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "\u201cexpression\u201d explicitly names a gene-expression event.",
+          "source_event_type": "Gene_expression",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "expression"
+        },
+        {
+          "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "\u201cenhanced\u201d explicitly states a positive effect.",
+          "source_event_type": "Positive_regulation",
+          "statement_kind": "EXPLICIT_RESULT",
+          "trigger_text": "enhanced"
+        },
+        {
+          "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "\u201ctriggering\u201d explicitly states induction of a downstream process.",
+          "source_event_type": "Positive_regulation",
+          "statement_kind": "MECHANISM",
+          "trigger_text": "triggering"
+        },
+        {
+          "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "\u201capoptosis\u201d explicitly names the cell-death process in the proposed causal sequence.",
+          "source_event_type": "Cell_death",
+          "statement_kind": "MECHANISM",
+          "trigger_text": "apoptosis"
+        },
+        {
+          "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "\u201cinduction\u201d explicitly denotes activation of the stated pathway.",
+          "source_event_type": "Positive_regulation",
+          "statement_kind": "MECHANISM",
+          "trigger_text": "induction"
+        },
+        {
+          "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "\u201cpathway\u201d explicitly names the intrinsic process in the mechanistic conclusion.",
+          "source_event_type": "Pathway",
+          "statement_kind": "MECHANISM",
+          "trigger_text": "pathway"
+        },
+        {
+          "event_passage": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+          "explanation": "\u201cinduction\u201d explicitly denotes increased c-myc activity or abundance.",
+          "source_event_type": "Positive_regulation",
+          "statement_kind": "MECHANISM",
+          "trigger_text": "induction"
+        },
+        {
+          "event_passage": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+          "explanation": "\u201cresistance\u201d explicitly denotes a negative effect on drug responsiveness.",
+          "source_event_type": "Negative_regulation",
+          "statement_kind": "MECHANISM",
+          "trigger_text": "resistance"
+        },
+        {
+          "event_passage": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+          "explanation": "\u201clow\u201d explicitly states reduced protein levels in the suggested condition.",
+          "source_event_type": "Negative_regulation",
+          "statement_kind": "HYPOTHESIS",
+          "trigger_text": "low"
+        },
+        {
+          "event_passage": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+          "explanation": "\u201cmore responsive\u201d explicitly proposes increased responsiveness, qualified by \u201csuggest\u201d and \u201ccould.\u201d",
+          "source_event_type": "Positive_regulation",
+          "statement_kind": "HYPOTHESIS",
+          "trigger_text": "more responsive"
+        },
+        {
+          "event_passage": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+          "explanation": "\u201ctreatment\u201d explicitly names the proposed therapeutic process.",
+          "source_event_type": "Planned_process",
+          "statement_kind": "HYPOTHESIS",
+          "trigger_text": "treatment"
+        },
+        {
+          "event_passage": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+          "explanation": "\u201cdownregulation\u201d explicitly denotes reduction and is presented tentatively with \u201cmight.\u201d",
+          "source_event_type": "Negative_regulation",
+          "statement_kind": "HYPOTHESIS",
+          "trigger_text": "downregulation"
+        },
+        {
+          "event_passage": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+          "explanation": "\u201cstrategy\u201d explicitly names a proposed intentional procedure.",
+          "source_event_type": "Planned_process",
+          "statement_kind": "HYPOTHESIS",
+          "trigger_text": "strategy"
+        },
+        {
+          "event_passage": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+          "explanation": "\u201cimproving\u201d explicitly proposes a positive change in efficacy.",
+          "source_event_type": "Positive_regulation",
+          "statement_kind": "HYPOTHESIS",
+          "trigger_text": "improving"
+        }
+      ],
+      "decision": "DISCOVERED"
+    },
+    "modifiers": {
+      "events": [
+        {
+          "decision": "NEITHER",
+          "event_id": "E-60b0d54816b0585893d1",
+          "exact_evidence": null,
+          "explanation": "\u201cDecrease\u201d expresses negative regulation, not negation of the event."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-e2a89e97c05e2b8d93d2",
+          "exact_evidence": null,
+          "explanation": "The enhancement is asserted without negation or speculation."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-7febe5b8f644b3cb69c9",
+          "exact_evidence": null,
+          "explanation": "The encoding event is stated as background fact."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-66488a62883bb758e80b",
+          "exact_evidence": null,
+          "explanation": "The proliferation event is not negated or presented speculatively."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-8498b84a9b3bb3e93c2f",
+          "exact_evidence": null,
+          "explanation": "The differentiation event is not negated or presented speculatively."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-544748ccc8e6c17eb290",
+          "exact_evidence": null,
+          "explanation": "The apoptosis event is not negated or presented speculatively."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-c30f1062b5528fce8cc2",
+          "exact_evidence": null,
+          "explanation": "The planned process is described without event-local negation or speculation."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-d7ef029df22fe0516c7d",
+          "exact_evidence": null,
+          "explanation": "The use of the cells is stated directly."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-142d96a6127befa7a558",
+          "exact_evidence": null,
+          "explanation": "The transfection process is stated directly."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-bc37a2c8e84b25cc8803",
+          "exact_evidence": null,
+          "explanation": "The containment relation is stated directly."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-ee60503275d45044215a",
+          "exact_evidence": null,
+          "explanation": "The analysis is reported as performed."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-b43186fccd287bbb1cd5",
+          "exact_evidence": null,
+          "explanation": "The cytotoxicity event has no event-local negation or speculation."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-94edf9d8896d3f0729cb",
+          "exact_evidence": null,
+          "explanation": "The increase is reported as a demonstrated result."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-0fb21d34ef7c813be59c",
+          "exact_evidence": null,
+          "explanation": "The comparison is reported as performed."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-81595271d3236055d068",
+          "exact_evidence": null,
+          "explanation": "The apoptosis event is reported without negation or speculation."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-4f529edc0c9ff43a7289",
+          "exact_evidence": null,
+          "explanation": "The accumulation is reported as an observed result."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-8909bcc79d88a8279fd1",
+          "exact_evidence": null,
+          "explanation": "The cleavage is reported as having occurred."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-6a75a0999b748f2fe913",
+          "exact_evidence": null,
+          "explanation": "\u201cDisruption\u201d expresses a negative effect, not event negation."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-fd54232743ba4d07aba2",
+          "exact_evidence": null,
+          "explanation": "The cytochrome c release is reported as demonstrated."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-c1c8f47ea535c511fb62",
+          "exact_evidence": null,
+          "explanation": "The apoptotic event is not negated or presented speculatively."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-dc2596d35c7a939787a6",
+          "exact_evidence": null,
+          "explanation": "The pathway is described without event-local negation or speculation."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-517799827c6f5744a01f",
+          "exact_evidence": null,
+          "explanation": "The apoptosis event is asserted as having occurred earlier."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-c90e03d4ddefcce735ec",
+          "exact_evidence": null,
+          "explanation": "\u201cDecrease\u201d is the event's negative-regulation direction, not a negation modifier."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-2d5bd3d8506d519d2d69",
+          "exact_evidence": null,
+          "explanation": "The p53 increase is asserted directly."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-0effc9409e12ed77b198",
+          "exact_evidence": null,
+          "explanation": "The decrease is asserted in the conclusion and is not negated or speculative."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-fd23ca8aac731381622e",
+          "exact_evidence": null,
+          "explanation": "The decrease affecting expression does not negate the expression event itself."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-9b071863693a57dae92b",
+          "exact_evidence": null,
+          "explanation": "The enhancement is asserted in the conclusion."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-a00865ea42e6f577581d",
+          "exact_evidence": null,
+          "explanation": "The triggering relation is presented as a mechanism without negation or speculation."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-205f021ad42236e5f142",
+          "exact_evidence": null,
+          "explanation": "The apoptosis event is presented as an asserted mechanistic outcome."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-cf483c0e6ea43235f767",
+          "exact_evidence": null,
+          "explanation": "The induction is presented as an asserted mechanism."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-d96f3f94563f9fce3286",
+          "exact_evidence": null,
+          "explanation": "The intrinsic pathway is described without event-local negation or speculation."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-dca78c9bf714ce8a0349",
+          "exact_evidence": null,
+          "explanation": "The c-myc induction is asserted to be a resistance factor."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-b98c681634a09b75e298",
+          "exact_evidence": null,
+          "explanation": "The resistance relation is asserted directly and is not a negation modifier."
+        },
+        {
+          "decision": "SPECULATIVE",
+          "event_id": "E-bcb6ce67e9169dfcd807",
+          "exact_evidence": "our findings suggest that tumors carrying low levels of c-Myc protein",
+          "explanation": "The low-level event occurs within the proposition introduced by the speculation cue \u201csuggest.\u201d"
+        },
+        {
+          "decision": "SPECULATIVE",
+          "event_id": "E-a699191e71c887b4c5b8",
+          "exact_evidence": "could be more responsive",
+          "explanation": "\u201cCould\u201d directly presents the increased responsiveness as possible rather than established."
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-11f3a0578efc0b883103",
+          "exact_evidence": null,
+          "explanation": "\u201cCould\u201d modifies responsiveness to the treatment, not the treatment event itself."
+        },
+        {
+          "decision": "SPECULATIVE",
+          "event_id": "E-2773996d557442a07d58",
+          "exact_evidence": "the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal",
+          "explanation": "The downregulation is presented as a possible goal through the modal cue \u201cmight.\u201d"
+        },
+        {
+          "decision": "NEITHER",
+          "event_id": "E-7c96d5ccc6b62c1f4602",
+          "exact_evidence": null,
+          "explanation": "The antisense strategy is named as the means of downregulation; \u201cmight\u201d does not directly modify this strategy event."
+        },
+        {
+          "decision": "SPECULATIVE",
+          "event_id": "E-faf304d73050cfefee5c",
+          "exact_evidence": "might represent a useful goal for improving the efficacy",
+          "explanation": "The improvement is framed as the possible intended result of a goal, not as an established result."
+        }
+      ]
+    },
+    "participants": {
+      "inventories": [
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-60b0d54816b0585893d1",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "c-Myc",
+              "explanation": "The decrease explicitly concerns c-Myc activity.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-e2a89e97c05e2b8d93d2",
+          "participants": [
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "Decrease",
+              "explanation": "The enhancement is explicitly associated with the preceding decrease event.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": null
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "cancer cell",
+              "explanation": "Cancer cells are the explicit bearers of the enhanced sensitivity.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Cell"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "vinblastine",
+              "explanation": "Vinblastine is the chemical to which sensitivity is enhanced.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p3",
+              "source_entity_type": "Simple_chemical"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-7febe5b8f644b3cb69c9",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "c-myc oncogene",
+              "explanation": "The oncogene is explicitly described as encoding the factor.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "transcriptional factor",
+              "explanation": "The transcriptional factor is the explicitly encoded product.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Gene_or_gene_product"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-66488a62883bb758e80b",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "transcriptional factor",
+              "explanation": "The factor is explicitly described as involved in proliferation.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-8498b84a9b3bb3e93c2f",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "transcriptional factor",
+              "explanation": "The factor is explicitly described as involved in differentiation.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-544748ccc8e6c17eb290",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "transcriptional factor",
+              "explanation": "The factor is explicitly described as involved in apoptosis.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-c30f1062b5528fce8cc2",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "c-Myc",
+              "explanation": "The defined role explicitly concerns c-Myc.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "cancer cell",
+              "explanation": "Cancer-cell sensitivity is explicitly within the defined subject.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Cell"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "vinblastine",
+              "explanation": "Vinblastine is explicitly named in the investigated sensitivity.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p3",
+              "source_entity_type": "Simple_chemical"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "VLB",
+              "explanation": "VLB is a distinct explicit chemical mention in the investigated sensitivity.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p4",
+              "source_entity_type": "Simple_chemical"
+            },
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "using",
+              "explanation": "The using event explicitly supplies the method for the defined investigation.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p5",
+              "source_entity_type": null
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-d7ef029df22fe0516c7d",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "human colon cancer cells",
+              "explanation": "These cells are explicitly stated as being used.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Cell"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "LoVo wild-type",
+              "explanation": "LoVo wild-type is an explicit cell condition used in the method.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Cell"
+            },
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "transfected",
+              "explanation": "The transfection event specifies the alternative cell condition used.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p3",
+              "source_entity_type": null
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "LoVo-mycANS",
+              "explanation": "LoVo-mycANS explicitly identifies the transfected cell condition.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p4",
+              "source_entity_type": "Cell"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-142d96a6127befa7a558",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "human colon cancer cells",
+              "explanation": "The transfected material is explicitly a human colon cancer cell condition.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Cell"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "plasmid",
+              "explanation": "The passage explicitly states that transfection was performed with a plasmid.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "DNA_domain_or_region"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "LoVo-mycANS",
+              "explanation": "LoVo-mycANS explicitly names the resulting transfected cell condition.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p3",
+              "source_entity_type": "Cell"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-bc37a2c8e84b25cc8803",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "plasmid",
+              "explanation": "The plasmid is the explicitly described containing structure.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "DNA_domain_or_region"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "human c-myc gene",
+              "explanation": "The human c-myc gene is explicitly stated to be contained in the plasmid.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Gene_or_gene_product"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-ee60503275d45044215a",
+          "participants": [
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "cytotoxicity",
+              "explanation": "The analysis explicitly examines the discovered cytotoxicity event.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": null
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-b43186fccd287bbb1cd5",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "VLB",
+              "explanation": "This first VLB mention explicitly modifies cytotoxicity.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Simple_chemical"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "LoVo-mycANS cells",
+              "explanation": "These are the explicit cells in which VLB sensitivity was assessed.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Cell"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-94edf9d8896d3f0729cb",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "VLB",
+              "explanation": "The second VLB mention is explicitly part of the increased sensitivity.",
+              "occurrence_id": "occurrence-1",
+              "occurrence_index": 1,
+              "participant_key": "p1",
+              "source_entity_type": "Simple_chemical"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "LoVo-mycANS cells",
+              "explanation": "The increase in sensitivity is explicitly observed in these cells.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Cell"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-0fb21d34ef7c813be59c",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "cells",
+              "explanation": "The comparison is explicitly between cells.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Cell"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-81595271d3236055d068",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "cells",
+              "explanation": "The different apoptosis kinetics are explicitly compared between these cells.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Cell"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "LoVo-mycANS",
+              "explanation": "Earlier apoptotic changes are explicitly reported in LoVo-mycANS.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Cell"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-4f529edc0c9ff43a7289",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "cells",
+              "explanation": "The second cells mention is explicitly the material that accumulates.",
+              "occurrence_id": "occurrence-1",
+              "occurrence_index": 1,
+              "participant_key": "p1",
+              "source_entity_type": "Cell"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "sub-G1 phase",
+              "explanation": "Sub-G1 phase is the explicit phase in which cells accumulate.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Immaterial_anatomical_entity"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "LoVo-mycANS",
+              "explanation": "The accumulation is explicitly reported as occurring earlier in LoVo-mycANS.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p3",
+              "source_entity_type": "Cell"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-8909bcc79d88a8279fd1",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "poly(ADP-ribose) polymerase",
+              "explanation": "This polymerase is explicitly the molecule undergoing cleavage.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "LoVo-mycANS",
+              "explanation": "The cleavage is explicitly reported as occurring earlier in LoVo-mycANS.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Cell"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-6a75a0999b748f2fe913",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "mitochondrial membrane potential",
+              "explanation": "The disruption explicitly concerns mitochondrial membrane potential.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Cellular_component"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-fd54232743ba4d07aba2",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "cytochrome c",
+              "explanation": "Cytochrome c is explicitly the released molecule.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "mitochondria",
+              "explanation": "Mitochondria are explicitly implicated in the pathway containing the release.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Cellular_component"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-c1c8f47ea535c511fb62",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "mitochondria",
+              "explanation": "Mitochondria are explicitly described as involved in the apoptotic signaling context.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Cellular_component"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-dc2596d35c7a939787a6",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "mitochondria",
+              "explanation": "The passage explicitly states involvement of mitochondria in the pathway.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Cellular_component"
+            },
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "apoptotic",
+              "explanation": "The pathway is explicitly characterized by the discovered apoptotic event.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": null
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-517799827c6f5744a01f",
+          "participants": []
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-c90e03d4ddefcce735ec",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "Bcl-2",
+              "explanation": "Bcl-2 is explicitly the molecule showing a decrease.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-2d5bd3d8506d519d2d69",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "p53",
+              "explanation": "p53 is explicitly the molecule showing an increase.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-0effc9409e12ed77b198",
+          "participants": [
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "expression",
+              "explanation": "The decrease explicitly affects the discovered c-Myc expression event.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": null
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-fd23ca8aac731381622e",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "c-Myc",
+              "explanation": "The expression event explicitly concerns c-Myc.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-9b071863693a57dae92b",
+          "participants": [
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "decrease",
+              "explanation": "The enhancement is explicitly attributed to the preceding decrease event.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": null
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "VLB",
+              "explanation": "VLB is explicitly the chemical associated with the enhanced sensitivity.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Simple_chemical"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-a00865ea42e6f577581d",
+          "participants": [
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "enhanced",
+              "explanation": "The triggering follows explicitly from the discovered enhancement event.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": null
+            },
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "apoptosis",
+              "explanation": "Earlier apoptosis is explicitly the event being triggered.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": null
+            },
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "induction",
+              "explanation": "The induction event is explicitly stated as the mechanism through which triggering occurs.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p3",
+              "source_entity_type": null
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-205f021ad42236e5f142",
+          "participants": []
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-cf483c0e6ea43235f767",
+          "participants": [
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "pathway",
+              "explanation": "The induction explicitly affects the discovered intrinsic pathway event.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": null
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-d96f3f94563f9fce3286",
+          "participants": [
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "apoptosis",
+              "explanation": "The intrinsic pathway is explicitly presented in the mechanism leading to apoptosis.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": null
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-dca78c9bf714ce8a0349",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "c-myc",
+              "explanation": "The induction explicitly concerns c-myc.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-b98c681634a09b75e298",
+          "participants": [
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "induction",
+              "explanation": "The c-myc induction event is explicitly identified as a resistance factor.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": null
+            },
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "treatment",
+              "explanation": "The passage explicitly links resistance or responsiveness to the discovered treatment event.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": null
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-bcb6ce67e9169dfcd807",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "tumors",
+              "explanation": "The low levels are explicitly carried by tumors.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Cancer"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "c-Myc protein",
+              "explanation": "The low level explicitly concerns c-Myc protein.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Gene_or_gene_product"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-a699191e71c887b4c5b8",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "tumors",
+              "explanation": "Tumors are explicitly described as more responsive.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Cancer"
+            },
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "low",
+              "explanation": "The discovered low-level event is explicitly associated with the increased responsiveness.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": null
+            },
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "treatment",
+              "explanation": "The responsiveness is explicitly directed toward the discovered treatment event.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p3",
+              "source_entity_type": null
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-11f3a0578efc0b883103",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "tumors",
+              "explanation": "The tumors are explicitly the subjects described in relation to treatment responsiveness.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Cancer"
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "vinca alkaloids",
+              "explanation": "Vinca alkaloids are the explicit chemical agents used in the treatment.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Simple_chemical"
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-2773996d557442a07d58",
+          "participants": [
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "c-myc oncogene",
+              "explanation": "The downregulation explicitly concerns the c-myc oncogene.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": "Gene_or_gene_product"
+            },
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "strategy",
+              "explanation": "The discovered antisense strategy event is explicitly associated with the downregulation.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": null
+            }
+          ]
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-7c96d5ccc6b62c1f4602",
+          "participants": []
+        },
+        {
+          "abstention_reason": null,
+          "decision": "INVENTORIED",
+          "event_id": "E-faf304d73050cfefee5c",
+          "participants": [
+            {
+              "candidate_target_kind": "EVENT",
+              "exact_text": "downregulation",
+              "explanation": "The proposed efficacy improvement is explicitly presented as a goal of the downregulation event.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p1",
+              "source_entity_type": null
+            },
+            {
+              "candidate_target_kind": "PARTICIPANT",
+              "exact_text": "anti-neoplastic drug family",
+              "explanation": "The efficacy being improved explicitly belongs to this drug family.",
+              "occurrence_id": "occurrence-0",
+              "occurrence_index": 0,
+              "participant_key": "p2",
+              "source_entity_type": "Simple_chemical"
+            }
+          ]
+        }
+      ]
+    },
+    "roles": {
+      "events": [
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "c-Myc is the entity whose activity decreases.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-60b0d54816b0585893d1"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The decrease event causes the enhanced sensitivity.",
+              "participant_key": "p1",
+              "source_role": "Cause",
+              "target_event_id": "E-60b0d54816b0585893d1",
+              "target_kind": "EVENT"
+            },
+            {
+              "explanation": "The cancer cell is the entity whose sensitivity is enhanced.",
+              "participant_key": "p2",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "Vinblastine specifies the drug to which sensitivity applies.",
+              "participant_key": "p3",
+              "source_role": "Participant",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-e2a89e97c05e2b8d93d2"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The c-myc oncogene participates as the encoding gene.",
+              "participant_key": "p1",
+              "source_role": "Participant",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "The transcriptional factor is the encoded product.",
+              "participant_key": "p2",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-7febe5b8f644b3cb69c9"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The factor is stated to be involved in proliferation.",
+              "participant_key": "p1",
+              "source_role": "Participant",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-66488a62883bb758e80b"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The factor is stated to be involved in differentiation.",
+              "participant_key": "p1",
+              "source_role": "Participant",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-8498b84a9b3bb3e93c2f"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The factor is stated to be involved in apoptosis.",
+              "participant_key": "p1",
+              "source_role": "Participant",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-544748ccc8e6c17eb290"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "c-Myc is part of the role being defined.",
+              "participant_key": "p1",
+              "source_role": "Participant",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "Cancer cells are part of the sensitivity relation being defined.",
+              "participant_key": "p2",
+              "source_role": "Participant2",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "Vinblastine is part of the investigated sensitivity relation.",
+              "participant_key": "p3",
+              "source_role": "Participant3",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "VLB is the separately inventoried drug mention in the investigation.",
+              "participant_key": "p4",
+              "source_role": "Participant4",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "The locally discovered using-process carries out the definition.",
+              "participant_key": "p5",
+              "source_role": "Instrument",
+              "target_event_id": "E-d7ef029df22fe0516c7d",
+              "target_kind": "EVENT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-c30f1062b5528fce8cc2"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "Human colon cancer cells are explicitly used in the experiment.",
+              "participant_key": "p1",
+              "source_role": "Instrument",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "LoVo wild-type cells are one of the cell preparations used.",
+              "participant_key": "p2",
+              "source_role": "Instrument2",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "The transfection process is involved in preparing the compared cells.",
+              "participant_key": "p3",
+              "source_role": "Participant",
+              "target_event_id": "E-142d96a6127befa7a558",
+              "target_kind": "EVENT"
+            },
+            {
+              "explanation": "LoVo-mycANS is the other cell preparation used.",
+              "participant_key": "p4",
+              "source_role": "Instrument3",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-d7ef029df22fe0516c7d"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The human colon cancer cells undergo transfection.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "The plasmid is used to transfect the cells.",
+              "participant_key": "p2",
+              "source_role": "Instrument",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "LoVo-mycANS names the resulting transfected cell preparation.",
+              "participant_key": "p3",
+              "source_role": "Participant",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-142d96a6127befa7a558"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The plasmid is the container in which the gene is located.",
+              "participant_key": "p1",
+              "source_role": "AtLoc",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "The human c-myc gene is what the plasmid contains.",
+              "participant_key": "p2",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-bc37a2c8e84b25cc8803"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The cytotoxicity event is the object of the analysis.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": "E-b43186fccd287bbb1cd5",
+              "target_kind": "EVENT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-ee60503275d45044215a"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "VLB is the cytotoxic agent involved.",
+              "participant_key": "p1",
+              "source_role": "Participant",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "LoVo-mycANS cells undergo the cytotoxic cell-death effect.",
+              "participant_key": "p2",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-b43186fccd287bbb1cd5"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "VLB specifies the drug to which sensitivity increased.",
+              "participant_key": "p1",
+              "source_role": "Participant",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "LoVo-mycANS cells exhibit the increased sensitivity.",
+              "participant_key": "p2",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-94edf9d8896d3f0729cb"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The cells are the objects being compared.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-0fb21d34ef7c813be59c"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The compared cells exhibit apoptosis kinetics.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "LoVo-mycANS is the specifically identified cell population exhibiting earlier effects.",
+              "participant_key": "p2",
+              "source_role": "Theme2",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-81595271d3236055d068"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "Cells are what accumulate.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "The sub-G1 phase is the destination/state of accumulation.",
+              "participant_key": "p2",
+              "source_role": "ToLoc",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "The accumulation occurs in the LoVo-mycANS cell population.",
+              "participant_key": "p3",
+              "source_role": "AtLoc",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-4f529edc0c9ff43a7289"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "Poly(ADP-ribose) polymerase is the protein being cleaved.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "The cleavage occurs in LoVo-mycANS cells.",
+              "participant_key": "p2",
+              "source_role": "AtLoc",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-8909bcc79d88a8279fd1"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The mitochondrial membrane potential undergoes disruption.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-6a75a0999b748f2fe913"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "Cytochrome c is the entity released.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "Mitochondria are the locally supported origin of cytochrome c release.",
+              "participant_key": "p2",
+              "source_role": "FromLoc",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-fd54232743ba4d07aba2"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "Mitochondria are stated to be involved in the apoptotic process.",
+              "participant_key": "p1",
+              "source_role": "Participant",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-c1c8f47ea535c511fb62"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "Mitochondria are explicitly involved in the signaling pathway.",
+              "participant_key": "p1",
+              "source_role": "Participant",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "The pathway is characterized by the locally discovered apoptotic event.",
+              "participant_key": "p2",
+              "source_role": "Theme",
+              "target_event_id": "E-c1c8f47ea535c511fb62",
+              "target_kind": "EVENT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-dc2596d35c7a939787a6"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [],
+          "decision": "ASSIGNED",
+          "event_id": "E-517799827c6f5744a01f"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "Bcl-2 is the entity whose level decreases.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-c90e03d4ddefcce735ec"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "p53 is the entity whose level increases.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-2d5bd3d8506d519d2d69"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The c-Myc expression event is what decreases.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": "E-fd23ca8aac731381622e",
+              "target_kind": "EVENT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-0effc9409e12ed77b198"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "c-Myc is the expressed gene product.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-fd23ca8aac731381622e"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The decrease in c-Myc expression causes enhanced sensitivity.",
+              "participant_key": "p1",
+              "source_role": "Cause",
+              "target_event_id": "E-0effc9409e12ed77b198",
+              "target_kind": "EVENT"
+            },
+            {
+              "explanation": "VLB is the object of the enhanced sensitivity.",
+              "participant_key": "p2",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-9b071863693a57dae92b"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The enhanced VLB-sensitivity event triggers apoptosis.",
+              "participant_key": "p1",
+              "source_role": "Cause",
+              "target_event_id": "E-9b071863693a57dae92b",
+              "target_kind": "EVENT"
+            },
+            {
+              "explanation": "The earlier apoptosis event is what is triggered.",
+              "participant_key": "p2",
+              "source_role": "Theme",
+              "target_event_id": "E-205f021ad42236e5f142",
+              "target_kind": "EVENT"
+            },
+            {
+              "explanation": "Induction of the intrinsic pathway is the stated mechanism accompanying the triggering.",
+              "participant_key": "p3",
+              "source_role": "Participant",
+              "target_event_id": "E-cf483c0e6ea43235f767",
+              "target_kind": "EVENT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-a00865ea42e6f577581d"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [],
+          "decision": "ASSIGNED",
+          "event_id": "E-205f021ad42236e5f142"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The intrinsic pathway event is what is induced.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": "E-d96f3f94563f9fce3286",
+              "target_kind": "EVENT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-cf483c0e6ea43235f767"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The intrinsic pathway is locally associated with the apoptosis event.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": "E-205f021ad42236e5f142",
+              "target_kind": "EVENT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-d96f3f94563f9fce3286"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "c-myc is the entity being induced.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-dca78c9bf714ce8a0349"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The c-myc induction event is identified as the resistance factor.",
+              "participant_key": "p1",
+              "source_role": "Cause",
+              "target_event_id": "E-dca78c9bf714ce8a0349",
+              "target_kind": "EVENT"
+            },
+            {
+              "explanation": "Resistance negatively affects the treatment process.",
+              "participant_key": "p2",
+              "source_role": "Theme",
+              "target_event_id": "E-11f3a0578efc0b883103",
+              "target_kind": "EVENT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-b98c681634a09b75e298"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The low c-Myc levels are carried in the tumors.",
+              "participant_key": "p1",
+              "source_role": "AtLoc",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "c-Myc protein is the entity present at low levels.",
+              "participant_key": "p2",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-bcb6ce67e9169dfcd807"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The tumors are the entities described as more responsive.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "The low-c-Myc event characterizes the tumors linked to increased responsiveness.",
+              "participant_key": "p2",
+              "source_role": "Cause",
+              "target_event_id": "E-bcb6ce67e9169dfcd807",
+              "target_kind": "EVENT"
+            },
+            {
+              "explanation": "The treatment event is what the tumors may respond to.",
+              "participant_key": "p3",
+              "source_role": "Participant",
+              "target_event_id": "E-11f3a0578efc0b883103",
+              "target_kind": "EVENT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-a699191e71c887b4c5b8"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The tumors are the entities undergoing treatment.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "Vinca alkaloids are used to carry out the treatment.",
+              "participant_key": "p2",
+              "source_role": "Instrument",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-11f3a0578efc0b883103"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The c-myc oncogene is what is downregulated.",
+              "participant_key": "p1",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            },
+            {
+              "explanation": "The antisense strategy is explicitly introduced by 'by' as the means causing downregulation.",
+              "participant_key": "p2",
+              "source_role": "Cause",
+              "target_event_id": "E-7c96d5ccc6b62c1f4602",
+              "target_kind": "EVENT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-2773996d557442a07d58"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [],
+          "decision": "ASSIGNED",
+          "event_id": "E-7c96d5ccc6b62c1f4602"
+        },
+        {
+          "abstention_reason": null,
+          "assignments": [
+            {
+              "explanation": "The downregulation event is proposed as the means of improving efficacy.",
+              "participant_key": "p1",
+              "source_role": "Cause",
+              "target_event_id": "E-2773996d557442a07d58",
+              "target_kind": "EVENT"
+            },
+            {
+              "explanation": "The anti-neoplastic drug family is the entity whose efficacy would improve.",
+              "participant_key": "p2",
+              "source_role": "Theme",
+              "target_event_id": null,
+              "target_kind": "PARTICIPANT"
+            }
+          ],
+          "decision": "ASSIGNED",
+          "event_id": "E-faf304d73050cfefee5c"
+        }
+      ]
+    },
+    "verification": {
+      "events": [
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cDecrease\u201d explicitly denotes negative regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and Theme."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The decrease is neither negated nor speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nested argument is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "c-Myc is explicitly the entity whose activity decreases."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "c-Myc correctly has the Theme role."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cDecrease\u201d is an exact minimal trigger."
+            }
+          },
+          "event_id": "E-60b0d54816b0585893d1",
+          "exact_evidence": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+          "explanation": "The source explicitly states a decrease in c-Myc activity.",
+          "falsification_explanation": "This would be falsified if \u201cDecrease\u201d did not govern c-Myc activity or if the decrease were negated or hypothetical.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cEnhances\u201d explicitly denotes positive regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "One exact sentence contains the trigger and every direct argument."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The enhancement is asserted without negation or speculation."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "The causal decrease is correctly preserved as an event argument."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "The decrease event, cancer cell, and vinblastine are all directly involved."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "The decrease is the Cause, cancer cell is the sensitivity bearer, and vinblastine is the associated Participant."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cenhances\u201d is an exact minimal trigger."
+            }
+          },
+          "event_id": "E-e2a89e97c05e2b8d93d2",
+          "exact_evidence": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+          "explanation": "The source states that decreased c-Myc activity enhances cancer-cell sensitivity to vinblastine.",
+          "falsification_explanation": "This would be falsified if the decrease were not the cause of enhanced sensitivity or if the text described reduced rather than enhanced sensitivity.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "Encoding a factor supports Gene_expression."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and both participants."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The encoding statement is categorical."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nested event is asserted."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "Both the encoding oncogene and encoded factor are explicit."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "The encoded transcriptional factor is Theme; the oncogene is an involved Participant."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cencodes\u201d is the exact expression trigger."
+            }
+          },
+          "event_id": "E-7febe5b8f644b3cb69c9",
+          "exact_evidence": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+          "explanation": "The source explicitly says that the c-myc oncogene encodes a transcriptional factor.",
+          "falsification_explanation": "This would be falsified if the factor were not presented as encoded by c-myc.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cproliferation\u201d explicitly names Cell_proliferation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains both trigger and participant."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The involvement is not negated or speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "The transcriptional factor is explicitly described as involved in proliferation."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "Participant correctly captures the stated involvement."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cproliferation\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-66488a62883bb758e80b",
+          "exact_evidence": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+          "explanation": "Proliferation is listed among the processes involving the transcriptional factor.",
+          "falsification_explanation": "This would be falsified if proliferation were not included among the processes in which the factor is involved.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cdifferentiation\u201d explicitly names Cell_differentiation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and participant."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "No event-local negation or speculation occurs."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nested event is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "The factor is explicitly involved in differentiation."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "Participant correctly represents that involvement."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cdifferentiation\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-8498b84a9b3bb3e93c2f",
+          "exact_evidence": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+          "explanation": "Differentiation is explicitly listed as a process involving the factor.",
+          "falsification_explanation": "This would be falsified if differentiation were not among the listed processes involving the factor.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201capoptosis\u201d explicitly denotes Cell_death."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and participant."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The event is not negated or speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "The transcriptional factor is explicitly involved in apoptosis."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "Participant correctly captures the stated involvement."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201capoptosis\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-544748ccc8e6c17eb290",
+          "exact_evidence": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+          "explanation": "Apoptosis is listed among the cellular processes involving the factor.",
+          "falsification_explanation": "This would be falsified if the factor were not described as involved in apoptosis.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cdefined\u201d can denote the stated investigative Planned_process."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "All cited strings occur in the supplied sentence."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The investigation is not negated or speculative."
+            },
+            "nesting": {
+              "decision": "FAIL",
+              "explanation": "The claim improperly nests the separate \u201cusing\u201d event as the Instrument of \u201cdefined.\u201d"
+            },
+            "participants": {
+              "decision": "FAIL",
+              "explanation": "vinblastine and its alias VLB are incorrectly treated as distinct numbered fillers, and the \u201cusing\u201d event is over-inventoried as an Instrument."
+            },
+            "roles": {
+              "decision": "FAIL",
+              "explanation": "The nested use process is not itself an Instrument; the cells used are the instruments."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cdefined\u201d is an exact trigger for that investigation."
+            }
+          },
+          "event_id": "E-c30f1062b5528fce8cc2",
+          "exact_evidence": null,
+          "explanation": "The investigative event is present, but its participant and Instrument structure is not supported.",
+          "falsification_explanation": "The claim would require VLB to be a distinct filler from vinblastine and the use event itself to be explicitly identified as an Instrument; the source does neither.",
+          "verdict": "CONTRADICTED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cusing\u201d denotes a methodological Planned_process."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The sentence contains every cited string."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The method is asserted categorically."
+            },
+            "nesting": {
+              "decision": "FAIL",
+              "explanation": "Nesting the transfection event as a Participant of \u201cusing\u201d is unsupported."
+            },
+            "participants": {
+              "decision": "FAIL",
+              "explanation": "The broad human-cell mention, LoVo wild-type, and LoVo-mycANS are overlapping descriptions rather than three distinct instruments, and transfection merely describes one cell preparation."
+            },
+            "roles": {
+              "decision": "FAIL",
+              "explanation": "The transfection event is not a generic Participant in the use event, and the numbered Instruments are not distinct fillers."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cusing\u201d is an exact methodological trigger."
+            }
+          },
+          "event_id": "E-d7ef029df22fe0516c7d",
+          "exact_evidence": null,
+          "explanation": "The source supports use of colon cancer cells, but not the assembled overlapping and nested argument structure.",
+          "falsification_explanation": "The structure would require the three cell descriptions to be distinct instruments and transfection to participate directly in the use event; the sentence instead describes alternative cell preparations.",
+          "verdict": "CONTRADICTED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "Transfection is a methodological Planned_process."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The sentence contains the trigger and all cited strings."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The transfection is not negated or speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nested event is claimed."
+            },
+            "participants": {
+              "decision": "FAIL",
+              "explanation": "The broad human colon cancer cell class and the LoVo-mycANS label are not both separately asserted direct participants of the transfection."
+            },
+            "roles": {
+              "decision": "FAIL",
+              "explanation": "LoVo-mycANS is a parenthetical designation of the transfected preparation, not an additional Participant."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201ctransfected\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-142d96a6127befa7a558",
+          "exact_evidence": null,
+          "explanation": "The text supports transfection with a plasmid, but not the claimed three-filler structure.",
+          "falsification_explanation": "The claim would require LoVo-mycANS to be explicitly presented as an additional participant rather than the name of the transfected cell preparation.",
+          "verdict": "CONTRADICTED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "Containment explicitly supports Localization."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "One exact sentence contains the trigger and both direct participants."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The containment is asserted categorically."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No event nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "The plasmid and human c-myc gene are both explicit."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "The gene is Theme and the plasmid is its explicit location."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201ccontaining\u201d is an exact localization trigger."
+            }
+          },
+          "event_id": "E-bc37a2c8e84b25cc8803",
+          "exact_evidence": "We defined the role of c-Myc in cancer cell sensitivity to vinblastine (VLB) using human colon cancer cells: LoVo wild-type or transfected with a plasmid containing the human c-myc gene in antisense orientation (LoVo-mycANS).",
+          "explanation": "The plasmid is explicitly said to contain the human c-myc gene.",
+          "falsification_explanation": "This would be falsified if the gene were not stated to be contained in the plasmid.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cAnalysis\u201d denotes a Planned_process."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the analysis trigger and nested cytotoxicity mention."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The analysis is not negated or speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "The analyzed phenomenon is properly preserved as a Cell_death event."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "VLB cytotoxicity is explicitly the object analyzed."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "The cytotoxicity event correctly serves as Theme."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cAnalysis\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-ee60503275d45044215a",
+          "exact_evidence": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+          "explanation": "The source explicitly reports analysis of VLB cytotoxicity.",
+          "falsification_explanation": "This would be falsified if cytotoxicity were not the object of the analysis.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201ccytotoxicity\u201d denotes Cell_death."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and both participants."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The cytotoxicity is not negated or speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nested argument is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "VLB and LoVo-mycANS cells are the explicit chemical and cellular context."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "The cells are Theme and VLB is an involved Participant."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201ccytotoxicity\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-b43186fccd287bbb1cd5",
+          "exact_evidence": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+          "explanation": "The sentence explicitly concerns VLB cytotoxicity in LoVo-mycANS cells.",
+          "falsification_explanation": "This would be falsified if cytotoxicity were unrelated to VLB or the LoVo-mycANS cellular context.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cincrease\u201d explicitly denotes Positive_regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The sentence contains the trigger and both correctly indexed participants."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The increase is asserted without qualification."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nested event is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "The second VLB occurrence and LoVo-mycANS cells are correctly identified."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "The cells bear the increased sensitivity and VLB is its associated Participant."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cincrease\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-94edf9d8896d3f0729cb",
+          "exact_evidence": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+          "explanation": "A three-fold increase in VLB sensitivity in LoVo-mycANS cells is explicit.",
+          "falsification_explanation": "This would be falsified if sensitivity did not increase or if the increase were reported in a different cell population.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cComparison\u201d denotes a Planned_process."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The sentence directly contains the trigger and Theme."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The comparison is not negated or speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "Cells are explicitly the objects compared."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "The compared cells correctly serve as Theme."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cComparison\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-0fb21d34ef7c813be59c",
+          "exact_evidence": "Comparison between cells revealed different apoptosis kinetics: accumulation of cells in sub-G1 phase and poly(ADP-ribose) polymerase cleavage occurred earlier in LoVo-mycANS.",
+          "explanation": "The source explicitly reports a comparison between cells.",
+          "falsification_explanation": "This would be falsified if no cells were compared or if \u201cComparison\u201d referred to a different object.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201capoptosis\u201d denotes Cell_death."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "Both strings and the trigger occur in the sentence."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The apoptosis is not negated or speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is claimed."
+            },
+            "participants": {
+              "decision": "FAIL",
+              "explanation": "The generic compared \u201ccells\u201d and LoVo-mycANS are overlapping rather than two distinct apoptosis Themes."
+            },
+            "roles": {
+              "decision": "FAIL",
+              "explanation": "Theme2 incorrectly treats LoVo-mycANS as an additional distinct Theme instead of the specific cellular context in which apoptosis occurred earlier."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201capoptosis\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-81595271d3236055d068",
+          "exact_evidence": null,
+          "explanation": "Apoptosis is supported, but the two numbered Theme fillers are not distinct as required.",
+          "falsification_explanation": "The claim would require the generic cells and LoVo-mycANS to denote two separately asserted apoptosis Themes; the latter is a specific member of the compared cell context.",
+          "verdict": "CONTRADICTED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "Cell accumulation in a phase supports Localization."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and every direct participant."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The accumulation is asserted categorically."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "The accumulated cells, sub-G1 phase, and LoVo-mycANS context are explicit."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "Cells are Theme, sub-G1 phase is ToLoc, and LoVo-mycANS is the explicit cellular context."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201caccumulation\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-4f529edc0c9ff43a7289",
+          "exact_evidence": "Comparison between cells revealed different apoptosis kinetics: accumulation of cells in sub-G1 phase and poly(ADP-ribose) polymerase cleavage occurred earlier in LoVo-mycANS.",
+          "explanation": "The source reports accumulation of cells in sub-G1 phase occurring earlier in LoVo-mycANS.",
+          "falsification_explanation": "This would be falsified if cells did not accumulate in sub-G1 phase or if the event were not situated in LoVo-mycANS.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "Protein \u201ccleavage\u201d explicitly denotes Protein_processing."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The sentence contains the exact trigger and both participants."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The cleavage is asserted without negation or speculation."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "PARP and LoVo-mycANS are both explicit."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "PARP is Theme and LoVo-mycANS is the cellular location/context."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201ccleavage\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-8909bcc79d88a8279fd1",
+          "exact_evidence": "Comparison between cells revealed different apoptosis kinetics: accumulation of cells in sub-G1 phase and poly(ADP-ribose) polymerase cleavage occurred earlier in LoVo-mycANS.",
+          "explanation": "PARP cleavage is explicitly reported as occurring earlier in LoVo-mycANS.",
+          "falsification_explanation": "This would be falsified if PARP were not cleaved or if the cleavage were not reported in LoVo-mycANS.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "Disruption explicitly denotes a negative effect on membrane potential."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and Theme."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The disruption is asserted categorically."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "Mitochondrial membrane potential is the explicit affected entity."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "The affected potential correctly has the Theme role."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cdisruption\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-6a75a0999b748f2fe913",
+          "exact_evidence": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+          "explanation": "The source explicitly demonstrates disruption of mitochondrial membrane potential.",
+          "falsification_explanation": "This would be falsified if the membrane potential were preserved or if \u201cdisruption\u201d referred to another entity.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201crelease\u201d supports Localization."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The sentence contains all cited strings, although it does not support the claimed FromLoc relation."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The release is asserted categorically."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is claimed."
+            },
+            "participants": {
+              "decision": "FAIL",
+              "explanation": "Mitochondria are stated to be involved in the pathway, not explicitly identified as the source of the cytochrome c release."
+            },
+            "roles": {
+              "decision": "FAIL",
+              "explanation": "FromLoc requires an explicit origin, and \u201crelease that indicates the involvement of mitochondria\u201d does not state release from mitochondria."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201crelease\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-fd54232743ba4d07aba2",
+          "exact_evidence": null,
+          "explanation": "Cytochrome c release is explicit, but its mitochondrial origin is inferred rather than stated.",
+          "falsification_explanation": "The structure would require wording such as \u201ccytochrome c release from mitochondria\u201d; that origin phrase is absent.",
+          "verdict": "CONTRADICTED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201capoptotic\u201d explicitly invokes Cell_death."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and mitochondria."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The apoptotic process is not negated or speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required inside this event."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "Mitochondria are explicitly involved in the apoptotic signaling context."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "Participant appropriately represents that involvement."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201capoptotic\u201d is a contiguous event trigger."
+            }
+          },
+          "event_id": "E-c1c8f47ea535c511fb62",
+          "exact_evidence": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+          "explanation": "The source explicitly links mitochondria with an apoptotic signaling process.",
+          "falsification_explanation": "This would be falsified if mitochondria were not described as involved in the apoptotic signaling pathway.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cpathway\u201d explicitly names a Pathway event."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "One exact sentence contains the pathway trigger and all arguments."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The pathway statement is neither negated nor speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "The apoptotic content is correctly preserved as an event argument."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "Mitochondria and the apoptotic event are both explicitly tied to the pathway."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "Mitochondria are an involved Participant and apoptosis is the pathway's Theme."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cpathway\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-dc2596d35c7a939787a6",
+          "exact_evidence": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+          "explanation": "The source identifies an apoptotic signaling pathway involving mitochondria.",
+          "falsification_explanation": "This would be falsified if the pathway were not apoptotic or mitochondria were not stated to be involved.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201capoptosis\u201d denotes Cell_death."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "\u201cearlier\u201d is temporal, not speculative or negative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "A zero-argument apoptosis event is valid here."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "No unsupported role is assigned."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201capoptosis\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-517799827c6f5744a01f",
+          "exact_evidence": "This earlier apoptosis was accompanied by a Bcl-2 decrease and a p53 increase.",
+          "explanation": "The source explicitly refers to earlier apoptosis.",
+          "falsification_explanation": "This would be falsified if the sentence did not assert apoptosis or explicitly denied it.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cdecrease\u201d explicitly denotes Negative_regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and Theme."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The decrease is asserted categorically."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "Bcl-2 is the explicit affected entity."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "Bcl-2 correctly has the Theme role."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cdecrease\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-c90e03d4ddefcce735ec",
+          "exact_evidence": "This earlier apoptosis was accompanied by a Bcl-2 decrease and a p53 increase.",
+          "explanation": "The source explicitly reports a Bcl-2 decrease.",
+          "falsification_explanation": "This would be falsified if Bcl-2 increased, remained unchanged, or were not the object of \u201cdecrease.\u201d",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cincrease\u201d explicitly denotes Positive_regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and Theme."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The increase is asserted categorically."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "p53 is the explicit affected entity."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "p53 correctly has the Theme role."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cincrease\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-2d5bd3d8506d519d2d69",
+          "exact_evidence": "This earlier apoptosis was accompanied by a Bcl-2 decrease and a p53 increase.",
+          "explanation": "The source explicitly reports a p53 increase.",
+          "falsification_explanation": "This would be falsified if p53 decreased, remained unchanged, or were not governed by \u201cincrease.\u201d",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cdecrease\u201d explicitly denotes Negative_regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and nested expression mention."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The decrease is asserted as a conclusion, not speculated."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "The affected Gene_expression event is correctly preserved rather than flattened."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "The affected c-Myc expression event is explicit."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "The expression event correctly serves as Theme."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cdecrease\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-0effc9409e12ed77b198",
+          "exact_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "The sentence explicitly reports a decrease in c-Myc expression.",
+          "falsification_explanation": "This would be falsified if expression were not decreased or if the decrease concerned a different gene.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cexpression\u201d explicitly denotes Gene_expression."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and Theme."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The expression event itself is not negated or speculative; its decrease is represented separately."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No inner nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "c-Myc is the explicit expressed gene product."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "c-Myc correctly has the Theme role."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cexpression\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-fd23ca8aac731381622e",
+          "exact_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "The source explicitly mentions c-Myc expression.",
+          "falsification_explanation": "This would be falsified if \u201cexpression\u201d referred to something other than c-Myc.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cenhanced\u201d explicitly denotes Positive_regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "One exact sentence contains the trigger and both arguments."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The enhancement is asserted categorically."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "The causal decrease is correctly represented as a nested event."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "The decrease event and VLB sensitivity are explicit."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "The decrease is Cause and VLB is the explicit sensitivity-associated Theme."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cenhanced\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-9b071863693a57dae92b",
+          "exact_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "The decrease in c-Myc expression is explicitly said to enhance VLB sensitivity.",
+          "falsification_explanation": "This would be falsified if the decrease did not cause enhanced VLB sensitivity or if sensitivity instead declined.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201ctriggering\u201d explicitly denotes Positive_regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and all nested event mentions."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The triggering relation is asserted categorically."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "All three event-valued arguments are preserved as events."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "Enhanced sensitivity, apoptosis, and pathway induction are all directly involved."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "Enhanced sensitivity is Cause, apoptosis is Theme, and induction is the stated mechanism Participant."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201ctriggering\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-a00865ea42e6f577581d",
+          "exact_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "The sentence states that enhanced sensitivity triggers earlier apoptosis through pathway induction.",
+          "falsification_explanation": "This would be falsified if enhanced sensitivity did not trigger apoptosis or if induction were not presented as the mechanism.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201capoptosis\u201d denotes Cell_death."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the apoptosis trigger."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "\u201cearlier\u201d is temporal and does not mark speculation."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No inner nested argument is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "A zero-argument apoptosis event is valid."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "No unsupported role is assigned."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201capoptosis\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-205f021ad42236e5f142",
+          "exact_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "Earlier apoptosis is explicitly asserted.",
+          "falsification_explanation": "This would be falsified if apoptosis were denied or mentioned only as a possibility.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cinduction\u201d explicitly denotes Positive_regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and nested pathway mention."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The induction is asserted without negation or speculation."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "The induced pathway is preserved as an event argument."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "The intrinsic pathway is the explicit induced event."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "The pathway event correctly serves as Theme."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cinduction\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-cf483c0e6ea43235f767",
+          "exact_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "The source explicitly refers to induction of the intrinsic pathway.",
+          "falsification_explanation": "This would be falsified if the intrinsic pathway were not induced or if \u201cinduction\u201d governed a different object.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cpathway\u201d explicitly names a Pathway event."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains both pathway and apoptosis mentions."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The pathway is not negated or speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "The apoptotic event is preserved as an event-valued argument."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "The preceding apoptosis is explicitly mediated through this pathway."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "The apoptosis event correctly represents the pathway's Theme."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cpathway\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-d96f3f94563f9fce3286",
+          "exact_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+          "explanation": "The intrinsic pathway is explicitly presented as the pathway through which apoptosis occurs.",
+          "falsification_explanation": "This would be falsified if the intrinsic pathway were unrelated to the apoptosis described.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cinduction\u201d explicitly denotes Positive_regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and Theme."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The induction is categorically identified as a resistance factor; the later suggestion does not make this event speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "c-myc is the explicit induced entity."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "c-myc correctly has the Theme role."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cinduction\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-dca78c9bf714ce8a0349",
+          "exact_evidence": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+          "explanation": "The source explicitly states c-myc induction.",
+          "falsification_explanation": "This would be falsified if c-myc were not the object of induction or if induction were explicitly denied.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cresistance\u201d explicitly denotes a negative regulatory effect."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The strings occur in one sentence, but their claimed direct relation is absent."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The resistance-factor assertion itself is categorical."
+            },
+            "nesting": {
+              "decision": "FAIL",
+              "explanation": "The claim improperly imports the treatment event from the separate speculative responsiveness clause."
+            },
+            "participants": {
+              "decision": "FAIL",
+              "explanation": "The source calls c-myc induction a resistance factor but does not explicitly make the later vinca-alkaloid treatment event the Theme of that resistance."
+            },
+            "roles": {
+              "decision": "FAIL",
+              "explanation": "Treatment is not an explicitly governed resistance Theme in the first clause."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cresistance\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-b98c681634a09b75e298",
+          "exact_evidence": null,
+          "explanation": "Induction is explicitly a resistance factor, but resistance to the assembled treatment event is not directly stated.",
+          "falsification_explanation": "The structure would require wording such as \u201cc-myc induction causes resistance to vinca alkaloid treatment\u201d; the source does not state that relation.",
+          "verdict": "CONTRADICTED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201clow\u201d explicitly denotes negative regulation of c-Myc protein level."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger, both participants, and speculation cues."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The low-level configuration occurs inside the proposition introduced by \u201csuggest\u201d and associated with \u201ccould.\u201d"
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "c-Myc protein and tumors are both explicit."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "c-Myc protein is Theme and tumors provide the explicit location/context."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201clow\u201d is an exact minimal trigger."
+            }
+          },
+          "event_id": "E-bcb6ce67e9169dfcd807",
+          "exact_evidence": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+          "explanation": "The source speculatively describes tumors carrying low levels of c-Myc protein.",
+          "falsification_explanation": "This would be falsified if the tumors were described as carrying high c-Myc levels or if the low-level proposition were asserted outside speculative scope.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cmore responsive\u201d explicitly denotes Positive_regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "One exact sentence contains the trigger, all arguments, and modifier evidence."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "\u201csuggest\u201d and \u201ccould be\u201d explicitly make responsiveness speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "The low-level and treatment mentions are correctly preserved as events."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "Tumors, low c-Myc levels, and treatment are all directly involved."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "Tumors are Theme, low c-Myc is the associated Cause, and treatment is the responsiveness context."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cmore responsive\u201d is the exact comparative trigger."
+            }
+          },
+          "event_id": "E-a699191e71c887b4c5b8",
+          "exact_evidence": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+          "explanation": "The source suggests that tumors with low c-Myc could be more responsive to vinca-alkaloid treatment.",
+          "falsification_explanation": "This would be falsified if low-c-Myc tumors were described as less responsive or if responsiveness were unrelated to the treatment.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201ctreatment\u201d explicitly denotes a Planned_process."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger and both participants."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The uncertainty modifies responsiveness, not the generic treatment process itself."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "Tumors and vinca alkaloids are explicit."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "Tumors are the treatment Theme and vinca alkaloids are the Instrument."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201ctreatment\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-11f3a0578efc0b883103",
+          "exact_evidence": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+          "explanation": "The text explicitly names vinca-alkaloid treatment directed toward tumors.",
+          "falsification_explanation": "This would be falsified if vinca alkaloids were not the treatment agent or tumors were not the treatment target.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cdownregulation\u201d explicitly denotes Negative_regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The sentence contains the trigger, participants, and the actual scope of \u201cmight.\u201d"
+            },
+            "modifier": {
+              "decision": "FAIL",
+              "explanation": "\u201cmight\u201d modifies whether downregulation represents a useful goal, not the downregulation relation itself."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "The causal strategy is properly represented as a Planned_process event."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "c-myc oncogene and the antisense strategy are explicit."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "c-myc is Theme and the \u201cby\u201d phrase supports the strategy as Cause."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cdownregulation\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-2773996d557442a07d58",
+          "exact_evidence": null,
+          "explanation": "The downregulation structure is supported, but its event-local SPECULATIVE modifier is not.",
+          "falsification_explanation": "SPECULATIVE would require wording such as \u201cc-myc might be downregulated\u201d; instead, the source says the downregulation \u201cmight represent a useful goal.\u201d",
+          "verdict": "CONTRADICTED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cstrategy\u201d explicitly names a Planned_process."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The strategy is named categorically; \u201cmight\u201d modifies its possible status as a useful goal."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "No inner nesting is required."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "A zero-argument Planned_process is permitted."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "No unsupported roles are assigned."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cstrategy\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-7c96d5ccc6b62c1f4602",
+          "exact_evidence": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+          "explanation": "An antisense strategy is explicitly named as a planned method.",
+          "falsification_explanation": "This would be falsified if \u201cstrategy\u201d did not denote the antisense method or were explicitly denied to exist.",
+          "verdict": "ENTAILED"
+        },
+        {
+          "axes": {
+            "event_type": {
+              "decision": "PASS",
+              "explanation": "\u201cimproving\u201d explicitly denotes Positive_regulation."
+            },
+            "evidence": {
+              "decision": "PASS",
+              "explanation": "The exact sentence contains the trigger, all arguments, and speculation cue."
+            },
+            "modifier": {
+              "decision": "PASS",
+              "explanation": "The improvement is part of what \u201cmight represent a useful goal,\u201d so it is speculative."
+            },
+            "nesting": {
+              "decision": "PASS",
+              "explanation": "The causal downregulation is correctly preserved as an event argument."
+            },
+            "participants": {
+              "decision": "PASS",
+              "explanation": "The downregulation event and anti-neoplastic drug family are explicit."
+            },
+            "roles": {
+              "decision": "PASS",
+              "explanation": "Downregulation is the proposed Cause and the drug family is the efficacy-bearing Theme."
+            },
+            "trigger": {
+              "decision": "PASS",
+              "explanation": "\u201cimproving\u201d is an exact trigger."
+            }
+          },
+          "event_id": "E-faf304d73050cfefee5c",
+          "exact_evidence": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+          "explanation": "The source speculatively proposes c-myc downregulation as a goal for improving drug-family efficacy.",
+          "falsification_explanation": "This would be falsified if downregulation were not proposed to improve efficacy or if the text stated reduced efficacy instead.",
+          "verdict": "ENTAILED"
+        }
+      ],
+      "missing_supported_events": []
+    }
+  }
+}
+```
+
+## Recommendation
+
+`REVISE_ONCE`

@@ -1,0 +1,671 @@
+{
+  "fallbacks": 0,
+  "provider_creation_calls": 5,
+  "provider_retries": 0,
+  "receipts": [
+    {
+      "acknowledgement_envelope_sha256": "e322ca3efea59f71cb639a2c57536cf71694c8b58f74abf82baa7644de174b03",
+      "acknowledgement_seconds": 0.8633154589915648,
+      "confirmation_retrieval_requests": 1,
+      "creation_envelope_sha256": "d256c96259275f0d119da03e04d2047ac0ce4d39f1139630a42b13b2b141c432",
+      "differences": [],
+      "duplicate_creation_calls": 0,
+      "identity": {
+        "created_at": 1784693996.0,
+        "model": "gpt-5.6-sol",
+        "object_type": "response",
+        "output_items": [
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60450560ec819a896271196c4bc144"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60450d18ac819a85da4ad92297a23b"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a604510d298819abf0384a5a890ac9d"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60451dcba4819a82353d1152f27502"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60452a1df0819ab27f0ec9fac1d296"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60453999a0819abdc1a117ad38f938"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60453f8a84819a9b9f4f88577ede29"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60454a5230819abac2720604ef72cc"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a6045591104819ab46b9c27efcff0e5"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a604568d5c4819aa7791cc9a63e4e54"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60457aa9f4819aaf34c5e78c4b39ef"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a6045865800819aa8eb8c61ac99ee45"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a6045900f44819aa8a363e2154b9905"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60459791c4819a9bef1670fcb76265"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a604598986c819a98d7b0c79da7a310"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a604599a508819a8b0dd063150036bf"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60459aa410819a905a7434688a3544"
+          ],
+          [
+            "reasoning",
+            "rs_0a67e8e88bb6f8bc006a60459b9698819a884fee263d988330"
+          ],
+          [
+            "message",
+            "msg_0a67e8e88bb6f8bc006a60459cf79c819aa91916a11d3cc76b"
+          ]
+        ],
+        "response_id": "resp_0a67e8e88bb6f8bc006a6044ec2454819a892e6a9f394b48dc",
+        "status": "completed"
+      },
+      "input_item_retrieval_requests": 1,
+      "model_generation_calls": 1,
+      "polling_does_not_count_as_model_generation": true,
+      "polling_retrieval_requests": 46,
+      "polling_seconds": 244.7105497920129,
+      "provider_creation_calls": 1,
+      "provider_input_sha256": "c1d589456c56289a4e52fc2a47a6c44ef50177c4b5d4dc42be6f59fe61b6e3fa",
+      "provider_retries": 0,
+      "provider_schema_sha256": "8d872edecdea1a757f85b00eb14dd42e4a156bc9ce837150c132773d05d70a5b",
+      "retrieval_envelope_sha256": "d256c96259275f0d119da03e04d2047ac0ce4d39f1139630a42b13b2b141c432",
+      "scientific_payload_sha256": "83512bc42276ba78b823cd06ad2b367132c66ba056eec8db74e7e0df0fbd743d",
+      "stage": "discovery",
+      "stage_output_sha256": "83512bc42276ba78b823cd06ad2b367132c66ba056eec8db74e7e0df0fbd743d",
+      "status": "VERIFIED_LIVE",
+      "status_history": [
+        "queued",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "completed"
+      ],
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 3.01439,
+        "input_tokens": 1600,
+        "latency_seconds": 245.96554291600478,
+        "output_tokens": 100213,
+        "reasoning_tokens": 9064,
+        "total_tokens": 101813
+      }
+    },
+    {
+      "acknowledgement_envelope_sha256": "9733e4dbaf6ccf5a4db0b891a279b11e7047343267c1d689b763bc329b09dcec",
+      "acknowledgement_seconds": 0.5436257910041604,
+      "confirmation_retrieval_requests": 1,
+      "creation_envelope_sha256": "bf5f0f160ab479d1fd192df721ec0f8b6477285d67d8651fb5bd21caeb49e6db",
+      "differences": [],
+      "duplicate_creation_calls": 0,
+      "identity": {
+        "created_at": 1784694241.0,
+        "model": "gpt-5.6-sol",
+        "object_type": "response",
+        "output_items": [
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a6045e377f0819abdccacf43bf8966c"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a6045ecdcec819aa39a6454d6b1032e"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a6045f89558819a8d273958cd0ddb7c"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a6046014948819ab530392c5ae6785b"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a604609f49c819a803adabf0e9ee8f8"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a604612699c819aa8a21e637019c426"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a60461b4f80819aad8dd20c3c28c9a7"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a604623c7b4819ab0aa7c94ab8bf85b"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a60462be7fc819aa3108dd31b6fe28d"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a604635b974819a973add495bda2a43"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a60463d8d98819a82ee311238898e13"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a6046462cf4819a956d4ac687760e1c"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a60464f1760819a8add917666563e68"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a60465705c4819ab51c4a2f524507a9"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a60465fa2f8819a95499b51b43564f9"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a604668a16c819ab0d2e27116ca8ab6"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a6046712ac8819a92ca9ea9c4d82e10"
+          ],
+          [
+            "reasoning",
+            "rs_0c1649c3bf1f650b006a604679a428819aac9eaefbd5b3fb03"
+          ],
+          [
+            "message",
+            "msg_0c1649c3bf1f650b006a60467fd358819a95021adbd9e8174c"
+          ]
+        ],
+        "response_id": "resp_0c1649c3bf1f650b006a6045e1df48819a977fc415c3c7efa5",
+        "status": "completed"
+      },
+      "input_item_retrieval_requests": 1,
+      "model_generation_calls": 1,
+      "polling_does_not_count_as_model_generation": true,
+      "polling_retrieval_requests": 39,
+      "polling_seconds": 205.7243094590085,
+      "provider_creation_calls": 1,
+      "provider_input_sha256": "90fa7d300d5fd0d656c22a140ab05d3358810a528ce9f99f61b976d3dfee351f",
+      "provider_retries": 0,
+      "provider_schema_sha256": "f859ddd48ccc39fdd67b20a6b751c95a323cfc95dd306242aafba74241c29dcf",
+      "retrieval_envelope_sha256": "bf5f0f160ab479d1fd192df721ec0f8b6477285d67d8651fb5bd21caeb49e6db",
+      "scientific_payload_sha256": "db2230d712fc4e40b2e556f6742464658935b42374113aad2c01d4ff122d95df",
+      "stage": "participants",
+      "stage_output_sha256": "db2230d712fc4e40b2e556f6742464658935b42374113aad2c01d4ff122d95df",
+      "status": "VERIFIED_LIVE",
+      "status_history": [
+        "queued",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "completed"
+      ],
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 3.1250299999999998,
+        "input_tokens": 7126,
+        "latency_seconds": 207.02591604099143,
+        "output_tokens": 102980,
+        "reasoning_tokens": 9190,
+        "total_tokens": 110106
+      }
+    },
+    {
+      "acknowledgement_envelope_sha256": "76683cdde4390cc21cf5688c501eb66e0ee83a4d7de9641f61a359777d4e45c7",
+      "acknowledgement_seconds": 0.7182148749998305,
+      "confirmation_retrieval_requests": 1,
+      "creation_envelope_sha256": "7025e7e965ac339326b519176845f2adfa8cfc97b7035489cd03b5826113e23d",
+      "differences": [],
+      "duplicate_creation_calls": 0,
+      "identity": {
+        "created_at": 1784694449.0,
+        "model": "gpt-5.6-sol",
+        "object_type": "response",
+        "output_items": [
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046b499dc819994f29082b9427faf"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046c02260819990c815a9160f4bec"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046cfa3b4819983ab1b294c096bd4"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046d0ac7081999958dd16cd2f1f17"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046dde8448199ac18949154e8fd35"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046ec1b788199822bbad793f2a4ab"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a6046f0b8cc8199aed9d5009fdb7d49"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a604701442c8199b64e49e705396467"
+          ],
+          [
+            "reasoning",
+            "rs_082f36ac7681b031006a60471165a88199a2bd5ba5603db750"
+          ],
+          [
+            "message",
+            "msg_082f36ac7681b031006a604718b7108199bbc23e0c4fe7685d"
+          ]
+        ],
+        "response_id": "resp_082f36ac7681b031006a6046b0f32c8199880091229358a2fd",
+        "status": "completed"
+      },
+      "input_item_retrieval_requests": 1,
+      "model_generation_calls": 1,
+      "polling_does_not_count_as_model_generation": true,
+      "polling_retrieval_requests": 28,
+      "polling_seconds": 152.21297849999974,
+      "provider_creation_calls": 1,
+      "provider_input_sha256": "70a017231f264c9f9fb343235aee00bc4e8fc15a7d2bb786b4a2986f4e065190",
+      "provider_retries": 0,
+      "provider_schema_sha256": "c89cdf6bbdf4dc1b5af1a1d848059ffedcd4c135e7eaf887195224f3913dabcc",
+      "retrieval_envelope_sha256": "7025e7e965ac339326b519176845f2adfa8cfc97b7035489cd03b5826113e23d",
+      "scientific_payload_sha256": "7c43b26ad2cfcdf39318244f76f6a0f9c8793f1884efa49feb3710a1a8db158b",
+      "stage": "roles",
+      "stage_output_sha256": "7c43b26ad2cfcdf39318244f76f6a0f9c8793f1884efa49feb3710a1a8db158b",
+      "status": "VERIFIED_LIVE",
+      "status_history": [
+        "queued",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "completed"
+      ],
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 1.1541100000000002,
+        "input_tokens": 38744,
+        "latency_seconds": 153.71166741699562,
+        "output_tokens": 32013,
+        "reasoning_tokens": 4576,
+        "total_tokens": 70757
+      }
+    },
+    {
+      "acknowledgement_envelope_sha256": "d0803d3ea078ae67684a45a5d8988706ac1a0b853ac662d3682382befbde0c14",
+      "acknowledgement_seconds": 0.7022962500050198,
+      "confirmation_retrieval_requests": 1,
+      "creation_envelope_sha256": "6f7e7a52bede9deae07bd07ed3a1d7d691d7f7350cf299ca20823aaff75d5dc9",
+      "differences": [],
+      "duplicate_creation_calls": 0,
+      "identity": {
+        "created_at": 1784694602.0,
+        "model": "gpt-5.6-sol",
+        "object_type": "response",
+        "output_items": [
+          [
+            "reasoning",
+            "rs_0fa2eb2d1654ba29006a60474cba908199aea9f5a6a97dca1a"
+          ],
+          [
+            "reasoning",
+            "rs_0fa2eb2d1654ba29006a60475548308199ae698bb05f759853"
+          ],
+          [
+            "reasoning",
+            "rs_0fa2eb2d1654ba29006a60475e5c188199a21399f08363b5d5"
+          ],
+          [
+            "reasoning",
+            "rs_0fa2eb2d1654ba29006a60476630408199a38b1a9987fbcece"
+          ],
+          [
+            "reasoning",
+            "rs_0fa2eb2d1654ba29006a60476d1f208199826683373e725305"
+          ],
+          [
+            "reasoning",
+            "rs_0fa2eb2d1654ba29006a604774320481998eaaabe58ba762c3"
+          ],
+          [
+            "message",
+            "msg_0fa2eb2d1654ba29006a60477d22448199aa275c46e7f1da8a"
+          ]
+        ],
+        "response_id": "resp_0fa2eb2d1654ba29006a60474a997c81999be5f2948b8ed1cd",
+        "status": "completed"
+      },
+      "input_item_retrieval_requests": 1,
+      "model_generation_calls": 1,
+      "polling_does_not_count_as_model_generation": true,
+      "polling_retrieval_requests": 13,
+      "polling_seconds": 68.43482224998297,
+      "provider_creation_calls": 1,
+      "provider_input_sha256": "feccbd9577c5ff3a259584443568058abf34471af6d3cc0d30827f727e51120b",
+      "provider_retries": 0,
+      "provider_schema_sha256": "044dc407b97b0b0e1ab3952cb5e339a451dfac21aec1d50b23a8819f1c237fd7",
+      "retrieval_envelope_sha256": "6f7e7a52bede9deae07bd07ed3a1d7d691d7f7350cf299ca20823aaff75d5dc9",
+      "scientific_payload_sha256": "2eb257dff50ae5163e9b3b5e0019b152869ddc10203544e37381115099b3fa5d",
+      "stage": "modifiers",
+      "stage_output_sha256": "2eb257dff50ae5163e9b3b5e0019b152869ddc10203544e37381115099b3fa5d",
+      "status": "VERIFIED_LIVE",
+      "status_history": [
+        "queued",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "completed"
+      ],
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 0.49982000000000004,
+        "input_tokens": 6820,
+        "latency_seconds": 69.66748441700474,
+        "output_tokens": 15524,
+        "reasoning_tokens": 2983,
+        "total_tokens": 22344
+      }
+    },
+    {
+      "acknowledgement_envelope_sha256": "129035d3c24024cf019926438d6e16f132f2f1c18a72295a860cce3fc505e5ef",
+      "acknowledgement_seconds": 0.6763872499868739,
+      "confirmation_retrieval_requests": 1,
+      "creation_envelope_sha256": "9c9d164e851d822b18e2e757da8dae412bb720617e0907692aa14822016aa14b",
+      "differences": [],
+      "duplicate_creation_calls": 0,
+      "identity": {
+        "created_at": 1784694672.0,
+        "model": "gpt-5.6-sol",
+        "object_type": "response",
+        "output_items": [
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a60479223b08198b25bd361670c9dee"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a60479b6a9c8198a7f77d59f2f1ca24"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047a41ca88198959096e17dc8641b"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047ab7e0c819883092c3ca1b68ac1"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047b41a40819894fffbe84367c578"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047bd9e048198a2a0b8bc90fda030"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047c497e88198ac984ad93cca6bed"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047ce26388198a8f9400de121f229"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047d78dd8819897f295c3bc712662"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047e119848198ac77832e69128c84"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047ea2da88198abb40dafe9f94357"
+          ],
+          [
+            "reasoning",
+            "rs_025355cb90df765e006a6047f17c508198ae0f439fccf483e8"
+          ],
+          [
+            "message",
+            "msg_025355cb90df765e006a6047f82f7881988e0979f262ca57dd"
+          ]
+        ],
+        "response_id": "resp_025355cb90df765e006a60479052a081988bcd5cf040c7f8da",
+        "status": "completed"
+      },
+      "input_item_retrieval_requests": 1,
+      "model_generation_calls": 1,
+      "polling_does_not_count_as_model_generation": true,
+      "polling_retrieval_requests": 47,
+      "polling_seconds": 248.59147845799453,
+      "provider_creation_calls": 1,
+      "provider_input_sha256": "253a2f2ecf71f5c0e4e11abb1d5c91f2a2557e73b5732bd377743a12e840fb4c",
+      "provider_retries": 0,
+      "provider_schema_sha256": "da149583a0595d972102aca4565bc7151caa80c1f850de6b41e1ff81c14031c7",
+      "retrieval_envelope_sha256": "9c9d164e851d822b18e2e757da8dae412bb720617e0907692aa14822016aa14b",
+      "scientific_payload_sha256": "cc11d3c22604a9553e5bcc4f763799f93a11af3bfa618dd529560620ec084f52",
+      "stage": "verification",
+      "stage_output_sha256": "cc11d3c22604a9553e5bcc4f763799f93a11af3bfa618dd529560620ec084f52",
+      "status": "VERIFIED_LIVE",
+      "status_history": [
+        "queued",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "in_progress",
+        "completed"
+      ],
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 1.799055,
+        "input_tokens": 21069,
+        "latency_seconds": 249.61060250000446,
+        "output_tokens": 56457,
+        "reasoning_tokens": 6214,
+        "total_tokens": 77526
+      }
+    }
+  ],
+  "terminal_violation": null,
+  "total_cost_usd": 9.592405,
+  "total_latency_seconds": 925.981213291001,
+  "total_tokens": 382546
+}

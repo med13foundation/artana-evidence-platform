@@ -1,0 +1,39 @@
+{
+  "decision": "PIVOT_TO_SPECIALIST",
+  "experiment_decision": "INVALID_EXPERIMENT",
+  "experiment_integrity": {
+    "fallbacks": 0,
+    "graph_writes": 0,
+    "provider_calls": 5,
+    "provider_retries": 0,
+    "receipt_failures": 0,
+    "token_budget_violations": 0
+  },
+  "accounting": {
+    "cost_usd": 9.592405,
+    "latency_seconds": 925.981213291001,
+    "tokens": 382546
+  },
+  "candidate_flow": {
+    "discovered": 39,
+    "modifier_stage": 39,
+    "participant_stage": 39,
+    "role_stage": 39,
+    "verification_stage": 39
+  },
+  "verification": {
+    "contradicted": 7,
+    "entailed": 32,
+    "false_acceptance_rate": "NOT_CALCULATED_INVALID_ASSEMBLY"
+  },
+  "failure": {
+    "child_event_id": "E-2773996d557442a07d58",
+    "child_failure_axis": "modifier",
+    "child_verdict": "CONTRADICTED",
+    "parent_event_id": "E-faf304d73050cfefee5c",
+    "root_cause": "The modifier stage assigned speculation to the downregulation event, but the source scopes might over whether downregulation represents a useful goal. A parent event nested the rejected child, so fail-closed assembly stopped.",
+    "stage": "verification"
+  },
+  "scientific_metrics": "WITHHELD_INVALID_ASSEMBLY",
+  "trusted_promotion": false
+}
