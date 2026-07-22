@@ -1,0 +1,81 @@
+{
+  "accounting": {
+    "fallbacks": 0,
+    "provider_creation_calls": 1,
+    "provider_retries": 0,
+    "receipts": [
+      {
+        "estimated_input_tokens": 11268,
+        "input_token_estimation_method": "ceil(utf8_bytes/4)",
+        "provider_input_bytes": 45071,
+        "provider_input_sha256": "7456aea40f0afb662ad06ad09be2b68aa62040461bfe6f2f331fb1cc070c514a",
+        "response_id": "resp_0909915ba5830325006a60620dbff88198adf8625d389c717e",
+        "stage": "participants",
+        "status": "REJECTED_BUDGET",
+        "usage": {
+          "cached_input_tokens": 0,
+          "cost_usd": 1.8716730000000001,
+          "input_tokens": 12153,
+          "latency_seconds": 148.9371607080102,
+          "output_tokens": 309920,
+          "reasoning_tokens": 17023,
+          "total_tokens": 322073
+        }
+      }
+    ],
+    "terminal_violation": "participants: total token ceiling exceeded",
+    "total_cost_usd": 1.8716730000000001,
+    "total_latency_seconds": 148.9371607080102,
+    "total_tokens": 322073
+  },
+  "decision": "INVALID_EXPERIMENT",
+  "failure": {
+    "boundary": "RECEIPT_BUDGET",
+    "diagnostics": {
+      "actual_sha256": "7d0ee7aab504fb7e1922617aa2045382f84ea51f162d9db06ab23818a0fe65ee",
+      "confirmation_retrieval_requests": 1,
+      "differences": [
+        {
+          "actual_sha256": "7d0ee7aab504fb7e1922617aa2045382f84ea51f162d9db06ab23818a0fe65ee",
+          "difference": "VALUE_CHANGED",
+          "expected_sha256": "6ce318969619d1c360b6144be09e3d3a22674897c7cbfe995716ed8b7ff7c4cf",
+          "path": "$.usage.total_tokens"
+        }
+      ],
+      "duplicate_creation_calls": 0,
+      "estimated_input_tokens": 11268,
+      "expected_sha256": "6ce318969619d1c360b6144be09e3d3a22674897c7cbfe995716ed8b7ff7c4cf",
+      "input_item_retrieval_requests": 1,
+      "input_token_estimation_method": "ceil(utf8_bytes/4)",
+      "model_generation_calls": 1,
+      "observed_usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 1.8716730000000001,
+        "input_tokens": 12153,
+        "latency_seconds": 148.9371607080102,
+        "output_tokens": 309920,
+        "reasoning_tokens": 17023,
+        "total_tokens": 322073
+      },
+      "polling_retrieval_requests": 28,
+      "provider_creation_calls": 1,
+      "provider_input_bytes": 45071,
+      "provider_input_sha256": "7456aea40f0afb662ad06ad09be2b68aa62040461bfe6f2f331fb1cc070c514a",
+      "provider_retries": 0,
+      "receipt_status": "REJECTED_BUDGET",
+      "response_id": "resp_0909915ba5830325006a60620dbff88198adf8625d389c717e",
+      "stage": "participants"
+    },
+    "root_cause": "total token ceiling exceeded",
+    "stage": "participants"
+  },
+  "preflight": {
+    "frozen_state_sha256": "6932e5739befc0963e890395b19e9e00b2506b221ba32127b2c166382439fb1d",
+    "preregistration_sha256": "1e5af604b42e973fa469b5ad2619ab99544e593b59730757d5fea4c0242ac5e8",
+    "status": "PREFLIGHT_PASSED"
+  },
+  "qualification_status": "EXPOSED_DEVELOPMENT_NON_QUALIFYING",
+  "schema_version": "artana.public_gold.luna_context_result.v2",
+  "stage_outputs": {},
+  "trusted_promotion": false
+}

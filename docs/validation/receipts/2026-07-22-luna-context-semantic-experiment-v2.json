@@ -1,0 +1,29 @@
+{
+  "fallbacks": 0,
+  "provider_creation_calls": 1,
+  "provider_retries": 0,
+  "receipts": [
+    {
+      "estimated_input_tokens": 11268,
+      "input_token_estimation_method": "ceil(utf8_bytes/4)",
+      "provider_input_bytes": 45071,
+      "provider_input_sha256": "7456aea40f0afb662ad06ad09be2b68aa62040461bfe6f2f331fb1cc070c514a",
+      "response_id": "resp_0909915ba5830325006a60620dbff88198adf8625d389c717e",
+      "stage": "participants",
+      "status": "REJECTED_BUDGET",
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 1.8716730000000001,
+        "input_tokens": 12153,
+        "latency_seconds": 148.9371607080102,
+        "output_tokens": 309920,
+        "reasoning_tokens": 17023,
+        "total_tokens": 322073
+      }
+    }
+  ],
+  "terminal_violation": "participants: total token ceiling exceeded",
+  "total_cost_usd": 1.8716730000000001,
+  "total_latency_seconds": 148.9371607080102,
+  "total_tokens": 322073
+}
