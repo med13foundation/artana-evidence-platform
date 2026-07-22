@@ -1,0 +1,27 @@
+{
+  "diagnostics": {
+    "actual_sha256": "b5b2280a9c7653dbf08aff783bbff7ce8dc6ba5e3fc224246049a7fe1aaf42df",
+    "confirmation_retrieval_requests": 1,
+    "differences": [
+      {
+        "actual_sha256": "b5b2280a9c7653dbf08aff783bbff7ce8dc6ba5e3fc224246049a7fe1aaf42df",
+        "difference": "VALUE_CHANGED",
+        "expected_sha256": "b5b2280a9c7653dbf08aff783bbff7ce8dc6ba5e3fc224246049a7fe1aaf42df",
+        "path": "$.output"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "expected_sha256": "b5b2280a9c7653dbf08aff783bbff7ce8dc6ba5e3fc224246049a7fe1aaf42df",
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "polling_retrieval_requests": 58,
+    "provider_creation_calls": 1,
+    "provider_retries": 0,
+    "response_id": "resp_0dc68e743f3173d3006a600bc344a0819a99e4da5c2142e67b"
+  },
+  "failure_stage": "RECEIPT_OUTPUT_TOPOLOGY",
+  "provider_calls_attempted": 1,
+  "provider_retries": 0,
+  "root_cause": "multiple reasoning items are unsupported",
+  "status": "UNVERIFIED"
+}

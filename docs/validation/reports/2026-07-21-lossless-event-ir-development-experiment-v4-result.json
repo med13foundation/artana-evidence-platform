@@ -1,0 +1,23 @@
+{
+  "decision": "INVALID_EXPERIMENT",
+  "failure": {
+    "root_cause": "multiple reasoning items are unsupported",
+    "stage": "RECEIPT_OUTPUT_TOPOLOGY"
+  },
+  "preflight": {
+    "frozen_state_sha256": "d3e0031abfbcb56b6b9cde0b9a0e66875c47b668f1f9aae2dc44662eb2fecc51",
+    "preregistration_sha256": "023768cdc0d4523c58d160073c76bc5dc36ee2cc00bcc441147caee53c5c994c",
+    "status": "PREFLIGHT_PASSED"
+  },
+  "preregistration_sha256": "023768cdc0d4523c58d160073c76bc5dc36ee2cc00bcc441147caee53c5c994c",
+  "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
+  "schema_version": "artana.public_gold.lossless_event_result.v3",
+  "terminal_rules": {
+    "fallbacks": 0,
+    "graph_writes": 0,
+    "promotions": 0,
+    "provider_retries": 0,
+    "repairs": 0,
+    "sealed_test_sources_accessed": 0
+  }
+}
