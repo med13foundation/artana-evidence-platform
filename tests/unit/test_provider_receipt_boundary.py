@@ -136,6 +136,29 @@ def test_identical_creation_and_retrieval_validate_with_truthful_cost() -> None:
     assert receipt.usage.cost_usd == pytest.approx(0.0003775)
 
 
+def test_budget_rejection_preserves_observed_numeric_accounting() -> None:
+    response = _response()
+
+    with pytest.raises(ReceiptBoundaryError) as captured:
+        _validate(
+            response,
+            copy.deepcopy(response),
+            expectations=_expectations(max_total_tokens=29),
+        )
+
+    assert captured.value.stage == "RECEIPT_BUDGET"
+    assert captured.value.diagnostics["receipt_status"] == "REJECTED_BUDGET"
+    assert captured.value.diagnostics["observed_usage"] == {
+        "input_tokens": 20,
+        "cached_input_tokens": 5,
+        "output_tokens": 10,
+        "reasoning_tokens": 4,
+        "total_tokens": 30,
+        "latency_seconds": 2.0,
+        "cost_usd": pytest.approx(0.0003775),
+    }
+
+
 def test_multiple_reasoning_items_preserve_one_structured_final_message() -> None:
     response = _response()
     output = response["output"]

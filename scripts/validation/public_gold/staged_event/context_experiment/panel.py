@@ -50,9 +50,7 @@ DEPENDENCY_CONTEXT_IDS = frozenset(
     }
 )
 PANEL_IDS = REPAIR_TARGET_IDS | CONTROL_IDS | DEPENDENCY_CONTEXT_IDS
-WRONG_EVENT_TYPE_IDS = frozenset(
-    {"E-6a75a0999b748f2fe913", "E-a699191e71c887b4c5b8"}
-)
+WRONG_EVENT_TYPE_IDS = frozenset({"E-6a75a0999b748f2fe913", "E-a699191e71c887b4c5b8"})
 NON_CREDITABLE_IDS = DEPENDENCY_CONTEXT_IDS | {"E-c1c8f47ea535c511fb62"}
 
 
@@ -62,6 +60,7 @@ class ContextPanelError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class ContextPanel:
+    shared_context: dict[str, object]
     packets: tuple[dict[str, object], ...]
     candidates: tuple[ResolvedCandidate, ...]
     all_event_map: tuple[dict[str, object], ...]
@@ -76,9 +75,6 @@ def build_context_panel(*, result_path: Path, source_path: Path) -> ContextPanel
     discovery = EventDiscoveryOutput.model_validate_json(
         json.dumps(_object(stages, "discovery"))
     )
-    participants = ParticipantInventoryOutput.model_validate_json(
-        json.dumps(_object(stages, "participants"))
-    )
     resolved = resolve_discovery_candidates(
         discovery.candidates,
         source_text=source_text,
@@ -91,19 +87,20 @@ def build_context_panel(*, result_path: Path, source_path: Path) -> ContextPanel
         raise ContextPanelError("wrong-event-type candidates entered repair panel")
 
     sentences = _sentence_spans(source_text)
-    participant_map = _participant_map(source_text, participants)
-    event_map = tuple(item.as_json() for item in resolved)
+    event_map = tuple(item.as_json() for item in resolved if item.event_id in PANEL_IDS)
     packets = tuple(
         _packet(
             candidate_index[event_id],
-            source_text=source_text,
             sentences=sentences,
-            participant_map=participant_map,
-            event_map=event_map,
         )
         for event_id in sorted(PANEL_IDS)
     )
     return ContextPanel(
+        shared_context={
+            "source_text": source_text,
+            "source_hash": source_sha256,
+            "compact_event_map": list(event_map),
+        },
         packets=packets,
         candidates=tuple(candidate_index[event_id] for event_id in sorted(PANEL_IDS)),
         all_event_map=event_map,
@@ -114,10 +111,7 @@ def build_context_panel(*, result_path: Path, source_path: Path) -> ContextPanel
 def _packet(
     candidate: ResolvedCandidate,
     *,
-    source_text: str,
     sentences: tuple[dict[str, object], ...],
-    participant_map: tuple[dict[str, object], ...],
-    event_map: tuple[dict[str, object], ...],
 ) -> dict[str, object]:
     sentence_index = next(
         index
@@ -134,27 +128,17 @@ def _packet(
         else "DEPENDENCY_CONTEXT"
     )
     return {
+        "event_id": candidate.event_id,
         "panel_classification": classification,
         "target_event": candidate.as_json(),
-        "primary_evidence": sentences[sentence_index],
-        "nearby_context": list(nearby),
-        "paragraph_context": {
-            "start": 0,
-            "end": len(source_text),
-            "text": source_text,
-        },
-        "document_context": {
-            "start": 0,
-            "end": len(source_text),
-            "text": source_text,
-            "interpretation_only": True,
-        },
-        "participant_map": list(participant_map),
-        "event_map": [
-            item for item in event_map if str(item.get("event_id")) in PANEL_IDS
-        ],
-        "permitted_event_ids": sorted(PANEL_IDS),
-        "permitted_evidence_scope": {
+        "primary_evidence_sentence": sentences[sentence_index],
+        "previous_sentence": sentences[sentence_index - 1] if sentence_index else None,
+        "following_sentence": (
+            sentences[sentence_index + 1]
+            if sentence_index + 1 < len(sentences)
+            else None
+        ),
+        "permitted_evidence_offsets": {
             "start": _int(nearby[0], "start"),
             "end": _int(nearby[-1], "end"),
         },
@@ -182,11 +166,17 @@ def _participant_map(
     source_text: str, output: ParticipantInventoryOutput
 ) -> tuple[dict[str, object], ...]:
     exact_texts = sorted(
-        {participant.exact_text for item in output.inventories for participant in item.participants}
+        {
+            participant.exact_text
+            for item in output.inventories
+            for participant in item.participants
+        }
     )
     mentions: list[dict[str, object]] = []
     for exact_text in exact_texts:
-        starts = [match.start() for match in re.finditer(re.escape(exact_text), source_text)]
+        starts = [
+            match.start() for match in re.finditer(re.escape(exact_text), source_text)
+        ]
         for index, start in enumerate(starts):
             mentions.append(
                 {
@@ -198,7 +188,11 @@ def _participant_map(
                     "end": start + len(exact_text),
                 }
             )
-    return tuple(sorted(mentions, key=lambda item: (_int(item, "start"), str(item["mention_id"]))))
+    return tuple(
+        sorted(
+            mentions, key=lambda item: (_int(item, "start"), str(item["mention_id"]))
+        )
+    )
 
 
 def _load_object(path: Path) -> dict[str, object]:

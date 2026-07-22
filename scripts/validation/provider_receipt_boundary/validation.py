@@ -490,7 +490,9 @@ def _require_description(
         raise ReceiptBoundaryError(
             stage,
             "frozen response-format description is absent",
-            diagnostics=_path_diagnostics("$.description", "NON_EMPTY_STRING", expected),
+            diagnostics=_path_diagnostics(
+                "$.description", "NON_EMPTY_STRING", expected
+            ),
         )
     if actual != expected:
         raise ReceiptBoundaryError(
@@ -653,7 +655,11 @@ def _require_budgets(usage: UsageAccounting, expectations: ReceiptExpectations) 
             raise ReceiptBoundaryError(
                 "RECEIPT_BUDGET",
                 message,
-                diagnostics=_path_diagnostics(path, maximum, actual),
+                diagnostics={
+                    **_path_diagnostics(path, maximum, actual),
+                    "observed_usage": asdict(usage),
+                    "receipt_status": "REJECTED_BUDGET",
+                },
             )
 
 

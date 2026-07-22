@@ -33,11 +33,23 @@ from scripts.validation.public_gold.staged_event.assembly import (
     StagedAssemblyError,
     assemble_staged_document,
 )
+from scripts.validation.public_gold.staged_event.context_experiment.compact_input import (
+    INPUT_TOKEN_ESTIMATION_METHOD,
+    build_compact_payload,
+    measure_provider_input,
+)
+from scripts.validation.public_gold.staged_event.context_experiment.contracts import (
+    SourceBoundParticipantOutput,
+)
 from scripts.validation.public_gold.staged_event.context_experiment.panel import (
     CONTROL_IDS,
     PANEL_IDS,
     ContextPanel,
     build_context_panel,
+)
+from scripts.validation.public_gold.staged_event.context_experiment.participant_grounding import (
+    ParticipantGroundingError,
+    ground_participants,
 )
 from scripts.validation.public_gold.staged_event.context_experiment.preflight import (
     PROMPTS,
@@ -71,7 +83,7 @@ from scripts.validation.public_gold.staged_event.prompting import (
 _OutputT = TypeVar("_OutputT", bound=BaseModel)
 STAGES = ("participants", "roles", "modifiers", "verification")
 OUTPUT_MODELS: dict[str, type[BaseModel]] = {
-    "participants": ParticipantInventoryOutput,
+    "participants": SourceBoundParticipantOutput,
     "roles": RoleAssignmentOutput,
     "modifiers": ModifierOutput,
     "verification": VerificationOutput,
@@ -123,9 +135,7 @@ def execute_context_experiment(
     ledger = BudgetLedger(
         max_calls=_integer(budgets, "max_agent_calls"),
         max_tokens=_integer(budgets, "max_total_tokens"),
-        max_output_tokens_per_call=_integer(
-            budgets, "max_output_tokens_per_call"
-        ),
+        max_output_tokens_per_call=_integer(budgets, "max_output_tokens_per_call"),
         max_cost_usd=_number(budgets, "max_total_cost_usd"),
         max_latency_seconds=_number(budgets, "max_total_latency_seconds"),
     )
@@ -150,56 +160,63 @@ def execute_context_experiment(
     )
     current_stage = "preflight"
     try:
-        participants = _call_stage(
+        current_stage = "participants"
+        source_bound_participants = _call_stage(
             stage="participants",
-            output_model=ParticipantInventoryOutput,
-            payload={"context_packets": list(panel.packets)},
+            output_model=SourceBoundParticipantOutput,
+            payload=build_compact_payload(panel=panel, prior_stage_outputs={}),
             environment=environment,
         )
-        current_stage = "participants"
+        participants = ground_participants(source_bound_participants, panel=panel)
         _require_stage_ids(participants.inventories)
-        stage_outputs[current_stage] = participants.model_dump(mode="json")
+        stage_outputs[current_stage] = source_bound_participants.model_dump(mode="json")
 
+        current_stage = "roles"
         roles = _call_stage(
             stage="roles",
             output_model=RoleAssignmentOutput,
-            payload={
-                "context_packets": list(panel.packets),
-                "participant_inventory": participants.model_dump(mode="json"),
-            },
+            payload=build_compact_payload(
+                panel=panel,
+                prior_stage_outputs={
+                    "participant_inventory": participants.model_dump(mode="json"),
+                },
+            ),
             environment=environment,
         )
-        current_stage = "roles"
         _require_stage_ids(roles.events)
         _require_permitted_references(roles)
         stage_outputs[current_stage] = roles.model_dump(mode="json")
 
+        current_stage = "modifiers"
         modifiers = _call_stage(
             stage="modifiers",
             output_model=ModifierOutput,
-            payload={
-                "context_packets": list(panel.packets),
-                "participant_inventory": participants.model_dump(mode="json"),
-                "role_assignments": roles.model_dump(mode="json"),
-            },
+            payload=build_compact_payload(
+                panel=panel,
+                prior_stage_outputs={
+                    "participant_inventory": participants.model_dump(mode="json"),
+                    "role_assignments": roles.model_dump(mode="json"),
+                },
+            ),
             environment=environment,
         )
-        current_stage = "modifiers"
         _require_stage_ids(modifiers.events)
         stage_outputs[current_stage] = modifiers.model_dump(mode="json")
 
+        current_stage = "verification"
         verification = _call_stage(
             stage="verification",
             output_model=VerificationOutput,
-            payload={
-                "context_packets": list(panel.packets),
-                "participant_inventory": participants.model_dump(mode="json"),
-                "role_assignments": roles.model_dump(mode="json"),
-                "modifiers": modifiers.model_dump(mode="json"),
-            },
+            payload=build_compact_payload(
+                panel=panel,
+                prior_stage_outputs={
+                    "participant_inventory": participants.model_dump(mode="json"),
+                    "role_assignments": roles.model_dump(mode="json"),
+                    "modifiers": modifiers.model_dump(mode="json"),
+                },
+            ),
             environment=environment,
         )
-        current_stage = "verification"
         _require_stage_ids(verification.events)
         stage_outputs[current_stage] = verification.model_dump(mode="json")
 
@@ -222,7 +239,7 @@ def execute_context_experiment(
             )
         )
         result = {
-            "schema_version": "artana.public_gold.luna_context_result.v1",
+            "schema_version": "artana.public_gold.luna_context_result.v2",
             "decision": "PENDING_SCIENTIFIC_ADJUDICATION",
             "qualification_status": "EXPOSED_DEVELOPMENT_NON_QUALIFYING",
             "preflight": preflight,
@@ -237,9 +254,16 @@ def execute_context_experiment(
         }
         _write_outputs(paths, ledger, result)
         return "PENDING_SCIENTIFIC_ADJUDICATION"  # noqa: TRY300
-    except (ProviderExecutionError, StagedAssemblyError, StagedComparisonError) as exc:
+    except (
+        ParticipantGroundingError,
+        ProviderExecutionError,
+        StagedAssemblyError,
+        StagedComparisonError,
+    ) as exc:
+        if isinstance(exc, ProviderExecutionError):
+            _record_rejected_budget(environment.ledger, current_stage, exc)
         result = {
-            "schema_version": "artana.public_gold.luna_context_result.v1",
+            "schema_version": "artana.public_gold.luna_context_result.v2",
             "decision": "INVALID_EXPERIMENT",
             "qualification_status": "EXPOSED_DEVELOPMENT_NON_QUALIFYING",
             "preflight": preflight,
@@ -277,54 +301,78 @@ def _call_stage(
         source_sha256=environment.source_sha256,
         payload=payload,
     )
-    execution = execute_background_provider_call(
-        api_key=api_key,
-        output_model=output_model,
-        transport_budgets=BackgroundExecutionBudgets(
-            acknowledgement_timeout_seconds=_number(
-                environment.budgets, "acknowledgement_timeout_seconds"
-            ),
-            polling_interval_seconds=_number(
-                environment.budgets, "polling_interval_seconds"
-            ),
-            max_polling_seconds=min(
-                _number(
-                    environment.budgets, "max_polling_seconds_per_call"
-                ),
-                remaining_latency,
-            ),
+    measurement = measure_provider_input(provider_input)
+    input_ceiling = _integer(
+        _object(
+            _object(_load_object(environment.preregistration_path), "frozen_state"),
+            "inputs",
         ),
-        request=ProviderRequest(
-            provider_input=provider_input,
-            provider_format=build_provider_format(
-                output_model,
-                description=f"Focused Luna {stage} output for fixed V2 events.",
-            ),
-            provider_model_id=_string(environment.model, "provider_model_id"),
-            reasoning_effort=_string(environment.model, "reasoning_effort"),
-            max_output_tokens=_integer(
-                environment.budgets, "max_output_tokens_per_call"
-            ),
-            max_total_tokens=remaining_tokens,
-            max_cost_usd=remaining_cost,
-            max_latency_seconds=remaining_latency,
-            pricing={
-                key: float(value)
-                for key, value in _object(
-                    environment.budgets, "pricing_usd_per_token"
-                ).items()
-                if isinstance(value, int | float)
-            },
-            metadata={
-                "artana_experiment": "luna-context-semantic-v1",
-                "artana_preregistration_sha256": _sha256(
-                    environment.preregistration_path
-                ),
-                "artana_source_sha256": environment.source_sha256,
-                "artana_stage": stage,
-            },
-        ),
+        "provider_input_byte_ceiling_per_stage",
     )
+    if measurement.serialized_bytes > input_ceiling:
+        raise StagedComparisonError(
+            f"{stage} serialized input exceeds frozen byte ceiling"
+        )
+    try:
+        execution = execute_background_provider_call(
+            api_key=api_key,
+            output_model=output_model,
+            transport_budgets=BackgroundExecutionBudgets(
+                acknowledgement_timeout_seconds=_number(
+                    environment.budgets, "acknowledgement_timeout_seconds"
+                ),
+                polling_interval_seconds=_number(
+                    environment.budgets, "polling_interval_seconds"
+                ),
+                max_polling_seconds=min(
+                    _number(environment.budgets, "max_polling_seconds_per_call"),
+                    remaining_latency,
+                ),
+            ),
+            request=ProviderRequest(
+                provider_input=provider_input,
+                provider_format=build_provider_format(
+                    output_model,
+                    description=f"Focused Luna {stage} output for fixed V2 events.",
+                ),
+                provider_model_id=_string(environment.model, "provider_model_id"),
+                reasoning_effort=_string(environment.model, "reasoning_effort"),
+                max_output_tokens=_integer(
+                    environment.budgets, "max_output_tokens_per_call"
+                ),
+                max_total_tokens=remaining_tokens,
+                max_cost_usd=remaining_cost,
+                max_latency_seconds=remaining_latency,
+                pricing={
+                    key: float(value)
+                    for key, value in _object(
+                        environment.budgets, "pricing_usd_per_token"
+                    ).items()
+                    if isinstance(value, int | float)
+                },
+                metadata={
+                    "artana_experiment": "luna-context-semantic-v2",
+                    "artana_preregistration_sha256": _sha256(
+                        environment.preregistration_path
+                    ),
+                    "artana_source_sha256": environment.source_sha256,
+                    "artana_stage": stage,
+                },
+            ),
+        )
+    except ProviderExecutionError as exc:
+        exc.diagnostics.update(
+            {
+                "stage": stage,
+                "provider_input_bytes": measurement.serialized_bytes,
+                "estimated_input_tokens": measurement.estimated_input_tokens,
+                "input_token_estimation_method": INPUT_TOKEN_ESTIMATION_METHOD,
+                "provider_input_sha256": hashlib.sha256(
+                    provider_input.encode()
+                ).hexdigest(),
+            }
+        )
+        raise
     environment.paths.raw_directory.mkdir(parents=True, exist_ok=True)
     (environment.paths.raw_directory / f"{stage}.json").write_text(
         json.dumps(
@@ -342,12 +390,51 @@ def _call_stage(
     receipt = {
         **execution.receipt,
         "provider_input_sha256": hashlib.sha256(provider_input.encode()).hexdigest(),
+        "provider_input_bytes": measurement.serialized_bytes,
+        "estimated_input_tokens": measurement.estimated_input_tokens,
+        "input_token_estimation_method": INPUT_TOKEN_ESTIMATION_METHOD,
         "stage_output_sha256": _canonical_sha256(
             execution.extraction.model_dump(mode="json")
         ),
     }
     environment.ledger.record(stage, receipt)
     return execution.extraction
+
+
+def _record_rejected_budget(
+    ledger: BudgetLedger, stage: str, error: ProviderExecutionError
+) -> None:
+    if error.stage != "RECEIPT_BUDGET":
+        return
+    usage = error.diagnostics.get("observed_usage")
+    if not isinstance(usage, dict):
+        return
+    total_tokens = usage.get("total_tokens")
+    cost = usage.get("cost_usd")
+    latency = usage.get("latency_seconds")
+    if not isinstance(total_tokens, int):
+        return
+    if not isinstance(cost, int | float) or not isinstance(latency, int | float):
+        return
+    ledger.calls += 1
+    ledger.total_tokens += total_tokens
+    ledger.total_cost_usd += float(cost)
+    ledger.total_latency_seconds += float(latency)
+    ledger.terminal_violation = f"{stage}: {error.root_cause}"
+    ledger.receipts.append(
+        {
+            "stage": stage,
+            "status": "REJECTED_BUDGET",
+            "usage": usage,
+            "provider_input_bytes": error.diagnostics.get("provider_input_bytes"),
+            "estimated_input_tokens": error.diagnostics.get("estimated_input_tokens"),
+            "input_token_estimation_method": error.diagnostics.get(
+                "input_token_estimation_method"
+            ),
+            "provider_input_sha256": error.diagnostics.get("provider_input_sha256"),
+            "response_id": error.diagnostics.get("response_id"),
+        }
+    )
 
 
 def _assemble_and_score(
@@ -381,7 +468,9 @@ def _assemble_and_score(
             candidates=tuple(item for item in candidates if item.event_id in retained),
             participant_output=ParticipantInventoryOutput(
                 inventories=tuple(
-                    item for item in participants.inventories if item.event_id in retained
+                    item
+                    for item in participants.inventories
+                    if item.event_id in retained
                 )
             ),
             role_output=RoleAssignmentOutput(
@@ -409,7 +498,9 @@ def _assemble_and_score(
         for item in project_development_directory((root / SOURCE_PATH).parent)
         if item.document_id == "PMID-16428936"
     )
-    return assembly, score_scientific_event_document(gold=gold, predicted=assembly.document)
+    return assembly, score_scientific_event_document(
+        gold=gold, predicted=assembly.document
+    )
 
 
 def _mechanical_metrics(inputs: MechanicalInputs) -> dict[str, object]:
@@ -520,7 +611,9 @@ def _parse_outputs(stages: dict[str, object]) -> tuple[object, ...]:
             events=tuple(item for item in roles.events if item.event_id in PANEL_IDS)
         ),
         ModifierOutput(
-            events=tuple(item for item in modifiers.events if item.event_id in PANEL_IDS)
+            events=tuple(
+                item for item in modifiers.events if item.event_id in PANEL_IDS
+            )
         ),
         VerificationOutput(
             events=tuple(
@@ -544,7 +637,9 @@ def _require_permitted_references(roles: RoleAssignmentOutput) -> None:
                 assignment.target_kind is ParticipantTargetKind.EVENT
                 and assignment.target_event_id not in PANEL_IDS
             ):
-                raise StagedComparisonError("role references an event outside the panel")
+                raise StagedComparisonError(
+                    "role references an event outside the panel"
+                )
 
 
 def _write_outputs(

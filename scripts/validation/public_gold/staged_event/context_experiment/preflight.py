@@ -12,6 +12,15 @@ import openai
 import pydantic
 from pydantic import BaseModel
 
+from scripts.validation.public_gold.staged_event.context_experiment.compact_input import (
+    INPUT_TOKEN_ESTIMATION_METHOD,
+    V1_PARTICIPANT_INPUT_BYTES,
+    build_compact_payload,
+    measure_provider_input,
+)
+from scripts.validation.public_gold.staged_event.context_experiment.contracts import (
+    SourceBoundParticipantOutput,
+)
 from scripts.validation.public_gold.staged_event.context_experiment.panel import (
     CONTROL_IDS,
     NON_CREDITABLE_IDS,
@@ -21,7 +30,6 @@ from scripts.validation.public_gold.staged_event.context_experiment.panel import
 )
 from scripts.validation.public_gold.staged_event.contracts import (
     ModifierOutput,
-    ParticipantInventoryOutput,
     RoleAssignmentOutput,
     VerificationOutput,
 )
@@ -29,6 +37,8 @@ from scripts.validation.public_gold.staged_event.paths import repository_root
 from scripts.validation.public_gold.staged_event.prompting import (
     GUIDELINE_PATH,
     build_provider_format,
+    build_stage_input,
+    load_prompt,
 )
 
 RESULT_PATH = Path(
@@ -48,7 +58,7 @@ PROMPTS = {
     "verification": "docs/validation/prompts/2026-07-22-luna-context-verification.md",
 }
 OUTPUT_MODELS: dict[str, type[BaseModel]] = {
-    "participants": ParticipantInventoryOutput,
+    "participants": SourceBoundParticipantOutput,
     "roles": RoleAssignmentOutput,
     "modifiers": ModifierOutput,
     "verification": VerificationOutput,
@@ -57,6 +67,9 @@ CODE_FILES = (
     "scripts/validation/public_gold/staged_event/context_experiment/panel.py",
     "scripts/validation/public_gold/staged_event/context_experiment/preflight.py",
     "scripts/validation/public_gold/staged_event/context_experiment/live_execution.py",
+    "scripts/validation/public_gold/staged_event/context_experiment/compact_input.py",
+    "scripts/validation/public_gold/staged_event/context_experiment/contracts.py",
+    "scripts/validation/public_gold/staged_event/context_experiment/participant_grounding.py",
 )
 MODEL_IDENTITY = "openai:gpt-5.6-luna"
 PROVIDER_MODEL_ID = "gpt-5.6-luna"
@@ -97,6 +110,22 @@ def build_preregistration(root: Path, *, authorized: bool) -> dict[str, object]:
         )
         for stage, model in OUTPUT_MODELS.items()
     }
+    participant_input = build_stage_input(
+        prompt=load_prompt(root, PROMPTS["participants"]),
+        document_id="PMID-16428936",
+        source_sha256=panel.source_sha256,
+        payload=build_compact_payload(panel=panel, prior_stage_outputs={}),
+    )
+    participant_measurement = measure_provider_input(participant_input)
+    input_byte_ceiling = 200_000
+    if participant_measurement.serialized_bytes >= input_byte_ceiling:
+        raise ContextExperimentPreflightError(
+            "compact participant input exceeds byte ceiling"
+        )
+    if participant_measurement.serialized_bytes >= V1_PARTICIPANT_INPUT_BYTES // 2:
+        raise ContextExperimentPreflightError(
+            "compact participant input is not materially smaller"
+        )
     frozen = {
         "source": {
             "document_id": "PMID-16428936",
@@ -110,7 +139,14 @@ def build_preregistration(root: Path, *, authorized: bool) -> dict[str, object]:
             "v2_result_sha256": _sha256(root / RESULT_PATH),
             "v2_consensus_path": CONSENSUS_PATH.as_posix(),
             "v2_consensus_sha256": _sha256(root / CONSENSUS_PATH),
-            "context_packets_sha256": _canonical_sha256(list(panel.packets)),
+            "shared_context_sha256": _canonical_sha256(panel.shared_context),
+            "target_packets_sha256": _canonical_sha256(list(panel.packets)),
+            "participant_provider_input_sha256": _text_sha256(participant_input),
+            "participant_provider_input_bytes": participant_measurement.serialized_bytes,
+            "participant_estimated_input_tokens": participant_measurement.estimated_input_tokens,
+            "input_token_estimation_method": INPUT_TOKEN_ESTIMATION_METHOD,
+            "provider_input_byte_ceiling_per_stage": input_byte_ceiling,
+            "v1_participant_provider_input_bytes": V1_PARTICIPANT_INPUT_BYTES,
         },
         "panel": {
             "event_ids": sorted(PANEL_IDS),
@@ -141,7 +177,7 @@ def build_preregistration(root: Path, *, authorized: bool) -> dict[str, object]:
         },
     }
     return {
-        "schema_version": "artana.public_gold.luna_context_experiment.v1",
+        "schema_version": "artana.public_gold.luna_context_experiment.v2",
         "status": (
             "FROZEN_AUTHORIZED_FOR_ONE_EXECUTION"
             if authorized
@@ -152,7 +188,7 @@ def build_preregistration(root: Path, *, authorized: bool) -> dict[str, object]:
         "stage_order": ["participants", "roles", "modifiers", "verification"],
         "budgets": {
             "max_agent_calls": 4,
-            "max_output_tokens_per_call": 120000,
+            "max_output_tokens_per_call": 50000,
             "max_total_tokens": 300000,
             "max_total_cost_usd": 3.0,
             "max_total_latency_seconds": 3600.0,
