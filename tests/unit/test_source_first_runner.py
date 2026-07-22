@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from scripts.validation.public_gold.staged_event.context_experiment.run_source_first_luna import (
+from scripts.validation.public_gold.staged_event.context_experiment.source_first.runner import (
     CASES,
     packet,
     provider_input,

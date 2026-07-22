@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from scripts.validation.public_gold.staged_event.context_experiment.source_first_contracts import (
+    from scripts.validation.public_gold.staged_event.context_experiment.source_first.contracts import (
         CompleteEventOutput,
         EventNode,
         EvidenceSpan,

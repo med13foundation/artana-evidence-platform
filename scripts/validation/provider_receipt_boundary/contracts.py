@@ -43,12 +43,29 @@ class UsageAccounting:
 
 
 @dataclass(frozen=True, slots=True)
+class BudgetAccounting:
+    requested_max_output_tokens: int
+    requested_max_total_tokens: int
+    requested_max_latency_seconds: float
+    requested_max_cost_usd: float
+    observed_output_tokens: int
+    observed_total_tokens: int
+    observed_latency_seconds: float
+    observed_cost_usd: float
+    output_tokens: str
+    total_tokens: str
+    latency: str
+    cost: str
+
+
+@dataclass(frozen=True, slots=True)
 class ReceiptExpectations:
     provider_input: str
     provider_format: dict[str, object]
     provider_model_id: str
     reasoning_effort: str
     metadata: dict[str, str]
+    max_output_tokens: int
     max_total_tokens: int
     max_cost_usd: float
     max_latency_seconds: float
@@ -65,6 +82,7 @@ class ReceiptValidation:
     provider_schema_sha256: str
     differences: tuple[FieldDifference, ...]
     usage: UsageAccounting
+    budgets: BudgetAccounting
 
     def as_json(self) -> dict[str, object]:
         payload = asdict(self)
@@ -74,6 +92,7 @@ class ReceiptValidation:
 
 __all__ = [
     "CanonicalPayload",
+    "BudgetAccounting",
     "FieldDifference",
     "ReceiptIdentity",
     "ReceiptExpectations",

@@ -1,0 +1,14 @@
+{
+  "decision": "INVALID_PROVIDER_EXECUTION",
+  "failure_stage": "POST_RECEIPT_STRICT_REVALIDATION",
+  "root_cause": "The receipt-validated EventInventoryOutput was serialized with model_dump(mode=json), converting tuple fields to lists, then redundantly revalidated under strict mode. Strict tuple validation rejected the list before custody artifacts or scientific gates were written.",
+  "provider_call_count": 1,
+  "stage_2_provider_call_count": 0,
+  "provider_retries": 0,
+  "scientific_metrics_calculated": false,
+  "trusted_promotion": false,
+  "graph_writes": 0,
+  "raw_output_preserved": false,
+  "receipt_preserved": false,
+  "accounting_status": "UNAVAILABLE_DUE_TO_PRE_PERSISTENCE_RUNNER_FAILURE"
+}

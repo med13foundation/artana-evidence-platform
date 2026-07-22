@@ -97,6 +97,7 @@ def _expectations(**overrides: object) -> ReceiptExpectations:
         "provider_model_id": "gpt-5.6-sol",
         "reasoning_effort": "low",
         "metadata": {"experiment": "receipt-smoke"},
+        "max_output_tokens": 50,
         "max_total_tokens": 100,
         "max_cost_usd": 0.25,
         "max_latency_seconds": 60.0,
@@ -134,6 +135,53 @@ def test_identical_creation_and_retrieval_validate_with_truthful_cost() -> None:
     assert receipt.differences == ()
     assert receipt.usage.total_tokens == 30
     assert receipt.usage.cost_usd == pytest.approx(0.0003775)
+    assert receipt.budgets.output_tokens == "PASS"
+    assert receipt.budgets.observed_output_tokens == 10
+    assert receipt.budgets.requested_max_output_tokens == 50
+
+
+def test_output_tokens_equal_to_maximum_pass() -> None:
+    response = _response()
+
+    receipt = _validate(
+        response,
+        copy.deepcopy(response),
+        expectations=_expectations(max_output_tokens=10),
+    )
+
+    assert receipt.budgets.output_tokens == "PASS"
+
+
+def test_output_token_overrun_fails_even_when_total_tokens_pass() -> None:
+    response = _response()
+
+    with pytest.raises(ReceiptBoundaryError) as captured:
+        _validate(
+            response,
+            copy.deepcopy(response),
+            expectations=_expectations(max_output_tokens=9, max_total_tokens=100),
+        )
+
+    assert captured.value.stage == "RECEIPT_BUDGET"
+    accounting = captured.value.diagnostics["budget_accounting"]
+    assert isinstance(accounting, dict)
+    assert accounting["output_tokens"] == "FAIL"
+    assert accounting["total_tokens"] == "PASS"
+
+
+def test_missing_requested_budget_provenance_fails_closed() -> None:
+    response = _response()
+
+    with pytest.raises(ReceiptBoundaryError, match="budget provenance") as captured:
+        _validate(
+            response,
+            copy.deepcopy(response),
+            expectations=_expectations(max_output_tokens=0),
+        )
+
+    assert captured.value.diagnostics["receipt_status"] == (
+        "REJECTED_BUDGET_PROVENANCE"
+    )
 
 
 def test_budget_rejection_preserves_observed_numeric_accounting() -> None:

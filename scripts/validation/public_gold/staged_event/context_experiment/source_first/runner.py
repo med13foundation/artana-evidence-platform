@@ -20,10 +20,10 @@ from scripts.validation.public_gold.lossless_event_provider import (
     ProviderExecutionError,
     ProviderRequest,
 )
-from scripts.validation.public_gold.staged_event.context_experiment.source_first_contracts import (
+from scripts.validation.public_gold.staged_event.context_experiment.source_first.contracts import (
     CompleteEventOutput,
 )
-from scripts.validation.public_gold.staged_event.context_experiment.source_first_validation import (
+from scripts.validation.public_gold.staged_event.context_experiment.source_first.validation import (
     SourceFirstValidationError,
     compare_to_exposed_gold_root,
     validate_structure,
@@ -32,7 +32,7 @@ from scripts.validation.public_gold.staged_event.context_experiment.specialist_r
     parse_standoff,
 )
 
-REPO = Path(__file__).resolve().parents[5]
+REPO = Path(__file__).resolve().parents[6]
 SOURCE = REPO / (
     "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/"
     "original-data/devel/PMID-16428936.txt"

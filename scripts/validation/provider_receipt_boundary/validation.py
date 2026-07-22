@@ -13,6 +13,7 @@ from scripts.validation.provider_receipt_boundary.canonical_payload import (
     extract_canonical_payload,
 )
 from scripts.validation.provider_receipt_boundary.contracts import (
+    BudgetAccounting,
     CanonicalPayload,
     FieldDifference,
     ReceiptExpectations,
@@ -99,7 +100,7 @@ def validate_provider_receipt(
         expectations=expectations,
         latency_seconds=latency_seconds,
     )
-    _require_budgets(usage, expectations)
+    budgets = _require_budgets(usage, expectations)
     differences = _require_known_envelope_differences(
         creation,
         retrieval,
@@ -115,6 +116,7 @@ def validate_provider_receipt(
         provider_schema_sha256=canonical_sha256(expectations.provider_format),
         differences=differences,
         usage=usage,
+        budgets=budgets,
     )
 
 
@@ -629,8 +631,46 @@ def _require_usage(
     )
 
 
-def _require_budgets(usage: UsageAccounting, expectations: ReceiptExpectations) -> None:
+def _require_budgets(
+    usage: UsageAccounting, expectations: ReceiptExpectations
+) -> BudgetAccounting:
+    requested = (
+        expectations.max_output_tokens,
+        expectations.max_total_tokens,
+        expectations.max_latency_seconds,
+        expectations.max_cost_usd,
+    )
+    if any(not isinstance(value, int | float) or value <= 0 for value in requested):
+        raise ReceiptBoundaryError(
+            "RECEIPT_BUDGET",
+            "requested budget provenance is absent or invalid",
+            diagnostics={"receipt_status": "REJECTED_BUDGET_PROVENANCE"},
+        )
+    accounting = BudgetAccounting(
+        requested_max_output_tokens=expectations.max_output_tokens,
+        requested_max_total_tokens=expectations.max_total_tokens,
+        requested_max_latency_seconds=expectations.max_latency_seconds,
+        requested_max_cost_usd=expectations.max_cost_usd,
+        observed_output_tokens=usage.output_tokens,
+        observed_total_tokens=usage.total_tokens,
+        observed_latency_seconds=usage.latency_seconds,
+        observed_cost_usd=usage.cost_usd,
+        output_tokens=_budget_status(
+            usage.output_tokens, expectations.max_output_tokens
+        ),
+        total_tokens=_budget_status(usage.total_tokens, expectations.max_total_tokens),
+        latency=_budget_status(
+            usage.latency_seconds, expectations.max_latency_seconds
+        ),
+        cost=_budget_status(usage.cost_usd, expectations.max_cost_usd),
+    )
     checks = (
+        (
+            "$.usage.output_tokens",
+            expectations.max_output_tokens,
+            usage.output_tokens,
+            "output token ceiling exceeded",
+        ),
         (
             "$.usage.total_tokens",
             expectations.max_total_tokens,
@@ -658,9 +698,15 @@ def _require_budgets(usage: UsageAccounting, expectations: ReceiptExpectations) 
                 diagnostics={
                     **_path_diagnostics(path, maximum, actual),
                     "observed_usage": asdict(usage),
+                    "budget_accounting": asdict(accounting),
                     "receipt_status": "REJECTED_BUDGET",
                 },
             )
+    return accounting
+
+
+def _budget_status(actual: float, maximum: float) -> str:
+    return "PASS" if actual <= maximum else "FAIL"
 
 
 def _classify_differences(

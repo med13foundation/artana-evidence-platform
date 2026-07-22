@@ -179,6 +179,8 @@ def test_provider_transport_calls_model_once_and_verifies_receipt() -> None:
     assert execution.receipt["response_retrieval_requests"] == 1
     assert execution.receipt["input_item_retrieval_requests"] == 1
     assert execution.receipt["usage"]["total_tokens"] == 150
+    assert execution.receipt["budgets"]["output_tokens"] == "PASS"
+    assert execution.receipt["budgets"]["requested_max_output_tokens"] == 20000
 
 
 def test_provider_transport_fails_closed_on_retrieved_input_drift() -> None:

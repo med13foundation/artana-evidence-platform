@@ -73,6 +73,7 @@ class ProviderRequest:
             provider_model_id=self.provider_model_id,
             reasoning_effort=self.reasoning_effort,
             metadata=self.metadata,
+            max_output_tokens=self.max_output_tokens,
             max_total_tokens=self.max_total_tokens,
             max_cost_usd=self.max_cost_usd,
             max_latency_seconds=self.max_latency_seconds,

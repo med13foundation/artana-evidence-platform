@@ -1,0 +1,16 @@
+{
+  "status": "INVALID_PROVIDER_EXECUTION",
+  "provider_creation_calls": 1,
+  "provider_retries": 0,
+  "stage_2_provider_creation_calls": 0,
+  "receipt_boundary_completed_in_process": true,
+  "receipt_artifact_persisted": false,
+  "response_id": "UNAVAILABLE_AFTER_PROCESS_TERMINATION",
+  "input_tokens": "UNAVAILABLE",
+  "output_tokens": "UNAVAILABLE",
+  "total_tokens": "UNAVAILABLE",
+  "latency_seconds": "UNAVAILABLE",
+  "cost_usd": "UNAVAILABLE",
+  "failure_stage": "POST_RECEIPT_STRICT_REVALIDATION",
+  "raw_sensitive_content_committed": false
+}

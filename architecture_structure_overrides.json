@@ -91,12 +91,6 @@
       "max_modules": 22,
       "reason": "Graph API schema modules are an existing schema package family retained until schema subpackages are introduced.",
       "tracking_ref": "docs/architecture/module-packaging-plan.md"
-    },
-    {
-      "path": "scripts/validation/public_gold/staged_event/context_experiment",
-      "max_modules": 17,
-      "reason": "Frozen exposed-development experiment modules remain in place so post-call custody hashes stay reproducible; future experiments must use a dedicated subpackage.",
-      "tracking_ref": "docs/validation/reports/2026-07-22-source-first-luna-event-construction-v1.md"
     }
   ],
   "large_helper_modules": [],

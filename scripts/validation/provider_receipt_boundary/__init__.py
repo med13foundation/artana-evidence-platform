@@ -1,6 +1,7 @@
 """Fail-closed verification of immutable Responses API receipt evidence."""
 
 from scripts.validation.provider_receipt_boundary.contracts import (
+    BudgetAccounting,
     CanonicalPayload,
     FieldDifference,
     ReceiptExpectations,
@@ -17,6 +18,7 @@ from scripts.validation.provider_receipt_boundary.validation import (
 )
 
 __all__ = [
+    "BudgetAccounting",
     "CanonicalPayload",
     "FieldDifference",
     "ReceiptBoundaryError",

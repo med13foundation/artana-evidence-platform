@@ -5,14 +5,14 @@ import pytest
 from scripts.validation.public_gold.lossless_event_experiment_contracts import (
     SourceEventType,
 )
-from scripts.validation.public_gold.staged_event.context_experiment.source_first_contracts import (
+from scripts.validation.public_gold.staged_event.context_experiment.source_first.contracts import (
     CompleteEventOutput,
     EventArgument,
     EventNode,
     EvidenceSpan,
     ParticipantNode,
 )
-from scripts.validation.public_gold.staged_event.context_experiment.source_first_validation import (
+from scripts.validation.public_gold.staged_event.context_experiment.source_first.validation import (
     SourceFirstValidationError,
     compare_exposed_nested_graph,
     validate_structure,
