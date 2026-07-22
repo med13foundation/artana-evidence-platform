@@ -1,0 +1,46 @@
+{
+  "schema_version": "specialist-luna-micro-canary-v1",
+  "status": "FROZEN_AUTHORIZED_FIRST_CALL_ONLY",
+  "qualification_status": "EXPOSED_REVIEW_ONLY",
+  "frozen_state": {
+    "source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+    "specialist_coverage_result_sha256": "3ab775cc20d36a44b18fd8d280c94f2d10d0007a9e20adc34ddf20c23a734240",
+    "candidate_sha256": "38b1cb34400892c5d345cced5374a9db9ad7a4e4459a781fb5f64d65c126faf2",
+    "prompt_sha256": "6f3afa303e6e4ab2eceab9e09d88cc4178f9fc47ae2d7e23f7a2d0752d1830e7",
+    "provider_input_sha256": "f65afbbf0244cd3b877e8284682da093f0cecf95c93b3e94c0a3c303a04ec0c1",
+    "provider_input_bytes": 2289,
+    "schema_sha256": "a0449b960281c6e7b668e0fa36ac71d9b35f1adfd5830cb4915ef613f7ca707f",
+    "provider_format_sha256": "4ad13a7acc2edd88d5217b74546b1d06ec0fcc936d8dc830d00f8987d91c51ce",
+    "runner_sha256": "ab21c01aef3c793827ee010613de1df2d20b2680ca345a45054f562d8d1f2132",
+    "contract_sha256": "9b6403e9f4cb55857ac050878964c981920586a145daed874717a17c96fff73a",
+    "model": "openai:gpt-5.6-luna",
+    "provider_model": "gpt-5.6-luna",
+    "reasoning_effort": "high",
+    "first_packet": "packet-central-nested-v1"
+  },
+  "budgets": {
+    "creation_calls": 1,
+    "retries": 0,
+    "fallbacks": 0,
+    "max_output_tokens": 8000,
+    "max_total_tokens": 20000,
+    "max_latency_seconds": 900,
+    "max_cost_usd": 1.0
+  },
+  "first_call_acceptance": {
+    "all_proposals_categorically_adjudicated": true,
+    "exact_event_local_evidence": true,
+    "complete_nested_structure_required": true,
+    "unsupported_participants_maximum": 0,
+    "contradictions_maximum": 0
+  },
+  "terminal_rules": {
+    "stop_on_incomplete_nested_structure": true,
+    "prompt_patch_after_call": false,
+    "schema_patch_after_call": false,
+    "provider_retry": false,
+    "untouched_source_access": false,
+    "graph_write": false,
+    "promotion": false
+  }
+}

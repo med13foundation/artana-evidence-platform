@@ -1,0 +1,111 @@
+{
+  "correctable_event_ids": [
+    "E-2773996d557442a07d58",
+    "E-fd23ca8aac731381622e"
+  ],
+  "coverage_gate_passed": true,
+  "distinct_correctable_error_count": 2,
+  "duplicate_event_count": 1,
+  "events": [
+    {
+      "artana_event_id": "E-11f3a0578efc0b883103",
+      "complete_specialist_structure": false,
+      "gold_event_id": "E29",
+      "nested_arguments_covered": 0,
+      "participant_arguments_covered": 0,
+      "roles_covered": 0,
+      "trigger_covered": false
+    },
+    {
+      "artana_event_id": "E-2773996d557442a07d58",
+      "complete_specialist_structure": true,
+      "gold_event_id": "E30",
+      "nested_arguments_covered": 0,
+      "participant_arguments_covered": 1,
+      "roles_covered": 1,
+      "trigger_covered": true
+    },
+    {
+      "artana_event_id": "E-544748ccc8e6c17eb290",
+      "complete_specialist_structure": false,
+      "gold_event_id": "E9",
+      "nested_arguments_covered": 0,
+      "participant_arguments_covered": 0,
+      "roles_covered": 0,
+      "trigger_covered": false
+    },
+    {
+      "artana_event_id": "E-66488a62883bb758e80b",
+      "complete_specialist_structure": false,
+      "gold_event_id": "E7",
+      "nested_arguments_covered": 0,
+      "participant_arguments_covered": 0,
+      "roles_covered": 0,
+      "trigger_covered": false
+    },
+    {
+      "artana_event_id": "E-8498b84a9b3bb3e93c2f",
+      "complete_specialist_structure": false,
+      "gold_event_id": "E8",
+      "nested_arguments_covered": 0,
+      "participant_arguments_covered": 0,
+      "roles_covered": 0,
+      "trigger_covered": false
+    },
+    {
+      "artana_event_id": "E-94edf9d8896d3f0729cb",
+      "complete_specialist_structure": false,
+      "gold_event_id": "E15",
+      "nested_arguments_covered": 0,
+      "participant_arguments_covered": 0,
+      "roles_covered": 0,
+      "trigger_covered": false
+    },
+    {
+      "artana_event_id": "E-a00865ea42e6f577581d",
+      "complete_specialist_structure": false,
+      "gold_event_id": "E25",
+      "nested_arguments_covered": 0,
+      "participant_arguments_covered": 0,
+      "roles_covered": 0,
+      "trigger_covered": false
+    },
+    {
+      "artana_event_id": "E-b43186fccd287bbb1cd5",
+      "complete_specialist_structure": false,
+      "gold_event_id": "E13",
+      "nested_arguments_covered": 0,
+      "participant_arguments_covered": 0,
+      "roles_covered": 0,
+      "trigger_covered": false
+    },
+    {
+      "artana_event_id": "E-e2a89e97c05e2b8d93d2",
+      "complete_specialist_structure": false,
+      "gold_event_id": "E2",
+      "nested_arguments_covered": 0,
+      "participant_arguments_covered": 0,
+      "roles_covered": 0,
+      "trigger_covered": false
+    },
+    {
+      "artana_event_id": "E-fd23ca8aac731381622e",
+      "complete_specialist_structure": true,
+      "gold_event_id": "E24",
+      "nested_arguments_covered": 0,
+      "participant_arguments_covered": 1,
+      "roles_covered": 1,
+      "trigger_covered": true
+    }
+  ],
+  "exact_source_grounding_rate": "7/7",
+  "nested_event_coverage_count": 0,
+  "normalized_event_count": 7,
+  "participant_coverage_count": 2,
+  "raw_event_count": 8,
+  "role_coverage_count": 2,
+  "target_event_count": 10,
+  "trigger_coverage_count": 2,
+  "unresolvable_span_count": 0,
+  "unsupported_span_count": 0
+}

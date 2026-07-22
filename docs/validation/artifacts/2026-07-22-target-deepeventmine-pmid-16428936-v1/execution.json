@@ -1,0 +1,30 @@
+{
+  "child_system_seconds": 0.009552,
+  "child_user_seconds": 0.011072,
+  "elapsed_seconds": 20.129995458002668,
+  "exit_status": 0,
+  "image": "sha256:84aecdb25d2336d3ae48514dcc75fc7e2e075c42a9276763895192909e973100",
+  "input_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+  "output_sha256": {
+    "evidence/experiment/configs/predict-pmid-16428936-target-v1.yaml": "f7e0fe53580b031c2bf0a74c9a3f7e5e287f8750982b54b526f7b3d0f78a8f94",
+    "evidence/experiment/results/ev-last/ev-tok-a2/PMID-16428936.a2": "6ae746725049c8ed4fc535455c6d39684be4ecaa91765e4b92f63089e2efbbe6",
+    "evidence/experiment/results/ev-last/ev-tok-ann/PMID-16428936.a1": "6ca9438d2672dfc9a79d68b7f9793d277552509744fb2e640286a0e73e3903ce",
+    "evidence/experiment/results/ev-last/ev-tok-ann/PMID-16428936.a2": "9f3d473591d896884379a257b8ae70317e1822493a2bd6f0bd7269fc70ec3fbc",
+    "evidence/experiment/results/ev-last/pmid-16428936-target-v1-brat/PMID-16428936.ann": "db173cb06f780ceec7ef62f457089211fd521ae1698952b3c934e6871d41b4e7",
+    "evidence/experiment/results/ev-last/pmid-16428936-target-v1-brat/PMID-16428936.txt": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+    "evidence/experiment/results/rel-last/rel-ann/PMID-16428936-EN.ann": "5db853ff6f8a8bb76dd4b473bfb092322a0cc5ab7b1cd9ff87f1788a5379e264",
+    "evidence/experiment/results/rel-last/rel-ann/PMID-16428936-RE.ann": "1ffe64c551e296986ab716c98c5f50fe0625bf93742c8db4d92dcdaa1eae8934",
+    "evidence/experiment/results/rel-last/rel-ann/PMID-16428936-TR.ann": "e1f9df5af80b9f1487b226f326b42df87fe35d09d0e0bbbd479f6d08359b9570",
+    "evidence/processed-text/text.subtoken.map": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "evidence/processed-text/text.types": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "evidence/processed-text/text/PMID-16428936.a1": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "evidence/processed-text/text/PMID-16428936.a2": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "evidence/processed-text/text/PMID-16428936.ann": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "evidence/processed-text/text/PMID-16428936.inv.map": "dd36b2eb962a23f3e33d83e6e5fbc11202799e70c02d647e9c0eaebb5c736bcf",
+    "evidence/processed-text/text/PMID-16428936.map": "69dbcbcb769f982ef000e602a2151956281b4dbe0bbebff606f4d9896e9700ab",
+    "evidence/processed-text/text/PMID-16428936.txt": "78816899d4b43baab43f1c39a2784c8ad3e43877da3fd0dbe99d1fa67f6102b8",
+    "evidence/processed-text/text/PMID-16428936.txt.ori": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab"
+  },
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.12 (main, Mar 10 2026, 18:26:32) [Clang 21.1.4 ]"
+}

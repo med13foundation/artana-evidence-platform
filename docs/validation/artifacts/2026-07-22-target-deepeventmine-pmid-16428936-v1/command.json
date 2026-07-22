@@ -1,0 +1,13 @@
+[
+  "docker",
+  "run",
+  "--rm",
+  "--platform",
+  "linux/amd64",
+  "--volume",
+  "/Users/alvaro/.codex/artana-evidence-experiments/tg04/target_deepeventmine_pmid_16428936_v1:/evidence",
+  "sha256:84aecdb25d2336d3ae48514dcc75fc7e2e075c42a9276763895192909e973100",
+  "bash",
+  "-lc",
+  "set -eu\ntarget=pmid-16428936-target-v1\nrm -rf /app/data/$target /app/experiments/$target\nmkdir -p /app/data/$target/text\ncp /evidence/input/PMID-16428936.txt /app/data/$target/text/PMID-16428936.txt\nbash pubmed.sh e2e rawtext $target ge11 -1\nmkdir -p /evidence/evidence\ncp -a /app/data/$target/processed-text /evidence/evidence/\ncp -a /app/experiments/$target /evidence/evidence/experiment"
+]

@@ -1,0 +1,27 @@
+T1	Protein 12 19	c - Myc
+T2	Protein 83 90	c - myc
+T3	Protein 282 289	c - Myc
+T4	Protein 387 394	c - Myc
+T5	Protein 546 553	c - myc
+T6	Protein 1128 1135	Bcl - 2
+T7	Protein 1151 1154	p53
+T8	Protein 1198 1205	c - Myc
+T9	Protein 1329 1336	c - myc
+T10	Protein 1430 1437	c - Myc
+T11	Protein 1535 1542	c - myc
+T12	Negative_regulation 0 8	Decrease
+T13	Localization 991 998	release
+T14	Negative_regulation 1136 1144	decrease
+T15	Positive_regulation 1155 1163	increase
+T16	Negative_regulation 1186 1194	decrease
+T17	Gene_expression 1206 1216	expression
+T18	Positive_regulation 1337 1346	induction
+T19	Negative_regulation 1517 1531	downregulation
+E1	Negative_regulation:T12 Theme:T1
+E2	Negative_regulation:T14 Theme:T6
+E3	Positive_regulation:T15 Theme:T7
+E4	Gene_expression:T17 Theme:T8
+E5	Positive_regulation:T18 Theme:T9
+E6	Negative_regulation:T19 Theme:T11
+E7	Negative_regulation:T16 Theme:E4
+E8	Negative_regulation:T16 Theme:E4

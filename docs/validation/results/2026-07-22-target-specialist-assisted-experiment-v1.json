@@ -1,0 +1,70 @@
+{
+  "decision": "STOP_LUNA_SCIENTIFIC_FAILURE",
+  "qualification_status": "EXPOSED_REVIEW_ONLY",
+  "baseline": {
+    "complete_participant_bearing_events": 3,
+    "participant_bearing_events": 13,
+    "known_errors_corrected_by_luna_context": 0
+  },
+  "specialist_execution": {
+    "valid": true,
+    "source_document_id": "PMID-16428936",
+    "source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+    "exit_status": 0,
+    "elapsed_seconds": 20.129995458002668,
+    "raw_event_count": 8,
+    "normalized_event_count": 7,
+    "duplicate_event_count": 1,
+    "exact_source_grounding": "7/7",
+    "unresolvable_spans": 0,
+    "unsupported_spans": 0
+  },
+  "coverage": {
+    "gate_passed": true,
+    "trigger_coverage": "2/10",
+    "participant_argument_coverage": 2,
+    "role_coverage": 2,
+    "nested_event_coverage": 0,
+    "potentially_correctable_event_ids": [
+      "E-2773996d557442a07d58",
+      "E-fd23ca8aac731381622e"
+    ]
+  },
+  "luna_first_canary": {
+    "packet_id": "packet-central-nested-v1",
+    "provider_response_id": "resp_0b0e5c99f4f0950a006a609b983a94819abaacea88f81dafef",
+    "receipt_status": "VERIFIED_LIVE",
+    "provider_creation_calls": 1,
+    "provider_retries": 0,
+    "duplicate_creation_calls": 0,
+    "input_tokens": 870,
+    "output_tokens": 1218,
+    "reasoning_tokens": 516,
+    "total_tokens": 2088,
+    "latency_seconds": 12.733598832972348,
+    "cost_usd": 0.008178,
+    "specialist_proposal_decision": "ACCEPT",
+    "reported_target_kind": "PARTICIPANT",
+    "reported_role": "THEME",
+    "reported_attachment": "NESTED_EVENT",
+    "structure_assessment": "INCOMPLETE",
+    "evidence_grounded": true,
+    "scientific_gate_passed": false
+  },
+  "failure": {
+    "stage": "FIRST_NESTED_EVENT_MICRO_CANARY",
+    "root_cause": "DeepEventMine recovered the nested c-Myc decrease but omitted the sensitivity event and outer enhancement structure. Luna correctly reported the proposal set as incomplete, but also returned the event proposal as target kind PARTICIPANT with role THEME rather than a complete typed event attachment.",
+    "remaining_calls_skipped": [
+      "E-66488a62883bb758e80b",
+      "E-94edf9d8896d3f0729cb",
+      "E-60b0d54816b0585893d1"
+    ]
+  },
+  "safety": {
+    "untouched_sources": 0,
+    "fallbacks": 0,
+    "graph_writes": 0,
+    "promotions": 0,
+    "all_results_review_only": true
+  }
+}

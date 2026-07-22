@@ -1,0 +1,27 @@
+{
+  "decision": "STOP_LUNA_SCIENTIFIC_FAILURE",
+  "evidence_spans_valid": true,
+  "nested_structure_correct": false,
+  "output": {
+    "packet_id": "packet-central-nested-v1",
+    "proposal_decisions": [
+      {
+        "attachment": "NESTED_EVENT",
+        "decision": "ACCEPT",
+        "evidence_end": 26,
+        "evidence_start": 0,
+        "exact_evidence": "Decrease in c-Myc activity",
+        "explanation": "The source explicitly states \u201cDecrease in c-Myc activity,\u201d grounding the trigger and the c-Myc participant. This decrease is embedded within the larger enhancement event, so the proposal attaches to a nested event.",
+        "proposal_id": "deepeventmine-E1",
+        "scientific_role": "THEME",
+        "target_kind": "PARTICIPANT"
+      }
+    ],
+    "structure_assessment": "INCOMPLETE",
+    "structure_explanation": "The accepted proposal represents the nested decrease involving c-Myc, but it does not represent the explicit current event in which this decrease enhances cancer cell sensitivity to vinblastine."
+  },
+  "packet_id": "packet-central-nested-v1",
+  "proposal_ids_valid": true,
+  "receipt_sha256": "316e9145e3b87c82ff53a5256f6bee8386958fa48911cde9f6ae967ccca5c33d",
+  "trusted_promotion": false
+}

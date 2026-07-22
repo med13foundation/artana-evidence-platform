@@ -1,0 +1,74 @@
+{
+  "schema_version": "target-deepeventmine-participant-experiment-v1",
+  "status": "FROZEN_AUTHORIZED",
+  "qualification_status": "EXPOSED_REVIEW_ONLY",
+  "source": {
+    "document_id": "PMID-16428936",
+    "path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-16428936.txt",
+    "sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+    "bytes": 1610
+  },
+  "specialist": {
+    "repository": "https://github.com/aistairc/DeepEventMine",
+    "commit": "e1c56013b4241e06c1cbe00992546367e4699036",
+    "model": "GE11",
+    "checkpoint_sha256": "789c01437966ac0ced10b78aa0e2a70eb3579edd1943cf7f91c4898a301fea33",
+    "parameters_sha256": "3dbad74face08a59674da86d787d30dfa792a057d4f42868dba6d261eb09a2b0",
+    "scibert_archive_sha256": "e584c8a99d302e6c83742d0f997ac743a033664631bc1768c976c31f9534bdcc",
+    "docker_image": "sha256:84aecdb25d2336d3ae48514dcc75fc7e2e075c42a9276763895192909e973100",
+    "configuration": {
+      "raw_text": true,
+      "ner_predict_all": true,
+      "gpu": -1,
+      "batch_size": 16,
+      "seed": 42
+    }
+  },
+  "execution": {
+    "repository_head_before_checkpoint": "c608330d254b41a1b576bc1a4c9c8903ebc35a73",
+    "runner": "scripts/validation/public_gold/staged_event/context_experiment/run_target_deepeventmine.py",
+    "runner_sha256": "e806152082e43cc03d79b83bab55a771ec63eb3cf39a80e7636aecf9ea548f26",
+    "command": [
+      "uv",
+      "run",
+      "python",
+      "scripts/validation/public_gold/staged_event/context_experiment/run_target_deepeventmine.py"
+    ],
+    "output_directory": "/Users/alvaro/.codex/artana-evidence-experiments/tg04/target_deepeventmine_pmid_16428936_v1",
+    "execution_limit": 1,
+    "timeout_seconds": 900,
+    "retries": 0,
+    "fallbacks": 0
+  },
+  "environment": {
+    "host": "Darwin arm64 Apple M5 Pro",
+    "docker_client": "29.5.3",
+    "docker_server": "29.5.3",
+    "container_architecture": "linux/amd64",
+    "python": "3.6.15",
+    "pytorch": "1.1.0",
+    "scikit_learn": "0.21.3"
+  },
+  "custody": {
+    "gold_annotations_in_generator_input": false,
+    "expected_event_ids_in_generator_input": false,
+    "expected_participant_counts_in_generator_input": false,
+    "known_errors_in_generator_input": false,
+    "untouched_sources": false,
+    "graph_writes": false,
+    "promotion": false
+  },
+  "coverage_gate": {
+    "minimum_distinct_correctable_errors": 2,
+    "exact_source_binding_required": true,
+    "ambiguous_occurrence_selection_forbidden": true,
+    "luna_forbidden_on_failure": true
+  },
+  "terminal_decisions": [
+    "INVALID_SPECIALIST_EXECUTION",
+    "STOP_SPECIALIST_COVERAGE_INSUFFICIENT",
+    "INVALID_PROVIDER_EXECUTION",
+    "STOP_LUNA_SCIENTIFIC_FAILURE",
+    "ADVANCE_SPECIALIST_LUNA_HYBRID"
+  ]
+}
