@@ -1,0 +1,30 @@
+{
+  "schema_version": "specialist-assisted-participant-micro-canary-v1",
+  "status": "TERMINAL_OFFLINE",
+  "execution_authorized": false,
+  "frozen_source": {
+    "document_id": "PMID-16428936",
+    "source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab"
+  },
+  "baseline": {
+    "participant_bearing_complete": 3,
+    "participant_bearing_total": 13,
+    "luna_known_participant_errors_corrected": 0
+  },
+  "specialist_artifacts": {
+    "pubtator_biorex_sha256": "8a6b2610cecd896dcd19bdb87cc6ecd474169b23126ee65537d996df19b1d150",
+    "deepeventmine_sha256": "4dda900ce522544ed28e97a21f94659390560de0932c7746f0c55f6df94513c3"
+  },
+  "offline_gate": {
+    "minimum_distinct_correctable_events": 2,
+    "source_identity_required": true,
+    "exact_offsets_required": true,
+    "gold_may_select_ambiguous_occurrence": false
+  },
+  "provider_phase": {
+    "permitted_only_after_offline_gate": true,
+    "calls_made": 0,
+    "authorized": false
+  },
+  "terminal_decision": "STOP_SPECIALIST_COVERAGE_INSUFFICIENT"
+}

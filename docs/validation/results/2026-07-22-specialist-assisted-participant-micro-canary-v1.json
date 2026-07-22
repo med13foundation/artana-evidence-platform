@@ -1,0 +1,34 @@
+{
+  "decision": "STOP_SPECIALIST_COVERAGE_INSUFFICIENT",
+  "target_document_id": "PMID-16428936",
+  "target_event_count": 10,
+  "artifacts": {
+    "pubtator_biorex": {
+      "entity_count": 84,
+      "relation_count": 16,
+      "document_ids": ["40289860", "40484925", "40518668", "41482925"],
+      "target_bound_candidate_count": 0
+    },
+    "deepeventmine": {
+      "event_count": 9,
+      "source_file": "source-5.ann",
+      "source_label": "exposed-molecular-mechanism",
+      "document_identity": "UNBOUND",
+      "target_bound_candidate_count": 0
+    }
+  },
+  "coverage": {
+    "eligible_candidate_count": 0,
+    "distinct_correctable_event_count": 0,
+    "minimum_required": 2,
+    "gate_passed": false
+  },
+  "execution": {
+    "external_api_calls": 0,
+    "provider_calls": 0,
+    "luna_calls": 0,
+    "retries": 0,
+    "graph_writes": 0
+  },
+  "root_cause": "The preserved normalized specialist artifacts do not contain source-bound outputs for PMID-16428936. PubTator/BioREx covers four other PMIDs, and DeepEventMine has no document identity and contains maize ZmWRKY104/ZmCCaMK events from another exposed source."
+}
