@@ -1,0 +1,70 @@
+{
+  "case_id": "generalization-negated-association",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "E1",
+      "event_type": "ASSOCIATION",
+      "exact_evidence": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS.",
+      "explanation": "The finding explicitly negates an association between steroid dose before ICI initiation and worse overall survival.",
+      "trigger_text": "was no longer associated with"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "Steroid dose before ICI initiation is the exposure in the association.",
+          "role": "EXPOSURE",
+          "target_id": "P1",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "Worse OS is the outcome with which the exposure is stated to have no longer been associated.",
+          "role": "OUTCOME",
+          "target_id": "P2",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "E1"
+    }
+  ],
+  "participants": [
+    {
+      "entity_type": "EXPOSURE",
+      "exact_evidence": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS.",
+      "exact_text": "steroid dose before ICI initiation",
+      "explanation": "This is the exposure whose association with the outcome is evaluated.",
+      "participant_id": "P1"
+    },
+    {
+      "entity_type": "OUTCOME",
+      "exact_evidence": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS.",
+      "exact_text": "worse OS",
+      "explanation": "This is the adverse overall-survival outcome named in the association statement.",
+      "participant_id": "P2"
+    }
+  ],
+  "root_event_id": "E1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "NO_ASSOCIATION",
+      "event_id": "E1",
+      "evidence_items": [
+        "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS."
+      ],
+      "explanation": "The sentence asserts that the previously described association was no longer present; it does not provide a numerical statistic or explicitly interpret statistical significance.",
+      "polarity": "NEGATED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    }
+  ],
+  "structure_explanation": "The highlighted finding is fully represented by one negated association event linking the explicitly stated exposure to the explicitly stated outcome. No antecedent resolution or additional neighboring finding is required."
+}
