@@ -1,0 +1,2684 @@
+{
+  "document_id": "PMID-16428936",
+  "event_summaries": [
+    {
+      "baseline_exact_participant_set": true,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1166,
+          "exact_text": "expression",
+          "explanation": "The decrease explicitly affects the discovered c-Myc expression event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 1156
+        }
+      ],
+      "control_event": true,
+      "event_id": "E-0effc9409e12ed77b198",
+      "gold_event_id": "E23",
+      "gold_participants": [
+        {
+          "end": 1166,
+          "exact_text": "expression",
+          "source_entity_type": null,
+          "start": 1156,
+          "target_kind": "EVENT"
+        }
+      ],
+      "luna_exact_participant_set": true,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1166,
+          "exact_text": "expression",
+          "explanation": "The decrease is explicitly stated to affect c-Myc expression.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "E-fd23ca8aac731381622e",
+          "source_entity_type": null,
+          "start": 1156
+        }
+      ],
+      "transition": "PRESERVED_CORRECT"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1351,
+          "exact_text": "tumors",
+          "explanation": "The tumors are explicitly the subjects described in relation to treatment responsiveness.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Cancer",
+          "start": 1345
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1432,
+          "exact_text": "vinca alkaloids",
+          "explanation": "Vinca alkaloids are the explicit chemical agents used in the treatment.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Simple_chemical",
+          "start": 1417
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-11f3a0578efc0b883103",
+      "gold_event_id": "E29",
+      "gold_participants": [
+        {
+          "end": 1432,
+          "exact_text": "vinca alkaloids",
+          "source_entity_type": "Simple_chemical",
+          "start": 1417,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1351,
+          "exact_text": "tumors",
+          "explanation": "The sentence explicitly describes tumors as responsive to the treatment.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "tumors",
+          "source_entity_type": "Cancer",
+          "start": 1345
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1432,
+          "exact_text": "vinca alkaloids",
+          "explanation": "Vinca alkaloids are explicitly named as the treatment.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "vinca-alkaloids",
+          "source_entity_type": "Simple_chemical",
+          "start": 1417
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [],
+      "control_event": true,
+      "event_id": "E-205f021ad42236e5f142",
+      "gold_event_id": "E26",
+      "gold_participants": [],
+      "luna_exact_participant_set": false,
+      "luna_participants": [],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 95,
+          "exact_text": "c-myc oncogene",
+          "explanation": "The downregulation explicitly concerns the c-myc oncogene.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 81
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1515,
+          "exact_text": "strategy",
+          "explanation": "The discovered antisense strategy event is explicitly associated with the downregulation.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": null,
+          "start": 1507
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-2773996d557442a07d58",
+      "gold_event_id": "E30",
+      "gold_participants": [
+        {
+          "end": 1481,
+          "exact_text": "c-myc",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 1476,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1490,
+          "exact_text": "c-myc oncogene",
+          "explanation": "The downregulation is explicitly stated to target the c-myc oncogene.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "c-myc-oncogene",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 1476
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1515,
+          "exact_text": "strategy",
+          "explanation": "The antisense strategy is explicitly stated as the process associated with the downregulation.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "E-7c96d5ccc6b62c1f4602",
+          "source_entity_type": null,
+          "start": 1507
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": true,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1108,
+          "exact_text": "p53",
+          "explanation": "p53 is explicitly the molecule showing an increase.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 1105
+        }
+      ],
+      "control_event": true,
+      "event_id": "E-2d5bd3d8506d519d2d69",
+      "gold_event_id": "E22",
+      "gold_participants": [
+        {
+          "end": 1108,
+          "exact_text": "p53",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 1105,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_exact_participant_set": true,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1108,
+          "exact_text": "p53",
+          "explanation": "The sentence explicitly states that p53 increased.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "p53",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 1105
+        }
+      ],
+      "transition": "PRESERVED_CORRECT"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 132,
+          "exact_text": "transcriptional factor",
+          "explanation": "The factor is explicitly described as involved in apoptosis.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 110
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-544748ccc8e6c17eb290",
+      "gold_event_id": "E9",
+      "gold_participants": [
+        {
+          "end": 158,
+          "exact_text": "cellular",
+          "source_entity_type": "Cell",
+          "start": 150,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 95,
+          "exact_text": "c-myc oncogene",
+          "explanation": "The c-myc oncogene is explicitly described as involved in apoptosis.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "c-myc-oncogene",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 81
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": true,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 17,
+          "exact_text": "c-Myc",
+          "explanation": "The decrease explicitly concerns c-Myc activity.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 12
+        }
+      ],
+      "control_event": true,
+      "event_id": "E-60b0d54816b0585893d1",
+      "gold_event_id": "E1",
+      "gold_participants": [
+        {
+          "end": 17,
+          "exact_text": "c-Myc",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 12,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_exact_participant_set": true,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 17,
+          "exact_text": "c-Myc",
+          "explanation": "The decrease is explicitly stated to be in c-Myc activity.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "c-Myc",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 12
+        }
+      ],
+      "transition": "PRESERVED_CORRECT"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 132,
+          "exact_text": "transcriptional factor",
+          "explanation": "The factor is explicitly described as involved in proliferation.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 110
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-66488a62883bb758e80b",
+      "gold_event_id": "E7",
+      "gold_participants": [
+        {
+          "end": 158,
+          "exact_text": "cellular",
+          "source_entity_type": "Cell",
+          "start": 150,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 95,
+          "exact_text": "c-myc oncogene",
+          "explanation": "The c-myc oncogene is explicitly described as involved in proliferation.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "c-myc-oncogene",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 81
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [],
+      "control_event": false,
+      "event_id": "E-7c96d5ccc6b62c1f4602",
+      "gold_event_id": null,
+      "gold_participants": [],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1472,
+          "exact_text": "downregulation",
+          "explanation": "The strategy is explicitly associated with the downregulation event.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "E-2773996d557442a07d58",
+          "source_entity_type": null,
+          "start": 1458
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 132,
+          "exact_text": "transcriptional factor",
+          "explanation": "The factor is explicitly described as involved in differentiation.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 110
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-8498b84a9b3bb3e93c2f",
+      "gold_event_id": "E8",
+      "gold_participants": [
+        {
+          "end": 158,
+          "exact_text": "cellular",
+          "source_entity_type": "Cell",
+          "start": 150,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 95,
+          "exact_text": "c-myc oncogene",
+          "explanation": "The c-myc oncogene is explicitly described as involved in differentiation.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "c-myc-oncogene",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 81
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 593,
+          "exact_text": "VLB",
+          "explanation": "The second VLB mention is explicitly part of the increased sensitivity.",
+          "occurrence_id": "occurrence-1",
+          "occurrence_index": 1,
+          "participant_key": "p1",
+          "source_entity_type": "Simple_chemical",
+          "start": 590
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 677,
+          "exact_text": "LoVo-mycANS cells",
+          "explanation": "The increase in sensitivity is explicitly observed in these cells.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Cell",
+          "start": 660
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-94edf9d8896d3f0729cb",
+      "gold_event_id": "E15",
+      "gold_participants": [
+        {
+          "end": 656,
+          "exact_text": "sensitivity",
+          "source_entity_type": null,
+          "start": 645,
+          "target_kind": "EVENT"
+        }
+      ],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 644,
+          "exact_text": "VLB",
+          "explanation": "The increase is explicitly described as an increase in VLB sensitivity.",
+          "occurrence_id": "occurrence-1",
+          "participant_key": "VLB",
+          "source_entity_type": "Simple_chemical",
+          "start": 641
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 677,
+          "exact_text": "LoVo-mycANS cells",
+          "explanation": "The increased sensitivity is explicitly reported in LoVo-mycANS cells.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "LoVo-mycANS-cells",
+          "source_entity_type": "Cell",
+          "start": 660
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1098,
+          "exact_text": "decrease",
+          "explanation": "The enhancement is explicitly attributed to the preceding decrease event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 1090
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 427,
+          "exact_text": "VLB",
+          "explanation": "VLB is explicitly the chemical associated with the enhanced sensitivity.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Simple_chemical",
+          "start": 424
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-9b071863693a57dae92b",
+      "gold_event_id": null,
+      "gold_participants": [],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1146,
+          "exact_text": "decrease",
+          "explanation": "The preceding decrease is explicitly stated as the cause of the enhanced sensitivity.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "E-0effc9409e12ed77b198",
+          "source_entity_type": null,
+          "start": 1138
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1183,
+          "exact_text": "VLB",
+          "explanation": "The enhanced object is explicitly identified as VLB sensitivity.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "VLB",
+          "source_entity_type": "Simple_chemical",
+          "start": 1180
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1175,
+          "exact_text": "enhanced",
+          "explanation": "The triggering follows explicitly from the discovered enhancement event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 1167
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 221,
+          "exact_text": "apoptosis",
+          "explanation": "Earlier apoptosis is explicitly the event being triggered.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": null,
+          "start": 212
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1243,
+          "exact_text": "induction",
+          "explanation": "The induction event is explicitly stated as the mechanism through which triggering occurs.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p3",
+          "source_entity_type": null,
+          "start": 1234
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-a00865ea42e6f577581d",
+      "gold_event_id": "E25",
+      "gold_participants": [
+        {
+          "end": 1146,
+          "exact_text": "decrease",
+          "source_entity_type": null,
+          "start": 1138,
+          "target_kind": "EVENT"
+        },
+        {
+          "end": 1225,
+          "exact_text": "apoptosis",
+          "source_entity_type": null,
+          "start": 1216,
+          "target_kind": "EVENT"
+        }
+      ],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1175,
+          "exact_text": "enhanced",
+          "explanation": "The enhanced-sensitivity event is explicitly stated to trigger the subsequent event.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "E-9b071863693a57dae92b",
+          "source_entity_type": null,
+          "start": 1167
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1225,
+          "exact_text": "apoptosis",
+          "explanation": "Earlier apoptosis is explicitly identified as the event being triggered.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "E-205f021ad42236e5f142",
+          "source_entity_type": null,
+          "start": 1216
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 427,
+          "exact_text": "VLB",
+          "explanation": "This first VLB mention explicitly modifies cytotoxicity.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Simple_chemical",
+          "start": 424
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 677,
+          "exact_text": "LoVo-mycANS cells",
+          "explanation": "These are the explicit cells in which VLB sensitivity was assessed.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Cell",
+          "start": 660
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-b43186fccd287bbb1cd5",
+      "gold_event_id": "E13",
+      "gold_participants": [
+        {
+          "end": 677,
+          "exact_text": "LoVo-mycANS cells",
+          "source_entity_type": "Cell",
+          "start": 660,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 593,
+          "exact_text": "VLB",
+          "explanation": "The cytotoxicity is explicitly described as VLB cytotoxicity.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "VLB",
+          "source_entity_type": "Simple_chemical",
+          "start": 590
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 677,
+          "exact_text": "LoVo-mycANS cells",
+          "explanation": "The cytotoxicity result is explicitly reported in LoVo-mycANS cells.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "LoVo-mycANS-cells",
+          "source_entity_type": "Cell",
+          "start": 660
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 891,
+          "exact_text": "mitochondria",
+          "explanation": "Mitochondria are explicitly described as involved in the apoptotic signaling context.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Cellular_component",
+          "start": 879
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-c1c8f47ea535c511fb62",
+      "gold_event_id": null,
+      "gold_participants": [],
+      "luna_exact_participant_set": false,
+      "luna_participants": [],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1038,
+          "exact_text": "pathway",
+          "explanation": "The induction explicitly affects the discovered intrinsic pathway event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 1031
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-cf483c0e6ea43235f767",
+      "gold_event_id": null,
+      "gold_participants": [],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1268,
+          "exact_text": "pathway",
+          "explanation": "The induction is explicitly stated to involve the intrinsic pathway.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "E-d96f3f94563f9fce3286",
+          "source_entity_type": null,
+          "start": 1261
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 221,
+          "exact_text": "apoptosis",
+          "explanation": "The intrinsic pathway is explicitly presented in the mechanism leading to apoptosis.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 212
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-d96f3f94563f9fce3286",
+      "gold_event_id": null,
+      "gold_participants": [],
+      "luna_exact_participant_set": false,
+      "luna_participants": [],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 891,
+          "exact_text": "mitochondria",
+          "explanation": "The passage explicitly states involvement of mitochondria in the pathway.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Cellular_component",
+          "start": 879
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1020,
+          "exact_text": "apoptotic",
+          "explanation": "The pathway is explicitly characterized by the discovered apoptotic event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": null,
+          "start": 1011
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-dc2596d35c7a939787a6",
+      "gold_event_id": null,
+      "gold_participants": [],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1002,
+          "exact_text": "mitochondria",
+          "explanation": "The pathway is explicitly described as involving mitochondria.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "mitochondria",
+          "source_entity_type": "Cellular_component",
+          "start": 990
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 8,
+          "exact_text": "Decrease",
+          "explanation": "The enhancement is explicitly associated with the preceding decrease event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 0
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 47,
+          "exact_text": "cancer cell",
+          "explanation": "Cancer cells are the explicit bearers of the enhanced sensitivity.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Cell",
+          "start": 36
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 74,
+          "exact_text": "vinblastine",
+          "explanation": "Vinblastine is the chemical to which sensitivity is enhanced.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p3",
+          "source_entity_type": "Simple_chemical",
+          "start": 63
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-e2a89e97c05e2b8d93d2",
+      "gold_event_id": "E2",
+      "gold_participants": [
+        {
+          "end": 59,
+          "exact_text": "sensitivity",
+          "source_entity_type": null,
+          "start": 48,
+          "target_kind": "EVENT"
+        },
+        {
+          "end": 8,
+          "exact_text": "Decrease",
+          "source_entity_type": null,
+          "start": 0,
+          "target_kind": "EVENT"
+        }
+      ],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 8,
+          "exact_text": "Decrease",
+          "explanation": "The decrease is explicitly stated as the cause of enhanced sensitivity.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "E-60b0d54816b0585893d1",
+          "source_entity_type": null,
+          "start": 0
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 47,
+          "exact_text": "cancer cell",
+          "explanation": "The enhanced sensitivity is explicitly associated with cancer cells.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "cancer-cell",
+          "source_entity_type": "Cell",
+          "start": 36
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 75,
+          "exact_text": "vinblastine",
+          "explanation": "Vinblastine is explicitly named in the sensitivity relation.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "vinblastine",
+          "source_entity_type": "Simple_chemical",
+          "start": 63
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    },
+    {
+      "baseline_exact_participant_set": false,
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 17,
+          "exact_text": "c-Myc",
+          "explanation": "The expression event explicitly concerns c-Myc.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 12
+        }
+      ],
+      "control_event": false,
+      "event_id": "E-fd23ca8aac731381622e",
+      "gold_event_id": "E24",
+      "gold_participants": [
+        {
+          "end": 1155,
+          "exact_text": "c-Myc",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 1150,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_exact_participant_set": false,
+      "luna_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1155,
+          "exact_text": "c-Myc",
+          "explanation": "The expression event is explicitly identified as c-Myc expression.",
+          "occurrence_id": "occurrence-0",
+          "participant_key": "c-Myc",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 1149
+        }
+      ],
+      "transition": "PRESERVED_WRONG"
+    }
+  ],
+  "gold_mapped_event_count": 14,
+  "packets": [
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1166,
+          "exact_text": "expression",
+          "explanation": "The decrease explicitly affects the discovered c-Myc expression event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 1156
+        }
+      ],
+      "control_event": true,
+      "counterfactual_exact_gold_if_offset_valid": true,
+      "event_id": "E-0effc9409e12ed77b198",
+      "exact_gold_participant": true,
+      "exact_span_valid": true,
+      "gold_event_id": "E23",
+      "gold_participants": [
+        {
+          "end": 1166,
+          "exact_text": "expression",
+          "source_entity_type": null,
+          "start": 1156,
+          "target_kind": "EVENT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "EVENT",
+        "end": 1166,
+        "exact_text": "expression",
+        "explanation": "The decrease is explicitly stated to affect c-Myc expression.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "E-fd23ca8aac731381622e",
+        "source_entity_type": null,
+        "start": 1156
+      },
+      "panel_classification": "REGRESSION_CONTROL",
+      "participant_id": "E-0effc9409e12ed77b198:P1",
+      "permitted_evidence_offsets": {
+        "end": 1443,
+        "start": 1040
+      },
+      "resolved_source_text": "expression",
+      "review_required": false,
+      "source_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "target_event": {
+        "event_id": "E-0effc9409e12ed77b198",
+        "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+        "passage_end": 1269,
+        "passage_start": 1119,
+        "source_event_type": "Negative_regulation",
+        "statement_kind": "EXPLICIT_RESULT",
+        "trigger_end": 1146,
+        "trigger_id": "T-ba466af1f29dade08ea4",
+        "trigger_start": 1138,
+        "trigger_text": "decrease"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1351,
+          "exact_text": "tumors",
+          "explanation": "The tumors are explicitly the subjects described in relation to treatment responsiveness.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Cancer",
+          "start": 1345
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1432,
+          "exact_text": "vinca alkaloids",
+          "explanation": "Vinca alkaloids are the explicit chemical agents used in the treatment.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Simple_chemical",
+          "start": 1417
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-11f3a0578efc0b883103",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": "E29",
+      "gold_participants": [
+        {
+          "end": 1432,
+          "exact_text": "vinca alkaloids",
+          "source_entity_type": "Simple_chemical",
+          "start": 1417,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 1351,
+        "exact_text": "tumors",
+        "explanation": "The sentence explicitly describes tumors as responsive to the treatment.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "tumors",
+        "source_entity_type": "Cancer",
+        "start": 1345
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-11f3a0578efc0b883103:P1",
+      "permitted_evidence_offsets": {
+        "end": 1609,
+        "start": 1119
+      },
+      "resolved_source_text": "tumors",
+      "review_required": true,
+      "source_passage": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+      "target_event": {
+        "event_id": "E-11f3a0578efc0b883103",
+        "event_passage": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+        "passage_end": 1443,
+        "passage_start": 1270,
+        "source_event_type": "Planned_process",
+        "statement_kind": "HYPOTHESIS",
+        "trigger_end": 1442,
+        "trigger_id": "T-3abb7bf6e2e9476c5e05",
+        "trigger_start": 1433,
+        "trigger_text": "treatment"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1351,
+          "exact_text": "tumors",
+          "explanation": "The tumors are explicitly the subjects described in relation to treatment responsiveness.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Cancer",
+          "start": 1345
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1432,
+          "exact_text": "vinca alkaloids",
+          "explanation": "Vinca alkaloids are the explicit chemical agents used in the treatment.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Simple_chemical",
+          "start": 1417
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": true,
+      "event_id": "E-11f3a0578efc0b883103",
+      "exact_gold_participant": true,
+      "exact_span_valid": true,
+      "gold_event_id": "E29",
+      "gold_participants": [
+        {
+          "end": 1432,
+          "exact_text": "vinca alkaloids",
+          "source_entity_type": "Simple_chemical",
+          "start": 1417,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 1432,
+        "exact_text": "vinca alkaloids",
+        "explanation": "Vinca alkaloids are explicitly named as the treatment.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "vinca-alkaloids",
+        "source_entity_type": "Simple_chemical",
+        "start": 1417
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-11f3a0578efc0b883103:P2",
+      "permitted_evidence_offsets": {
+        "end": 1609,
+        "start": 1119
+      },
+      "resolved_source_text": "vinca alkaloids",
+      "review_required": false,
+      "source_passage": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+      "target_event": {
+        "event_id": "E-11f3a0578efc0b883103",
+        "event_passage": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment.",
+        "passage_end": 1443,
+        "passage_start": 1270,
+        "source_event_type": "Planned_process",
+        "statement_kind": "HYPOTHESIS",
+        "trigger_end": 1442,
+        "trigger_id": "T-3abb7bf6e2e9476c5e05",
+        "trigger_start": 1433,
+        "trigger_text": "treatment"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 95,
+          "exact_text": "c-myc oncogene",
+          "explanation": "The downregulation explicitly concerns the c-myc oncogene.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 81
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1515,
+          "exact_text": "strategy",
+          "explanation": "The discovered antisense strategy event is explicitly associated with the downregulation.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": null,
+          "start": 1507
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-2773996d557442a07d58",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": "E30",
+      "gold_participants": [
+        {
+          "end": 1481,
+          "exact_text": "c-myc",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 1476,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 1490,
+        "exact_text": "c-myc oncogene",
+        "explanation": "The downregulation is explicitly stated to target the c-myc oncogene.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "c-myc-oncogene",
+        "source_entity_type": "Gene_or_gene_product",
+        "start": 1476
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-2773996d557442a07d58:P1",
+      "permitted_evidence_offsets": {
+        "end": 1609,
+        "start": 1270
+      },
+      "resolved_source_text": "c-myc oncogene",
+      "review_required": true,
+      "source_passage": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+      "target_event": {
+        "event_id": "E-2773996d557442a07d58",
+        "event_passage": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+        "passage_end": 1609,
+        "passage_start": 1444,
+        "source_event_type": "Negative_regulation",
+        "statement_kind": "HYPOTHESIS",
+        "trigger_end": 1472,
+        "trigger_id": "T-21983e98e8200a872a7c",
+        "trigger_start": 1458,
+        "trigger_text": "downregulation"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 95,
+          "exact_text": "c-myc oncogene",
+          "explanation": "The downregulation explicitly concerns the c-myc oncogene.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 81
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1515,
+          "exact_text": "strategy",
+          "explanation": "The discovered antisense strategy event is explicitly associated with the downregulation.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": null,
+          "start": 1507
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-2773996d557442a07d58",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": "E30",
+      "gold_participants": [
+        {
+          "end": 1481,
+          "exact_text": "c-myc",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 1476,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "EVENT",
+        "end": 1515,
+        "exact_text": "strategy",
+        "explanation": "The antisense strategy is explicitly stated as the process associated with the downregulation.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "E-7c96d5ccc6b62c1f4602",
+        "source_entity_type": null,
+        "start": 1507
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-2773996d557442a07d58:P2",
+      "permitted_evidence_offsets": {
+        "end": 1609,
+        "start": 1270
+      },
+      "resolved_source_text": "strategy",
+      "review_required": true,
+      "source_passage": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+      "target_event": {
+        "event_id": "E-2773996d557442a07d58",
+        "event_passage": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+        "passage_end": 1609,
+        "passage_start": 1444,
+        "source_event_type": "Negative_regulation",
+        "statement_kind": "HYPOTHESIS",
+        "trigger_end": 1472,
+        "trigger_id": "T-21983e98e8200a872a7c",
+        "trigger_start": 1458,
+        "trigger_text": "downregulation"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 1108,
+          "exact_text": "p53",
+          "explanation": "p53 is explicitly the molecule showing an increase.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 1105
+        }
+      ],
+      "control_event": true,
+      "counterfactual_exact_gold_if_offset_valid": true,
+      "event_id": "E-2d5bd3d8506d519d2d69",
+      "exact_gold_participant": true,
+      "exact_span_valid": true,
+      "gold_event_id": "E22",
+      "gold_participants": [
+        {
+          "end": 1108,
+          "exact_text": "p53",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 1105,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 1108,
+        "exact_text": "p53",
+        "explanation": "The sentence explicitly states that p53 increased.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "p53",
+        "source_entity_type": "Gene_or_gene_product",
+        "start": 1105
+      },
+      "panel_classification": "REGRESSION_CONTROL",
+      "participant_id": "E-2d5bd3d8506d519d2d69:P1",
+      "permitted_evidence_offsets": {
+        "end": 1269,
+        "start": 855
+      },
+      "resolved_source_text": "p53",
+      "review_required": false,
+      "source_passage": "This earlier apoptosis was accompanied by a Bcl-2 decrease and a p53 increase.",
+      "target_event": {
+        "event_id": "E-2d5bd3d8506d519d2d69",
+        "event_passage": "This earlier apoptosis was accompanied by a Bcl-2 decrease and a p53 increase.",
+        "passage_end": 1118,
+        "passage_start": 1040,
+        "source_event_type": "Positive_regulation",
+        "statement_kind": "EXPLICIT_RESULT",
+        "trigger_end": 1117,
+        "trigger_id": "T-c265339e3ef5bed7cb23",
+        "trigger_start": 1109,
+        "trigger_text": "increase"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 132,
+          "exact_text": "transcriptional factor",
+          "explanation": "The factor is explicitly described as involved in apoptosis.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 110
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-544748ccc8e6c17eb290",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": "E9",
+      "gold_participants": [
+        {
+          "end": 158,
+          "exact_text": "cellular",
+          "source_entity_type": "Cell",
+          "start": 150,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 95,
+        "exact_text": "c-myc oncogene",
+        "explanation": "The c-myc oncogene is explicitly described as involved in apoptosis.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "c-myc-oncogene",
+        "source_entity_type": "Gene_or_gene_product",
+        "start": 81
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-544748ccc8e6c17eb290:P1",
+      "permitted_evidence_offsets": {
+        "end": 351,
+        "start": 0
+      },
+      "resolved_source_text": "c-myc oncogene",
+      "review_required": true,
+      "source_passage": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+      "target_event": {
+        "event_id": "E-544748ccc8e6c17eb290",
+        "event_passage": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+        "passage_end": 222,
+        "passage_start": 77,
+        "source_event_type": "Cell_death",
+        "statement_kind": "BACKGROUND",
+        "trigger_end": 221,
+        "trigger_id": "T-25eb19f38f93e0bcf4cc",
+        "trigger_start": 212,
+        "trigger_text": "apoptosis"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 17,
+          "exact_text": "c-Myc",
+          "explanation": "The decrease explicitly concerns c-Myc activity.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 12
+        }
+      ],
+      "control_event": true,
+      "counterfactual_exact_gold_if_offset_valid": true,
+      "event_id": "E-60b0d54816b0585893d1",
+      "exact_gold_participant": true,
+      "exact_span_valid": true,
+      "gold_event_id": "E1",
+      "gold_participants": [
+        {
+          "end": 17,
+          "exact_text": "c-Myc",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 12,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 17,
+        "exact_text": "c-Myc",
+        "explanation": "The decrease is explicitly stated to be in c-Myc activity.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "c-Myc",
+        "source_entity_type": "Gene_or_gene_product",
+        "start": 12
+      },
+      "panel_classification": "REGRESSION_CONTROL",
+      "participant_id": "E-60b0d54816b0585893d1:P1",
+      "permitted_evidence_offsets": {
+        "end": 222,
+        "start": 0
+      },
+      "resolved_source_text": "c-Myc",
+      "review_required": false,
+      "source_passage": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+      "target_event": {
+        "event_id": "E-60b0d54816b0585893d1",
+        "event_passage": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+        "passage_end": 75,
+        "passage_start": 0,
+        "source_event_type": "Negative_regulation",
+        "statement_kind": "EXPLICIT_RESULT",
+        "trigger_end": 8,
+        "trigger_id": "T-fe2270aea22bcbeda6fc",
+        "trigger_start": 0,
+        "trigger_text": "Decrease"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 132,
+          "exact_text": "transcriptional factor",
+          "explanation": "The factor is explicitly described as involved in proliferation.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 110
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-66488a62883bb758e80b",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": "E7",
+      "gold_participants": [
+        {
+          "end": 158,
+          "exact_text": "cellular",
+          "source_entity_type": "Cell",
+          "start": 150,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 95,
+        "exact_text": "c-myc oncogene",
+        "explanation": "The c-myc oncogene is explicitly described as involved in proliferation.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "c-myc-oncogene",
+        "source_entity_type": "Gene_or_gene_product",
+        "start": 81
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-66488a62883bb758e80b:P1",
+      "permitted_evidence_offsets": {
+        "end": 351,
+        "start": 0
+      },
+      "resolved_source_text": "c-myc oncogene",
+      "review_required": true,
+      "source_passage": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+      "target_event": {
+        "event_id": "E-66488a62883bb758e80b",
+        "event_passage": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+        "passage_end": 222,
+        "passage_start": 77,
+        "source_event_type": "Cell_proliferation",
+        "statement_kind": "BACKGROUND",
+        "trigger_end": 190,
+        "trigger_id": "T-3ac91b3c5dcedb216b68",
+        "trigger_start": 177,
+        "trigger_text": "proliferation"
+      }
+    },
+    {
+      "baseline_participants": [],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-7c96d5ccc6b62c1f4602",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": null,
+      "gold_participants": [],
+      "luna_participant": {
+        "candidate_target_kind": "EVENT",
+        "end": 1472,
+        "exact_text": "downregulation",
+        "explanation": "The strategy is explicitly associated with the downregulation event.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "E-2773996d557442a07d58",
+        "source_entity_type": null,
+        "start": 1458
+      },
+      "panel_classification": "DEPENDENCY_CONTEXT",
+      "participant_id": "E-7c96d5ccc6b62c1f4602:P1",
+      "permitted_evidence_offsets": {
+        "end": 1609,
+        "start": 1270
+      },
+      "resolved_source_text": "downregulation",
+      "review_required": true,
+      "source_passage": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+      "target_event": {
+        "event_id": "E-7c96d5ccc6b62c1f4602",
+        "event_passage": "Moreover, the downregulation of c-myc oncogene by an antisense strategy might represent a useful goal for improving the efficacy of this anti-neoplastic drug family.",
+        "passage_end": 1609,
+        "passage_start": 1444,
+        "source_event_type": "Planned_process",
+        "statement_kind": "HYPOTHESIS",
+        "trigger_end": 1515,
+        "trigger_id": "T-6aa08e75962b5b6e9de6",
+        "trigger_start": 1507,
+        "trigger_text": "strategy"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 132,
+          "exact_text": "transcriptional factor",
+          "explanation": "The factor is explicitly described as involved in differentiation.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 110
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-8498b84a9b3bb3e93c2f",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": "E8",
+      "gold_participants": [
+        {
+          "end": 158,
+          "exact_text": "cellular",
+          "source_entity_type": "Cell",
+          "start": 150,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 95,
+        "exact_text": "c-myc oncogene",
+        "explanation": "The c-myc oncogene is explicitly described as involved in differentiation.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "c-myc-oncogene",
+        "source_entity_type": "Gene_or_gene_product",
+        "start": 81
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-8498b84a9b3bb3e93c2f:P1",
+      "permitted_evidence_offsets": {
+        "end": 351,
+        "start": 0
+      },
+      "resolved_source_text": "c-myc oncogene",
+      "review_required": true,
+      "source_passage": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+      "target_event": {
+        "event_id": "E-8498b84a9b3bb3e93c2f",
+        "event_passage": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis.",
+        "passage_end": 222,
+        "passage_start": 77,
+        "source_event_type": "Cell_differentiation",
+        "statement_kind": "BACKGROUND",
+        "trigger_end": 207,
+        "trigger_id": "T-1313532805d2ce1e9b5a",
+        "trigger_start": 192,
+        "trigger_text": "differentiation"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 593,
+          "exact_text": "VLB",
+          "explanation": "The second VLB mention is explicitly part of the increased sensitivity.",
+          "occurrence_id": "occurrence-1",
+          "occurrence_index": 1,
+          "participant_key": "p1",
+          "source_entity_type": "Simple_chemical",
+          "start": 590
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 677,
+          "exact_text": "LoVo-mycANS cells",
+          "explanation": "The increase in sensitivity is explicitly observed in these cells.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Cell",
+          "start": 660
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-94edf9d8896d3f0729cb",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": "E15",
+      "gold_participants": [
+        {
+          "end": 656,
+          "exact_text": "sensitivity",
+          "source_entity_type": null,
+          "start": 645,
+          "target_kind": "EVENT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 644,
+        "exact_text": "VLB",
+        "explanation": "The increase is explicitly described as an increase in VLB sensitivity.",
+        "occurrence_id": "occurrence-1",
+        "participant_key": "VLB",
+        "source_entity_type": "Simple_chemical",
+        "start": 641
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-94edf9d8896d3f0729cb:P1",
+      "permitted_evidence_offsets": {
+        "end": 854,
+        "start": 352
+      },
+      "resolved_source_text": "VLB",
+      "review_required": true,
+      "source_passage": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+      "target_event": {
+        "event_id": "E-94edf9d8896d3f0729cb",
+        "event_passage": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+        "passage_end": 678,
+        "passage_start": 578,
+        "source_event_type": "Positive_regulation",
+        "statement_kind": "EXPLICIT_RESULT",
+        "trigger_end": 637,
+        "trigger_id": "T-65e2dbc7fb0470f1804c",
+        "trigger_start": 629,
+        "trigger_text": "increase"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 593,
+          "exact_text": "VLB",
+          "explanation": "The second VLB mention is explicitly part of the increased sensitivity.",
+          "occurrence_id": "occurrence-1",
+          "occurrence_index": 1,
+          "participant_key": "p1",
+          "source_entity_type": "Simple_chemical",
+          "start": 590
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 677,
+          "exact_text": "LoVo-mycANS cells",
+          "explanation": "The increase in sensitivity is explicitly observed in these cells.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Cell",
+          "start": 660
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-94edf9d8896d3f0729cb",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": "E15",
+      "gold_participants": [
+        {
+          "end": 656,
+          "exact_text": "sensitivity",
+          "source_entity_type": null,
+          "start": 645,
+          "target_kind": "EVENT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 677,
+        "exact_text": "LoVo-mycANS cells",
+        "explanation": "The increased sensitivity is explicitly reported in LoVo-mycANS cells.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "LoVo-mycANS-cells",
+        "source_entity_type": "Cell",
+        "start": 660
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-94edf9d8896d3f0729cb:P2",
+      "permitted_evidence_offsets": {
+        "end": 854,
+        "start": 352
+      },
+      "resolved_source_text": "LoVo-mycANS cells",
+      "review_required": true,
+      "source_passage": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+      "target_event": {
+        "event_id": "E-94edf9d8896d3f0729cb",
+        "event_passage": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+        "passage_end": 678,
+        "passage_start": 578,
+        "source_event_type": "Positive_regulation",
+        "statement_kind": "EXPLICIT_RESULT",
+        "trigger_end": 637,
+        "trigger_id": "T-65e2dbc7fb0470f1804c",
+        "trigger_start": 629,
+        "trigger_text": "increase"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1098,
+          "exact_text": "decrease",
+          "explanation": "The enhancement is explicitly attributed to the preceding decrease event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 1090
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 427,
+          "exact_text": "VLB",
+          "explanation": "VLB is explicitly the chemical associated with the enhanced sensitivity.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Simple_chemical",
+          "start": 424
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-9b071863693a57dae92b",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": null,
+      "gold_participants": [],
+      "luna_participant": {
+        "candidate_target_kind": "EVENT",
+        "end": 1146,
+        "exact_text": "decrease",
+        "explanation": "The preceding decrease is explicitly stated as the cause of the enhanced sensitivity.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "E-0effc9409e12ed77b198",
+        "source_entity_type": null,
+        "start": 1138
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-9b071863693a57dae92b:P1",
+      "permitted_evidence_offsets": {
+        "end": 1443,
+        "start": 1040
+      },
+      "resolved_source_text": "decrease",
+      "review_required": true,
+      "source_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "target_event": {
+        "event_id": "E-9b071863693a57dae92b",
+        "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+        "passage_end": 1269,
+        "passage_start": 1119,
+        "source_event_type": "Positive_regulation",
+        "statement_kind": "EXPLICIT_RESULT",
+        "trigger_end": 1175,
+        "trigger_id": "T-b925edf82c88751c02e4",
+        "trigger_start": 1167,
+        "trigger_text": "enhanced"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1098,
+          "exact_text": "decrease",
+          "explanation": "The enhancement is explicitly attributed to the preceding decrease event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 1090
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 427,
+          "exact_text": "VLB",
+          "explanation": "VLB is explicitly the chemical associated with the enhanced sensitivity.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Simple_chemical",
+          "start": 424
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-9b071863693a57dae92b",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": null,
+      "gold_participants": [],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 1183,
+        "exact_text": "VLB",
+        "explanation": "The enhanced object is explicitly identified as VLB sensitivity.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "VLB",
+        "source_entity_type": "Simple_chemical",
+        "start": 1180
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-9b071863693a57dae92b:P2",
+      "permitted_evidence_offsets": {
+        "end": 1443,
+        "start": 1040
+      },
+      "resolved_source_text": "VLB",
+      "review_required": true,
+      "source_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "target_event": {
+        "event_id": "E-9b071863693a57dae92b",
+        "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+        "passage_end": 1269,
+        "passage_start": 1119,
+        "source_event_type": "Positive_regulation",
+        "statement_kind": "EXPLICIT_RESULT",
+        "trigger_end": 1175,
+        "trigger_id": "T-b925edf82c88751c02e4",
+        "trigger_start": 1167,
+        "trigger_text": "enhanced"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1175,
+          "exact_text": "enhanced",
+          "explanation": "The triggering follows explicitly from the discovered enhancement event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 1167
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 221,
+          "exact_text": "apoptosis",
+          "explanation": "Earlier apoptosis is explicitly the event being triggered.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": null,
+          "start": 212
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1243,
+          "exact_text": "induction",
+          "explanation": "The induction event is explicitly stated as the mechanism through which triggering occurs.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p3",
+          "source_entity_type": null,
+          "start": 1234
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-a00865ea42e6f577581d",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": "E25",
+      "gold_participants": [
+        {
+          "end": 1146,
+          "exact_text": "decrease",
+          "source_entity_type": null,
+          "start": 1138,
+          "target_kind": "EVENT"
+        },
+        {
+          "end": 1225,
+          "exact_text": "apoptosis",
+          "source_entity_type": null,
+          "start": 1216,
+          "target_kind": "EVENT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "EVENT",
+        "end": 1175,
+        "exact_text": "enhanced",
+        "explanation": "The enhanced-sensitivity event is explicitly stated to trigger the subsequent event.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "E-9b071863693a57dae92b",
+        "source_entity_type": null,
+        "start": 1167
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-a00865ea42e6f577581d:P1",
+      "permitted_evidence_offsets": {
+        "end": 1443,
+        "start": 1040
+      },
+      "resolved_source_text": "enhanced",
+      "review_required": true,
+      "source_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "target_event": {
+        "event_id": "E-a00865ea42e6f577581d",
+        "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+        "passage_end": 1269,
+        "passage_start": 1119,
+        "source_event_type": "Positive_regulation",
+        "statement_kind": "MECHANISM",
+        "trigger_end": 1207,
+        "trigger_id": "T-83af35731bc838249dc3",
+        "trigger_start": 1197,
+        "trigger_text": "triggering"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1175,
+          "exact_text": "enhanced",
+          "explanation": "The triggering follows explicitly from the discovered enhancement event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 1167
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 221,
+          "exact_text": "apoptosis",
+          "explanation": "Earlier apoptosis is explicitly the event being triggered.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": null,
+          "start": 212
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1243,
+          "exact_text": "induction",
+          "explanation": "The induction event is explicitly stated as the mechanism through which triggering occurs.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p3",
+          "source_entity_type": null,
+          "start": 1234
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": true,
+      "event_id": "E-a00865ea42e6f577581d",
+      "exact_gold_participant": true,
+      "exact_span_valid": true,
+      "gold_event_id": "E25",
+      "gold_participants": [
+        {
+          "end": 1146,
+          "exact_text": "decrease",
+          "source_entity_type": null,
+          "start": 1138,
+          "target_kind": "EVENT"
+        },
+        {
+          "end": 1225,
+          "exact_text": "apoptosis",
+          "source_entity_type": null,
+          "start": 1216,
+          "target_kind": "EVENT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "EVENT",
+        "end": 1225,
+        "exact_text": "apoptosis",
+        "explanation": "Earlier apoptosis is explicitly identified as the event being triggered.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "E-205f021ad42236e5f142",
+        "source_entity_type": null,
+        "start": 1216
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-a00865ea42e6f577581d:P2",
+      "permitted_evidence_offsets": {
+        "end": 1443,
+        "start": 1040
+      },
+      "resolved_source_text": "apoptosis",
+      "review_required": false,
+      "source_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "target_event": {
+        "event_id": "E-a00865ea42e6f577581d",
+        "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+        "passage_end": 1269,
+        "passage_start": 1119,
+        "source_event_type": "Positive_regulation",
+        "statement_kind": "MECHANISM",
+        "trigger_end": 1207,
+        "trigger_id": "T-83af35731bc838249dc3",
+        "trigger_start": 1197,
+        "trigger_text": "triggering"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 427,
+          "exact_text": "VLB",
+          "explanation": "This first VLB mention explicitly modifies cytotoxicity.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Simple_chemical",
+          "start": 424
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 677,
+          "exact_text": "LoVo-mycANS cells",
+          "explanation": "These are the explicit cells in which VLB sensitivity was assessed.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Cell",
+          "start": 660
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-b43186fccd287bbb1cd5",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": "E13",
+      "gold_participants": [
+        {
+          "end": 677,
+          "exact_text": "LoVo-mycANS cells",
+          "source_entity_type": "Cell",
+          "start": 660,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 593,
+        "exact_text": "VLB",
+        "explanation": "The cytotoxicity is explicitly described as VLB cytotoxicity.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "VLB",
+        "source_entity_type": "Simple_chemical",
+        "start": 590
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-b43186fccd287bbb1cd5:P1",
+      "permitted_evidence_offsets": {
+        "end": 854,
+        "start": 352
+      },
+      "resolved_source_text": "VLB",
+      "review_required": true,
+      "source_passage": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+      "target_event": {
+        "event_id": "E-b43186fccd287bbb1cd5",
+        "event_passage": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+        "passage_end": 678,
+        "passage_start": 578,
+        "source_event_type": "Cell_death",
+        "statement_kind": "METHOD",
+        "trigger_end": 606,
+        "trigger_id": "T-8beac9d1df18f8e4f75b",
+        "trigger_start": 594,
+        "trigger_text": "cytotoxicity"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 427,
+          "exact_text": "VLB",
+          "explanation": "This first VLB mention explicitly modifies cytotoxicity.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Simple_chemical",
+          "start": 424
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 677,
+          "exact_text": "LoVo-mycANS cells",
+          "explanation": "These are the explicit cells in which VLB sensitivity was assessed.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Cell",
+          "start": 660
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": true,
+      "event_id": "E-b43186fccd287bbb1cd5",
+      "exact_gold_participant": true,
+      "exact_span_valid": true,
+      "gold_event_id": "E13",
+      "gold_participants": [
+        {
+          "end": 677,
+          "exact_text": "LoVo-mycANS cells",
+          "source_entity_type": "Cell",
+          "start": 660,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 677,
+        "exact_text": "LoVo-mycANS cells",
+        "explanation": "The cytotoxicity result is explicitly reported in LoVo-mycANS cells.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "LoVo-mycANS-cells",
+        "source_entity_type": "Cell",
+        "start": 660
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-b43186fccd287bbb1cd5:P2",
+      "permitted_evidence_offsets": {
+        "end": 854,
+        "start": 352
+      },
+      "resolved_source_text": "LoVo-mycANS cells",
+      "review_required": false,
+      "source_passage": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+      "target_event": {
+        "event_id": "E-b43186fccd287bbb1cd5",
+        "event_passage": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells.",
+        "passage_end": 678,
+        "passage_start": 578,
+        "source_event_type": "Cell_death",
+        "statement_kind": "METHOD",
+        "trigger_end": 606,
+        "trigger_id": "T-8beac9d1df18f8e4f75b",
+        "trigger_start": 594,
+        "trigger_text": "cytotoxicity"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1038,
+          "exact_text": "pathway",
+          "explanation": "The induction explicitly affects the discovered intrinsic pathway event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 1031
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-cf483c0e6ea43235f767",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": null,
+      "gold_participants": [],
+      "luna_participant": {
+        "candidate_target_kind": "EVENT",
+        "end": 1268,
+        "exact_text": "pathway",
+        "explanation": "The induction is explicitly stated to involve the intrinsic pathway.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "E-d96f3f94563f9fce3286",
+        "source_entity_type": null,
+        "start": 1261
+      },
+      "panel_classification": "DEPENDENCY_CONTEXT",
+      "participant_id": "E-cf483c0e6ea43235f767:P1",
+      "permitted_evidence_offsets": {
+        "end": 1443,
+        "start": 1040
+      },
+      "resolved_source_text": "pathway",
+      "review_required": true,
+      "source_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "target_event": {
+        "event_id": "E-cf483c0e6ea43235f767",
+        "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+        "passage_end": 1269,
+        "passage_start": 1119,
+        "source_event_type": "Positive_regulation",
+        "statement_kind": "MECHANISM",
+        "trigger_end": 1243,
+        "trigger_id": "T-dfb9bce342a39bb0ac06",
+        "trigger_start": 1234,
+        "trigger_text": "induction"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 891,
+          "exact_text": "mitochondria",
+          "explanation": "The passage explicitly states involvement of mitochondria in the pathway.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Cellular_component",
+          "start": 879
+        },
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 1020,
+          "exact_text": "apoptotic",
+          "explanation": "The pathway is explicitly characterized by the discovered apoptotic event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": null,
+          "start": 1011
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-dc2596d35c7a939787a6",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": null,
+      "gold_participants": [],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 1002,
+        "exact_text": "mitochondria",
+        "explanation": "The pathway is explicitly described as involving mitochondria.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "mitochondria",
+        "source_entity_type": "Cellular_component",
+        "start": 990
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-dc2596d35c7a939787a6:P1",
+      "permitted_evidence_offsets": {
+        "end": 1118,
+        "start": 679
+      },
+      "resolved_source_text": "mitochondria",
+      "review_required": true,
+      "source_passage": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+      "target_event": {
+        "event_id": "E-dc2596d35c7a939787a6",
+        "event_passage": "Then, we demonstrated a mitochondrial membrane potential disruption followed by cytochrome c release that indicates the involvement of mitochondria in this apoptotic signaling pathway.",
+        "passage_end": 1039,
+        "passage_start": 855,
+        "source_event_type": "Pathway",
+        "statement_kind": "MECHANISM",
+        "trigger_end": 1038,
+        "trigger_id": "T-154983c6169db960bcc0",
+        "trigger_start": 1031,
+        "trigger_text": "pathway"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 8,
+          "exact_text": "Decrease",
+          "explanation": "The enhancement is explicitly associated with the preceding decrease event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 0
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 47,
+          "exact_text": "cancer cell",
+          "explanation": "Cancer cells are the explicit bearers of the enhanced sensitivity.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Cell",
+          "start": 36
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 74,
+          "exact_text": "vinblastine",
+          "explanation": "Vinblastine is the chemical to which sensitivity is enhanced.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p3",
+          "source_entity_type": "Simple_chemical",
+          "start": 63
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": true,
+      "event_id": "E-e2a89e97c05e2b8d93d2",
+      "exact_gold_participant": true,
+      "exact_span_valid": true,
+      "gold_event_id": "E2",
+      "gold_participants": [
+        {
+          "end": 59,
+          "exact_text": "sensitivity",
+          "source_entity_type": null,
+          "start": 48,
+          "target_kind": "EVENT"
+        },
+        {
+          "end": 8,
+          "exact_text": "Decrease",
+          "source_entity_type": null,
+          "start": 0,
+          "target_kind": "EVENT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "EVENT",
+        "end": 8,
+        "exact_text": "Decrease",
+        "explanation": "The decrease is explicitly stated as the cause of enhanced sensitivity.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "E-60b0d54816b0585893d1",
+        "source_entity_type": null,
+        "start": 0
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-e2a89e97c05e2b8d93d2:P1",
+      "permitted_evidence_offsets": {
+        "end": 222,
+        "start": 0
+      },
+      "resolved_source_text": "Decrease",
+      "review_required": false,
+      "source_passage": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+      "target_event": {
+        "event_id": "E-e2a89e97c05e2b8d93d2",
+        "event_passage": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+        "passage_end": 75,
+        "passage_start": 0,
+        "source_event_type": "Positive_regulation",
+        "statement_kind": "EXPLICIT_RESULT",
+        "trigger_end": 35,
+        "trigger_id": "T-8efc8898184676c235a5",
+        "trigger_start": 27,
+        "trigger_text": "enhances"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 8,
+          "exact_text": "Decrease",
+          "explanation": "The enhancement is explicitly associated with the preceding decrease event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 0
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 47,
+          "exact_text": "cancer cell",
+          "explanation": "Cancer cells are the explicit bearers of the enhanced sensitivity.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Cell",
+          "start": 36
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 74,
+          "exact_text": "vinblastine",
+          "explanation": "Vinblastine is the chemical to which sensitivity is enhanced.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p3",
+          "source_entity_type": "Simple_chemical",
+          "start": 63
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-e2a89e97c05e2b8d93d2",
+      "exact_gold_participant": false,
+      "exact_span_valid": true,
+      "gold_event_id": "E2",
+      "gold_participants": [
+        {
+          "end": 59,
+          "exact_text": "sensitivity",
+          "source_entity_type": null,
+          "start": 48,
+          "target_kind": "EVENT"
+        },
+        {
+          "end": 8,
+          "exact_text": "Decrease",
+          "source_entity_type": null,
+          "start": 0,
+          "target_kind": "EVENT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 47,
+        "exact_text": "cancer cell",
+        "explanation": "The enhanced sensitivity is explicitly associated with cancer cells.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "cancer-cell",
+        "source_entity_type": "Cell",
+        "start": 36
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-e2a89e97c05e2b8d93d2:P2",
+      "permitted_evidence_offsets": {
+        "end": 222,
+        "start": 0
+      },
+      "resolved_source_text": "cancer cell",
+      "review_required": true,
+      "source_passage": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+      "target_event": {
+        "event_id": "E-e2a89e97c05e2b8d93d2",
+        "event_passage": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+        "passage_end": 75,
+        "passage_start": 0,
+        "source_event_type": "Positive_regulation",
+        "statement_kind": "EXPLICIT_RESULT",
+        "trigger_end": 35,
+        "trigger_id": "T-8efc8898184676c235a5",
+        "trigger_start": 27,
+        "trigger_text": "enhances"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "EVENT",
+          "end": 8,
+          "exact_text": "Decrease",
+          "explanation": "The enhancement is explicitly associated with the preceding decrease event.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": null,
+          "start": 0
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 47,
+          "exact_text": "cancer cell",
+          "explanation": "Cancer cells are the explicit bearers of the enhanced sensitivity.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p2",
+          "source_entity_type": "Cell",
+          "start": 36
+        },
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 74,
+          "exact_text": "vinblastine",
+          "explanation": "Vinblastine is the chemical to which sensitivity is enhanced.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p3",
+          "source_entity_type": "Simple_chemical",
+          "start": 63
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": false,
+      "event_id": "E-e2a89e97c05e2b8d93d2",
+      "exact_gold_participant": false,
+      "exact_span_valid": false,
+      "gold_event_id": "E2",
+      "gold_participants": [
+        {
+          "end": 59,
+          "exact_text": "sensitivity",
+          "source_entity_type": null,
+          "start": 48,
+          "target_kind": "EVENT"
+        },
+        {
+          "end": 8,
+          "exact_text": "Decrease",
+          "source_entity_type": null,
+          "start": 0,
+          "target_kind": "EVENT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 75,
+        "exact_text": "vinblastine",
+        "explanation": "Vinblastine is explicitly named in the sensitivity relation.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "vinblastine",
+        "source_entity_type": "Simple_chemical",
+        "start": 63
+      },
+      "panel_classification": "REPAIR_TARGET",
+      "participant_id": "E-e2a89e97c05e2b8d93d2:P3",
+      "permitted_evidence_offsets": {
+        "end": 222,
+        "start": 0
+      },
+      "resolved_source_text": "vinblastine.",
+      "review_required": true,
+      "source_passage": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+      "target_event": {
+        "event_id": "E-e2a89e97c05e2b8d93d2",
+        "event_passage": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine.",
+        "passage_end": 75,
+        "passage_start": 0,
+        "source_event_type": "Positive_regulation",
+        "statement_kind": "EXPLICIT_RESULT",
+        "trigger_end": 35,
+        "trigger_id": "T-8efc8898184676c235a5",
+        "trigger_start": 27,
+        "trigger_text": "enhances"
+      }
+    },
+    {
+      "baseline_participants": [
+        {
+          "candidate_target_kind": "PARTICIPANT",
+          "end": 17,
+          "exact_text": "c-Myc",
+          "explanation": "The expression event explicitly concerns c-Myc.",
+          "occurrence_id": "occurrence-0",
+          "occurrence_index": 0,
+          "participant_key": "p1",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 12
+        }
+      ],
+      "control_event": false,
+      "counterfactual_exact_gold_if_offset_valid": true,
+      "event_id": "E-fd23ca8aac731381622e",
+      "exact_gold_participant": false,
+      "exact_span_valid": false,
+      "gold_event_id": "E24",
+      "gold_participants": [
+        {
+          "end": 1155,
+          "exact_text": "c-Myc",
+          "source_entity_type": "Gene_or_gene_product",
+          "start": 1150,
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "luna_participant": {
+        "candidate_target_kind": "PARTICIPANT",
+        "end": 1155,
+        "exact_text": "c-Myc",
+        "explanation": "The expression event is explicitly identified as c-Myc expression.",
+        "occurrence_id": "occurrence-0",
+        "participant_key": "c-Myc",
+        "source_entity_type": "Gene_or_gene_product",
+        "start": 1149
+      },
+      "panel_classification": "DEPENDENCY_CONTEXT",
+      "participant_id": "E-fd23ca8aac731381622e:P1",
+      "permitted_evidence_offsets": {
+        "end": 1443,
+        "start": 1040
+      },
+      "resolved_source_text": " c-Myc",
+      "review_required": true,
+      "source_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+      "target_event": {
+        "event_id": "E-fd23ca8aac731381622e",
+        "event_passage": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway.",
+        "passage_end": 1269,
+        "passage_start": 1119,
+        "source_event_type": "Gene_expression",
+        "statement_kind": "EXPLICIT_RESULT",
+        "trigger_end": 1166,
+        "trigger_id": "T-5eacc3fa7c7511641d36",
+        "trigger_start": 1156,
+        "trigger_text": "expression"
+      }
+    }
+  ],
+  "participant_count": 25,
+  "response_id": "resp_0909915ba5830325006a60620dbff88198adf8625d389c717e",
+  "retrieval_mode": "EXISTING_RESPONSE_RETRIEVAL_NO_GENERATION",
+  "retrieved_payload_sha256": "df430cd9d3db4d87a9d7172ffb7d1c98d007011146bd60faf3cf8237b0dc8e1f",
+  "schema_version": "artana.public_gold.luna_participant_packets.v1",
+  "source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab"
+}

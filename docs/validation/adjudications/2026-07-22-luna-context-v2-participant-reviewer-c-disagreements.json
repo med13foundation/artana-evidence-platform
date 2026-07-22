@@ -1,0 +1,258 @@
+{
+  "schema_version": "artana.public_gold.luna_participant_tie_break.v1",
+  "reviewer_id": "C",
+  "review_type": "blinded_tie_break",
+  "reviewer_provenance": {
+    "reviewer_kind": "internal_codex_adjudicator",
+    "model_identity": "GPT-5 (Codex)",
+    "external_provider_calls": 0,
+    "api_calls": 0,
+    "reviewer_a_or_b_read": false,
+    "gold_answers_exposed_during_review": false
+  },
+  "document_id": "PMID-16428936",
+  "source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+  "packet_sha256": "de28f67952e69b866f9c84b9f993376c0c3b7703e3444696398092e069b20449",
+  "gold_annotation_sha256": {
+    "a1": "4ec95904f21ba78855f05428c6a8ad715bf96974eee655b8bf4f8e583f11e310",
+    "a2": "6f1ac4934e6f619d68f17015d2ebc8c53ff73d3cb652274b2efbbdc0db7dbac5"
+  },
+  "guideline_sha256": "0f3a6e79e2cc39ab20a8b18426af1818bd71e45dc08c5761c2d826c28f1d6a5c",
+  "allowed_labels": [
+    "EXACT_GOLD_PARTICIPANT",
+    "SOURCE_SUPPORTED_EQUIVALENT",
+    "WRONG_PARTICIPANT",
+    "WRONG_ENTITY_TYPE",
+    "MISSING_PRIMARY_PARTICIPANT",
+    "EXTRA_UNSUPPORTED_PARTICIPANT",
+    "OFFSET_MISMATCH",
+    "OUTSIDE_EVENT_SCOPE",
+    "AMBIGUOUS_REFERENCE",
+    "OCCURRENCE_IDENTITY_CONTRACT_MISMATCH"
+  ],
+  "judgments": [
+    {
+      "participant_id": "E-2773996d557442a07d58:P1",
+      "event_id": "E-2773996d557442a07d58",
+      "gold_event_id": "E30",
+      "labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT",
+        "OFFSET_MISMATCH"
+      ],
+      "evidence": {
+        "start": 1476,
+        "end": 1490,
+        "text": "c-myc oncogene"
+      },
+      "gold_comparison": {
+        "start": 1476,
+        "end": 1481,
+        "text": "c-myc",
+        "entity_type": "Gene_or_gene_product"
+      },
+      "explanation": "The span identifies the same gene mention and is supported by the source, but it includes the descriptor 'oncogene'. Public gold E30 Theme T37 is the narrower span c-myc at 1476-1481, so this candidate is not exact-creditable under offset-sensitive evaluation."
+    },
+    {
+      "participant_id": "E-2773996d557442a07d58:P2",
+      "event_id": "E-2773996d557442a07d58",
+      "gold_event_id": "E30",
+      "labels": [
+        "EXTRA_UNSUPPORTED_PARTICIPANT"
+      ],
+      "evidence": {
+        "start": 1507,
+        "end": 1515,
+        "text": "strategy"
+      },
+      "gold_comparison": {
+        "start": 1476,
+        "end": 1481,
+        "text": "c-myc",
+        "entity_type": "Gene_or_gene_product"
+      },
+      "explanation": "The source calls antisense strategy a method or strategy, but Negative_regulation E30 has only the c-myc Theme in public gold. The guideline forbids adding an argument merely because a mention occurs in the same sentence, and no explicit event argument supports strategy here."
+    },
+    {
+      "participant_id": "E-66488a62883bb758e80b:P1",
+      "event_id": "E-66488a62883bb758e80b",
+      "gold_event_id": "E7",
+      "labels": [
+        "WRONG_PARTICIPANT",
+        "WRONG_ENTITY_TYPE"
+      ],
+      "evidence": {
+        "start": 81,
+        "end": 95,
+        "text": "c-myc oncogene"
+      },
+      "gold_comparison": {
+        "start": 150,
+        "end": 158,
+        "text": "cellular",
+        "entity_type": "Cell"
+      },
+      "explanation": "For the Cell_proliferation event triggered by proliferation, public gold uses cellular (Cell) as Theme. The candidate points to c-myc oncogene, a Gene_or_gene_product, so both participant identity and entity type disagree."
+    },
+    {
+      "participant_id": "E-7c96d5ccc6b62c1f4602:P1",
+      "event_id": "E-7c96d5ccc6b62c1f4602",
+      "gold_event_id": null,
+      "labels": [
+        "WRONG_PARTICIPANT",
+        "EXTRA_UNSUPPORTED_PARTICIPANT"
+      ],
+      "evidence": {
+        "start": 1458,
+        "end": 1472,
+        "text": "downregulation"
+      },
+      "gold_comparison": null,
+      "explanation": "The candidate makes downregulation an argument of the event triggered by strategy. In the source, the antisense strategy is a method associated with the separate downregulation statement; it is not evidence that downregulation is a participant of a Planned_process event. No corresponding public-gold event exists for this candidate."
+    },
+    {
+      "participant_id": "E-8498b84a9b3bb3e93c2f:P1",
+      "event_id": "E-8498b84a9b3bb3e93c2f",
+      "gold_event_id": "E8",
+      "labels": [
+        "WRONG_PARTICIPANT",
+        "WRONG_ENTITY_TYPE"
+      ],
+      "evidence": {
+        "start": 81,
+        "end": 95,
+        "text": "c-myc oncogene"
+      },
+      "gold_comparison": {
+        "start": 150,
+        "end": 158,
+        "text": "cellular",
+        "entity_type": "Cell"
+      },
+      "explanation": "For the Cell_differentiation event triggered by differentiation, public gold uses cellular (Cell) as Theme. The candidate instead selects c-myc oncogene, a Gene_or_gene_product, so the participant and its type are wrong for this event."
+    },
+    {
+      "participant_id": "E-9b071863693a57dae92b",
+      "event_id": "E-9b071863693a57dae92b",
+      "gold_event_id": null,
+      "labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "evidence": {
+        "start": 1138,
+        "end": 1146,
+        "text": "decrease"
+      },
+      "gold_comparison": null,
+      "explanation": "The source explicitly states that the decrease in c-Myc expression enhanced VLB sensitivity, so this is a source-supported causal antecedent for the candidate enhanced-sensitivity event. It is not benchmark credit because public gold has no corresponding event at this occurrence; it should remain review-only."
+    },
+    {
+      "participant_id": "E-a00865ea42e6f577581d",
+      "event_id": "E-a00865ea42e6f577581d",
+      "gold_event_id": "E25",
+      "labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "evidence": {
+        "start": 1167,
+        "end": 1175,
+        "text": "enhanced"
+      },
+      "gold_comparison": {
+        "start": 1138,
+        "end": 1146,
+        "text": "decrease",
+        "entity_type": null,
+        "target_kind": "EVENT"
+      },
+      "explanation": "Public gold E25 Cause is the nested decrease event at 1138-1146. The candidate instead points to the separate enhanced-sensitivity wording at 1167-1175. That wording is source-related, but it is not the typed nested event selected by the gold Cause argument."
+    },
+    {
+      "participant_id": "E-b43186fccd287bbb1cd5",
+      "event_id": "E-b43186fccd287bbb1cd5",
+      "gold_event_id": "E13",
+      "labels": [
+        "WRONG_PARTICIPANT",
+        "WRONG_ENTITY_TYPE"
+      ],
+      "evidence": {
+        "start": 590,
+        "end": 593,
+        "text": "VLB"
+      },
+      "gold_comparison": {
+        "start": 660,
+        "end": 677,
+        "text": "LoVo-mycANS cells",
+        "entity_type": "Cell"
+      },
+      "explanation": "Public gold E13 Theme is LoVo-mycANS cells (Cell). VLB is a Simple_chemical in the same sentence, but the guideline does not permit adding it as an argument merely because it occurs in the cytotoxicity statement."
+    },
+    {
+      "participant_id": "E-cf483c0e6ea43235f767",
+      "event_id": "E-cf483c0e6ea43235f767",
+      "gold_event_id": null,
+      "labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "evidence": {
+        "start": 1261,
+        "end": 1268,
+        "text": "pathway"
+      },
+      "gold_comparison": null,
+      "explanation": "The source explicitly describes induction of the intrinsic pathway. The candidate event is not represented as a participant-bearing event in public gold, so it earns no benchmark credit, but this participant is supported by the source and should not be treated as invented."
+    },
+    {
+      "participant_id": "E-dc2596d35c7a939787a6",
+      "event_id": "E-dc2596d35c7a939787a6",
+      "gold_event_id": null,
+      "labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "evidence": {
+        "start": 990,
+        "end": 1002,
+        "text": "mitochondria"
+      },
+      "gold_comparison": null,
+      "explanation": "The source explicitly says that the apoptotic signaling pathway involves mitochondria. Public gold does not attach mitochondria to the unary Cell_death/pathway-related annotation, so this is source-supported but outside benchmark credit and must remain review-only."
+    },
+    {
+      "participant_id": "E-fd23ca8aac731381622e",
+      "event_id": "E-fd23ca8aac731381622e",
+      "gold_event_id": "E24",
+      "labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT",
+        "OFFSET_MISMATCH"
+      ],
+      "evidence": {
+        "start": 1149,
+        "end": 1155,
+        "text": " c-Myc"
+      },
+      "gold_comparison": {
+        "start": 1150,
+        "end": 1155,
+        "text": "c-Myc",
+        "entity_type": "Gene_or_gene_product"
+      },
+      "explanation": "The candidate identifies the same c-Myc mention, and the corrected span 1150-1155 would match public gold T31. The returned span starts one character early and resolves to a leading space plus c-Myc, so it is source-supported but non-creditable because the offset is invalid."
+    }
+  ],
+  "review_summary": {
+    "judgment_count": 11,
+    "exact_gold_participant_count": 0,
+    "source_supported_equivalent_count": 5,
+    "offset_mismatch_count": 2,
+    "wrong_participant_count": 5,
+    "wrong_entity_type_count": 3,
+    "extra_unsupported_participant_count": 2,
+    "occurrence_identity_errors": 0,
+    "ambiguous_references": 0,
+    "notes": [
+      "Source-supported equivalents are not benchmark credit and remain review-only.",
+      "The public gold comparison is separate from source validity; a source-supported extra is not called an invention.",
+      "Occurrence-0 is accepted when it is the first exact occurrence within the supplied event passage."
+    ]
+  }
+}

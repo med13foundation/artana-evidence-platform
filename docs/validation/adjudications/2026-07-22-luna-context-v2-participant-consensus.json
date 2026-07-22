@@ -1,0 +1,529 @@
+{
+  "decision": "PIVOT_TO_SPECIALIST_CANDIDATES",
+  "document_id": "PMID-16428936",
+  "judgments": [
+    {
+      "event_id": "E-0effc9409e12ed77b198",
+      "exact_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway. Focused participant span: \"expression\".",
+      "explanation": "The prediction resolves exactly to the nested Gene_expression event E24 and matches gold E23's Theme target.",
+      "labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "participant_id": "E-0effc9409e12ed77b198:P1",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-11f3a0578efc0b883103",
+      "exact_evidence": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment. Focused participant span: \"tumors\".",
+      "explanation": "Tumors are the population described as responsive, but the requested gold Planned_process treatment participant is the Instrument \"vinca alkaloids\". The tumor mention is contextual to responsiveness, not the treatment argument represented here.",
+      "labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "participant_id": "E-11f3a0578efc0b883103:P1",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-11f3a0578efc0b883103",
+      "exact_evidence": "Thus, c-myc induction is a resistance factor and our findings suggest that tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment. Focused participant span: \"vinca alkaloids\".",
+      "explanation": "The prediction exactly matches gold E29's treatment Instrument.",
+      "labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "participant_id": "E-11f3a0578efc0b883103:P2",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-2773996d557442a07d58",
+      "exact_evidence": null,
+      "explanation": "The span identifies the same gene mention and is supported by the source, but it includes the descriptor 'oncogene'. Public gold E30 Theme T37 is the narrower span c-myc at 1476-1481, so this candidate is not exact-creditable under offset-sensitive evaluation.",
+      "labels": [
+        "OFFSET_MISMATCH",
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "participant_id": "E-2773996d557442a07d58:P1",
+      "resolution": "BLINDED_REVIEWER_C",
+      "reviewer_a_labels": [
+        "OFFSET_MISMATCH",
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "reviewer_b_labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "reviewer_c_labels": [
+        "OFFSET_MISMATCH",
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ]
+    },
+    {
+      "event_id": "E-2773996d557442a07d58",
+      "exact_evidence": null,
+      "explanation": "The source calls antisense strategy a method or strategy, but Negative_regulation E30 has only the c-myc Theme in public gold. The guideline forbids adding an argument merely because a mention occurs in the same sentence, and no explicit event argument supports strategy here.",
+      "labels": [
+        "EXTRA_UNSUPPORTED_PARTICIPANT"
+      ],
+      "participant_id": "E-2773996d557442a07d58:P2",
+      "resolution": "BLINDED_REVIEWER_C",
+      "reviewer_a_labels": [
+        "EXTRA_UNSUPPORTED_PARTICIPANT",
+        "WRONG_ENTITY_TYPE",
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_c_labels": [
+        "EXTRA_UNSUPPORTED_PARTICIPANT"
+      ]
+    },
+    {
+      "event_id": "E-2d5bd3d8506d519d2d69",
+      "exact_evidence": "This earlier apoptosis was accompanied by a Bcl-2 decrease and a p53 increase. Focused participant span: \"p53\".",
+      "explanation": "The prediction exactly matches gold E22's p53 Theme.",
+      "labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "participant_id": "E-2d5bd3d8506d519d2d69:P1",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-544748ccc8e6c17eb290",
+      "exact_evidence": "The c-myc oncogene encodes for a transcriptional factor involved in many cellular processes such as proliferation, differentiation and apoptosis. Focused participant span: \"c-myc oncogene\"; gold Theme span: \"cellular\".",
+      "explanation": "The source supports c-myc as an involved upstream factor, but gold E9's Cell_death Theme is the cellular entity. c-myc is not the affected Theme for this event.",
+      "labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "participant_id": "E-544748ccc8e6c17eb290:P1",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-60b0d54816b0585893d1",
+      "exact_evidence": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine. Focused participant span: \"c-Myc\".",
+      "explanation": "The prediction exactly matches gold E1's c-Myc Theme.",
+      "labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "participant_id": "E-60b0d54816b0585893d1:P1",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-66488a62883bb758e80b",
+      "exact_evidence": null,
+      "explanation": "For the Cell_proliferation event triggered by proliferation, public gold uses cellular (Cell) as Theme. The candidate points to c-myc oncogene, a Gene_or_gene_product, so both participant identity and entity type disagree.",
+      "labels": [
+        "WRONG_ENTITY_TYPE",
+        "WRONG_PARTICIPANT"
+      ],
+      "participant_id": "E-66488a62883bb758e80b:P1",
+      "resolution": "BLINDED_REVIEWER_C",
+      "reviewer_a_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "WRONG_ENTITY_TYPE",
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_c_labels": [
+        "WRONG_ENTITY_TYPE",
+        "WRONG_PARTICIPANT"
+      ]
+    },
+    {
+      "event_id": "E-7c96d5ccc6b62c1f4602",
+      "exact_evidence": null,
+      "explanation": "The candidate makes downregulation an argument of the event triggered by strategy. In the source, the antisense strategy is a method associated with the separate downregulation statement; it is not evidence that downregulation is a participant of a Planned_process event. No corresponding public-gold event exists for this candidate.",
+      "labels": [
+        "EXTRA_UNSUPPORTED_PARTICIPANT",
+        "WRONG_PARTICIPANT"
+      ],
+      "participant_id": "E-7c96d5ccc6b62c1f4602:P1",
+      "resolution": "BLINDED_REVIEWER_C",
+      "reviewer_a_labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "reviewer_b_labels": [],
+      "reviewer_c_labels": [
+        "EXTRA_UNSUPPORTED_PARTICIPANT",
+        "WRONG_PARTICIPANT"
+      ]
+    },
+    {
+      "event_id": "E-8498b84a9b3bb3e93c2f",
+      "exact_evidence": null,
+      "explanation": "For the Cell_differentiation event triggered by differentiation, public gold uses cellular (Cell) as Theme. The candidate instead selects c-myc oncogene, a Gene_or_gene_product, so the participant and its type are wrong for this event.",
+      "labels": [
+        "WRONG_ENTITY_TYPE",
+        "WRONG_PARTICIPANT"
+      ],
+      "participant_id": "E-8498b84a9b3bb3e93c2f:P1",
+      "resolution": "BLINDED_REVIEWER_C",
+      "reviewer_a_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "WRONG_ENTITY_TYPE",
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_c_labels": [
+        "WRONG_ENTITY_TYPE",
+        "WRONG_PARTICIPANT"
+      ]
+    },
+    {
+      "event_id": "E-94edf9d8896d3f0729cb",
+      "exact_evidence": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells. Focused participant span: \"VLB\".",
+      "explanation": "VLB is the chemical associated with the nested sensitivity proposition, but gold E15's Theme is the nested Regulation event E16 triggered by \"sensitivity\". The chemical is attached at the wrong event level.",
+      "labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "participant_id": "E-94edf9d8896d3f0729cb:P1",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-94edf9d8896d3f0729cb",
+      "exact_evidence": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells. Focused participant span: \"LoVo-mycANS cells\".",
+      "explanation": "The cells are the Theme of the nested sensitivity event E16, not a direct participant of the outer increase event E15.",
+      "labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "participant_id": "E-94edf9d8896d3f0729cb:P2",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-9b071863693a57dae92b",
+      "exact_evidence": null,
+      "explanation": "The source explicitly states that the decrease in c-Myc expression enhanced VLB sensitivity, so this is a source-supported causal antecedent for the candidate enhanced-sensitivity event. It is not benchmark credit because public gold has no corresponding event at this occurrence; it should remain review-only.",
+      "labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "participant_id": "E-9b071863693a57dae92b:P1",
+      "resolution": "BLINDED_REVIEWER_C",
+      "reviewer_a_labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "reviewer_b_labels": [],
+      "reviewer_c_labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ]
+    },
+    {
+      "event_id": "E-9b071863693a57dae92b",
+      "exact_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway. Focused participant span: \"VLB\".",
+      "explanation": "VLB is source-supported inside the sensitivity phrase, but the direct affected object of enhancement is the sensitivity event, not bare VLB.",
+      "labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "participant_id": "E-9b071863693a57dae92b:P2",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-a00865ea42e6f577581d",
+      "exact_evidence": null,
+      "explanation": "Public gold E25 Cause is the nested decrease event at 1138-1146. The candidate instead points to the separate enhanced-sensitivity wording at 1167-1175. That wording is source-related, but it is not the typed nested event selected by the gold Cause argument.",
+      "labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "participant_id": "E-a00865ea42e6f577581d:P1",
+      "resolution": "BLINDED_REVIEWER_C",
+      "reviewer_a_labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT",
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [],
+      "reviewer_c_labels": [
+        "WRONG_PARTICIPANT"
+      ]
+    },
+    {
+      "event_id": "E-a00865ea42e6f577581d",
+      "exact_evidence": "In conclusion, the decrease in c-Myc expression enhanced the VLB sensitivity, triggering earlier apoptosis through induction of the intrinsic pathway. Focused event-reference span: \"apoptosis\".",
+      "explanation": "The prediction exactly matches gold E25's apoptosis Theme event E26.",
+      "labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "participant_id": "E-a00865ea42e6f577581d:P2",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-b43186fccd287bbb1cd5",
+      "exact_evidence": null,
+      "explanation": "Public gold E13 Theme is LoVo-mycANS cells (Cell). VLB is a Simple_chemical in the same sentence, but the guideline does not permit adding it as an argument merely because it occurs in the cytotoxicity statement.",
+      "labels": [
+        "WRONG_ENTITY_TYPE",
+        "WRONG_PARTICIPANT"
+      ],
+      "participant_id": "E-b43186fccd287bbb1cd5:P1",
+      "resolution": "BLINDED_REVIEWER_C",
+      "reviewer_a_labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "reviewer_b_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_c_labels": [
+        "WRONG_ENTITY_TYPE",
+        "WRONG_PARTICIPANT"
+      ]
+    },
+    {
+      "event_id": "E-b43186fccd287bbb1cd5",
+      "exact_evidence": "Analysis of VLB cytotoxicity demonstrated a 3-fold increase in VLB sensitivity in LoVo-mycANS cells. Focused participant span: \"LoVo-mycANS cells\".",
+      "explanation": "The prediction exactly matches gold E13's LoVo-mycANS cells Theme.",
+      "labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "participant_id": "E-b43186fccd287bbb1cd5:P2",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-cf483c0e6ea43235f767",
+      "exact_evidence": null,
+      "explanation": "The source explicitly describes induction of the intrinsic pathway. The candidate event is not represented as a participant-bearing event in public gold, so it earns no benchmark credit, but this participant is supported by the source and should not be treated as invented.",
+      "labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "participant_id": "E-cf483c0e6ea43235f767:P1",
+      "resolution": "BLINDED_REVIEWER_C",
+      "reviewer_a_labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "reviewer_b_labels": [],
+      "reviewer_c_labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ]
+    },
+    {
+      "event_id": "E-dc2596d35c7a939787a6",
+      "exact_evidence": null,
+      "explanation": "The source explicitly says that the apoptotic signaling pathway involves mitochondria. Public gold does not attach mitochondria to the unary Cell_death/pathway-related annotation, so this is source-supported but outside benchmark credit and must remain review-only.",
+      "labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "participant_id": "E-dc2596d35c7a939787a6:P1",
+      "resolution": "BLINDED_REVIEWER_C",
+      "reviewer_a_labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "reviewer_b_labels": [],
+      "reviewer_c_labels": [
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ]
+    },
+    {
+      "event_id": "E-e2a89e97c05e2b8d93d2",
+      "exact_evidence": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine. Focused event-reference span: \"Decrease\".",
+      "explanation": "The prediction exactly matches gold E2's Cause event E1.",
+      "labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "participant_id": "E-e2a89e97c05e2b8d93d2:P1",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "EXACT_GOLD_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-e2a89e97c05e2b8d93d2",
+      "exact_evidence": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine. Focused participant span: \"cancer cell\".",
+      "explanation": "Cancer cell is the subject/context of the nested sensitivity event E3, not the direct Theme of the outer enhances event E2.",
+      "labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "participant_id": "E-e2a89e97c05e2b8d93d2:P2",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-e2a89e97c05e2b8d93d2",
+      "exact_evidence": "Decrease in c-Myc activity enhances cancer cell sensitivity to vinblastine. Returned text at 63:75 resolves to \"vinblastine.\", while the returned exact_text is \"vinblastine\".",
+      "explanation": "Vinblastine is inside the nested sensitivity proposition and is not the outer event's required Theme. In addition, the end offset includes the sentence-final period, so the returned span is invalid even as a chemical mention.",
+      "labels": [
+        "OFFSET_MISMATCH",
+        "WRONG_PARTICIPANT"
+      ],
+      "participant_id": "E-e2a89e97c05e2b8d93d2:P3",
+      "resolution": "A_B_AGREEMENT",
+      "reviewer_a_labels": [
+        "OFFSET_MISMATCH",
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_b_labels": [
+        "OFFSET_MISMATCH",
+        "WRONG_PARTICIPANT"
+      ],
+      "reviewer_c_labels": null
+    },
+    {
+      "event_id": "E-fd23ca8aac731381622e",
+      "exact_evidence": null,
+      "explanation": "The candidate identifies the same c-Myc mention, and the corrected span 1150-1155 would match public gold T31. The returned span starts one character early and resolves to a leading space plus c-Myc, so it is source-supported but non-creditable because the offset is invalid.",
+      "labels": [
+        "OFFSET_MISMATCH",
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "participant_id": "E-fd23ca8aac731381622e:P1",
+      "resolution": "BLINDED_REVIEWER_C",
+      "reviewer_a_labels": [
+        "OFFSET_MISMATCH",
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ],
+      "reviewer_b_labels": [
+        "EXACT_GOLD_PARTICIPANT",
+        "OFFSET_MISMATCH"
+      ],
+      "reviewer_c_labels": [
+        "OFFSET_MISMATCH",
+        "SOURCE_SUPPORTED_EQUIVALENT"
+      ]
+    }
+  ],
+  "metrics": {
+    "ambiguous_references": 0,
+    "complete_primary_participant_event_count": 3,
+    "correct_controls_preserved": [
+      "E-0effc9409e12ed77b198",
+      "E-205f021ad42236e5f142",
+      "E-2d5bd3d8506d519d2d69",
+      "E-60b0d54816b0585893d1"
+    ],
+    "correct_to_wrong_events": [],
+    "entity_type_fidelity_count": 12,
+    "entity_type_fidelity_denominator": 25,
+    "exact_gold_participants": 7,
+    "exact_participant_span_precision": 0.28,
+    "exact_participant_span_recall": 0.4666666666666667,
+    "gold_participant_denominator": 15,
+    "label_counts": {
+      "EXACT_GOLD_PARTICIPANT": 7,
+      "EXTRA_UNSUPPORTED_PARTICIPANT": 2,
+      "OFFSET_MISMATCH": 3,
+      "SOURCE_SUPPORTED_EQUIVALENT": 5,
+      "WRONG_ENTITY_TYPE": 3,
+      "WRONG_PARTICIPANT": 12
+    },
+    "missing_primary_event_ids": [
+      "E-11f3a0578efc0b883103",
+      "E-2773996d557442a07d58",
+      "E-544748ccc8e6c17eb290",
+      "E-66488a62883bb758e80b",
+      "E-8498b84a9b3bb3e93c2f",
+      "E-94edf9d8896d3f0729cb",
+      "E-a00865ea42e6f577581d",
+      "E-b43186fccd287bbb1cd5",
+      "E-e2a89e97c05e2b8d93d2",
+      "E-fd23ca8aac731381622e"
+    ],
+    "occurrence_identity_contract_mismatches": 0,
+    "offset_failures": 2,
+    "participant_predictions": 25,
+    "required_primary_event_count": 13,
+    "resolved_by_blinded_third_reviewer": 11,
+    "reviewer_a_b_disagreement_rate": 0.44,
+    "reviewer_a_b_disagreements": 11,
+    "reviewer_a_b_exact_agreements": 14,
+    "reviewer_agreement_gate_passed": true,
+    "source_supported_equivalents": 5,
+    "unresolved_disagreement_rate": 0.0,
+    "unresolved_disagreements": 0,
+    "unsupported_extras": 2,
+    "wrong_entity_types": 3,
+    "wrong_participants": 12,
+    "wrong_to_correct_events": []
+  },
+  "micro_canary_executed": false,
+  "retrieved_payload_sha256": "df430cd9d3db4d87a9d7172ffb7d1c98d007011146bd60faf3cf8237b0dc8e1f",
+  "reviewer_provenance": {
+    "independence": "BLINDED_INTERNAL_CODEX_SUBAGENTS_NO_PROVIDER_CALLS",
+    "reviewer_a_sha256": "cb434fc7239a66e6822c8af28047a14c55a85eec684b631db2f67608d89e05df",
+    "reviewer_b_sha256": "1fcce6f945fee5dba6b022d401d8287b4addde3b246b1c0d0c7dd2a9bbd959d7",
+    "reviewer_c_sha256": "234cbc05bbf11a690abaa8e4e6037cc2ffd86af14e836318f7f25a0de555af77"
+  },
+  "schema_version": "artana.public_gold.luna_participant_consensus.v1",
+  "source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab"
+}

@@ -1,0 +1,308 @@
+{
+  "schema_version": "artana.public_gold.luna_context_v2.participant_reviewer.v1",
+  "reviewer": {
+    "reviewer_id": "B",
+    "role": "blinded_source_only_participant_reviewer",
+    "provenance": "internal Codex subagent",
+    "model": "Codex GPT-5",
+    "configuration_limitations": "No provider, API, or external model calls were made. Reviewer B did not inspect another reviewer output. This is an independent internal adjudication, not a human-expert judgment."
+  },
+  "custody": {
+    "packet_path": "/tmp/artana-luna-context-v2-participant-packets.json",
+    "packet_sha256": "c3daec86d2d298e474721d86a621771e6e4a91533de82135e1889fcc8b0016ce",
+    "source_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-16428936.txt",
+    "source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+    "a1_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-16428936.a1",
+    "a1_sha256": "4ec95904f21ba78855f05428c6a8ad715bf96974eee655b8bf4f8e583f11e310",
+    "a2_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-16428936.a2",
+    "a2_sha256": "6f1ac4934e6f619d68f17015d2ebc8c53ff73d3cb652274b2efbbdc0db7dbac5",
+    "guidelines_path": "docs/validation/prompts/bionlp-cg-ontology-and-role-guidelines.md",
+    "guidelines_sha256": "0f3a6e79e2cc39ab20a8b18426af1818bd71e45dc08c5761c2d826c28f1d6a5c",
+    "retrieval_mode": "existing_packet_and_local_source_only"
+  },
+  "contract": {
+    "labels": [
+      "EXACT_GOLD_PARTICIPANT",
+      "SOURCE_SUPPORTED_EQUIVALENT",
+      "WRONG_PARTICIPANT",
+      "WRONG_ENTITY_TYPE",
+      "MISSING_PRIMARY_PARTICIPANT",
+      "EXTRA_UNSUPPORTED_PARTICIPANT",
+      "OFFSET_MISMATCH",
+      "OUTSIDE_EVENT_SCOPE",
+      "AMBIGUOUS_REFERENCE",
+      "OCCURRENCE_IDENTITY_CONTRACT_MISMATCH"
+    ],
+    "interpretation": "Labels are categorical. Exact gold credit requires the exact gold span, target kind, and source entity type; a source-supported equivalent is not exact benchmark credit. Offset-invalid choices are non-creditable even when their intended semantic target is recognizable. occurrence-0 reuse for different exact text is not an error by itself."
+  },
+  "document_id": "PMID-16428936",
+  "judgment_count": 25,
+  "judgments": [
+    {
+      "participant_id": "E-0effc9409e12ed77b198:P1",
+      "event_id": "E-0effc9409e12ed77b198",
+      "gold_event_id": "E23",
+      "candidate": {"target_kind": "EVENT", "start": 1156, "end": 1166, "text": "expression", "source_entity_type": null, "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "EVENT", "start": 1156, "end": 1166, "text": "expression", "source_entity_type": null},
+      "labels": ["EXACT_GOLD_PARTICIPANT"],
+      "exact_evidence": "source[1156:1166] = \"expression\"",
+      "explanation": "This is the exact trigger of nested gold event E24, which is the Theme of E23. The event-local occurrence is correct."
+    },
+    {
+      "participant_id": "E-11f3a0578efc0b883103:P1",
+      "event_id": "E-11f3a0578efc0b883103",
+      "gold_event_id": "E29",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 1345, "end": 1351, "text": "tumors", "source_entity_type": "Cancer", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "PARTICIPANT", "start": 1417, "end": 1432, "text": "vinca alkaloids", "source_entity_type": "Simple_chemical"},
+      "labels": ["WRONG_PARTICIPANT"],
+      "source_status": "SOURCE_SUPPORTED_EXTRA_REVIEW_ONLY",
+      "exact_evidence": "source[1345:1351] = \"tumors\"; source[1345:1442] = \"tumors carrying low levels of c-Myc protein could be more responsive to vinca alkaloids treatment\"",
+      "explanation": "The source supports tumors as the population responsive to the treatment, but the gold Planned_process E29 records vinca alkaloids as its Instrument and does not attach tumors. This is source-supported review-only extra context, not exact gold credit."
+    },
+    {
+      "participant_id": "E-11f3a0578efc0b883103:P2",
+      "event_id": "E-11f3a0578efc0b883103",
+      "gold_event_id": "E29",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 1417, "end": 1432, "text": "vinca alkaloids", "source_entity_type": "Simple_chemical", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "PARTICIPANT", "start": 1417, "end": 1432, "text": "vinca alkaloids", "source_entity_type": "Simple_chemical"},
+      "labels": ["EXACT_GOLD_PARTICIPANT"],
+      "exact_evidence": "source[1417:1432] = \"vinca alkaloids\"",
+      "explanation": "This exactly matches gold T36, including offsets, text, target kind, and source entity type."
+    },
+    {
+      "participant_id": "E-2773996d557442a07d58:P1",
+      "event_id": "E-2773996d557442a07d58",
+      "gold_event_id": "E30",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 1476, "end": 1490, "text": "c-myc oncogene", "source_entity_type": "Gene_or_gene_product", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "PARTICIPANT", "start": 1476, "end": 1481, "text": "c-myc", "source_entity_type": "Gene_or_gene_product"},
+      "labels": ["SOURCE_SUPPORTED_EQUIVALENT"],
+      "exact_evidence": "source[1476:1490] = \"c-myc oncogene\"; gold source[1476:1481] = \"c-myc\"",
+      "explanation": "The candidate resolves to the same gene mention and preserves the correct type, but includes the source descriptor \"oncogene\" beyond the exact gold span. It is source-supported equivalent, not exact-span gold credit."
+    },
+    {
+      "participant_id": "E-2773996d557442a07d58:P2",
+      "event_id": "E-2773996d557442a07d58",
+      "gold_event_id": "E30",
+      "candidate": {"target_kind": "EVENT", "start": 1507, "end": 1515, "text": "strategy", "source_entity_type": null, "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "PARTICIPANT", "start": 1476, "end": 1481, "text": "c-myc", "source_entity_type": "Gene_or_gene_product"},
+      "labels": ["WRONG_PARTICIPANT"],
+      "source_status": "SOURCE_SUPPORTED_BUT_STRUCTURALLY_MISATTACHED",
+      "exact_evidence": "source[1507:1515] = \"strategy\"",
+      "explanation": "The gold downregulation event has c-myc as Theme. The candidate instead inserts a strategy event as a participant. The source names an antisense strategy, but a strategy noun is not by itself a new scientific event under the guidelines."
+    },
+    {
+      "participant_id": "E-2d5bd3d8506d519d2d69:P1",
+      "event_id": "E-2d5bd3d8506d519d2d69",
+      "gold_event_id": "E22",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 1105, "end": 1108, "text": "p53", "source_entity_type": "Gene_or_gene_product", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "PARTICIPANT", "start": 1105, "end": 1108, "text": "p53", "source_entity_type": "Gene_or_gene_product"},
+      "labels": ["EXACT_GOLD_PARTICIPANT"],
+      "exact_evidence": "source[1105:1108] = \"p53\"",
+      "explanation": "This exactly matches gold T30, the Theme of the p53 increase event."
+    },
+    {
+      "participant_id": "E-544748ccc8e6c17eb290:P1",
+      "event_id": "E-544748ccc8e6c17eb290",
+      "gold_event_id": "E9",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 81, "end": 95, "text": "c-myc oncogene", "source_entity_type": "Gene_or_gene_product", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "PARTICIPANT", "start": 150, "end": 158, "text": "cellular", "source_entity_type": "Cell"},
+      "labels": ["WRONG_PARTICIPANT"],
+      "source_status": "SOURCE_SUPPORTED_BUT_STRUCTURALLY_MISATTACHED",
+      "exact_evidence": "source[81:95] = \"c-myc oncogene\"",
+      "explanation": "Gold E9 is the unary Cell_death event with Theme cellular. The source links c-myc to apoptosis through the separate Regulation event E6, so directly attaching c-myc to E9 is a structural flattening, not exact participant recovery."
+    },
+    {
+      "participant_id": "E-60b0d54816b0585893d1:P1",
+      "event_id": "E-60b0d54816b0585893d1",
+      "gold_event_id": "E1",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 12, "end": 17, "text": "c-Myc", "source_entity_type": "Gene_or_gene_product", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "PARTICIPANT", "start": 12, "end": 17, "text": "c-Myc", "source_entity_type": "Gene_or_gene_product"},
+      "labels": ["EXACT_GOLD_PARTICIPANT"],
+      "exact_evidence": "source[12:17] = \"c-Myc\"",
+      "explanation": "This exactly matches gold T1, the Theme of the initial decrease event."
+    },
+    {
+      "participant_id": "E-66488a62883bb758e80b:P1",
+      "event_id": "E-66488a62883bb758e80b",
+      "gold_event_id": "E7",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 81, "end": 95, "text": "c-myc oncogene", "source_entity_type": "Gene_or_gene_product", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "PARTICIPANT", "start": 150, "end": 158, "text": "cellular", "source_entity_type": "Cell"},
+      "labels": ["WRONG_ENTITY_TYPE", "WRONG_PARTICIPANT"],
+      "source_status": "SOURCE_SUPPORTED_BUT_STRUCTURALLY_MISATTACHED",
+      "exact_evidence": "source[81:95] = \"c-myc oncogene\"",
+      "explanation": "Gold E7 is the unary Cell_proliferation event whose Theme is cellular. c-myc is a gene entity in the source and belongs to the outer Regulation event as Cause, so this candidate has the wrong participant, type for the required Theme, and nesting."
+    },
+    {
+      "participant_id": "E-7c96d5ccc6b62c1f4602:P1",
+      "event_id": "E-7c96d5ccc6b62c1f4602",
+      "gold_event_id": null,
+      "candidate": {"target_kind": "EVENT", "start": 1458, "end": 1472, "text": "downregulation", "source_entity_type": null, "occurrence_id": "occurrence-0"},
+      "gold_reference": null,
+      "labels": [],
+      "source_status": "SOURCE_SUPPORTED_BUT_PARENT_EVENT_UNSUPPORTED",
+      "exact_evidence": "source[1458:1472] = \"downregulation\"; source[1507:1515] = \"strategy\"",
+      "explanation": "Downregulation is source-supported as gold event E30, but the candidate makes it a participant of a new event triggered by the method noun strategy. The guidelines explicitly prohibit treating a strategy noun as a new event without independent event evidence."
+    },
+    {
+      "participant_id": "E-8498b84a9b3bb3e93c2f:P1",
+      "event_id": "E-8498b84a9b3bb3e93c2f",
+      "gold_event_id": "E8",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 81, "end": 95, "text": "c-myc oncogene", "source_entity_type": "Gene_or_gene_product", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "PARTICIPANT", "start": 150, "end": 158, "text": "cellular", "source_entity_type": "Cell"},
+      "labels": ["WRONG_ENTITY_TYPE", "WRONG_PARTICIPANT"],
+      "source_status": "SOURCE_SUPPORTED_BUT_STRUCTURALLY_MISATTACHED",
+      "exact_evidence": "source[81:95] = \"c-myc oncogene\"",
+      "explanation": "Gold E8 is the unary Cell_differentiation event with Theme cellular. The gene is a Cause of the separate Regulation event E5, not the direct Theme of differentiation."
+    },
+    {
+      "participant_id": "E-94edf9d8896d3f0729cb:P1",
+      "event_id": "E-94edf9d8896d3f0729cb",
+      "gold_event_id": "E15",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 641, "end": 644, "text": "VLB", "source_entity_type": "Simple_chemical", "occurrence_id": "occurrence-1"},
+      "gold_reference": {"target_kind": "EVENT", "start": 645, "end": 656, "text": "sensitivity", "source_entity_type": null},
+      "labels": ["WRONG_PARTICIPANT"],
+      "source_status": "SOURCE_SUPPORTED_BUT_STRUCTURALLY_MISATTACHED",
+      "exact_evidence": "source[641:644] = \"VLB\"; source[645:656] = \"sensitivity\"",
+      "explanation": "The occurrence identity is correct: this is the second VLB in the event passage. Gold E15 takes the nested Regulation sensitivity event as Theme; VLB is its Cause, so direct attachment to the increase event flattens the nesting."
+    },
+    {
+      "participant_id": "E-94edf9d8896d3f0729cb:P2",
+      "event_id": "E-94edf9d8896d3f0729cb",
+      "gold_event_id": "E15",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 660, "end": 677, "text": "LoVo-mycANS cells", "source_entity_type": "Cell", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "EVENT", "start": 645, "end": 656, "text": "sensitivity", "source_entity_type": null},
+      "labels": ["WRONG_PARTICIPANT"],
+      "source_status": "SOURCE_SUPPORTED_BUT_STRUCTURALLY_MISATTACHED",
+      "exact_evidence": "source[660:677] = \"LoVo-mycANS cells\"; source[645:656] = \"sensitivity\"",
+      "explanation": "The cell span is valid and source-supported, but gold E15 takes the nested sensitivity event as Theme. The cells are the Theme of that nested sensitivity event, not a direct participant of the increase event."
+    },
+    {
+      "participant_id": "E-9b071863693a57dae92b:P1",
+      "event_id": "E-9b071863693a57dae92b",
+      "gold_event_id": null,
+      "candidate": {"target_kind": "EVENT", "start": 1138, "end": 1146, "text": "decrease", "source_entity_type": null, "occurrence_id": "occurrence-0"},
+      "gold_reference": null,
+      "labels": [],
+      "source_status": "SOURCE_SUPPORTED_EXTRA_REVIEW_ONLY",
+      "exact_evidence": "source[1138:1175] = \"decrease in c-Myc expression enhanced\"",
+      "explanation": "The source explicitly states that the decrease enhanced VLB sensitivity. The referenced decrease is also gold E23, so this is a source-supported extra representation of a relation not mapped to the current enhanced trigger, not an unsupported claim or benchmark credit."
+    },
+    {
+      "participant_id": "E-9b071863693a57dae92b:P2",
+      "event_id": "E-9b071863693a57dae92b",
+      "gold_event_id": null,
+      "candidate": {"target_kind": "PARTICIPANT", "start": 1180, "end": 1183, "text": "VLB", "source_entity_type": "Simple_chemical", "occurrence_id": "occurrence-0"},
+      "gold_reference": null,
+      "labels": ["WRONG_PARTICIPANT"],
+      "source_status": "SOURCE_SUPPORTED_BUT_STRUCTURALLY_MISATTACHED",
+      "exact_evidence": "source[1167:1183] = \"enhanced the VLB\"; source[1180:1183] = \"VLB\"",
+      "explanation": "VLB is source-supported in the sensitivity phrase, but the structured representation should preserve the nested sensitivity event rather than attach VLB directly to the enhanced event."
+    },
+    {
+      "participant_id": "E-a00865ea42e6f577581d:P1",
+      "event_id": "E-a00865ea42e6f577581d",
+      "gold_event_id": "E25",
+      "candidate": {"target_kind": "EVENT", "start": 1167, "end": 1175, "text": "enhanced", "source_entity_type": null, "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "EVENT", "start": 1138, "end": 1146, "text": "decrease", "source_entity_type": null},
+      "labels": [],
+      "source_status": "SOURCE_SUPPORTED_EXTRA_REVIEW_ONLY",
+      "exact_evidence": "source[1138:1207] = \"decrease in c-Myc expression enhanced the VLB sensitivity, triggering\"",
+      "explanation": "The source explicitly presents enhanced sensitivity as preceding and contributing to earlier apoptosis. Gold E25 uses the decrease event as Cause, so this source-supported nested interpretation is review-only and not exact gold credit."
+    },
+    {
+      "participant_id": "E-a00865ea42e6f577581d:P2",
+      "event_id": "E-a00865ea42e6f577581d",
+      "gold_event_id": "E25",
+      "candidate": {"target_kind": "EVENT", "start": 1216, "end": 1225, "text": "apoptosis", "source_entity_type": null, "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "EVENT", "start": 1216, "end": 1225, "text": "apoptosis", "source_entity_type": null},
+      "labels": ["EXACT_GOLD_PARTICIPANT"],
+      "exact_evidence": "source[1216:1225] = \"apoptosis\"",
+      "explanation": "This exactly matches gold E26, the Theme event of E25."
+    },
+    {
+      "participant_id": "E-b43186fccd287bbb1cd5:P1",
+      "event_id": "E-b43186fccd287bbb1cd5",
+      "gold_event_id": "E13",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 590, "end": 593, "text": "VLB", "source_entity_type": "Simple_chemical", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "PARTICIPANT", "start": 660, "end": 677, "text": "LoVo-mycANS cells", "source_entity_type": "Cell"},
+      "labels": ["WRONG_PARTICIPANT"],
+      "source_status": "SOURCE_SUPPORTED_BUT_STRUCTURALLY_MISATTACHED",
+      "exact_evidence": "source[590:606] = \"VLB cytotoxicity\"",
+      "explanation": "VLB is explicitly associated with cytotoxicity, but gold E13 is the Cell_death event whose Theme is LoVo-mycANS cells. The VLB Cause belongs to the separate positive-regulation E14, so this direct participant is structurally misattached."
+    },
+    {
+      "participant_id": "E-b43186fccd287bbb1cd5:P2",
+      "event_id": "E-b43186fccd287bbb1cd5",
+      "gold_event_id": "E13",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 660, "end": 677, "text": "LoVo-mycANS cells", "source_entity_type": "Cell", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "PARTICIPANT", "start": 660, "end": 677, "text": "LoVo-mycANS cells", "source_entity_type": "Cell"},
+      "labels": ["EXACT_GOLD_PARTICIPANT"],
+      "exact_evidence": "source[660:677] = \"LoVo-mycANS cells\"",
+      "explanation": "This exactly matches gold T21, the Theme of the cytotoxicity Cell_death event."
+    },
+    {
+      "participant_id": "E-cf483c0e6ea43235f767:P1",
+      "event_id": "E-cf483c0e6ea43235f767",
+      "gold_event_id": null,
+      "candidate": {"target_kind": "EVENT", "start": 1261, "end": 1268, "text": "pathway", "source_entity_type": null, "occurrence_id": "occurrence-0"},
+      "gold_reference": null,
+      "labels": [],
+      "source_status": "SOURCE_SUPPORTED_EXTRA_REVIEW_ONLY",
+      "exact_evidence": "source[1234:1268] = \"induction of the intrinsic pathway\"",
+      "explanation": "The source explicitly names an intrinsic pathway as the object of induction. A Pathway event is allowed by the ontology, but this event is absent from the public gold mapping; it remains a source-supported review-only extra."
+    },
+    {
+      "participant_id": "E-dc2596d35c7a939787a6:P1",
+      "event_id": "E-dc2596d35c7a939787a6",
+      "gold_event_id": null,
+      "candidate": {"target_kind": "PARTICIPANT", "start": 990, "end": 1002, "text": "mitochondria", "source_entity_type": "Cellular_component", "occurrence_id": "occurrence-0"},
+      "gold_reference": null,
+      "labels": [],
+      "source_status": "SOURCE_SUPPORTED_EXTRA_REVIEW_ONLY",
+      "exact_evidence": "source[990:1038] = \"mitochondria in this apoptotic signaling pathway\"",
+      "explanation": "The source explicitly states involvement of mitochondria in the apoptotic signaling pathway. The public gold has no corresponding Pathway event here, so this is source-supported extra context and not benchmark credit."
+    },
+    {
+      "participant_id": "E-e2a89e97c05e2b8d93d2:P1",
+      "event_id": "E-e2a89e97c05e2b8d93d2",
+      "gold_event_id": "E2",
+      "candidate": {"target_kind": "EVENT", "start": 0, "end": 8, "text": "Decrease", "source_entity_type": null, "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "EVENT", "start": 0, "end": 8, "text": "Decrease", "source_entity_type": null},
+      "labels": ["EXACT_GOLD_PARTICIPANT"],
+      "exact_evidence": "source[0:8] = \"Decrease\"",
+      "explanation": "This exactly matches gold E1, the Cause of the positive regulation event E2."
+    },
+    {
+      "participant_id": "E-e2a89e97c05e2b8d93d2:P2",
+      "event_id": "E-e2a89e97c05e2b8d93d2",
+      "gold_event_id": "E2",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 36, "end": 47, "text": "cancer cell", "source_entity_type": "Cell", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "EVENT", "start": 48, "end": 59, "text": "sensitivity", "source_entity_type": null},
+      "labels": ["WRONG_PARTICIPANT"],
+      "source_status": "SOURCE_SUPPORTED_BUT_STRUCTURALLY_MISATTACHED",
+      "exact_evidence": "source[36:59] = \"cancer cell sensitivity\"",
+      "explanation": "Cancer cell is the Theme of nested Regulation E3. Gold E2 takes E3 as Theme, so attaching the cell directly to E2 loses the event nesting even though the source mention is valid."
+    },
+    {
+      "participant_id": "E-e2a89e97c05e2b8d93d2:P3",
+      "event_id": "E-e2a89e97c05e2b8d93d2",
+      "gold_event_id": "E2",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 63, "end": 75, "text": "vinblastine", "source_entity_type": "Simple_chemical", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "EVENT", "start": 48, "end": 59, "text": "sensitivity", "source_entity_type": null},
+      "labels": ["OFFSET_MISMATCH", "WRONG_PARTICIPANT"],
+      "source_status": "SOURCE_SUPPORTED_BUT_STRUCTURALLY_MISATTACHED",
+      "exact_evidence": "candidate source[63:75] resolves to \"vinblastine.\"; gold T3 is source[63:74] = \"vinblastine\"",
+      "explanation": "The candidate includes the sentence-final period, so its offset is invalid and non-creditable. Counterfactually, corrected T3 is the Cause of nested E3, not a direct participant of E2; the proposal also flattens the required nesting."
+    },
+    {
+      "participant_id": "E-fd23ca8aac731381622e:P1",
+      "event_id": "E-fd23ca8aac731381622e",
+      "gold_event_id": "E24",
+      "candidate": {"target_kind": "PARTICIPANT", "start": 1149, "end": 1155, "text": "c-Myc", "source_entity_type": "Gene_or_gene_product", "occurrence_id": "occurrence-0"},
+      "gold_reference": {"target_kind": "PARTICIPANT", "start": 1150, "end": 1155, "text": "c-Myc", "source_entity_type": "Gene_or_gene_product"},
+      "labels": ["EXACT_GOLD_PARTICIPANT", "OFFSET_MISMATCH"],
+      "exact_evidence": "candidate source[1149:1155] resolves to \" c-Myc\"; gold T31 is source[1150:1155] = \"c-Myc\"",
+      "explanation": "The intended participant is the exact gold Theme of E24, but the returned start offset includes the preceding space. The semantic intention is recognizable; the supplied span remains non-creditable."
+    }
+  ]
+}
