@@ -1,0 +1,487 @@
+{
+  "benchmark_lane": "SEPARATE_EVALUATION_ONLY_REVIEW_ONLY",
+  "cases": [
+    {
+      "ambiguous_additions": "REVIEW_ONLY_BLOCKS_PASS",
+      "case_id": "generalization-comparison-canary",
+      "contextual_participants": [
+        {
+          "acceptable_texts": [
+            "ICI initiation"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "comparison",
+              "role": "EXPOSURE"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "EXPOSURE",
+          "judgment_id": "comparison-ici-neighbor",
+          "rationale": "ICI initiation supplies timing for the later steroid-use observation, not for the focus comparison. Attaching it here would import a neighboring event modifier."
+        },
+        {
+          "acceptable_texts": [
+            "female"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "comparison",
+              "role": "CONTEXTUAL_PARTICIPANT"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "POPULATION",
+          "judgment_id": "comparison-female-neighbor",
+          "rationale": "Female sex belongs to the separate preceding comparison that patients with RA were more likely to be female. Attaching it to the comorbidity comparison would merge two neighboring findings."
+        },
+        {
+          "acceptable_texts": [
+            "dexamethasone"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "comparison",
+              "role": "EXPOSURE"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "SIMPLE_CHEMICAL",
+          "judgment_id": "comparison-dexamethasone-neighbor",
+          "rationale": "Dexamethasone occurs only in the later medication-use comparison. It does not qualify or explain the focus event about comorbidities."
+        },
+        {
+          "acceptable_texts": [
+            "steroids"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "comparison",
+              "role": "EXPOSURE"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "SIMPLE_CHEMICAL",
+          "judgment_id": "comparison-steroids-neighbor",
+          "rationale": "Steroid use is the subject of a later RA-versus-non-RA comparison, not a participant in the focus comparison of comorbidity burden."
+        }
+      ],
+      "core_reference_sha256": "619b50612e88eddb8f49bb72c531b62b4fdff5b5579f29ab9c1e10a508b63892",
+      "excluded_core_duplicate_judgment_ids": [],
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "unlisted_additions": "UNSUPPORTED"
+    },
+    {
+      "ambiguous_additions": "REVIEW_ONLY_BLOCKS_PASS",
+      "case_id": "generalization-null-statistics",
+      "contextual_participants": [
+        {
+          "acceptable_texts": [
+            "95% confidence interval 0.78-1.09"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "null_os",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "classification": "PERMITTED_CONTEXT",
+          "entity_type": "MEASUREMENT",
+          "judgment_id": "null-confidence-interval",
+          "rationale": "The confidence interval explicitly qualifies the adjusted hazard-ratio estimate and includes the null value, so it faithfully contextualizes the reported absence of a difference."
+        },
+        {
+          "acceptable_texts": [
+            "Kaplan-Meier survival curves"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "null_os",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "MEASUREMENT",
+          "judgment_id": "null-kaplan-meier-procedure",
+          "rationale": "The Kaplan-Meier curves are the analytical representation on which the comparison was performed, not a biomedical participant or result measurement node."
+        },
+        {
+          "acceptable_texts": [
+            "adjusted models"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "null_os",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "MEASUREMENT",
+          "judgment_id": "null-adjusted-models-procedure",
+          "rationale": "Field-level two-of-three consensus from independent blinded source reviews; source-specific rationales remain in the hashed review artifacts."
+        },
+        {
+          "acceptable_texts": [
+            "hazard ratio 0.92"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "null_os",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "classification": "PERMITTED_CONTEXT",
+          "entity_type": "MEASUREMENT",
+          "judgment_id": "null-hazard-ratio",
+          "rationale": "The hazard ratio is an explicit adjusted estimate for the same RA-versus-non-RA overall-survival comparison and is consistent with the null finding."
+        },
+        {
+          "acceptable_texts": [
+            "log-rank P = 0.08"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "null_os",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "classification": "PERMITTED_CONTEXT",
+          "entity_type": "MEASUREMENT",
+          "judgment_id": "null-log-rank-p",
+          "rationale": "This exact p-value is the explicit statistical measurement for the reported null Kaplan-Meier comparison and can be attached without changing its direction."
+        }
+      ],
+      "core_reference_sha256": "b67d0e68daddadf55884975d32b15d5627b1c6c5340e7d12f0970a24d3ee18e3",
+      "excluded_core_duplicate_judgment_ids": [],
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "unlisted_additions": "UNSUPPORTED"
+    },
+    {
+      "ambiguous_additions": "REVIEW_ONLY_BLOCKS_PASS",
+      "case_id": "generalization-negated-association",
+      "contextual_participants": [
+        {
+          "acceptable_texts": [
+            "sensitivity analysis"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "no_association",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "MEASUREMENT",
+          "judgment_id": "negated-sensitivity-analysis-procedure",
+          "rationale": "Field-level two-of-three consensus from independent blinded source reviews; source-specific rationales remain in the hashed review artifacts."
+        },
+        {
+          "acceptable_texts": [
+            "ICI-treated patients with RA with mNSCLC"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "no_association",
+              "role": "POPULATION"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "POPULATION",
+          "judgment_id": "negated-ra-mnsclc-neighbor",
+          "rationale": "Field-level two-of-three consensus from independent blinded source reviews; source-specific rationales remain in the hashed review artifacts."
+        },
+        {
+          "acceptable_texts": [
+            "patients receiving baseline dexamethasone"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "no_association",
+              "role": "CONTEXTUAL_PARTICIPANT"
+            }
+          ],
+          "classification": "AMBIGUOUS_REVIEW_ONLY",
+          "entity_type": "POPULATION",
+          "judgment_id": "negated-excluded-dexamethasone-population",
+          "rationale": "Field-level two-of-three consensus from independent blinded source reviews; source-specific rationales remain in the hashed review artifacts."
+        },
+        {
+          "acceptable_texts": [
+            "patients without RA"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "no_association",
+              "role": "COMPARATOR"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "POPULATION",
+          "judgment_id": "negated-non-ra-neighbor",
+          "rationale": "Field-level two-of-three consensus from independent blinded source reviews; source-specific rationales remain in the hashed review artifacts."
+        }
+      ],
+      "core_reference_sha256": "dcfd8e2795d12ceac0d1979a5b81192983cb2874c96f97f8a1653cd1e0537e92",
+      "excluded_core_duplicate_judgment_ids": [],
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "unlisted_additions": "UNSUPPORTED"
+    },
+    {
+      "ambiguous_additions": "REVIEW_ONLY_BLOCKS_PASS",
+      "case_id": "generalization-uncertainty",
+      "contextual_participants": [
+        {
+          "acceptable_texts": [
+            "Hyponatremia"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "classification",
+              "role": "OUTCOME"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "OUTCOME",
+          "judgment_id": "uncertainty-hyponatremia-neighbor",
+          "rationale": "Hyponatremia is the outcome of the following variant-rate finding. It is not an outcome or context node of the uncertain-significance classification."
+        },
+        {
+          "acceptable_texts": [
+            "c.282+492G>A"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "classification",
+              "role": "AFFECTED_ENTITY"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "VARIANT",
+          "judgment_id": "uncertainty-variant-282-492",
+          "rationale": "Field-level two-of-three consensus from independent blinded source reviews; source-specific rationales remain in the hashed review artifacts."
+        },
+        {
+          "acceptable_texts": [
+            "c.282+495G>A"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "classification",
+              "role": "AFFECTED_ENTITY"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "VARIANT",
+          "judgment_id": "uncertainty-variant-282-495",
+          "rationale": "Field-level two-of-three consensus from independent blinded source reviews; source-specific rationales remain in the hashed review artifacts."
+        },
+        {
+          "acceptable_texts": [
+            "c.282+499G>C"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "classification",
+              "role": "AFFECTED_ENTITY"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "VARIANT",
+          "judgment_id": "uncertainty-variant-282-499",
+          "rationale": "Field-level two-of-three consensus from independent blinded source reviews; source-specific rationales remain in the hashed review artifacts."
+        },
+        {
+          "acceptable_texts": [
+            "c.505+375G>A"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "classification",
+              "role": "AFFECTED_ENTITY"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "VARIANT",
+          "judgment_id": "uncertainty-variant-505-375",
+          "rationale": "Field-level two-of-three consensus from independent blinded source reviews; source-specific rationales remain in the hashed review artifacts."
+        },
+        {
+          "acceptable_texts": [
+            "c.506-276A>G"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "classification",
+              "role": "AFFECTED_ENTITY"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "VARIANT",
+          "judgment_id": "uncertainty-variant-506-276",
+          "rationale": "Field-level two-of-three consensus from independent blinded source reviews; source-specific rationales remain in the hashed review artifacts."
+        }
+      ],
+      "core_reference_sha256": "05c8aad782215d535f38e3146fdb039f0cf70eabc96c94e6e0620a773e7039d9",
+      "excluded_core_duplicate_judgment_ids": [
+        "uncertainty-variant-count"
+      ],
+      "source_id": "exposed-human-genetics",
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b",
+      "unlisted_additions": "UNSUPPORTED"
+    },
+    {
+      "ambiguous_additions": "REVIEW_ONLY_BLOCKS_PASS",
+      "case_id": "generalization-drug-sensitivity",
+      "contextual_participants": [
+        {
+          "acceptable_texts": [
+            "DPD",
+            "dihydropyrimidine dehydrogenase"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "sensitivity",
+              "role": "CONTEXTUAL_PARTICIPANT"
+            }
+          ],
+          "classification": "PERMITTED_CONTEXT",
+          "entity_type": "GENE_OR_PROTEIN",
+          "judgment_id": "drug-sensitivity-dpd",
+          "rationale": "The source explicitly identifies DPD as a 5-FU-metabolizing enzyme involved in the same sensitivity. A contextual role is faithful and avoids overstating direct causality."
+        },
+        {
+          "acceptable_texts": [
+            "TS",
+            "Thymidylate synthase"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "sensitivity",
+              "role": "CONTEXTUAL_PARTICIPANT"
+            }
+          ],
+          "classification": "PERMITTED_CONTEXT",
+          "entity_type": "GENE_OR_PROTEIN",
+          "judgment_id": "drug-sensitivity-ts",
+          "rationale": "The source explicitly identifies TS as a 5-FU-metabolizing enzyme involved in carcinoma-patient sensitivity. CONTEXTUAL_PARTICIPANT preserves the source's involvement wording without upgrading it to sole causation."
+        }
+      ],
+      "core_reference_sha256": "1831289a2f45de9a6a5c6d9bbf1a2d107897b3d141906286948b7be745aa5e97",
+      "excluded_core_duplicate_judgment_ids": [],
+      "source_id": "PMID-21965773",
+      "source_sha256": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880",
+      "unlisted_additions": "UNSUPPORTED"
+    },
+    {
+      "ambiguous_additions": "REVIEW_ONLY_BLOCKS_PASS",
+      "case_id": "generalization-explicit-nested-cause",
+      "contextual_participants": [
+        {
+          "acceptable_texts": [
+            "HCMV immediate-early region 1 and 2 proteins"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "responsible",
+              "role": "CAUSAL_AGENT"
+            }
+          ],
+          "classification": "AMBIGUOUS_REVIEW_ONLY",
+          "entity_type": "GENE_OR_PROTEIN",
+          "judgment_id": "nested-region-1-2-proteins",
+          "rationale": "Field-level two-of-three consensus from independent blinded source reviews; source-specific rationales remain in the hashed review artifacts."
+        },
+        {
+          "acceptable_texts": [
+            "transfected human fibroblasts"
+          ],
+          "allowed_arguments": [
+            {
+              "event_key": "responsible",
+              "role": "POPULATION"
+            }
+          ],
+          "classification": "FORBIDDEN",
+          "entity_type": "POPULATION",
+          "judgment_id": "nested-transfected-fibroblasts",
+          "rationale": "Field-level two-of-three consensus from independent blinded source reviews; source-specific rationales remain in the hashed review artifacts."
+        }
+      ],
+      "core_reference_sha256": "020377d1680f97da907577c7b22af08b263f0066e87cc2a297636e79f909b2a5",
+      "excluded_core_duplicate_judgment_ids": [],
+      "source_id": "PMID-7966592",
+      "source_sha256": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+      "unlisted_additions": "UNSUPPORTED"
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "pubmed-21965773",
+      "kind": "PRIMARY_ARTICLE",
+      "retrieved_at": "2026-07-22T21:15:00Z",
+      "retrieved_sha256": "772c57ffdd883b54012a27e37466ca4ff088af078ef1cf45a78f29aad9793e92",
+      "title": "Expression of thymidylate synthase and dihydropyrimidine dehydrogenase in primary oral squamous cell carcinoma and corresponding metastases in cervical lymph nodes: association with the metastasis suppressor CD82",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=21965773&rettype=abstract&retmode=xml"
+    },
+    {
+      "evidence_id": "pubmed-40289860",
+      "kind": "PRIMARY_ARTICLE",
+      "retrieved_at": "2026-07-22T21:15:00Z",
+      "retrieved_sha256": "771c3f55ab33485416f442f50853ca37d1c02799864cc50c3f44da56a94e3d33",
+      "title": "Survival in Immune Checkpoint Inhibitor-Treated Patients With Rheumatoid Arthritis and Non-Small Cell Lung Cancer: An Observational Cohort Study",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=40289860&rettype=abstract&retmode=xml"
+    },
+    {
+      "evidence_id": "pubmed-42454948",
+      "kind": "PRIMARY_ARTICLE",
+      "retrieved_at": "2026-07-22T21:15:00Z",
+      "retrieved_sha256": "6881671b08495a5597e84f56ad64e5814ec4427cd5687e6cc5d8290f0eb11360",
+      "title": "Does hydrochlorothiazide-associated hyponatremia in hypertensive individuals have a genetic origin?",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=42454948&rettype=abstract&retmode=xml"
+    },
+    {
+      "evidence_id": "pubmed-7966592",
+      "kind": "PRIMARY_ARTICLE",
+      "retrieved_at": "2026-07-22T21:15:00Z",
+      "retrieved_sha256": "c2f0efdab5d9424489fbc06442687ea55de87068ced33f4f2185c8a879faa0f4",
+      "title": "Human cytomegalovirus elevates levels of the cellular protein p53 in infected fibroblasts",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=7966592&rettype=abstract&retmode=xml"
+    }
+  ],
+  "frozen_at": "2026-07-22T21:43:28Z",
+  "graph_promotion_allowed": false,
+  "policy_id": "staged-generalization-v5-dual-lane",
+  "primary_reviewers": [
+    {
+      "internet_access": true,
+      "model": "gpt-5.6-sol",
+      "reviewer_id": "v5-internet-grader-a",
+      "reviewer_kind": "INTERNET_SOURCE_GRADER",
+      "task_id": "v5_grader_a"
+    },
+    {
+      "internet_access": true,
+      "model": "gpt-5.6-sol",
+      "reviewer_id": "v5-internet-grader-b",
+      "reviewer_kind": "INTERNET_SOURCE_GRADER",
+      "task_id": "v5_grader_b"
+    }
+  ],
+  "qualification_credit": false,
+  "review_artifact_sha256": {
+    "v5-internet-grader-a": "e49307a293e3cfa8f93cfb75ec6473e422f1d5dce8fa51331a53831ff6da764d",
+    "v5-internet-grader-b": "41f21ea0f50f941fc886dea3f772220580e29b2eba0b8fed221ac6db8cf30b45",
+    "v5-internet-grader-c": "388002786417b626fb21f77481e1d2b3b7526eaa7d8fe644b018a2e22bf11f5b"
+  },
+  "schema_version": "artana.staged_generalization.dual_lane_policy.v1",
+  "tiebreaker_reviewer": {
+    "internet_access": true,
+    "model": "gpt-5.6-sol",
+    "reviewer_id": "v5-internet-grader-c",
+    "reviewer_kind": "INTERNET_SOURCE_GRADER",
+    "task_id": "v5_grader_c"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "retrieval_policy": {
+    "allowed_sources": "SUPPLIED_PRIMARY_URLS_ONLY",
+    "automated_annotations_are_evidence": false,
+    "retrieved_at": "2026-07-22T21:15:00Z",
+    "search_snippets_are_evidence": false
+  },
+  "sources": [
+    {
+      "byte_count": 22817,
+      "evidence_id": "pubmed-40289860",
+      "kind": "PRIMARY_ARTICLE",
+      "retrieved_at": "2026-07-22T21:15:00Z",
+      "retrieved_sha256": "771c3f55ab33485416f442f50853ca37d1c02799864cc50c3f44da56a94e3d33",
+      "title": "Survival in Immune Checkpoint Inhibitor-Treated Patients With Rheumatoid Arthritis and Non-Small Cell Lung Cancer: An Observational Cohort Study",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=40289860&rettype=abstract&retmode=xml"
+    },
+    {
+      "byte_count": 9244,
+      "evidence_id": "pubmed-42454948",
+      "kind": "PRIMARY_ARTICLE",
+      "retrieved_at": "2026-07-22T21:15:00Z",
+      "retrieved_sha256": "6881671b08495a5597e84f56ad64e5814ec4427cd5687e6cc5d8290f0eb11360",
+      "title": "Does hydrochlorothiazide-associated hyponatremia in hypertensive individuals have a genetic origin?",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=42454948&rettype=abstract&retmode=xml"
+    },
+    {
+      "byte_count": 7437,
+      "evidence_id": "pubmed-21965773",
+      "kind": "PRIMARY_ARTICLE",
+      "retrieved_at": "2026-07-22T21:15:00Z",
+      "retrieved_sha256": "772c57ffdd883b54012a27e37466ca4ff088af078ef1cf45a78f29aad9793e92",
+      "title": "Expression of thymidylate synthase and dihydropyrimidine dehydrogenase in primary oral squamous cell carcinoma and corresponding metastases in cervical lymph nodes: association with the metastasis suppressor CD82",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=21965773&rettype=abstract&retmode=xml"
+    },
+    {
+      "byte_count": 15024,
+      "evidence_id": "pubmed-7966592",
+      "kind": "PRIMARY_ARTICLE",
+      "retrieved_at": "2026-07-22T21:15:00Z",
+      "retrieved_sha256": "c2f0efdab5d9424489fbc06442687ea55de87068ced33f4f2185c8a879faa0f4",
+      "title": "Human cytomegalovirus elevates levels of the cellular protein p53 in infected fibroblasts",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=7966592&rettype=abstract&retmode=xml"
+    }
+  ]
+}

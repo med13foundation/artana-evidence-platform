@@ -1,0 +1,121 @@
+{
+  "cases": [
+    {
+      "benchmark_labels_included": false,
+      "case_id": "generalization-comparison-canary",
+      "context_end": 1190,
+      "context_start": 862,
+      "family": "COMPARISON_DIRECTION",
+      "focus_end": 960,
+      "focus_passage": "had more comorbidities than patients without RA",
+      "focus_start": 913,
+      "frozen_core_reference_included": false,
+      "local_context": "Patients with RA were more likely to be female and had more comorbidities than patients without RA. Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation.",
+      "primary_source_urls": [
+        "https://pubmed.ncbi.nlm.nih.gov/40289860/",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=40289860&rettype=abstract&retmode=xml"
+      ],
+      "production_output_included": false,
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+    },
+    {
+      "benchmark_labels_included": false,
+      "case_id": "generalization-null-statistics",
+      "context_end": 1380,
+      "context_start": 1191,
+      "family": "NULL_STATISTICAL_RESULT",
+      "focus_end": 1301,
+      "focus_passage": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08)",
+      "focus_start": 1191,
+      "frozen_core_reference_included": false,
+      "local_context": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "primary_source_urls": [
+        "https://pubmed.ncbi.nlm.nih.gov/40289860/",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=40289860&rettype=abstract&retmode=xml"
+      ],
+      "production_output_included": false,
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+    },
+    {
+      "benchmark_labels_included": false,
+      "case_id": "generalization-negated-association",
+      "context_end": 1812,
+      "context_start": 1488,
+      "family": "NEGATION",
+      "focus_end": 1639,
+      "focus_passage": "steroid dose before ICI initiation was no longer associated with worse OS",
+      "focus_start": 1566,
+      "frozen_core_reference_included": false,
+      "local_context": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS. CONCLUSION: After controlling for demographics and comorbid conditions, ICI-treated patients with RA with mNSCLC had no difference in OS compared with patients without RA.",
+      "primary_source_urls": [
+        "https://pubmed.ncbi.nlm.nih.gov/40289860/",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=40289860&rettype=abstract&retmode=xml"
+      ],
+      "production_output_included": false,
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+    },
+    {
+      "benchmark_labels_included": false,
+      "case_id": "generalization-uncertainty",
+      "context_end": 1290,
+      "context_start": 833,
+      "family": "UNCERTAINTY",
+      "focus_end": 1085,
+      "focus_passage": "the majority of which were classified as of uncertain significance",
+      "focus_start": 1019,
+      "frozen_core_reference_included": false,
+      "local_context": "Variants in the SLC12A3 gene were analyzed using next generation sequencing and were compared with the clinical data.\nRESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance. Hyponatremia was determined at a higher rate in patients with c.506-276A>G (75.00%), c.282+492G>A (85.70%), c.282+499G>C (87.00%), c.282+495G>A (85.00%), and c.505+375G>A (92.30%) variants in particular.",
+      "primary_source_urls": [
+        "https://pubmed.ncbi.nlm.nih.gov/42454948/",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=42454948&rettype=abstract&retmode=xml"
+      ],
+      "production_output_included": false,
+      "source_id": "exposed-human-genetics",
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b"
+    },
+    {
+      "benchmark_labels_included": false,
+      "case_id": "generalization-drug-sensitivity",
+      "context_end": 396,
+      "context_start": 214,
+      "family": "DRUG_SENSITIVITY",
+      "focus_end": 395,
+      "focus_passage": "the sensitivity of carcinoma patients to 5-FU",
+      "focus_start": 350,
+      "frozen_core_reference_included": false,
+      "local_context": "\nThymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "primary_source_urls": [
+        "https://pubmed.ncbi.nlm.nih.gov/21965773/",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=21965773&rettype=abstract&retmode=xml"
+      ],
+      "production_output_included": false,
+      "source_id": "PMID-21965773",
+      "source_sha256": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880"
+    },
+    {
+      "benchmark_labels_included": false,
+      "case_id": "generalization-explicit-nested-cause",
+      "context_end": 1336,
+      "context_start": 1091,
+      "family": "NESTED_EXPLICIT_CAUSATION",
+      "focus_end": 1206,
+      "focus_passage": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts",
+      "focus_start": 1091,
+      "frozen_core_reference_included": false,
+      "local_context": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.",
+      "primary_source_urls": [
+        "https://pubmed.ncbi.nlm.nih.gov/7966592/",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=7966592&rettype=abstract&retmode=xml"
+      ],
+      "production_output_included": false,
+      "source_id": "PMID-7966592",
+      "source_sha256": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02"
+    }
+  ],
+  "instructions": "You are an independent source grader. Review only the supplied exposed source\ncontext and primary-source URLs. Do not inspect Artana output, the frozen core\nreference, expected event counts, benchmark labels, or another grader's answer.\n\nEnumerate only additional participant nodes that a scientifically faithful graph may\ninclude beyond the focus event's indispensable population, comparator, outcome,\nexposure, or causal core. Classify each as PERMITTED_CONTEXT,\nAMBIGUOUS_REVIEW_ONLY, or FORBIDDEN. Every judgment must name exact source text,\nthe participant entity type, the focus-event argument role, and a concise rationale.\n\nPERMITTED_CONTEXT must be explicit, correctly typed, nonduplicative in scientific\nmeaning, useful to interpreting the focus event, and attachable through the named\nrole without changing the source claim. Procedural or neighboring-event material is\nnot context merely because it appears in the paragraph. Mark uncertain cases\nAMBIGUOUS_REVIEW_ONLY. Set inventory_complete only after considering the full packet.\n",
+  "packet_sha256": "ec4ba948112a2adef5d240fcb082862ca84b1a2d5b511e2df1892dd69119bc01",
+  "schema_version": "artana.staged_generalization.blinded_context_packets.v1"
+}

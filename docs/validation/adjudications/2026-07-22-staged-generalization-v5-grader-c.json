@@ -1,0 +1,500 @@
+{
+  "schema_version": "artana.staged_generalization.context_review.v1",
+  "reviewer": {
+    "reviewer_id": "v5-internet-grader-c",
+    "task_id": "v5_grader_c",
+    "model": "gpt-5.6-sol",
+    "reviewer_kind": "INTERNET_SOURCE_GRADER",
+    "internet_access": true
+  },
+  "reviewed_at": "2026-07-22T21:35:41Z",
+  "production_output_seen": false,
+  "benchmark_labels_seen": false,
+  "frozen_core_reference_seen": false,
+  "evidence": [
+    {
+      "evidence_id": "pubmed-40289860",
+      "kind": "PRIMARY_ARTICLE",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=40289860&rettype=abstract&retmode=xml",
+      "title": "Survival in Immune Checkpoint Inhibitor-Treated Patients With Rheumatoid Arthritis and Non-Small Cell Lung Cancer: An Observational Cohort Study",
+      "retrieved_at": "2026-07-22T21:15:00Z",
+      "retrieved_sha256": "771c3f55ab33485416f442f50853ca37d1c02799864cc50c3f44da56a94e3d33"
+    },
+    {
+      "evidence_id": "pubmed-42454948",
+      "kind": "PRIMARY_ARTICLE",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=42454948&rettype=abstract&retmode=xml",
+      "title": "Does hydrochlorothiazide-associated hyponatremia in hypertensive individuals have a genetic origin?",
+      "retrieved_at": "2026-07-22T21:15:00Z",
+      "retrieved_sha256": "6881671b08495a5597e84f56ad64e5814ec4427cd5687e6cc5d8290f0eb11360"
+    },
+    {
+      "evidence_id": "pubmed-21965773",
+      "kind": "PRIMARY_ARTICLE",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=21965773&rettype=abstract&retmode=xml",
+      "title": "Expression of thymidylate synthase and dihydropyrimidine dehydrogenase in primary oral squamous cell carcinoma and corresponding metastases in cervical lymph nodes: association with the metastasis suppressor CD82",
+      "retrieved_at": "2026-07-22T21:15:00Z",
+      "retrieved_sha256": "772c57ffdd883b54012a27e37466ca4ff088af078ef1cf45a78f29aad9793e92"
+    },
+    {
+      "evidence_id": "pubmed-7966592",
+      "kind": "PRIMARY_ARTICLE",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=7966592&rettype=abstract&retmode=xml",
+      "title": "Human cytomegalovirus elevates levels of the cellular protein p53 in infected fibroblasts",
+      "retrieved_at": "2026-07-22T21:15:00Z",
+      "retrieved_sha256": "c2f0efdab5d9424489fbc06442687ea55de87068ced33f4f2185c8a879faa0f4"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "inventory_complete": true,
+      "judgments": [
+        {
+          "judgment_id": "comparison-female-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "POPULATION",
+          "acceptable_texts": [
+            "female"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "more",
+              "role": "CONTEXTUAL_PARTICIPANT"
+            }
+          ],
+          "rationale": "Female sex belongs to the separate neighboring finding that patients with RA were more likely to be female; it is not a participant in the comorbidity comparison."
+        },
+        {
+          "judgment_id": "comparison-steroids-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "SIMPLE_CHEMICAL",
+          "acceptable_texts": [
+            "steroids"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "more",
+              "role": "EXPOSURE"
+            }
+          ],
+          "rationale": "Steroid use is compared in a separate sentence and does not qualify or participate in the focused comparison of comorbidity burden."
+        },
+        {
+          "judgment_id": "comparison-dexamethasone-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "SIMPLE_CHEMICAL",
+          "acceptable_texts": [
+            "dexamethasone"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "more",
+              "role": "EXPOSURE"
+            }
+          ],
+          "rationale": "Dexamethasone is the object of a neighboring medication-use comparison, not context that can be attached to the comorbidity comparison."
+        },
+        {
+          "judgment_id": "comparison-ici-initiation-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "EXPOSURE",
+          "acceptable_texts": [
+            "ICI initiation"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "more",
+              "role": "EXPOSURE"
+            }
+          ],
+          "rationale": "ICI initiation is only the temporal anchor for the neighboring steroid and dexamethasone findings and has no stated attachment to comorbidity burden."
+        }
+      ],
+      "evidence_ids": [
+        "pubmed-40289860"
+      ],
+      "explanation": "The RA population, non-RA comparator, and comorbidity outcome form the indispensable comparison core. Every other typed candidate in the packet belongs to a separate demographic or medication-use result."
+    },
+    {
+      "case_id": "generalization-null-statistics",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "inventory_complete": true,
+      "judgments": [
+        {
+          "judgment_id": "null-log-rank-p",
+          "classification": "PERMITTED_CONTEXT",
+          "entity_type": "MEASUREMENT",
+          "acceptable_texts": [
+            "log-rank P = 0.08"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "no difference",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "rationale": "This exact statistic directly measures the focused Kaplan-Meier comparison and preserves the source's evidence for the null result."
+        },
+        {
+          "judgment_id": "null-hazard-ratio",
+          "classification": "PERMITTED_CONTEXT",
+          "entity_type": "MEASUREMENT",
+          "acceptable_texts": [
+            "hazard ratio 0.92"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "no difference",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "rationale": "The adjusted hazard ratio is an explicit quantitative estimate of the same RA versus non-RA overall-survival result."
+        },
+        {
+          "judgment_id": "null-confidence-interval",
+          "classification": "PERMITTED_CONTEXT",
+          "entity_type": "MEASUREMENT",
+          "acceptable_texts": [
+            "95% confidence interval 0.78-1.09"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "no difference",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "rationale": "The confidence interval explicitly qualifies the adjusted estimate and is useful statistical context for the focused null comparison."
+        },
+        {
+          "judgment_id": "null-kaplan-meier-procedure",
+          "classification": "FORBIDDEN",
+          "entity_type": "MEASUREMENT",
+          "acceptable_texts": [
+            "Kaplan-Meier survival curves"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "no difference",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "rationale": "The curves are the analytical representation named in the event, not an additional participant node beyond the event core."
+        },
+        {
+          "judgment_id": "null-adjusted-models-procedure",
+          "classification": "FORBIDDEN",
+          "entity_type": "MEASUREMENT",
+          "acceptable_texts": [
+            "adjusted models"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "no difference",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "rationale": "Adjusted models describe an analysis procedure, whereas their explicit hazard ratio and confidence interval are the attachable measurements."
+        }
+      ],
+      "evidence_ids": [
+        "pubmed-40289860"
+      ],
+      "explanation": "The populations and overall-survival outcome are core. The exact inferential statistics are permissible measurements; names of analysis procedures are not additional biomedical participants."
+    },
+    {
+      "case_id": "generalization-negated-association",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "inventory_complete": true,
+      "judgments": [
+        {
+          "judgment_id": "negated-baseline-dexamethasone-condition",
+          "classification": "PERMITTED_CONTEXT",
+          "entity_type": "SIMPLE_CHEMICAL",
+          "acceptable_texts": [
+            "baseline dexamethasone",
+            "dexamethasone"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "associated",
+              "role": "CONTEXTUAL_PARTICIPANT"
+            }
+          ],
+          "rationale": "The source explicitly conditions the negated association on omitting recipients of baseline dexamethasone, so the drug is necessary interpretive context without being asserted as the analyzed exposure."
+        },
+        {
+          "judgment_id": "negated-baseline-dexamethasone-excluded-population",
+          "classification": "AMBIGUOUS_REVIEW_ONLY",
+          "entity_type": "POPULATION",
+          "acceptable_texts": [
+            "patients receiving baseline dexamethasone"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "associated",
+              "role": "CONTEXTUAL_PARTICIPANT"
+            }
+          ],
+          "rationale": "This exact subgroup explicitly defines who was omitted before the negated association was observed and therefore must be inventoried. It remains review-only because the available roles cannot encode exclusion; POPULATION would falsely suggest that these patients were included in the focused analysis, while CONTEXTUAL_PARTICIPANT is the least misleading available attachment."
+        },
+        {
+          "judgment_id": "negated-sensitivity-analysis-procedure",
+          "classification": "FORBIDDEN",
+          "entity_type": "MEASUREMENT",
+          "acceptable_texts": [
+            "sensitivity analysis"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "associated",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "rationale": "Sensitivity analysis is a procedural label rather than a participant or result measurement for the association event."
+        },
+        {
+          "judgment_id": "negated-ra-mnsclc-population-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "POPULATION",
+          "acceptable_texts": [
+            "ICI-treated patients with RA with mNSCLC"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "associated",
+              "role": "POPULATION"
+            }
+          ],
+          "rationale": "This population is the subject of the following RA versus non-RA survival conclusion; attaching it to the steroid-dose sensitivity result would import a neighboring event and may incorrectly narrow the analyzed cohort."
+        },
+        {
+          "judgment_id": "negated-non-ra-comparator-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "POPULATION",
+          "acceptable_texts": [
+            "patients without RA"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "associated",
+              "role": "COMPARATOR"
+            }
+          ],
+          "rationale": "The non-RA comparator belongs to the following survival-comparison event, not to the focused steroid-dose association."
+        }
+      ],
+      "evidence_ids": [
+        "pubmed-40289860"
+      ],
+      "explanation": "Steroid dose and worse overall survival are core to the negated association. Baseline dexamethasone is explicit exclusion context; the analytical label and the populations in the following conclusion are not attachable participants."
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "source_id": "exposed-human-genetics",
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b",
+      "inventory_complete": true,
+      "judgments": [
+        {
+          "judgment_id": "uncertainty-total-variant-count",
+          "classification": "PERMITTED_CONTEXT",
+          "entity_type": "MEASUREMENT",
+          "acceptable_texts": [
+            "A total of 947 variants"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "classified",
+              "role": "MEASUREMENT"
+            }
+          ],
+          "rationale": "The total count explicitly defines the detected SLC12A3 variant set of which the source says a majority had uncertain significance."
+        },
+        {
+          "judgment_id": "uncertainty-hyponatremia-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "OUTCOME",
+          "acceptable_texts": [
+            "Hyponatremia"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "classified",
+              "role": "OUTCOME"
+            }
+          ],
+          "rationale": "Hyponatremia is the outcome of the following variant-rate findings, not an outcome or participant of the uncertain-significance classification event."
+        },
+        {
+          "judgment_id": "uncertainty-c506-276-variant-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "VARIANT",
+          "acceptable_texts": [
+            "c.506-276A>G"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "classified",
+              "role": "AFFECTED_ENTITY"
+            }
+          ],
+          "rationale": "This variant is named only in the neighboring hyponatremia-rate result; the source does not state that this specific variant was classified as uncertain."
+        },
+        {
+          "judgment_id": "uncertainty-c282-492-variant-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "VARIANT",
+          "acceptable_texts": [
+            "c.282+492G>A"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "classified",
+              "role": "AFFECTED_ENTITY"
+            }
+          ],
+          "rationale": "This variant is named only in the neighboring hyponatremia-rate result; the source does not state that this specific variant was classified as uncertain."
+        },
+        {
+          "judgment_id": "uncertainty-c282-499-variant-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "VARIANT",
+          "acceptable_texts": [
+            "c.282+499G>C"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "classified",
+              "role": "AFFECTED_ENTITY"
+            }
+          ],
+          "rationale": "This variant is named only in the neighboring hyponatremia-rate result; the source does not state that this specific variant was classified as uncertain."
+        },
+        {
+          "judgment_id": "uncertainty-c282-495-variant-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "VARIANT",
+          "acceptable_texts": [
+            "c.282+495G>A"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "classified",
+              "role": "AFFECTED_ENTITY"
+            }
+          ],
+          "rationale": "This variant is named only in the neighboring hyponatremia-rate result; the source does not state that this specific variant was classified as uncertain."
+        },
+        {
+          "judgment_id": "uncertainty-c505-375-variant-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "VARIANT",
+          "acceptable_texts": [
+            "c.505+375G>A"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "classified",
+              "role": "AFFECTED_ENTITY"
+            }
+          ],
+          "rationale": "This variant is named only in the neighboring hyponatremia-rate result; the source does not state that this specific variant was classified as uncertain."
+        }
+      ],
+      "evidence_ids": [
+        "pubmed-42454948"
+      ],
+      "explanation": "The SLC12A3 variants and uncertain-significance status form the core. The total detected count is useful context, while the five individually named variants and hyponatremia belong to a separate downstream association finding."
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "source_id": "PMID-21965773",
+      "source_sha256": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880",
+      "inventory_complete": true,
+      "judgments": [
+        {
+          "judgment_id": "drug-sensitivity-ts",
+          "classification": "PERMITTED_CONTEXT",
+          "entity_type": "GENE_OR_PROTEIN",
+          "acceptable_texts": [
+            "Thymidylate synthase",
+            "TS"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "sensitivity",
+              "role": "CONTEXTUAL_PARTICIPANT"
+            }
+          ],
+          "rationale": "The source explicitly identifies TS as a 5-FU-metabolizing enzyme involved in carcinoma-patient sensitivity to 5-FU; contextual-participant attachment preserves the nonexclusive 'involved in' wording without overstating causality."
+        },
+        {
+          "judgment_id": "drug-sensitivity-dpd",
+          "classification": "PERMITTED_CONTEXT",
+          "entity_type": "GENE_OR_PROTEIN",
+          "acceptable_texts": [
+            "dihydropyrimidine dehydrogenase",
+            "DPD"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "sensitivity",
+              "role": "CONTEXTUAL_PARTICIPANT"
+            }
+          ],
+          "rationale": "The source explicitly identifies DPD as a 5-FU-metabolizing enzyme involved in carcinoma-patient sensitivity to 5-FU; contextual-participant attachment preserves the nonexclusive 'involved in' wording without overstating causality."
+        }
+      ],
+      "evidence_ids": [
+        "pubmed-21965773"
+      ],
+      "explanation": "Carcinoma patients, 5-FU, and sensitivity are the indispensable core. TS and DPD are explicit, typed, nonduplicative mechanistic context linked to that sensitivity in the same sentence."
+    },
+    {
+      "case_id": "generalization-explicit-nested-cause",
+      "source_id": "PMID-7966592",
+      "source_sha256": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+      "inventory_complete": true,
+      "judgments": [
+        {
+          "judgment_id": "nested-region-1-and-2-proteins",
+          "classification": "AMBIGUOUS_REVIEW_ONLY",
+          "entity_type": "GENE_OR_PROTEIN",
+          "acceptable_texts": [
+            "HCMV immediate-early region 1 and 2 proteins"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "responsible",
+              "role": "CAUSAL_AGENT"
+            }
+          ],
+          "rationale": "The proteins are explicit specific candidates within the broader immediate-early causal class, but their stated p53-elevation result comes from the neighboring expression experiment in transfected fibroblasts rather than the focused infected-fibroblast claim. Direct attachment is therefore reasonably disputable."
+        },
+        {
+          "judgment_id": "nested-transfected-fibroblast-neighbor",
+          "classification": "FORBIDDEN",
+          "entity_type": "POPULATION",
+          "acceptable_texts": [
+            "transfected human fibroblasts"
+          ],
+          "allowed_arguments": [
+            {
+              "event_trigger_text": "responsible",
+              "role": "POPULATION"
+            }
+          ],
+          "rationale": "Transfected human fibroblasts are the population of the post-semicolon expression experiment, whereas the focused causal claim explicitly concerns infected fibroblasts."
+        }
+      ],
+      "evidence_ids": [
+        "pubmed-7966592"
+      ],
+      "explanation": "The broader HCMV immediate-early proteins, p53 elevation, and infected fibroblasts are core. The more specific region 1 and 2 proteins are explicit but cross an experimental-event boundary, while the transfected population is clearly neighboring-event material."
+    }
+  ]
+}

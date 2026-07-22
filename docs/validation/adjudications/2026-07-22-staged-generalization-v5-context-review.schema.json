@@ -1,0 +1,325 @@
+{
+  "$defs": {
+    "CaseContextReview": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "explanation": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        },
+        "inventory_complete": {
+          "const": true,
+          "title": "Inventory Complete",
+          "type": "boolean"
+        },
+        "judgments": {
+          "items": {
+            "$ref": "#/$defs/ContextParticipantJudgment"
+          },
+          "maxItems": 32,
+          "title": "Judgments",
+          "type": "array"
+        },
+        "source_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "source_id",
+        "source_sha256",
+        "inventory_complete",
+        "judgments",
+        "evidence_ids",
+        "explanation"
+      ],
+      "title": "CaseContextReview",
+      "type": "object"
+    },
+    "ContextParticipantJudgment": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptable_texts": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Acceptable Texts",
+          "type": "array"
+        },
+        "allowed_arguments": {
+          "items": {
+            "$ref": "#/$defs/ReviewedContextArgument"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Allowed Arguments",
+          "type": "array"
+        },
+        "classification": {
+          "enum": [
+            "PERMITTED_CONTEXT",
+            "AMBIGUOUS_REVIEW_ONLY",
+            "FORBIDDEN"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "entity_type": {
+          "enum": [
+            "POPULATION",
+            "OUTCOME",
+            "EXPOSURE",
+            "VARIANT",
+            "GENE_OR_PROTEIN",
+            "CANCER",
+            "SIMPLE_CHEMICAL",
+            "MEASUREMENT"
+          ],
+          "title": "Entity Type",
+          "type": "string"
+        },
+        "judgment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Judgment Id",
+          "type": "string"
+        },
+        "rationale": {
+          "maxLength": 1500,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "judgment_id",
+        "classification",
+        "entity_type",
+        "acceptable_texts",
+        "allowed_arguments",
+        "rationale"
+      ],
+      "title": "ContextParticipantJudgment",
+      "type": "object"
+    },
+    "PrimarySourceEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "PRIMARY_ARTICLE",
+            "OFFICIAL_BENCHMARK",
+            "LOCAL_EXPOSED_SOURCE"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "retrieved_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Retrieved Sha256",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "kind",
+        "url",
+        "title",
+        "retrieved_at",
+        "retrieved_sha256"
+      ],
+      "title": "PrimarySourceEvidence",
+      "type": "object"
+    },
+    "ReviewedContextArgument": {
+      "additionalProperties": false,
+      "properties": {
+        "event_trigger_text": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Event Trigger Text",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "AFFECTED_ENTITY",
+            "CAUSAL_AGENT",
+            "STIMULUS_OR_OBJECT",
+            "POPULATION",
+            "COMPARATOR",
+            "OUTCOME",
+            "EXPOSURE",
+            "MEASUREMENT",
+            "CONTEXTUAL_PARTICIPANT",
+            "EFFECT_EVENT"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_trigger_text",
+        "role"
+      ],
+      "title": "ReviewedContextArgument",
+      "type": "object"
+    },
+    "ReviewerIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "internet_access": {
+          "title": "Internet Access",
+          "type": "boolean"
+        },
+        "model": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "reviewer_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Reviewer Id",
+          "type": "string"
+        },
+        "reviewer_kind": {
+          "enum": [
+            "INTERNET_SOURCE_GRADER",
+            "SOURCE_ONLY_GRADER"
+          ],
+          "title": "Reviewer Kind",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reviewer_id",
+        "task_id",
+        "model",
+        "reviewer_kind",
+        "internet_access"
+      ],
+      "title": "ReviewerIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "benchmark_labels_seen": {
+      "const": false,
+      "title": "Benchmark Labels Seen",
+      "type": "boolean"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/CaseContextReview"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Cases",
+      "type": "array"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/PrimarySourceEvidence"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Evidence",
+      "type": "array"
+    },
+    "frozen_core_reference_seen": {
+      "const": false,
+      "title": "Frozen Core Reference Seen",
+      "type": "boolean"
+    },
+    "production_output_seen": {
+      "const": false,
+      "title": "Production Output Seen",
+      "type": "boolean"
+    },
+    "reviewed_at": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Reviewed At",
+      "type": "string"
+    },
+    "reviewer": {
+      "$ref": "#/$defs/ReviewerIdentity"
+    },
+    "schema_version": {
+      "const": "artana.staged_generalization.context_review.v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "reviewer",
+    "reviewed_at",
+    "production_output_seen",
+    "benchmark_labels_seen",
+    "frozen_core_reference_seen",
+    "evidence",
+    "cases"
+  ],
+  "title": "GraderReviewBatch",
+  "type": "object"
+}
