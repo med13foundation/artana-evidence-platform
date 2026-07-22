@@ -1,0 +1,36 @@
+{
+  "decision": "STOP_OPERATIONAL_BLOCKER",
+  "scientifically_useful_result_obtained": false,
+  "root_cause": "Repeated provider output-token ceiling violations prevent valid scientific interpretation without changing the frozen scientific experiment or making hope-based retries.",
+  "new_provider_creation_calls": 2,
+  "maximum_new_provider_creation_calls": 4,
+  "total_provider_cost_usd": 0.131266,
+  "maximum_total_provider_cost_usd": 1.0,
+  "versions": [
+    {
+      "version": "V3",
+      "decision": "INVALID_PROVIDER_EXECUTION",
+      "calls": 1,
+      "cost_usd": 0.017762,
+      "failure_stage": "ATOMIC_CUSTODY_READBACK_COMPARISON"
+    },
+    {
+      "version": "V4",
+      "decision": "INVALID_PROVIDER_EXECUTION",
+      "calls": 1,
+      "cost_usd": 0.113504,
+      "failure_stage": "RECEIPT_BUDGET"
+    }
+  ],
+  "stage_2_provider_calls": 0,
+  "provider_retries": 0,
+  "fallback": false,
+  "untouched_sources_accessed": false,
+  "graph_writes": 0,
+  "trusted_promotion": false,
+  "scientific_answers": {
+    "sensitivity_event_inventoried": "UNKNOWN",
+    "three_event_levels_linked_correctly": "NOT_TESTED",
+    "scientific_failure_stage": "NOT_REACHED"
+  }
+}

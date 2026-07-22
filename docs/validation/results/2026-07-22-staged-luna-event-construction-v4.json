@@ -1,0 +1,52 @@
+{
+  "completed_stage_count": 0,
+  "decision": "INVALID_PROVIDER_EXECUTION",
+  "diagnostics": {
+    "actual_sha256": "f16bf54f1185d6c86843edc5b44c71e805053e64e17ca3117efae7410ecf70f8",
+    "budget_accounting": {
+      "cost": "PASS",
+      "latency": "PASS",
+      "observed_cost_usd": 0.11350400000000001,
+      "observed_latency_seconds": 191.60452637501294,
+      "observed_output_tokens": 18778,
+      "observed_total_tokens": 19614,
+      "output_tokens": "FAIL",
+      "requested_max_cost_usd": 0.25,
+      "requested_max_latency_seconds": 900.0,
+      "requested_max_output_tokens": 16000,
+      "requested_max_total_tokens": 24000,
+      "total_tokens": "PASS"
+    },
+    "confirmation_retrieval_requests": 1,
+    "differences": [
+      {
+        "actual_sha256": "f16bf54f1185d6c86843edc5b44c71e805053e64e17ca3117efae7410ecf70f8",
+        "difference": "VALUE_CHANGED",
+        "expected_sha256": "2570901c76653e578fecf066b5fc3fa1619f1a051e928e39797bab1b1342bf40",
+        "path": "$.usage.output_tokens"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "expected_sha256": "2570901c76653e578fecf066b5fc3fa1619f1a051e928e39797bab1b1342bf40",
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "observed_usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.11350400000000001,
+      "input_tokens": 836,
+      "latency_seconds": 191.60452637501294,
+      "output_tokens": 18778,
+      "reasoning_tokens": 3624,
+      "total_tokens": 19614
+    },
+    "polling_retrieval_requests": 36,
+    "provider_creation_calls": 1,
+    "provider_retries": 0,
+    "receipt_status": "REJECTED_BUDGET",
+    "response_id": "resp_0849ac0e3cd34e45006a60f0ecae3c819b82c696cf0d99d705"
+  },
+  "failure_stage": "RECEIPT_BUDGET",
+  "provider_call_count": 1,
+  "root_cause": "output token ceiling exceeded",
+  "trusted_promotion": false
+}

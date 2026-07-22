@@ -1,0 +1,9 @@
+{
+  "preregistration_sha256": "e52e2de801bd48687931154cafed4c6ecebdb99dcc9a5f491006dda92a3b958d",
+  "provider_creation_limit": 1,
+  "provider_input_sha256": "ccdff022e73b8f9f7137b82c88b6e7efdd0d429ef430853435f70b0752f2ce7e",
+  "provider_retries": 0,
+  "response_id": "resp_0318bce8f23c6172006a60f02ae04881998ef9903dab5b0548",
+  "stage": "EVENT_INVENTORY",
+  "state": "ACKNOWLEDGED"
+}

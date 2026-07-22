@@ -292,15 +292,13 @@ def test_budget_provider_error_remains_invalid_execution(
     )
 
     monkeypatch.setattr(staged_runner, "RESULT", tmp_path / "result.json")
-    monkeypatch.setattr(staged_runner, "RECEIPT", tmp_path / "receipt.json")
-    monkeypatch.setattr(staged_runner, "RAW_OUTPUT", tmp_path / "raw.json")
     error = ProviderExecutionError(
         "RECEIPT_BUDGET",
         "output token ceiling exceeded",
         diagnostics={"receipt_status": "REJECTED_BUDGET"},
     )
 
-    decision = _stop_invalid(error, [], [])
+    decision = _stop_invalid(error, completed_stage_count=0)
 
     assert decision == "INVALID_PROVIDER_EXECUTION"
     assert '"decision": "INVALID_PROVIDER_EXECUTION"' in (

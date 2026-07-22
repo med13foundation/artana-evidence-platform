@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from collections.abc import Callable
 
 import pytest
 from pydantic import BaseModel, ConfigDict
@@ -216,6 +217,7 @@ def _execute(
     clock: _Clock,
     *,
     polling: float = 10.0,
+    on_acknowledged: Callable[[str], None] | None = None,
 ) -> BackgroundProviderExecution[_Output]:
     return execute_background_provider_call(
         api_key="test",
@@ -226,6 +228,7 @@ def _execute(
             client=client,
             monotonic=clock.monotonic,
             sleep=clock.sleep,
+            on_acknowledged=on_acknowledged,
         ),
     )
 
@@ -245,6 +248,32 @@ def test_immediate_completion_uses_one_creation_and_one_confirmation() -> None:
     assert execution.receipt["status_history"] == ["completed"]
     assert execution.receipt["model_generation_calls"] == 1
     assert execution.receipt["polling_retrieval_requests"] == 0
+
+
+def test_acknowledgement_callback_receives_identity_before_polling() -> None:
+    completed = _response("completed")
+    client = _Client(_response("queued"), [completed, completed])
+    acknowledged: list[str] = []
+
+    _execute(client, _Clock(), on_acknowledged=acknowledged.append)
+
+    assert acknowledged == ["resp-1"]
+
+
+def test_acknowledgement_identity_is_preserved_before_binding_failure() -> None:
+    malformed = _response("queued")
+    malformed["model"] = "unexpected-model"
+    acknowledged: list[str] = []
+
+    with pytest.raises(ProviderExecutionError) as error:
+        _execute(
+            _Client(malformed, []),
+            _Clock(),
+            on_acknowledged=acknowledged.append,
+        )
+
+    assert acknowledged == ["resp-1"]
+    assert error.value.diagnostics["response_id"] == "resp-1"
 
 
 def test_queued_to_in_progress_to_completed_polls_only_one_response_id() -> None:
@@ -315,6 +344,7 @@ def test_terminal_provider_failure_stops_before_confirmation(status: str) -> Non
         _execute(client, _Clock())
 
     assert error.value.stage == "BACKGROUND_TERMINAL_FAILURE"
+    assert error.value.diagnostics["response_id"] == "resp-1"
     assert client.responses.create_calls == 1
     assert client.responses.retrieve_calls == 1
     assert client.responses.input_items.list_calls == 0
@@ -327,6 +357,7 @@ def test_unknown_status_fails_closed() -> None:
         _execute(client, _Clock())
 
     assert error.value.stage == "BACKGROUND_UNKNOWN_STATUS"
+    assert error.value.diagnostics["response_id"] == "resp-1"
     assert client.responses.create_calls == 1
     assert client.responses.retrieve_calls == 0
 

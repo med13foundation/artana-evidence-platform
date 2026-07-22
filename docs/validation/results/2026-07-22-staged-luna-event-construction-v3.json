@@ -1,0 +1,18 @@
+{
+  "decision": "INVALID_PROVIDER_EXECUTION",
+  "failure_stage": "ATOMIC_CUSTODY_READBACK_COMPARISON",
+  "root_cause": "The complete atomic custody bundle was written, but Python structural equality compared pre-JSON receipt tuples with post-JSON lists and falsely reported readback drift.",
+  "provider_call_count": 1,
+  "stage_2_provider_call_count": 0,
+  "provider_retries": 0,
+  "response_id": "resp_0318bce8f23c6172006a60f02ae04881998ef9903dab5b0548",
+  "input_tokens": 836,
+  "output_tokens": 2821,
+  "total_tokens": 3657,
+  "latency_seconds": 17.661909916001605,
+  "cost_usd": 0.017762,
+  "custody_bundle": "docs/validation/receipts/2026-07-22-staged-luna-v3-inventory-custody.json",
+  "scientific_metrics_calculated": false,
+  "trusted_promotion": false,
+  "graph_writes": 0
+}

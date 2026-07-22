@@ -29,6 +29,7 @@ from scripts.validation.provider_receipt_boundary.background.states import (
     classify_background_status,
 )
 from scripts.validation.provider_receipt_boundary.canonical_payload import (
+    StructuredPayloadError,
     canonical_sha256,
     extract_canonical_payload,
 )
@@ -84,6 +85,7 @@ class BackgroundExecutionRuntime:
     client: object | None = None
     monotonic: Callable[[], float] = time.monotonic
     sleep: Callable[[float], None] = time.sleep
+    on_acknowledged: Callable[[str], None] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,13 +120,26 @@ def execute_background_provider_call(
     acknowledged = _create_acknowledgement(
         provider_client=provider_client,
         request=request,
-        budgets=transport_budgets,
-        expectations=expectations,
+        acknowledgement_timeout_seconds=transport_budgets.acknowledgement_timeout_seconds,
         monotonic=execution_runtime.monotonic,
     )
     acknowledgement = acknowledged.response
     response_id = acknowledged.response_id
     acknowledgement_seconds = acknowledged.elapsed_seconds
+    if execution_runtime.on_acknowledged is not None:
+        try:
+            execution_runtime.on_acknowledged(response_id)
+        except Exception as exc:  # noqa: BLE001 - custody callback fails closed.
+            raise ProviderExecutionError(
+                "BACKGROUND_ACKNOWLEDGEMENT_CUSTODY",
+                type(exc).__name__,
+                diagnostics={"response_id": response_id},
+            ) from exc
+    _validate_acknowledgement(
+        acknowledged,
+        budgets=transport_budgets,
+        expectations=expectations,
+    )
 
     def retrieve(known_response_id: str) -> dict[str, object]:
         return _api_response_dict(
@@ -167,17 +182,11 @@ def execute_background_provider_call(
                 "response_id": response_id,
             },
         ) from exc
-    _validate_snapshot(
+    _validate_confirmation(
         confirmation,
-        expected_response_id=response_id,
+        response_id=response_id,
         expectations=expectations,
     )
-    if classify_background_status(confirmation) != "COMPLETED":
-        raise ProviderExecutionError(
-            "BACKGROUND_CONFIRMATION_NOT_COMPLETED",
-            "confirmation response regressed to a pending state",
-            diagnostics={"response_id": response_id},
-        )
     try:
         validate_retrieval_envelope(
             polling.terminal_response,
@@ -232,7 +241,14 @@ def execute_background_provider_call(
             input_item_retrieval_requests=input_item_retrieval_requests,
         ) from exc
 
-    canonical_payload = extract_canonical_payload(confirmation)
+    try:
+        canonical_payload = extract_canonical_payload(confirmation)
+    except StructuredPayloadError as exc:
+        raise ProviderExecutionError(
+            "STRUCTURED_OUTPUT_PAYLOAD",
+            str(exc),
+            diagnostics={"response_id": response_id},
+        ) from exc
     try:
         parsed = output_model.model_validate_json(
             json.dumps(canonical_payload.payload, separators=(",", ":"))
@@ -265,6 +281,7 @@ def execute_background_provider_call(
     )
     return BackgroundProviderExecution(
         extraction=parsed,
+        canonical_payload=canonical_payload.payload,
         acknowledgement_response=acknowledgement,
         terminal_response=polling.terminal_response,
         confirmation_response=confirmation,
@@ -276,8 +293,7 @@ def _create_acknowledgement(
     *,
     provider_client: _Client,
     request: ProviderRequest,
-    budgets: BackgroundExecutionBudgets,
-    expectations: ReceiptExpectations,
+    acknowledgement_timeout_seconds: float,
     monotonic: Callable[[], float],
 ) -> _Acknowledgement:
     started = monotonic()
@@ -291,7 +307,7 @@ def _create_acknowledgement(
             metadata=request.metadata,
             background=True,
             store=True,
-            timeout=budgets.acknowledgement_timeout_seconds,
+            timeout=acknowledgement_timeout_seconds,
         )
     except Exception as exc:  # noqa: BLE001 - creation is never repeated.
         stage = (
@@ -311,24 +327,85 @@ def _create_acknowledgement(
         ) from exc
     elapsed_seconds = monotonic() - started
     acknowledgement = _api_response_dict(response)
-    response_id = _validate_snapshot(
-        acknowledgement,
-        expected_response_id=None,
-        expectations=expectations,
-    )
-    if elapsed_seconds > budgets.acknowledgement_timeout_seconds:
+    response_id = _require_response_id(acknowledgement)
+    return _Acknowledgement(acknowledgement, response_id, elapsed_seconds)
+
+
+def _validate_acknowledgement(
+    acknowledgement: _Acknowledgement,
+    *,
+    budgets: BackgroundExecutionBudgets,
+    expectations: ReceiptExpectations,
+) -> None:
+    try:
+        _validate_snapshot(
+            acknowledgement.response,
+            expected_response_id=acknowledgement.response_id,
+            expectations=expectations,
+        )
+    except ProviderExecutionError as exc:
+        if "response_id" in exc.diagnostics:
+            raise
+        raise ProviderExecutionError(
+            exc.stage,
+            exc.root_cause,
+            diagnostics={
+                **exc.diagnostics,
+                "response_id": acknowledgement.response_id,
+            },
+        ) from exc
+    if acknowledgement.elapsed_seconds > budgets.acknowledgement_timeout_seconds:
         raise ProviderExecutionError(
             "BACKGROUND_ACKNOWLEDGEMENT_TIMEOUT",
             "response ID arrived after the acknowledgement budget",
             diagnostics={
                 **_counts(),
-                "response_id": response_id,
-                "acknowledgement_seconds": elapsed_seconds,
+                "response_id": acknowledgement.response_id,
+                "acknowledgement_seconds": acknowledgement.elapsed_seconds,
                 "duplicate_creation_may_exist": False,
             },
         )
-    classify_background_status(acknowledgement)
-    return _Acknowledgement(acknowledgement, response_id, elapsed_seconds)
+
+
+def _require_response_id(response: dict[str, object]) -> str:
+    response_id = response.get("id")
+    if not isinstance(response_id, str) or not response_id:
+        raise ProviderExecutionError(
+            "BACKGROUND_RESPONSE_ID",
+            "provider response ID is absent or malformed",
+        )
+    return response_id
+
+
+def _validate_confirmation(
+    confirmation: dict[str, object],
+    *,
+    response_id: str,
+    expectations: ReceiptExpectations,
+) -> None:
+    try:
+        _validate_snapshot(
+            confirmation,
+            expected_response_id=response_id,
+            expectations=expectations,
+        )
+        _require_confirmation_completed(confirmation)
+    except ProviderExecutionError as exc:
+        if "response_id" in exc.diagnostics:
+            raise
+        raise ProviderExecutionError(
+            exc.stage,
+            exc.root_cause,
+            diagnostics={**exc.diagnostics, "response_id": response_id},
+        ) from exc
+
+
+def _require_confirmation_completed(confirmation: dict[str, object]) -> None:
+    if classify_background_status(confirmation) != "COMPLETED":
+        raise ProviderExecutionError(
+            "BACKGROUND_CONFIRMATION_NOT_COMPLETED",
+            "confirmation response regressed to a pending state",
+        )
 
 
 def _validate_snapshot(

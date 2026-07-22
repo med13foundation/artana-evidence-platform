@@ -11,6 +11,7 @@ from scripts.validation.provider_receipt_boundary.background.contracts import (
     PollingResult,
 )
 from scripts.validation.provider_receipt_boundary.background.states import (
+    BackgroundDisposition,
     classify_background_status,
 )
 from scripts.validation.public_gold.lossless_event_provider import (
@@ -38,9 +39,10 @@ def poll_background_response(
 ) -> PollingResult:
     """Poll one response until completion or the first terminal failure."""
 
-    runtime.validate(initial_response)
-    disposition = classify_background_status(initial_response)
-    statuses = [_status(initial_response)]
+    disposition, initial_status = _validate_response(
+        initial_response, response_id=response_id, runtime=runtime
+    )
+    statuses = [initial_status]
     if disposition == "COMPLETED":
         return PollingResult(initial_response, tuple(statuses), 0, 0.0)
 
@@ -69,9 +71,10 @@ def poll_background_response(
                     "polling_retrieval_requests": retrieval_requests,
                 },
             ) from exc
-        runtime.validate(response)
-        disposition = classify_background_status(response)
-        statuses.append(_status(response))
+        disposition, status = _validate_response(
+            response, response_id=response_id, runtime=runtime
+        )
+        statuses.append(status)
         if disposition == "COMPLETED":
             return PollingResult(
                 response,
@@ -89,6 +92,25 @@ def _status(response: dict[str, object]) -> str:
             "provider status is malformed",
         )
     return value
+
+
+def _validate_response(
+    response: dict[str, object],
+    *,
+    response_id: str,
+    runtime: PollingRuntime,
+) -> tuple[BackgroundDisposition, str]:
+    try:
+        runtime.validate(response)
+        return classify_background_status(response), _status(response)
+    except ProviderExecutionError as exc:
+        if "response_id" in exc.diagnostics:
+            raise
+        raise ProviderExecutionError(
+            exc.stage,
+            exc.root_cause,
+            diagnostics={**exc.diagnostics, "response_id": response_id},
+        ) from exc
 
 
 def _polling_timeout(

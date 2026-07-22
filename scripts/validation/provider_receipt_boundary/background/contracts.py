@@ -29,6 +29,7 @@ class BackgroundExecutionBudgets:
 @dataclass(frozen=True, slots=True)
 class BackgroundProviderExecution(Generic[_OutputT]):
     extraction: _OutputT
+    canonical_payload: dict[str, object]
     acknowledgement_response: dict[str, object]
     terminal_response: dict[str, object]
     confirmation_response: dict[str, object]

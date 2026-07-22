@@ -1,0 +1,76 @@
+{
+  "experiment_id": "staged-luna-event-construction-v4",
+  "authorized": true,
+  "qualification_status": "EXPOSED_DEVELOPMENT_REVIEW_ONLY",
+  "supersedes_invalid_experiment": "staged-luna-event-construction-v3",
+  "permitted_change": "Canonical JSON hash comparison replaces Python tuple-versus-list equality during custody readback.",
+  "frozen_state": {
+    "source_document_id": "PMID-16428936",
+    "source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+    "permitted_scope": {"start": 0, "end": 222},
+    "permitted_scope_sha256": "06a93c5187d68a60e379ee9341889102b47e398e6ff973c2479e2de2795dda26",
+    "highlighted_finding": {"start": 0, "end": 75},
+    "highlighted_finding_sha256": "e8f760d797e3032b6e60ec15065e7903588c9c13ee976f9a79d13a096edcd2f0",
+    "model": "gpt-5.6-luna",
+    "reasoning_effort": "high",
+    "inventory_prompt_sha256": "5b73195e8aa20993680db7fff3c73361f08f6b844236b4ea4c094c30f710b9a0",
+    "linking_prompt_sha256": "951c3e074dd087d47031b18edafc41731342450e47df359e580114db6003aacf",
+    "inventory_schema_sha256": "ce5d8cdd1ae3f3d5c03d71c77f7a3a8538dc82c8ef730f52ee4c9a6674873189",
+    "linking_schema_sha256": "bc31c8e8412f0a436cc0087f99275675f091b7f881837bb9bc0a0dc334b8e36b",
+    "inventory_provider_format_sha256": "4fb0d6ff8e9358b7a6f6583301beaef0ebb52d4adaa15913f38ce3488a8bdb17",
+    "linking_provider_format_sha256": "2042af0429e535505375da5189ddf38e616dd6d580b4a3ef5139aa762af4be1c",
+    "inventory_provider_input_sha256": "6e49e356a27cf69a9fce968ba2c3b11257d569917bebf2303fda3797c790fa6f",
+    "linking_input_prefix_sha256": "951c3e074dd087d47031b18edafc41731342450e47df359e580114db6003aacf",
+    "specialist_hint_sha256": "d3c71a2ee033a52ce1711dff46cd47f8502b6409acfb2b9f2d836430e9ccd2a5",
+    "code_sha256": {
+      "scripts/validation/provider_receipt_boundary/background/contracts.py": "51a79ab28fa381bb6e6692040e0781ab68a6e029c8facc72bf2266e9f82460d8",
+      "scripts/validation/provider_receipt_boundary/background/execution.py": "c84f2c67cce1a1bed25190592e8b2cd1716dec73142283e97a152af90d79783d",
+      "scripts/validation/provider_receipt_boundary/background/polling.py": "3bd5f043c3e2f1be764b6d9e92dfff649e5ad8089aa8b2d1047c273e3cd06b90",
+      "scripts/validation/provider_receipt_boundary/contracts.py": "1d3b4fe0612923e26af166a790ef30217788a363b17e5bc0264ba4f167befed5",
+      "scripts/validation/provider_receipt_boundary/validation.py": "a0f21c6a6a882a2647763cd13f23ef4eb19518ac03ef409d23caf17b5b2b708a",
+      "scripts/validation/public_gold/lossless_event_provider.py": "3504289a8b225b44a11d95dbaa31ea517c50eb829f8732645400e7bad108db5a",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/anchors.py": "9f0b021f88c3edbd8f5d9d21bbfa2e9b5ef0e824a42e65c7820c5fb7c4702b7c",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/contracts.py": "e1b43b21a8a499df7b9103ee854d689d22385524177f45d426b54c37dcfa1d97",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/custody.py": "8a569b13078af044fa7399c2f237c2a340e76553849d6c0d0fa38d3d6f8bcfb6",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/inventory.py": "49156a14afd981a37da275b0eb17bb3c4811449a0e26cef0685bb186a6391192",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/linking.py": "63861b66f888ea63a493ab11282d2fc51291982cb514157e428dd37972088205",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/staged_runner.py": "7a9fde89e8ec7f9ee16791bfbbca7c80471f05c07a8400ec4cd0ed94ec318225",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/validation.py": "a58391b765f0732d81e0cd5c66d4e6ac9abb343ad218bcce5a79959d123ef2ea"
+    }
+  },
+  "budgets_per_stage": {
+    "provider_creation_calls": 1,
+    "provider_retries": 0,
+    "max_output_tokens": 16000,
+    "max_total_tokens": 24000,
+    "max_cost_usd": 0.25,
+    "max_latency_seconds": 900.0,
+    "acknowledgement_timeout_seconds": 30.0,
+    "polling_interval_seconds": 5.0,
+    "max_polling_seconds": 900.0
+  },
+  "global_self_healing_budget": {
+    "maximum_new_provider_creation_calls": 4,
+    "maximum_total_cost_usd": 1.0,
+    "calls_consumed_before_v4": 1,
+    "cost_consumed_before_v4_usd": 0.017762,
+    "remaining_creation_calls": 3,
+    "remaining_cost_usd": 0.982238
+  },
+  "unchanged_scientific_contract": {
+    "prompts": true,
+    "schemas": true,
+    "source_and_scope": true,
+    "model_and_reasoning": true,
+    "anchor_rules": true,
+    "gold_comparison": true,
+    "stop_and_advance_criteria": true
+  },
+  "terminal_decisions": [
+    "ADVANCE_STAGED_EVENT_CONSTRUCTION",
+    "STOP_EVENT_INVENTORY_SCIENTIFIC_FAILURE",
+    "STOP_EVENT_LINKING_SCIENTIFIC_FAILURE",
+    "INVALID_PROVIDER_EXECUTION",
+    "STOP_OPERATIONAL_BLOCKER"
+  ]
+}
