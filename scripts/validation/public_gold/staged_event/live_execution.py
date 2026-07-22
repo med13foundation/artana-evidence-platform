@@ -52,6 +52,7 @@ from scripts.validation.public_gold.staged_event.contracts import (
     RoleAssignmentOutput,
     VerificationOutput,
 )
+from scripts.validation.public_gold.staged_event.paths import repository_root
 from scripts.validation.public_gold.staged_event.preflight import (
     DEVELOPMENT_DIRECTORY,
     verify_preregistration,
@@ -700,7 +701,7 @@ def main() -> int:
     parser.add_argument("--raw-output-directory", type=Path, required=True)
     args = parser.parse_args()
     decision = run_comparison(
-        repository_root=Path(__file__).resolve().parents[3],
+        repository_root=repository_root(),
         preregistration_path=args.preregistration,
         artifacts=ArtifactPaths(
             receipt=args.receipt,

@@ -20,6 +20,7 @@ from scripts.validation.public_gold.source_selection import (
     select_lowest_sha256,
     source_inventory_sha256,
 )
+from scripts.validation.public_gold.staged_event.paths import repository_root
 from scripts.validation.public_gold.staged_event.prompting import (
     build_provider_format,
     build_stage_input,
@@ -50,6 +51,7 @@ EXPERIMENT_CODE_FILES = (
     "scripts/validation/public_gold/staged_event/registry.py",
     "scripts/validation/public_gold/staged_event/preflight.py",
     "scripts/validation/public_gold/staged_event/live_execution.py",
+    "scripts/validation/public_gold/staged_event/paths.py",
     "scripts/validation/provider_receipt_boundary/canonical_payload.py",
     "scripts/validation/provider_receipt_boundary/contracts.py",
     "scripts/validation/provider_receipt_boundary/identity.py",
@@ -275,7 +277,7 @@ def main() -> int:
     verify.add_argument("path", type=Path)
     verify.add_argument("--allow-unauthorized", action="store_true")
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[3]
+    root = repository_root()
     if args.command == "write":
         payload = build_preregistration(root)
         args.path.parent.mkdir(parents=True, exist_ok=True)

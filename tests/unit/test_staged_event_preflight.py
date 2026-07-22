@@ -14,6 +14,7 @@ from scripts.validation.public_gold.staged_event.live_execution import (
     StagedComparisonError,
     _scientific_decision,
 )
+from scripts.validation.public_gold.staged_event.paths import repository_root
 from scripts.validation.public_gold.staged_event.preflight import (
     StagedExperimentPreflightError,
     build_preregistration,
@@ -23,6 +24,15 @@ from scripts.validation.public_gold.staged_event.prompting import build_provider
 from scripts.validation.public_gold.staged_event.registry import ALL_STAGES
 
 ROOT = Path(__file__).parents[2]
+
+
+def test_staged_entrypoints_find_repository_independent_of_shell_cwd(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert repository_root() == ROOT
 
 
 def test_staged_candidate_is_reproducible_but_unauthorized(tmp_path: Path) -> None:
