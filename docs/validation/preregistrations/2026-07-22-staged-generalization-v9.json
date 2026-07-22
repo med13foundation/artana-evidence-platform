@@ -1,0 +1,145 @@
+{
+  "acceptance": {
+    "all_cases_pass": true,
+    "all_required_core_complete": true,
+    "ambiguous_context_count": 0,
+    "contradiction_count": 0,
+    "receipt_and_budget_validity": "ALL_CALLS",
+    "source_meaning_preserved": true,
+    "unsupported_claim_count": 0
+  },
+  "authorization": "EXPOSED_DEVELOPMENT_ONLY",
+  "change_control": {
+    "classification_argument_rule": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+    "grader_changed": false,
+    "historical_v8_rescored": false,
+    "model_changed": false,
+    "panel_changed": false,
+    "polarity_rule": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+    "prompt_changed": true,
+    "referential_rule": "Resolve a unique explicit antecedent only when the highlighted finding contains dependent referring grammar; do not expand the participant inventory with contained subspans, analytic methods, or unrelated context.",
+    "schema_changed": true,
+    "schema_shape_changed": false,
+    "single_scientific_change": "CLASSIFICATION_ARGUMENT_BOUNDARY",
+    "uncertainty_rule": "Classify uncertainty from proposition content independently from whether the sentence asserts that content."
+  },
+  "experiment_id": "staged-generalization-v9",
+  "frozen_state": {
+    "budgets": {
+      "global_max_cost_usd": 0.9,
+      "global_max_creation_calls": 6,
+      "per_call_max_cost_usd": 0.15,
+      "per_call_max_latency_seconds": 900.0,
+      "per_call_max_output_tokens": 20000,
+      "per_call_max_total_tokens": 24000,
+      "provider_retries": 0
+    },
+    "canary_case_id": "generalization-comparison-canary",
+    "case_order": [
+      "generalization-comparison-canary",
+      "generalization-null-statistics",
+      "generalization-negated-association",
+      "generalization-uncertainty",
+      "generalization-drug-sensitivity",
+      "generalization-explicit-nested-cause"
+    ],
+    "code_sha256": {
+      "scripts/run_staged_generalization_v9.py": "72145c4912ceb7d30a973e811e23db61922fc6fbba365fbc1eabd166642db1e0",
+      "scripts/validation/provider_receipt_boundary/__init__.py": "f5352623348b5b3a2d30a217c535a9c4a19bd50eadeec2d583218337bff7260a",
+      "scripts/validation/provider_receipt_boundary/background/__init__.py": "6d9be1be575586dd43cad0a7703f9a14cb72d67fe38d8e33b9c67931c3e411f7",
+      "scripts/validation/provider_receipt_boundary/background/contracts.py": "51a79ab28fa381bb6e6692040e0781ab68a6e029c8facc72bf2266e9f82460d8",
+      "scripts/validation/provider_receipt_boundary/background/execution.py": "c84f2c67cce1a1bed25190592e8b2cd1716dec73142283e97a152af90d79783d",
+      "scripts/validation/provider_receipt_boundary/background/polling.py": "3bd5f043c3e2f1be764b6d9e92dfff649e5ad8089aa8b2d1047c273e3cd06b90",
+      "scripts/validation/provider_receipt_boundary/background/states.py": "958a34fa0ab25fd7fb9f877c23bedbd83a1b00e59836b8799f3659b5fc60f2ba",
+      "scripts/validation/provider_receipt_boundary/canonical_payload.py": "61294b3278b3d7bb6c8ba9127404658ca4c24fe30234e46a989931206f50f908",
+      "scripts/validation/provider_receipt_boundary/contracts.py": "1d3b4fe0612923e26af166a790ef30217788a363b17e5bc0264ba4f167befed5",
+      "scripts/validation/provider_receipt_boundary/identity.py": "a07f468ae572ab07ef4b70e7661dcdb416860a71fc1be1b509518aeda1ad8d30",
+      "scripts/validation/provider_receipt_boundary/structural_diff.py": "46e778decc1d15172cfaaa898ae53f693846b779bc9cf84a0ed2415cd2da2e55",
+      "scripts/validation/provider_receipt_boundary/validation.py": "a0f21c6a6a882a2647763cd13f23ef4eb19518ac03ef409d23caf17b5b2b708a",
+      "scripts/validation/public_gold/lossless_event_provider.py": "3504289a8b225b44a11d95dbaa31ea517c50eb829f8732645400e7bad108db5a",
+      "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/policy.py": "8d1ea3a8ea64f53f25e99d3130c13939931b620247d515944dabdb00e8c9bb62",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/attempts.py": "c579a40c0d6739a090e2ce673e5ffcb1c5833c97d36341f7ed310ad3c809f7de",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/custody.py": "8a569b13078af044fa7399c2f237c2a340e76553849d6c0d0fa38d3d6f8bcfb6",
+      "scripts/validation/public_gold/staged_event/generalization/anchors.py": "abecbd8b816e0e927d0ce490a54066e42adff42666810294babf6d1adbd76ab6",
+      "scripts/validation/public_gold/staged_event/generalization/contracts.py": "94127ba08dbc8d4efbb1d57ebfb90ba0e4f36c5a22369031ec903fa149431bac",
+      "scripts/validation/public_gold/staged_event/generalization/grading/agreement.py": "b0358f0d6b7a328cb17b6dc7d0482044b77650243136a9c01064f29494d76dda",
+      "scripts/validation/public_gold/staged_event/generalization/grading/artifacts.py": "4bbd831cae66dafac9f0be32693edd393de76cefb72b487cd3b4ef6542240759",
+      "scripts/validation/public_gold/staged_event/generalization/grading/config.py": "046176a558e96471bd2dc24bd4ddd151c16f0d38930ef40554a0dc4816d74e6c",
+      "scripts/validation/public_gold/staged_event/generalization/grading/contracts.py": "24428bd5bf901712600912bcfc287edbc61ecff5c4d36aa8c3ba26ccfaff2faa",
+      "scripts/validation/public_gold/staged_event/generalization/grading/evaluation.py": "6dc6186cb262d3494e3decc8143790bcbb1132ad62173b807155c5eb905dc1e9",
+      "scripts/validation/public_gold/staged_event/generalization/grading/policy.py": "cd630f3c4dc8a7725a53ab0fec063413ec932fc39b4cc3dccf279a53da795e4b",
+      "scripts/validation/public_gold/staged_event/generalization/panel.py": "299ab554981194720e7e86cb8a16688cfd7eaa180682d916a499324ee5f2dde2",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v8/contracts.py": "3310c4f4434555c5da577a465848b67b27a2e4084a226a4bba2312f7abfaedd2",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v9/config.py": "0cb58f3cf24aa63a2921476d418695d8b4fe8e54b7b63297920a1cbd097ac44d",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v9/contracts.py": "7732a185d9796a15cd3986982eb46b0c40cba7ed2c19784802a92116a44f17ab",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v9/preflight.py": "585993aaa9f20cc4cb1cf07babde8055ab8078e2ad3c872e8bf6b6e736b54eff",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v9/provider.py": "d3732a52f1c098afe8a2a40a0838543699aec353843b5bbf709e575cbe1764bc",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v9/runner.py": "ed5c53dd5733d2c31e567884d025622478f1a8edf4d659ed7ce5a10c93b5d8c2",
+      "scripts/validation/public_gold/staged_event/generalization/span_identity.py": "b9d21433557c763e8f905827e31f450e1141677d827384b532bd9b49940e541e"
+    },
+    "grading": {
+      "benchmark_lane": "SEPARATE_EVALUATION_ONLY_REVIEW_ONLY",
+      "graph_promotion_allowed": false,
+      "policy_sha256": "da315ef20300e669fbbfb2565f26faad7ba2ba1336de5d7939a7b22b34a2420c",
+      "qualification_credit": false,
+      "review_artifact_sha256": {
+        "v5-internet-grader-a": "e49307a293e3cfa8f93cfb75ec6473e422f1d5dce8fa51331a53831ff6da764d",
+        "v5-internet-grader-b": "41f21ea0f50f941fc886dea3f772220580e29b2eba0b8fed221ac6db8cf30b45",
+        "v5-internet-grader-c": "388002786417b626fb21f77481e1d2b3b7526eaa7d8fe644b018a2e22bf11f5b"
+      }
+    },
+    "model": "openai:gpt-5.6-luna",
+    "panel_sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+    "pivot_basis_sha256": {
+      "docs/validation/preregistrations/2026-07-22-staged-generalization-v8.json": "73d48a30f131ea5daaacc2a85cfdc95c192e7880aae37dfb114e7819a6675eec",
+      "docs/validation/reports/2026-07-22-staged-generalization-v8-final.md": "33dc68d4d16b78473aaea38b225570c8cdcb55c21cae36f5aee6ac772d69554c",
+      "docs/validation/results/2026-07-22-staged-generalization-v8-generalization-uncertainty-raw.json": "f856b55c53efc606d7543fb51f249e6c9d8752e30d23a864ee8165d00fa22b3d",
+      "docs/validation/results/2026-07-22-staged-generalization-v8.json": "07f9f18256322c989ae7a1279af0ef31adb622b2699779c942913953fd21f2f9"
+    },
+    "prompt_sha256": "4ce450b6a79fdb0cb99c48a69eae1390beef21dcf0094099503c03bdb4dd9234",
+    "provider_format_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+    "provider_input_sha256_by_case": {
+      "generalization-comparison-canary": "29919cc8520e798334bf535df67947d8afd9f0c2d0fb99b6331f672f10aaaf7f",
+      "generalization-drug-sensitivity": "07f86b55afe1af305b7f5678dfa9988978b489790d1d1df78f9df9b3699c48ef",
+      "generalization-explicit-nested-cause": "c5663fa949fb6fc2158246560e09d00cb1e9fa23dddca35d896b2adc3b1e322c",
+      "generalization-negated-association": "54881d84cd8ee6fbe2ea0d56f4d594ba5ff79cf1af610f04762d69d205bdab79",
+      "generalization-null-statistics": "a702cab19c6a6cb63cbe8c5aeed81107755d69dd8481e340ec7e38ed1ee5c41b",
+      "generalization-uncertainty": "8373c8dc460b59c28aaa72c9812318d59bfd738e36255b62af4e73d6f81a8565"
+    },
+    "reasoning_effort": "high",
+    "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+    "source_sha256_by_case": {
+      "generalization-comparison-canary": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-drug-sensitivity": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880",
+      "generalization-explicit-nested-cause": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+      "generalization-negated-association": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-null-statistics": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-uncertainty": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b"
+    }
+  },
+  "rules": {
+    "agent_inputs_exclude": [
+      "grader policy",
+      "expected roles",
+      "event counts",
+      "gold labels",
+      "benchmark projections",
+      "V8 output",
+      "case-specific correction"
+    ],
+    "benchmark_projection": "SEPARATE_EVALUATION_ONLY_REVIEW_ONLY",
+    "canary_first": true,
+    "fallback": false,
+    "graph_writes": false,
+    "one_creation_call_per_case": true,
+    "promotion": false,
+    "silent_retries": 0,
+    "terminal_decisions": [
+      "ADVANCE_STAGED_GENERALIZATION",
+      "PIVOT_WITH_EVIDENCE"
+    ],
+    "untouched_sources": false
+  },
+  "schema_version": "artana.staged_generalization.v9",
+  "supersedes_terminal": "PIVOT_WITH_EVIDENCE"
+}
