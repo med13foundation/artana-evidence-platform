@@ -22,6 +22,11 @@ Official references:
 - https://github.com/openai/openai-python/blob/main/src/openai/resources/responses/api.md
 - https://github.com/openai/openai-python/blob/main/src/openai/types/responses/response.py
 
+The official `Response` contract states that the length and order of the
+`output` array depend on the model. Reasoning items are first-class output
+items, so receipt validation must not impose a one-reasoning-item cardinality
+that the provider does not guarantee.
+
 ## State Machine
 
 1. Submit one request with `background=true`, SDK retries disabled, and a short
@@ -50,3 +55,16 @@ background operation reaches `completed`.
 - A local polling timeout does not prove provider cancellation. This checkpoint
   does not automatically cancel because cancellation cannot make a timed-out
   experiment valid.
+
+## V4 Topology Correction
+
+Scientific development V4 completed with one final structured message and a
+stable canonical payload, but it also returned multiple reasoning items. The
+original receipt selector rejected that valid provider topology before usage or
+scientific validation could be finalized.
+
+The corrected boundary accepts zero or more well-formed reasoning items and
+still requires exactly one completed final assistant message with exactly one
+structured `output_text` part. Receipt identity includes every output item in
+order, so an added, removed, reordered, or changed reasoning item still fails
+closed between completed and confirmation retrievals.

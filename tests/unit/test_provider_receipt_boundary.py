@@ -8,6 +8,7 @@ import pytest
 from scripts.validation.provider_receipt_boundary import (
     ReceiptBoundaryError,
     ReceiptExpectations,
+    ReceiptValidation,
     validate_creation_response,
     validate_provider_receipt,
 )
@@ -115,7 +116,7 @@ def _validate(
     *,
     input_items: tuple[dict[str, object], ...] | None = None,
     expectations: ReceiptExpectations | None = None,
-):
+) -> ReceiptValidation:
     return validate_provider_receipt(
         creation=creation,
         retrieval=retrieval,
@@ -133,6 +134,90 @@ def test_identical_creation_and_retrieval_validate_with_truthful_cost() -> None:
     assert receipt.differences == ()
     assert receipt.usage.total_tokens == 30
     assert receipt.usage.cost_usd == pytest.approx(0.0003775)
+
+
+def test_multiple_reasoning_items_preserve_one_structured_final_message() -> None:
+    response = _response()
+    output = response["output"]
+    assert isinstance(output, list)
+    output.insert(
+        1,
+        {
+            "id": "rs_2",
+            "type": "reasoning",
+            "summary": [],
+            "content": None,
+            "encrypted_content": None,
+            "status": "completed",
+        },
+    )
+
+    receipt = _validate(response, copy.deepcopy(response))
+
+    assert receipt.identity.output_items == (
+        ("reasoning", "rs_1"),
+        ("reasoning", "rs_2"),
+        ("message", "msg_1"),
+    )
+
+
+def test_reasoning_item_removal_or_reordering_fails_identity() -> None:
+    creation = _response()
+    output = creation["output"]
+    assert isinstance(output, list)
+    output.insert(
+        1,
+        {
+            "id": "rs_2",
+            "type": "reasoning",
+            "summary": [],
+            "status": "completed",
+        },
+    )
+    removed = copy.deepcopy(creation)
+    removed_output = removed["output"]
+    assert isinstance(removed_output, list)
+    del removed_output[1]
+    reordered = copy.deepcopy(creation)
+    reordered_output = reordered["output"]
+    assert isinstance(reordered_output, list)
+    reordered_output[0], reordered_output[1] = (
+        reordered_output[1],
+        reordered_output[0],
+    )
+
+    with pytest.raises(ReceiptBoundaryError, match="identities differ"):
+        _validate(creation, removed)
+    with pytest.raises(ReceiptBoundaryError, match="identities differ"):
+        _validate(creation, reordered)
+
+
+@pytest.mark.parametrize("status", ["unexpected", 1])
+def test_malformed_reasoning_item_fails_closed(status: object) -> None:
+    response = _response()
+    output = response["output"]
+    assert isinstance(output, list)
+    reasoning = output[0]
+    assert isinstance(reasoning, dict)
+    reasoning["status"] = status
+
+    with pytest.raises(ReceiptBoundaryError, match="reasoning output item status"):
+        _validate(response, copy.deepcopy(response))
+
+
+def test_multiple_final_messages_remain_rejected() -> None:
+    response = _response()
+    output = response["output"]
+    assert isinstance(output, list)
+    second_message = copy.deepcopy(output[1])
+    assert isinstance(second_message, dict)
+    second_message["id"] = "msg_2"
+    output.append(second_message)
+
+    with pytest.raises(
+        ReceiptBoundaryError, match="exactly one discoverable output_text"
+    ):
+        _validate(response, copy.deepcopy(response))
 
 
 def test_documented_transport_differences_and_json_key_order_are_allowlisted() -> None:
@@ -231,7 +316,7 @@ def test_changed_input_or_schema_fails() -> None:
     with pytest.raises(ReceiptBoundaryError, match="schema differs") as error:
         _validate(_response(), retrieval)
 
-    differences = error.value.diagnostics["differences"]
+    differences = _diagnostic_differences(error.value)
     assert differences[0]["path"] == "$.name"
     assert "changed" not in json.dumps(differences)
 
@@ -247,7 +332,7 @@ def test_creation_description_must_match_exactly(description: object) -> None:
         validate_creation_response(creation, _expectations())
 
     assert error.value.stage == "CREATION_DESCRIPTION"
-    assert error.value.diagnostics["differences"][0]["path"] == "$.description"
+    assert _diagnostic_differences(error.value)[0]["path"] == "$.description"
 
 
 def test_creation_description_cannot_be_omitted() -> None:
@@ -273,7 +358,7 @@ def test_retrieval_description_must_match_exactly(description: object) -> None:
         _validate(_response(), retrieval)
 
     assert error.value.stage == "RETRIEVAL_SCHEMA"
-    assert error.value.diagnostics["differences"][0]["path"] == "$.description"
+    assert _diagnostic_differences(error.value)[0]["path"] == "$.description"
 
 
 def test_missing_retrieval_schema_fails_before_payload_validation() -> None:
@@ -284,7 +369,7 @@ def test_missing_retrieval_schema_fails_before_payload_validation() -> None:
         _validate(_response(), retrieval)
 
     assert error.value.stage == "RETRIEVAL_SCHEMA"
-    assert error.value.diagnostics["differences"][0]["path"] == "$.text"
+    assert _diagnostic_differences(error.value)[0]["path"] == "$.text"
 
 
 @pytest.mark.parametrize("usage", [None, {"input_tokens": -1}])
@@ -316,6 +401,18 @@ def test_unknown_envelope_difference_fails_with_redacted_path() -> None:
         _validate(_response(), retrieval)
 
     assert error.value.stage == "RECEIPT_ENVELOPE"
-    differences = error.value.diagnostics["differences"]
+    differences = _diagnostic_differences(error.value)
     assert differences[0]["path"] == "$.service_tier"
     assert "default" not in json.dumps(differences)
+
+
+def _diagnostic_differences(
+    error: ReceiptBoundaryError,
+) -> tuple[dict[str, object], ...]:
+    value = error.diagnostics.get("differences")
+    assert isinstance(value, list)
+    differences: list[dict[str, object]] = []
+    for item in value:
+        assert isinstance(item, dict)
+        differences.append(item)
+    return tuple(differences)

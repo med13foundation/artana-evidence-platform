@@ -88,7 +88,7 @@ def run_experiment(
     )
     preregistration_sha256 = _file_sha256(preregistration_path)
     metadata = {
-        "artana_experiment": "lossless-event-development-v4",
+        "artana_experiment": "lossless-event-development-v5",
         "artana_preregistration_sha256": preregistration_sha256,
         "artana_source_sha256": selected.source_sha256,
     }
@@ -193,7 +193,7 @@ def run_experiment(
         else "DEVELOPMENT_GATE_FAILED"
     )
     final_result: dict[str, object] = {
-        "schema_version": "artana.public_gold.lossless_event_result.v3",
+        "schema_version": "artana.public_gold.lossless_event_result.v4",
         "decision": decision,
         "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
         "preregistration_sha256": preregistration_sha256,
@@ -235,7 +235,7 @@ def _invalid_result(
     root_cause: str,
 ) -> dict[str, object]:
     return {
-        "schema_version": "artana.public_gold.lossless_event_result.v3",
+        "schema_version": "artana.public_gold.lossless_event_result.v4",
         "decision": "INVALID_EXPERIMENT",
         "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
         "preregistration_sha256": preregistration_sha256,
@@ -268,7 +268,7 @@ def _write_artifacts(
     score = result.get("score")
     failure = result.get("failure")
     report = [
-        "# Lossless Scientific Event Development Experiment V4",
+        "# Lossless Scientific Event Development Experiment V5",
         "",
         f"**Decision:** `{decision}`",
         "",

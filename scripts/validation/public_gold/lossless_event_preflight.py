@@ -215,13 +215,13 @@ def build_preregistration(repository_root: Path) -> dict[str, object]:
     """Create a new candidate; callers freeze it as a new immutable file."""
 
     return {
-        "schema_version": "artana.public_gold.lossless_event_experiment.v4",
+        "schema_version": "artana.public_gold.lossless_event_experiment.v5",
         "status": "FROZEN_UNAUTHORIZED_AWAITING_EXPLICIT_AUTHORIZATION",
         "execution_authorized": False,
         "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
         "invalid_predecessor": (
             "docs/validation/preregistrations/"
-            "2026-07-21-lossless-event-ir-development-experiment-v3.json"
+            "2026-07-21-lossless-event-ir-development-experiment-v4.json"
         ),
         "frozen_state": compute_frozen_state(repository_root),
         "budgets": {

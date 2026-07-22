@@ -25,6 +25,10 @@ V3_PREREGISTRATION = (
     ROOT / "docs/validation/preregistrations/"
     "2026-07-21-lossless-event-ir-development-experiment-v3.json"
 )
+V4_PREREGISTRATION = (
+    ROOT / "docs/validation/preregistrations/"
+    "2026-07-21-lossless-event-ir-development-experiment-v4.json"
+)
 
 
 def test_v2_preregistration_remains_immutable_after_boundary_change() -> None:
@@ -37,7 +41,12 @@ def test_v3_preregistration_remains_immutable_after_background_change() -> None:
         verify_preregistration(ROOT, V3_PREREGISTRATION)
 
 
-def test_v4_candidate_recomputes_but_remains_unauthorized(tmp_path: Path) -> None:
+def test_v4_preregistration_remains_immutable_after_topology_change() -> None:
+    with pytest.raises(ExperimentPreflightError, match="frozen state"):
+        verify_preregistration(ROOT, V4_PREREGISTRATION)
+
+
+def test_v5_candidate_recomputes_but_remains_unauthorized(tmp_path: Path) -> None:
     payload = build_preregistration(ROOT)
     candidate = tmp_path / "candidate.json"
     candidate.write_text(json.dumps(payload), encoding="utf-8")
@@ -54,9 +63,17 @@ def test_v4_candidate_recomputes_but_remains_unauthorized(tmp_path: Path) -> Non
     assert len(preregistration_sha256) == 64
     assert payload["execution_authorized"] is False
     assert payload["status"] == "FROZEN_UNAUTHORIZED_AWAITING_EXPLICIT_AUTHORIZATION"
+    assert (
+        payload["schema_version"] == "artana.public_gold.lossless_event_experiment.v5"
+    )
+    invalid_predecessor = payload["invalid_predecessor"]
+    assert isinstance(invalid_predecessor, str)
+    assert invalid_predecessor.endswith(
+        "2026-07-21-lossless-event-ir-development-experiment-v4.json"
+    )
 
 
-def test_v4_provider_format_has_one_explicit_stable_description() -> None:
+def test_v5_provider_format_has_one_explicit_stable_description() -> None:
     first = build_scientific_event_provider_format()
     second = build_scientific_event_provider_format()
 
@@ -66,7 +83,7 @@ def test_v4_provider_format_has_one_explicit_stable_description() -> None:
     assert first["description"]
 
 
-def test_v4_preregistration_rejects_selection_drift(tmp_path: Path) -> None:
+def test_v5_preregistration_rejects_selection_drift(tmp_path: Path) -> None:
     payload = build_preregistration(ROOT)
     frozen_state = _required_dict(payload, "frozen_state")
     source = _required_dict(frozen_state, "source")
@@ -78,7 +95,7 @@ def test_v4_preregistration_rejects_selection_drift(tmp_path: Path) -> None:
         verify_preregistration(ROOT, tampered, require_authorized=False)
 
 
-def test_v4_preregistration_rejects_recovery_or_promotion_capability(
+def test_v5_preregistration_rejects_recovery_or_promotion_capability(
     tmp_path: Path,
 ) -> None:
     payload = build_preregistration(ROOT)

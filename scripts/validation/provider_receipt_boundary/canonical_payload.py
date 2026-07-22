@@ -48,15 +48,12 @@ def _select_final_message(response: dict[str, object]) -> dict[str, object]:
     if not isinstance(output, list) or not output:
         raise StructuredPayloadError("provider output array is missing or empty")
     messages: list[dict[str, object]] = []
-    reasoning_items = 0
     for item in output:
         if not isinstance(item, dict):
             raise StructuredPayloadError("provider output item is not an object")
         item_type = item.get("type")
         if item_type == "reasoning":
-            reasoning_items += 1
-            if reasoning_items > 1:
-                raise StructuredPayloadError("multiple reasoning items are unsupported")
+            _validate_reasoning_item(item)
             continue
         if item_type != "message":
             raise StructuredPayloadError(
@@ -74,6 +71,15 @@ def _select_final_message(response: dict[str, object]) -> dict[str, object]:
     if phase not in (None, "final_answer"):
         raise StructuredPayloadError("commentary output cannot be scientific payload")
     return message
+
+
+def _validate_reasoning_item(item: dict[str, object]) -> None:
+    item_id = item.get("id")
+    if not isinstance(item_id, str) or not item_id:
+        raise StructuredPayloadError("reasoning output item ID is missing")
+    status = item.get("status")
+    if status not in (None, "in_progress", "completed", "incomplete"):
+        raise StructuredPayloadError("reasoning output item status is invalid")
 
 
 def _extract_structured_text(message: dict[str, object]) -> str:

@@ -273,6 +273,40 @@ def test_queued_to_in_progress_to_completed_polls_only_one_response_id() -> None
     assert usage["cost_usd"] == pytest.approx(0.0003775)
 
 
+def test_completed_background_response_accepts_multiple_reasoning_items() -> None:
+    completed = _response("completed")
+    output = completed["output"]
+    assert isinstance(output, list)
+    output[0:0] = [
+        {
+            "id": "rs-1",
+            "type": "reasoning",
+            "summary": [],
+            "status": "completed",
+        },
+        {
+            "id": "rs-2",
+            "type": "reasoning",
+            "summary": [],
+            "status": "completed",
+        },
+    ]
+    client = _Client(_response("queued"), [completed, completed])
+
+    execution = _execute(client, _Clock())
+
+    identity = execution.receipt["identity"]
+    assert isinstance(identity, dict)
+    assert identity["output_items"] == (
+        ("reasoning", "rs-1"),
+        ("reasoning", "rs-2"),
+        ("message", "msg-1"),
+    )
+    assert execution.extraction.status == "OK"
+    assert client.responses.create_calls == 1
+    assert client.responses.retrieve_calls == 2
+
+
 @pytest.mark.parametrize("status", ["failed", "cancelled", "incomplete"])
 def test_terminal_provider_failure_stops_before_confirmation(status: str) -> None:
     client = _Client(_response("queued"), [_response(status)])
