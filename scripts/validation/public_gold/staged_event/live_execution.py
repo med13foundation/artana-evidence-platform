@@ -24,6 +24,9 @@ from scripts.validation.provider_receipt_boundary.background import (
 from scripts.validation.public_gold.bionlp_cg_event_projection import (
     project_development_directory,
 )
+from scripts.validation.public_gold.lossless_event_preflight import (
+    DEVELOPMENT_DIRECTORY,
+)
 from scripts.validation.public_gold.lossless_event_provider import (
     ProviderExecutionError,
     ProviderRequest,
@@ -53,10 +56,7 @@ from scripts.validation.public_gold.staged_event.contracts import (
     VerificationOutput,
 )
 from scripts.validation.public_gold.staged_event.paths import repository_root
-from scripts.validation.public_gold.staged_event.preflight import (
-    DEVELOPMENT_DIRECTORY,
-    verify_preregistration,
-)
+from scripts.validation.public_gold.staged_event.preflight import verify_preregistration
 from scripts.validation.public_gold.staged_event.prompting import (
     build_provider_format,
     build_stage_input,
@@ -82,7 +82,7 @@ MINIMUM_TYPED_ARGUMENTS = 15
 MINIMUM_NESTED_ARGUMENTS = 5
 MAXIMUM_UNSUPPORTED_EVENTS = 15
 DECISIONS = {
-    "ADVANCE_STAGED",
+    "STAGED_METRIC_GATE_PASSED_PENDING_ADJUDICATION",
     "STAGED_NO_MEANINGFUL_IMPROVEMENT",
     "INVALID_EXPERIMENT",
 }
@@ -104,6 +104,7 @@ class ArtifactPaths:
 class BudgetLedger:
     max_calls: int
     max_tokens: int
+    max_output_tokens_per_call: int
     max_cost_usd: float
     max_latency_seconds: float
     calls: int = 0
@@ -111,6 +112,7 @@ class BudgetLedger:
     total_cost_usd: float = 0.0
     total_latency_seconds: float = 0.0
     receipts: list[dict[str, object]] = field(default_factory=list)
+    terminal_violation: str | None = None
 
     def remaining(self) -> tuple[int, float, float]:
         return (
@@ -120,12 +122,15 @@ class BudgetLedger:
         )
 
     def ensure_call_available(self) -> None:
+        if self.terminal_violation is not None:
+            raise StagedComparisonError(self.terminal_violation)
         if self.calls >= self.max_calls:
             raise StagedComparisonError("agent call budget exhausted")
 
     def record(self, stage: str, receipt: dict[str, object]) -> None:
         usage = _required_dict(receipt, "usage")
         tokens = _required_int(usage, "total_tokens")
+        output_tokens = _required_int(usage, "output_tokens")
         cost = _required_float(usage, "cost_usd", allow_zero=True)
         latency = _required_float(usage, "latency_seconds", allow_zero=True)
         self.calls += 1
@@ -136,6 +141,11 @@ class BudgetLedger:
         self.receipts.append(recorded)
         if self.calls > self.max_calls:
             raise StagedComparisonError("agent call budget exceeded")
+        if output_tokens > self.max_output_tokens_per_call:
+            self.terminal_violation = (
+                f"{stage} per-call output token budget exceeded"
+            )
+            raise StagedComparisonError(self.terminal_violation)
         if self.total_tokens > self.max_tokens:
             raise StagedComparisonError("aggregate token budget exceeded")
         if self.total_cost_usd > self.max_cost_usd:
@@ -152,6 +162,7 @@ class BudgetLedger:
             "total_cost_usd": self.total_cost_usd,
             "total_latency_seconds": self.total_latency_seconds,
             "receipts": self.receipts,
+            "terminal_violation": self.terminal_violation,
         }
 
 
@@ -186,6 +197,9 @@ def run_comparison(  # noqa: PLR0915 - linear orchestration mirrors frozen stage
     ledger = BudgetLedger(
         max_calls=_required_int(budgets, "max_agent_calls"),
         max_tokens=_required_int(budgets, "max_total_tokens"),
+        max_output_tokens_per_call=_required_int(
+            budgets, "max_output_tokens_per_call"
+        ),
         max_cost_usd=_required_float(budgets, "max_total_cost_usd"),
         max_latency_seconds=_required_float(budgets, "max_total_latency_seconds"),
     )
@@ -363,7 +377,7 @@ def run_comparison(  # noqa: PLR0915 - linear orchestration mirrors frozen stage
             completion_unsupported_increase=completion_unsupported_increase,
         )
         result = {
-            "schema_version": "artana.public_gold.staged_event_result.v1",
+            "schema_version": "artana.public_gold.staged_event_result.v2",
             "decision": decision,
             "qualification_status": "EXPOSED_DEVELOPMENT_NON_QUALIFYING",
             "preflight": preflight,
@@ -390,7 +404,7 @@ def run_comparison(  # noqa: PLR0915 - linear orchestration mirrors frozen stage
         return decision  # noqa: TRY300 - terminal artifact is written before return.
     except (ProviderExecutionError, StagedAssemblyError, StagedComparisonError) as exc:
         result = {
-            "schema_version": "artana.public_gold.staged_event_result.v1",
+            "schema_version": "artana.public_gold.staged_event_result.v2",
             "decision": "INVALID_EXPERIMENT",
             "qualification_status": "EXPOSED_DEVELOPMENT_NON_QUALIFYING",
             "preflight": preflight,
@@ -462,7 +476,7 @@ def _run_stage(
             max_latency_seconds=remaining_latency,
             pricing=_pricing(_required_dict(context.budgets, "pricing_usd_per_token")),
             metadata={
-                "artana_experiment": "staged-event-comparison-v1",
+                "artana_experiment": "staged-event-comparison-v2",
                 "artana_preregistration_sha256": preregistration_sha256,
                 "artana_source_sha256": context.source_sha256,
                 "artana_stage": spec.name,
@@ -507,7 +521,7 @@ def _scientific_decision(
         and score.unsupported_or_invented_events <= MAXIMUM_UNSUPPORTED_EVENTS
         and completion_unsupported_increase == 0
     ):
-        return "ADVANCE_STAGED"
+        return "STAGED_METRIC_GATE_PASSED_PENDING_ADJUDICATION"
     return "STAGED_NO_MEANINGFUL_IMPROVEMENT"
 
 
@@ -627,8 +641,8 @@ def _terminal_rules() -> dict[str, int]:
 
 
 def _recommendation(decision: str) -> str:
-    if decision == "ADVANCE_STAGED":
-        return "ADVANCE_STAGED"
+    if decision == "STAGED_METRIC_GATE_PASSED_PENDING_ADJUDICATION":
+        return "REQUIRE_SOURCE_VALIDITY_ADJUDICATION"
     if decision == "STAGED_NO_MEANINGFUL_IMPROVEMENT":
         return "ABANDON_THIS_ARCHITECTURE"
     return "REVISE_ONCE"

@@ -1,0 +1,39 @@
+{
+  "benchmark_exact_gold_events_recovered": 9,
+  "benchmark_exact_recovery_rate": 0.3,
+  "benchmark_fidelity": {
+    "EXACT": 9,
+    "MISMATCH": 13,
+    "OUTSIDE_GOLD_POLICY": 12
+  },
+  "benchmark_gold_event_denominator": 30,
+  "candidate_count": 34,
+  "decision": "REVISE_ONCE",
+  "failure_labels": {
+    "EXACT_GOLD_EVENT": 9,
+    "VALID_EXTRA_OUTSIDE_GOLD_POLICY": 16,
+    "WRONG_EVENT_TYPE": 4,
+    "WRONG_MODIFIER": 4,
+    "WRONG_NESTING": 9,
+    "WRONG_PARTICIPANT": 15,
+    "WRONG_ROLE": 16,
+    "WRONG_TRIGGER": 2
+  },
+  "qualification_status": "EXPOSED_DEVELOPMENT_REVIEW_ONLY",
+  "schema_version": "artana.public_gold.staged_event_adjudication_result.v1",
+  "source_supported_complete_events": 19,
+  "source_validity": {
+    "SUPPORTED_CLAIM_BUT_TYPED_EVENT_INCORRECT": 15,
+    "SUPPORTED_COMPLETE_TYPED_EVENT": 19
+  },
+  "status": "ADJUDICATION_VALID",
+  "unsupported_by_source": 0,
+  "verifier_audit": {
+    "COMPLETE_TYPED_EVENT_ACCEPTED": 17,
+    "COMPLETE_TYPED_EVENT_REJECTED": 2,
+    "PLAUSIBLE_OR_PARTIAL_EVENT_ACCEPTED": 15,
+    "entailed_total": 32,
+    "false_accept_count": 15,
+    "false_accept_rate": 0.46875
+  }
+}

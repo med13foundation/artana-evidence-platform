@@ -10,6 +10,7 @@ from scripts.validation.public_gold.staged_event.contracts import (
     DiscoveryCandidate,
     EventDiscoveryOutput,
     EventModifierFinding,
+    EventVerification,
     ModifierDecision,
     ParticipantCandidate,
     ParticipantTargetKind,
@@ -17,6 +18,10 @@ from scripts.validation.public_gold.staged_event.contracts import (
     SourceArgumentRole,
     SourceEntityType,
     StatementKind,
+    VerificationAxes,
+    VerificationAxisDecision,
+    VerificationAxisFinding,
+    VerificationVerdict,
 )
 
 
@@ -58,6 +63,8 @@ def test_direct_participants_require_a_categorical_entity_type() -> None:
         ParticipantCandidate(
             participant_key="p1",
             exact_text="A",
+            occurrence_id="occurrence-0",
+            occurrence_index=0,
             candidate_target_kind=ParticipantTargetKind.PARTICIPANT,
             source_entity_type=None,
             explanation="A is explicit.",
@@ -66,6 +73,8 @@ def test_direct_participants_require_a_categorical_entity_type() -> None:
     participant = ParticipantCandidate(
         participant_key="p1",
         exact_text="A",
+        occurrence_id="occurrence-0",
+        occurrence_index=0,
         candidate_target_kind=ParticipantTargetKind.PARTICIPANT,
         source_entity_type=SourceEntityType.GENE_OR_GENE_PRODUCT,
         explanation="A is explicit.",
@@ -118,3 +127,52 @@ def test_modifier_contract_does_not_turn_neither_into_evidence() -> None:
         explanation="The event-local source explicitly negates the event.",
     )
     assert finding.decision is ModifierDecision.NEGATED
+
+
+def test_entailment_requires_every_typed_axis_to_pass() -> None:
+    axes = _axes(VerificationAxisDecision.PASS)
+    finding = EventVerification(
+        event_id="E1",
+        verdict=VerificationVerdict.ENTAILED,
+        exact_evidence="A binds B.",
+        axes=axes,
+        explanation="Every complete-event axis passes.",
+        falsification_explanation="Removing binds would falsify the event.",
+    )
+    assert finding.axes.roles.decision is VerificationAxisDecision.PASS
+
+    failed_roles = axes.model_copy(
+        update={
+            "roles": VerificationAxisFinding(
+                decision=VerificationAxisDecision.FAIL,
+                explanation="The proposed role is reversed.",
+            )
+        }
+    )
+    with pytest.raises(ValidationError, match="every verification axis"):
+        EventVerification(
+            event_id="E1",
+            verdict=VerificationVerdict.ENTAILED,
+            exact_evidence="A binds B.",
+            axes=failed_roles,
+            explanation="The sentence is generally plausible.",
+            falsification_explanation="Role reversal falsifies the typed event.",
+        )
+
+
+def _axes(decision: VerificationAxisDecision) -> VerificationAxes:
+    def finding(name: str) -> VerificationAxisFinding:
+        return VerificationAxisFinding(
+            decision=decision,
+            explanation=f"{name} received a categorical decision.",
+        )
+
+    return VerificationAxes(
+        event_type=finding("event type"),
+        trigger=finding("trigger"),
+        participants=finding("participants"),
+        roles=finding("roles"),
+        nesting=finding("nesting"),
+        modifier=finding("modifier"),
+        evidence=finding("evidence"),
+    )

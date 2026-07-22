@@ -29,6 +29,9 @@ from scripts.validation.public_gold.staged_event.contracts import (
     SourceArgumentRole,
     SourceEntityType,
     StatementKind,
+    VerificationAxes,
+    VerificationAxisDecision,
+    VerificationAxisFinding,
     VerificationOutput,
     VerificationVerdict,
 )
@@ -48,20 +51,32 @@ def _candidate(
     )
 
 
-def _direct(key: str, text: str, entity_type: SourceEntityType) -> ParticipantCandidate:
+def _direct(
+    key: str,
+    text: str,
+    entity_type: SourceEntityType,
+    *,
+    occurrence_index: int = 0,
+) -> ParticipantCandidate:
     return ParticipantCandidate(
         participant_key=key,
         exact_text=text,
+        occurrence_id=f"occurrence-{occurrence_index}",
+        occurrence_index=occurrence_index,
         candidate_target_kind=ParticipantTargetKind.PARTICIPANT,
         source_entity_type=entity_type,
         explanation="The participant is explicit and event-local.",
     )
 
 
-def _event_target(key: str, text: str) -> ParticipantCandidate:
+def _event_target(
+    key: str, text: str, *, occurrence_index: int = 0
+) -> ParticipantCandidate:
     return ParticipantCandidate(
         participant_key=key,
         exact_text=text,
+        occurrence_id=f"occurrence-{occurrence_index}",
+        occurrence_index=occurrence_index,
         candidate_target_kind=ParticipantTargetKind.EVENT,
         source_entity_type=None,
         explanation="The passage refers to another discovered event.",
@@ -73,8 +88,27 @@ def _verify(event_id: str, evidence: str) -> EventVerification:
         event_id=event_id,
         verdict=VerificationVerdict.ENTAILED,
         exact_evidence=evidence,
+        axes=_passing_axes(),
         explanation="The complete event is explicit.",
         falsification_explanation="Removing the event wording would falsify support.",
+    )
+
+
+def _passing_axes() -> VerificationAxes:
+    def finding(axis: str) -> VerificationAxisFinding:
+        return VerificationAxisFinding(
+            decision=VerificationAxisDecision.PASS,
+            explanation=f"The {axis} axis is fully supported.",
+        )
+
+    return VerificationAxes(
+        event_type=finding("event type"),
+        trigger=finding("trigger"),
+        participants=finding("participants"),
+        roles=finding("roles"),
+        nesting=finding("nesting"),
+        modifier=finding("modifier"),
+        evidence=finding("evidence"),
     )
 
 
@@ -235,7 +269,7 @@ def test_nested_event_reference_is_preserved_without_flattening() -> None:
     assert nested.target_id == growth.event_id
 
 
-def test_participant_cannot_borrow_an_ambiguous_event_local_mention() -> None:
+def test_participant_occurrence_id_selects_one_repeated_event_local_mention() -> None:
     source = "A activates A."
     source_hash = hashlib.sha256(source.encode()).hexdigest()
     candidates = resolve_discovery_candidates(
@@ -248,12 +282,72 @@ def test_participant_cannot_borrow_an_ambiguous_event_local_mention() -> None:
         inventories=(
             _inventory(
                 event.event_id,
-                (_direct("a", "A", SourceEntityType.GENE_OR_GENE_PRODUCT),),
+                (
+                    _direct(
+                        "a",
+                        "A",
+                        SourceEntityType.GENE_OR_GENE_PRODUCT,
+                        occurrence_index=1,
+                    ),
+                ),
             ),
         )
     )
 
-    with pytest.raises(StagedAssemblyError, match="ambiguous"):
+    result = assemble_staged_document(
+        _inputs(
+            candidates,
+            participants,
+            RoleAssignmentOutput(
+                events=(
+                    _assigned(
+                        event.event_id, (_role("a", SourceArgumentRole.THEME),)
+                    ),
+                )
+            ),
+            ModifierOutput(
+                events=(_modifier(event.event_id, ModifierDecision.NEITHER, None),)
+            ),
+            VerificationOutput(
+                events=(_verify(event.event_id, source),),
+                missing_supported_events=(),
+            ),
+            source,
+        )
+    )
+    participant = next(
+        mention for mention in result.document.mentions if mention.span.exact_text == "A"
+    )
+
+    assert participant.span.start == 12
+
+
+def test_participant_occurrence_outside_event_scope_fails_closed() -> None:
+    source = "A activates A."
+    source_hash = hashlib.sha256(source.encode()).hexdigest()
+    candidates = resolve_discovery_candidates(
+        (_candidate("activates", source, SourceEventType.POSITIVE_REGULATION),),
+        source_text=source,
+        source_sha256=source_hash,
+    ).candidates
+    event = candidates[0]
+    participants = ParticipantInventoryOutput(
+        inventories=(
+            _inventory(
+                event.event_id,
+                (
+                    _direct(
+                        "a",
+                        "A",
+                        SourceEntityType.GENE_OR_GENE_PRODUCT,
+                        occurrence_index=2,
+                    ),
+                ),
+            ),
+        )
+    )
+
+    with pytest.raises(StagedAssemblyError, match="outside its permitted scope"):
         assemble_staged_document(
             _inputs(
                 candidates,

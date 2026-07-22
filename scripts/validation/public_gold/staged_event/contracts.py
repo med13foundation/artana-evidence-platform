@@ -84,6 +84,12 @@ class VerificationVerdict(str, Enum):
     ABSTAIN = "ABSTAIN"
 
 
+class VerificationAxisDecision(str, Enum):
+    PASS = "PASS"
+    FAIL = "FAIL"
+    ABSTAIN = "ABSTAIN"
+
+
 class DiscoveryCandidate(StrictStageModel):
     trigger_text: str = Field(min_length=1, max_length=512)
     event_passage: str = Field(min_length=1, max_length=12000)
@@ -110,6 +116,8 @@ class EventDiscoveryOutput(StrictStageModel):
 class ParticipantCandidate(StrictStageModel):
     participant_key: str = Field(min_length=1, max_length=128)
     exact_text: str = Field(min_length=1, max_length=12000)
+    occurrence_id: str = Field(pattern=r"^occurrence-[0-9]+$", max_length=64)
+    occurrence_index: int = Field(ge=0, le=128)
     candidate_target_kind: ParticipantTargetKind = Field(strict=False)
     source_entity_type: SourceEntityType | None = Field(default=None, strict=False)
     explanation: str = Field(min_length=1, max_length=2000)
@@ -203,10 +211,26 @@ class ModifierOutput(StrictStageModel):
     events: tuple[EventModifierFinding, ...] = Field(max_length=128)
 
 
+class VerificationAxisFinding(StrictStageModel):
+    decision: VerificationAxisDecision = Field(strict=False)
+    explanation: str = Field(min_length=1, max_length=2000)
+
+
+class VerificationAxes(StrictStageModel):
+    event_type: VerificationAxisFinding
+    trigger: VerificationAxisFinding
+    participants: VerificationAxisFinding
+    roles: VerificationAxisFinding
+    nesting: VerificationAxisFinding
+    modifier: VerificationAxisFinding
+    evidence: VerificationAxisFinding
+
+
 class EventVerification(StrictStageModel):
     event_id: str = Field(min_length=1, max_length=128)
     verdict: VerificationVerdict = Field(strict=False)
     exact_evidence: str | None = Field(default=None, max_length=12000)
+    axes: VerificationAxes
     explanation: str = Field(min_length=1, max_length=2000)
     falsification_explanation: str = Field(min_length=1, max_length=2000)
 
@@ -214,6 +238,33 @@ class EventVerification(StrictStageModel):
     def validate_evidence(self) -> EventVerification:
         if self.verdict is VerificationVerdict.ENTAILED and not self.exact_evidence:
             raise ValueError("ENTAILED requires exact evidence")
+        decisions = tuple(
+            finding.decision
+            for finding in (
+                self.axes.event_type,
+                self.axes.trigger,
+                self.axes.participants,
+                self.axes.roles,
+                self.axes.nesting,
+                self.axes.modifier,
+                self.axes.evidence,
+            )
+        )
+        if self.verdict is VerificationVerdict.ENTAILED and any(
+            decision is not VerificationAxisDecision.PASS for decision in decisions
+        ):
+            raise ValueError("ENTAILED requires every verification axis to PASS")
+        if self.verdict is VerificationVerdict.CONTRADICTED and not any(
+            decision is VerificationAxisDecision.FAIL for decision in decisions
+        ):
+            raise ValueError("CONTRADICTED requires a failed verification axis")
+        if self.verdict in {
+            VerificationVerdict.INSUFFICIENT,
+            VerificationVerdict.ABSTAIN,
+        } and not any(
+            decision is VerificationAxisDecision.ABSTAIN for decision in decisions
+        ):
+            raise ValueError("INSUFFICIENT or ABSTAIN requires an abstained axis")
         return self
 
 
@@ -264,5 +315,8 @@ __all__ = [
     "SourceEntityType",
     "StatementKind",
     "VerificationOutput",
+    "VerificationAxes",
+    "VerificationAxisDecision",
+    "VerificationAxisFinding",
     "VerificationVerdict",
 ]

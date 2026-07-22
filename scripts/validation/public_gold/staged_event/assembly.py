@@ -223,9 +223,9 @@ def assemble_staged_document(  # noqa: PLR0915 - validates one atomic stage bund
         for participant_key in sorted(assignment_index):
             participant = participant_index[participant_key]
             assignment = assignment_index[participant_key]
-            local_start = _unique_start(
+            local_start = _selected_occurrence_start(
                 candidate.candidate.event_passage,
-                participant.exact_text,
+                participant,
                 label=f"{event_id} participant {participant_key}",
             )
             if assignment.target_kind is not participant.candidate_target_kind:
@@ -520,6 +520,30 @@ def _unique_start(source: str, exact_text: str, *, label: str) -> int:
         condition = "absent" if not starts else "ambiguous"
         raise StagedAssemblyError(f"{label} is {condition} in its permitted scope")
     return starts[0]
+
+
+def _selected_occurrence_start(
+    source: str,
+    participant: ParticipantCandidate,
+    *,
+    label: str,
+) -> int:
+    expected_id = f"occurrence-{participant.occurrence_index}"
+    if participant.occurrence_id != expected_id:
+        raise StagedAssemblyError(f"{label} occurrence ID contradicts its index")
+    starts: list[int] = []
+    cursor = 0
+    while True:
+        start = source.find(participant.exact_text, cursor)
+        if start < 0:
+            break
+        starts.append(start)
+        cursor = start + 1
+    if not starts:
+        raise StagedAssemblyError(f"{label} is absent in its permitted scope")
+    if participant.occurrence_index >= len(starts):
+        raise StagedAssemblyError(f"{label} occurrence is outside its permitted scope")
+    return starts[participant.occurrence_index]
 
 
 def _stable_id(prefix: str, source_sha256: str, *parts: object) -> str:

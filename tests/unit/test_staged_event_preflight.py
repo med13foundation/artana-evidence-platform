@@ -20,7 +20,11 @@ from scripts.validation.public_gold.staged_event.preflight import (
     build_preregistration,
     verify_preregistration,
 )
-from scripts.validation.public_gold.staged_event.prompting import build_provider_format
+from scripts.validation.public_gold.staged_event.prompting import (
+    GUIDELINE_PATH,
+    build_provider_format,
+    load_prompt,
+)
 from scripts.validation.public_gold.staged_event.registry import ALL_STAGES
 
 ROOT = Path(__file__).parents[2]
@@ -78,16 +82,35 @@ def test_every_stage_format_is_strict_and_categorically_described() -> None:
         assert provider_format["description"] == stage.description
 
 
+def test_every_effective_prompt_contains_generic_guidelines_without_gold() -> None:
+    guidelines = (ROOT / GUIDELINE_PATH).read_text(encoding="utf-8")
+    forbidden = (
+        "PMID-16428936",
+        "c-Myc",
+        "LoVo",
+        "30 gold",
+        "E1 Negative_regulation",
+    )
+
+    assert "Theme: the entity or event" in guidelines
+    for stage in ALL_STAGES:
+        effective = load_prompt(ROOT, stage.prompt_path)
+        assert guidelines.rstrip() in effective
+        assert not any(item in effective for item in forbidden)
+
+
 def test_budget_ledger_fails_closed_without_fabricating_accounting() -> None:
     ledger = BudgetLedger(
         max_calls=1,
         max_tokens=100,
+        max_output_tokens_per_call=100,
         max_cost_usd=1.0,
         max_latency_seconds=10.0,
     )
     receipt = {
         "usage": {
             "total_tokens": 101,
+            "output_tokens": 50,
             "cost_usd": 0.5,
             "latency_seconds": 1.0,
         }
@@ -98,6 +121,34 @@ def test_budget_ledger_fails_closed_without_fabricating_accounting() -> None:
 
     assert ledger.total_tokens == 101
     assert ledger.total_cost_usd == 0.5
+
+
+def test_budget_ledger_stops_on_actual_per_call_output_usage() -> None:
+    ledger = BudgetLedger(
+        max_calls=2,
+        max_tokens=1000,
+        max_output_tokens_per_call=100,
+        max_cost_usd=1.0,
+        max_latency_seconds=10.0,
+    )
+
+    with pytest.raises(StagedComparisonError, match="discovery per-call output"):
+        ledger.record(
+            "discovery",
+            {
+                "usage": {
+                    "total_tokens": 150,
+                    "output_tokens": 101,
+                    "cost_usd": 0.2,
+                    "latency_seconds": 1.0,
+                }
+            },
+        )
+
+    assert ledger.calls == 1
+    assert ledger.total_tokens == 150
+    with pytest.raises(StagedComparisonError, match="discovery per-call output"):
+        ledger.ensure_call_available()
 
 
 def test_advance_gate_is_fully_deterministic() -> None:
@@ -118,7 +169,7 @@ def test_advance_gate_is_fully_deterministic() -> None:
 
     assert (
         _scientific_decision(passing, completion_unsupported_increase=0)
-        == "ADVANCE_STAGED"
+        == "STAGED_METRIC_GATE_PASSED_PENDING_ADJUDICATION"
     )
     assert (
         _scientific_decision(failing, completion_unsupported_increase=0)

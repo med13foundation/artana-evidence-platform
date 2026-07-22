@@ -22,6 +22,7 @@ from scripts.validation.public_gold.source_selection import (
 )
 from scripts.validation.public_gold.staged_event.paths import repository_root
 from scripts.validation.public_gold.staged_event.prompting import (
+    GUIDELINE_PATH,
     build_provider_format,
     build_stage_input,
     load_prompt,
@@ -78,7 +79,10 @@ def compute_frozen_state(repository_root: Path) -> dict[str, object]:
     prompts = {
         stage.name: {
             "path": stage.prompt_path,
-            "sha256": _file_sha256(repository_root / stage.prompt_path),
+            "stage_file_sha256": _file_sha256(repository_root / stage.prompt_path),
+            "effective_prompt_sha256": hashlib.sha256(
+                load_prompt(repository_root, stage.prompt_path).encode()
+            ).hexdigest(),
         }
         for stage in ALL_STAGES
     }
@@ -130,6 +134,10 @@ def compute_frozen_state(repository_root: Path) -> dict[str, object]:
             "bundle_sha256": canonical_sha256(dependencies),
         },
         "prompts": prompts,
+        "annotation_guidelines": {
+            "path": GUIDELINE_PATH,
+            "sha256": _file_sha256(repository_root / GUIDELINE_PATH),
+        },
         "schemas": schemas,
         "provider_formats": {
             name: canonical_sha256(provider_format)
@@ -184,7 +192,7 @@ def verify_preregistration(
 
 def _experiment_policy(*, authorized: bool) -> dict[str, object]:
     return {
-        "schema_version": "artana.public_gold.staged_event_comparison.v1",
+        "schema_version": "artana.public_gold.staged_event_comparison.v2",
         "status": (
             "FROZEN_AUTHORIZED_FOR_ONE_EXECUTION"
             if authorized
@@ -202,12 +210,31 @@ def _experiment_policy(*, authorized: bool) -> dict[str, object]:
             "unsupported_or_invented_events": 31,
             "unauthorized_semantic_mappings": 19,
         },
+        "post_run_adjudication": {
+            "required_before_advance": True,
+            "v1_verifier_false_accept_rate": 0.46875,
+            "final_false_accept_rate_must_be_less_than": 0.46875,
+            "axes": [
+                "event_type",
+                "trigger",
+                "participants",
+                "roles",
+                "nesting",
+                "modifier",
+                "evidence",
+            ],
+            "valid_extras_receive_benchmark_credit": False,
+            "valid_extras_terminal_state": "REVIEW_ONLY",
+        },
         "budgets": {
             "max_agent_calls": 6,
             "max_total_tokens": 400000,
             "max_total_cost_usd": 12.0,
             "max_total_latency_seconds": 1800.0,
-            "max_output_tokens_per_call": 20000,
+            "max_output_tokens_per_call": 200000,
+            "per_call_output_token_basis": (
+                "staged V1 observed maximum 184663 plus bounded headroom"
+            ),
             "acknowledgement_timeout_seconds": 30.0,
             "polling_interval_seconds": 5.0,
             "max_polling_seconds_per_call": 600.0,

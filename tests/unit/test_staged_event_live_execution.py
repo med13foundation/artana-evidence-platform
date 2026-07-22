@@ -23,6 +23,9 @@ from scripts.validation.public_gold.staged_event.contracts import (
     SourceArgumentRole,
     SourceEntityType,
     StatementKind,
+    VerificationAxes,
+    VerificationAxisDecision,
+    VerificationAxisFinding,
     VerificationOutput,
     VerificationVerdict,
 )
@@ -62,6 +65,7 @@ def test_five_stage_orchestration_writes_auditable_terminal_artifacts(
                 "response_id": f"resp-{spec.name}",
                 "usage": {
                     "total_tokens": 10,
+                    "output_tokens": 5,
                     "cost_usd": 0.001,
                     "latency_seconds": 0.1,
                 },
@@ -98,6 +102,8 @@ def test_five_stage_orchestration_writes_auditable_terminal_artifacts(
                             ParticipantCandidate(
                                 participant_key="myc",
                                 exact_text="c-Myc",
+                                occurrence_id="occurrence-0",
+                                occurrence_index=0,
                                 candidate_target_kind=(
                                     ParticipantTargetKind.PARTICIPANT
                                 ),
@@ -109,6 +115,8 @@ def test_five_stage_orchestration_writes_auditable_terminal_artifacts(
                             ParticipantCandidate(
                                 participant_key="vinblastine",
                                 exact_text="vinblastine",
+                                occurrence_id="occurrence-0",
+                                occurrence_index=0,
                                 candidate_target_kind=(
                                     ParticipantTargetKind.PARTICIPANT
                                 ),
@@ -164,6 +172,7 @@ def test_five_stage_orchestration_writes_auditable_terminal_artifacts(
                         event_id=event_id,
                         verdict=VerificationVerdict.ENTAILED,
                         exact_evidence=PASSAGE,
+                        axes=_passing_axes(),
                         explanation="The complete event is explicit.",
                         falsification_explanation=(
                             "Removing the event wording would remove support."
@@ -209,3 +218,19 @@ def test_five_stage_orchestration_writes_auditable_terminal_artifacts(
     assert result["completion_used"] is False
     assert set(result["stage_outputs"]) == set(stage_names)
     assert "Stage Outputs And Abstentions" in report
+
+
+def _passing_axes() -> VerificationAxes:
+    finding = VerificationAxisFinding(
+        decision=VerificationAxisDecision.PASS,
+        explanation="The complete typed-event axis passes.",
+    )
+    return VerificationAxes(
+        event_type=finding,
+        trigger=finding,
+        participants=finding,
+        roles=finding,
+        nesting=finding,
+        modifier=finding,
+        evidence=finding,
+    )

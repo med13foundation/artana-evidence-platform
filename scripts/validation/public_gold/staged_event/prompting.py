@@ -8,6 +8,10 @@ from typing import TYPE_CHECKING, cast
 
 from openai.lib._parsing._responses import type_to_text_format_param
 
+GUIDELINE_PATH = (
+    "docs/validation/prompts/bionlp-cg-ontology-and-role-guidelines.md"
+)
+
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
@@ -31,7 +35,9 @@ def build_provider_format(
 
 
 def load_prompt(repository_root: Path, relative_path: str) -> str:
-    return (repository_root / relative_path).read_text(encoding="utf-8")
+    stage_prompt = (repository_root / relative_path).read_text(encoding="utf-8")
+    guidelines = (repository_root / GUIDELINE_PATH).read_text(encoding="utf-8")
+    return f"{stage_prompt.rstrip()}\n\n{guidelines.rstrip()}\n"
 
 
 def build_stage_input(
@@ -103,6 +109,7 @@ __all__ = [
     "build_provider_format",
     "build_stage_input",
     "event_context",
+    "GUIDELINE_PATH",
     "load_prompt",
     "role_context",
     "verification_context",
