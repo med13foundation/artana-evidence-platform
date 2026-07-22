@@ -1,0 +1,494 @@
+{
+  "canary_case_id": "generalization-comparison-canary",
+  "case_count": 6,
+  "cases": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "context_end": 1190,
+      "context_start": 862,
+      "family": "COMPARISON_DIRECTION",
+      "focus_end": 960,
+      "focus_passage": "had more comorbidities than patients without RA",
+      "focus_start": 913,
+      "local_context": "Patients with RA were more likely to be female and had more comorbidities than patients without RA. Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation.",
+      "reference": {
+        "arguments": [
+          {
+            "event_key": "comparison",
+            "role": "POPULATION",
+            "target_key": "ra",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "event_key": "comparison",
+            "role": "COMPARATOR",
+            "target_key": "non_ra",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "event_key": "comparison",
+            "role": "OUTCOME",
+            "target_key": "comorbidities",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "axes": [
+          {
+            "acceptable_statistical_texts": [],
+            "author_interpretation": "NOT_CLAIMED",
+            "comparison": "GREATER",
+            "direction": "INCREASED",
+            "event_key": "comparison",
+            "polarity": "AFFIRMED",
+            "statistical_type": "NONE",
+            "uncertainty": "ASSERTED"
+          }
+        ],
+        "events": [
+          {
+            "acceptable_triggers": [
+              "more",
+              "more comorbidities than"
+            ],
+            "event_key": "comparison",
+            "event_type": "COMPARISON"
+          }
+        ],
+        "participants": [
+          {
+            "acceptable_texts": [
+              "Patients with RA"
+            ],
+            "entity_type": "POPULATION",
+            "participant_key": "ra"
+          },
+          {
+            "acceptable_texts": [
+              "patients without RA"
+            ],
+            "entity_type": "POPULATION",
+            "participant_key": "non_ra"
+          },
+          {
+            "acceptable_texts": [
+              "comorbidities"
+            ],
+            "entity_type": "OUTCOME",
+            "participant_key": "comorbidities"
+          }
+        ],
+        "reference_basis": "literal exposed comparison",
+        "root_event_key": "comparison"
+      },
+      "source": "OBJECTIVE: We aimed to compare overall survival (OS) in immune checkpoint inhibitor (ICI)-treated patients with metastatic non-small cell lung cancer (mNSCLC) with pre-existing rheumatoid arthritis (RA) versus those without RA. METHODS: A retrospective cohort study using Medicare claims data was performed. Participants included patients aged >= 66 years with a diagnosis of a malignant neoplasm of lung and bronchus who initiated nivolumab, pembrolizumab, or atezolizumab between March 4, 2015 and April 11, 2019, which is after the US Food and Drug Administration (FDA) approval of ICIs for mNSCLC but before the first FDA approval for stage III disease. Survival analysis using Kaplan-Meier and adjusted Cox proportional hazard models was performed. RESULTS: A total of 2,732 people with mNSCLC (N = 790 RA and N = 1,942 non-RA) were in the analytic cohort. Patients with RA were more likely to be female and had more comorbidities than patients without RA. Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation. There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09). Male sex, having more comorbidities, and steroid dose before ICI initiation were associated with worse OS. In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS. CONCLUSION: After controlling for demographics and comorbid conditions, ICI-treated patients with RA with mNSCLC had no difference in OS compared with patients without RA. After excluding patients receiving dexamethasone, steroid dose was not associated with worse OS.",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+    },
+    {
+      "case_id": "generalization-null-statistics",
+      "context_end": 1380,
+      "context_start": 1191,
+      "family": "NULL_STATISTICAL_RESULT",
+      "focus_end": 1301,
+      "focus_passage": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08)",
+      "focus_start": 1191,
+      "local_context": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "reference": {
+        "arguments": [
+          {
+            "event_key": "null_os",
+            "role": "POPULATION",
+            "target_key": "ra",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "event_key": "null_os",
+            "role": "COMPARATOR",
+            "target_key": "non_ra",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "event_key": "null_os",
+            "role": "OUTCOME",
+            "target_key": "os",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "axes": [
+          {
+            "acceptable_statistical_texts": [
+              "P = 0.08"
+            ],
+            "author_interpretation": "NOT_CLAIMED",
+            "comparison": "NO_DIFFERENCE",
+            "direction": "NO_DIFFERENCE",
+            "event_key": "null_os",
+            "polarity": "NULL_RESULT",
+            "statistical_type": "P_VALUE",
+            "uncertainty": "ASSERTED"
+          }
+        ],
+        "events": [
+          {
+            "acceptable_triggers": [
+              "no difference"
+            ],
+            "event_key": "null_os",
+            "event_type": "COMPARISON"
+          }
+        ],
+        "participants": [
+          {
+            "acceptable_texts": [
+              "RA"
+            ],
+            "entity_type": "POPULATION",
+            "participant_key": "ra"
+          },
+          {
+            "acceptable_texts": [
+              "non-RA NSCLC"
+            ],
+            "entity_type": "POPULATION",
+            "participant_key": "non_ra"
+          },
+          {
+            "acceptable_texts": [
+              "OS"
+            ],
+            "entity_type": "OUTCOME",
+            "participant_key": "os"
+          }
+        ],
+        "reference_basis": "literal exposed null result, coordinated-ellipsis cohort spans, and statistical observation",
+        "root_event_key": "null_os"
+      },
+      "source": "OBJECTIVE: We aimed to compare overall survival (OS) in immune checkpoint inhibitor (ICI)-treated patients with metastatic non-small cell lung cancer (mNSCLC) with pre-existing rheumatoid arthritis (RA) versus those without RA. METHODS: A retrospective cohort study using Medicare claims data was performed. Participants included patients aged >= 66 years with a diagnosis of a malignant neoplasm of lung and bronchus who initiated nivolumab, pembrolizumab, or atezolizumab between March 4, 2015 and April 11, 2019, which is after the US Food and Drug Administration (FDA) approval of ICIs for mNSCLC but before the first FDA approval for stage III disease. Survival analysis using Kaplan-Meier and adjusted Cox proportional hazard models was performed. RESULTS: A total of 2,732 people with mNSCLC (N = 790 RA and N = 1,942 non-RA) were in the analytic cohort. Patients with RA were more likely to be female and had more comorbidities than patients without RA. Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation. There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09). Male sex, having more comorbidities, and steroid dose before ICI initiation were associated with worse OS. In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS. CONCLUSION: After controlling for demographics and comorbid conditions, ICI-treated patients with RA with mNSCLC had no difference in OS compared with patients without RA. After excluding patients receiving dexamethasone, steroid dose was not associated with worse OS.",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+    },
+    {
+      "case_id": "generalization-negated-association",
+      "context_end": 1812,
+      "context_start": 1488,
+      "family": "NEGATION",
+      "focus_end": 1639,
+      "focus_passage": "steroid dose before ICI initiation was no longer associated with worse OS",
+      "focus_start": 1566,
+      "local_context": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS. CONCLUSION: After controlling for demographics and comorbid conditions, ICI-treated patients with RA with mNSCLC had no difference in OS compared with patients without RA.",
+      "reference": {
+        "arguments": [
+          {
+            "event_key": "no_association",
+            "role": "EXPOSURE",
+            "target_key": "dose",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "event_key": "no_association",
+            "role": "OUTCOME",
+            "target_key": "os",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "axes": [
+          {
+            "acceptable_statistical_texts": [],
+            "author_interpretation": "NOT_CLAIMED",
+            "comparison": "NOT_APPLICABLE",
+            "direction": "NO_ASSOCIATION",
+            "event_key": "no_association",
+            "polarity": "NULL_RESULT",
+            "statistical_type": "NONE",
+            "uncertainty": "ASSERTED"
+          }
+        ],
+        "events": [
+          {
+            "acceptable_triggers": [
+              "no longer associated"
+            ],
+            "event_key": "no_association",
+            "event_type": "ASSOCIATION"
+          }
+        ],
+        "participants": [
+          {
+            "acceptable_texts": [
+              "steroid dose before ICI initiation"
+            ],
+            "entity_type": "EXPOSURE",
+            "participant_key": "dose"
+          },
+          {
+            "acceptable_texts": [
+              "worse OS"
+            ],
+            "entity_type": "OUTCOME",
+            "participant_key": "os"
+          }
+        ],
+        "reference_basis": "literal exposed no-association result",
+        "root_event_key": "no_association"
+      },
+      "source": "OBJECTIVE: We aimed to compare overall survival (OS) in immune checkpoint inhibitor (ICI)-treated patients with metastatic non-small cell lung cancer (mNSCLC) with pre-existing rheumatoid arthritis (RA) versus those without RA. METHODS: A retrospective cohort study using Medicare claims data was performed. Participants included patients aged >= 66 years with a diagnosis of a malignant neoplasm of lung and bronchus who initiated nivolumab, pembrolizumab, or atezolizumab between March 4, 2015 and April 11, 2019, which is after the US Food and Drug Administration (FDA) approval of ICIs for mNSCLC but before the first FDA approval for stage III disease. Survival analysis using Kaplan-Meier and adjusted Cox proportional hazard models was performed. RESULTS: A total of 2,732 people with mNSCLC (N = 790 RA and N = 1,942 non-RA) were in the analytic cohort. Patients with RA were more likely to be female and had more comorbidities than patients without RA. Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation. There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09). Male sex, having more comorbidities, and steroid dose before ICI initiation were associated with worse OS. In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS. CONCLUSION: After controlling for demographics and comorbid conditions, ICI-treated patients with RA with mNSCLC had no difference in OS compared with patients without RA. After excluding patients receiving dexamethasone, steroid dose was not associated with worse OS.",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "context_end": 1290,
+      "context_start": 833,
+      "family": "UNCERTAINTY",
+      "focus_end": 1085,
+      "focus_passage": "the majority of which were classified as of uncertain significance",
+      "focus_start": 1019,
+      "local_context": "Variants in the SLC12A3 gene were analyzed using next generation sequencing and were compared with the clinical data.\nRESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance. Hyponatremia was determined at a higher rate in patients with c.506-276A>G (75.00%), c.282+492G>A (85.70%), c.282+499G>C (87.00%), c.282+495G>A (85.00%), and c.505+375G>A (92.30%) variants in particular.",
+      "reference": {
+        "arguments": [
+          {
+            "event_key": "classification",
+            "role": "AFFECTED_ENTITY",
+            "target_key": "variants",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "event_key": "classification",
+            "role": "CONTEXTUAL_PARTICIPANT",
+            "target_key": "gene",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "axes": [
+          {
+            "acceptable_statistical_texts": [],
+            "author_interpretation": "NOT_CLAIMED",
+            "comparison": "NOT_APPLICABLE",
+            "direction": "NOT_APPLICABLE",
+            "event_key": "classification",
+            "polarity": "AFFIRMED",
+            "statistical_type": "NONE",
+            "uncertainty": "UNCERTAIN"
+          }
+        ],
+        "events": [
+          {
+            "acceptable_triggers": [
+              "classified",
+              "uncertain significance"
+            ],
+            "event_key": "classification",
+            "event_type": "CLASSIFICATION"
+          }
+        ],
+        "participants": [
+          {
+            "acceptable_texts": [
+              "947 variants",
+              "variants"
+            ],
+            "entity_type": "VARIANT",
+            "participant_key": "variants"
+          },
+          {
+            "acceptable_texts": [
+              "SLC12A3 gene"
+            ],
+            "entity_type": "GENE_OR_PROTEIN",
+            "participant_key": "gene"
+          }
+        ],
+        "reference_basis": "literal exposed uncertainty classification",
+        "root_event_key": "classification"
+      },
+      "source": "OBJECTIVE: Hyponatremia is one of the most common electrolyte disorders in clinical practice and is frequently observed following thiazide use. Advanced age and female gender are implicated in the etiology of hydrochlorothiazide (HCTZ)-associated hyponatremia. There has also recently been mention of a genetic disposition. This study evaluated the genetic component, and particularly the clinical significance, of variants in the SLC12A3 gene in the development of hyponatremia in hypertensive patients using HCTZ-group diuretics.\nMETHOD: Ninety-five patients presenting to the Tekirda\u011f Nam\u0131k Kemal University nephrology clinic and receiving antihypertensive therapy including HCTZ for at least one month were examined. Peripheral blood specimens were collected from hyponatremic (n = 62) and non-hyponatremic (n = 33) individuals. Variants in the SLC12A3 gene were analyzed using next generation sequencing and were compared with the clinical data.\nRESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance. Hyponatremia was determined at a higher rate in patients with c.506-276A>G (75.00%), c.282+492G>A (85.70%), c.282+499G>C (87.00%), c.282+495G>A (85.00%), and c.505+375G>A (92.30%) variants in particular. The risk of hyponatremia development increased 9.2-fold in the presence of the c.282+492G>A variant (OR = 9.243; 95% CI: 2.259-37.818; p = 0.002).\nCONCLUSION: In conclusion, we think that HCTZ-associated hyponatremia cannot be predicted by clinical and biochemical parameters alone, and that genetic factors should also be considered. Further multi-center prospective studies involving larger populations will clarify the clinical significance of variants in SLC12A3 and other genes and will make a significant contribution to individualized therapeutic approaches.",
+      "source_id": "exposed-human-genetics",
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "context_end": 396,
+      "context_start": 214,
+      "family": "DRUG_SENSITIVITY",
+      "focus_end": 395,
+      "focus_passage": "the sensitivity of carcinoma patients to 5-FU",
+      "focus_start": 350,
+      "local_context": "\nThymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "reference": {
+        "arguments": [
+          {
+            "event_key": "sensitivity",
+            "role": "AFFECTED_ENTITY",
+            "target_key": "carcinoma",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "event_key": "sensitivity",
+            "role": "STIMULUS_OR_OBJECT",
+            "target_key": "drug",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "axes": [
+          {
+            "acceptable_statistical_texts": [],
+            "author_interpretation": "NOT_CLAIMED",
+            "comparison": "NOT_APPLICABLE",
+            "direction": "NOT_APPLICABLE",
+            "event_key": "sensitivity",
+            "polarity": "AFFIRMED",
+            "statistical_type": "NONE",
+            "uncertainty": "ASSERTED"
+          }
+        ],
+        "events": [
+          {
+            "acceptable_triggers": [
+              "sensitivity"
+            ],
+            "event_key": "sensitivity",
+            "event_type": "REGULATION"
+          }
+        ],
+        "participants": [
+          {
+            "acceptable_texts": [
+              "carcinoma"
+            ],
+            "entity_type": "CANCER",
+            "participant_key": "carcinoma"
+          },
+          {
+            "acceptable_texts": [
+              "5-FU"
+            ],
+            "entity_type": "SIMPLE_CHEMICAL",
+            "participant_key": "drug"
+          }
+        ],
+        "reference_basis": "public CG nodes plus cautious source-semantic role reference",
+        "root_event_key": "sensitivity"
+      },
+      "source": "Expression of thymidylate synthase and dihydropyrimidine dehydrogenase in primary oral squamous cell carcinoma and corresponding metastases in cervical lymph nodes: association with the metastasis suppressor CD82. \nThymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU. Although 5-FU is often used for the treatment of oral carcinoma, there has not been any investigation into the expression of these enzymes in metastatic lymph nodes or of their roles in the effectiveness of 5-FU in treating lymph node-metastatic cancer. Oral squamous cell carcinoma (OSCC) often metastasizes to the lymph nodes, and these enzymes may be significant in the survival of patients with this disease. This study investigated the expression of TS and DPD in cervical lymph node metastases and its relationship with primary OSCC, as well as the interaction between these enzymes and Kangai 1(KAI1/CD82) which is a metastasis suppressor protein. Surgical specimens from 20 cases of OSCC with lymph node metastasis, 20 cases of OSCC without lymph node metastasis, and 10 cases of normal mucosa were examined by immunohistochemistry. The relationship between TS and DPD expression and clinicopathological data was analyzed. TS and DPD proteins were overexpressed in primary OSCC compared to that in normal mucosa. TS expression of the primary oral cancer cells in the group with lymph node metastasis was higher than that of those without. DPD expression did not significantly correlate with the occurrence of lymph node metastasis, nor was it different between primary oral cancer cells and cervical metastases. CD82 expression was significantly reduced in lymph node metastases. These findings indicate that TS and CD82 may be of great value in assessing lymph node metastasis of OSCC, and could be taken as new targets for therapy of metastatic OSCC.\n",
+      "source_id": "PMID-21965773",
+      "source_sha256": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880"
+    },
+    {
+      "case_id": "generalization-explicit-nested-cause",
+      "context_end": 1336,
+      "context_start": 1091,
+      "family": "NESTED_EXPLICIT_CAUSATION",
+      "focus_end": 1206,
+      "focus_passage": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts",
+      "focus_start": 1091,
+      "local_context": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.",
+      "reference": {
+        "arguments": [
+          {
+            "event_key": "responsible",
+            "role": "CAUSAL_AGENT",
+            "target_key": "proteins",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "event_key": "responsible",
+            "role": "EFFECT_EVENT",
+            "target_key": "elevating",
+            "target_kind": "EVENT"
+          },
+          {
+            "event_key": "elevating",
+            "role": "EFFECT_EVENT",
+            "target_key": "levels",
+            "target_kind": "EVENT"
+          },
+          {
+            "event_key": "levels",
+            "role": "AFFECTED_ENTITY",
+            "target_key": "p53",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "axes": [
+          {
+            "acceptable_statistical_texts": [],
+            "author_interpretation": "NOT_CLAIMED",
+            "comparison": "NOT_APPLICABLE",
+            "direction": "ENABLES",
+            "event_key": "responsible",
+            "polarity": "AFFIRMED",
+            "statistical_type": "NONE",
+            "uncertainty": "ASSERTED"
+          },
+          {
+            "acceptable_statistical_texts": [],
+            "author_interpretation": "NOT_CLAIMED",
+            "comparison": "NOT_APPLICABLE",
+            "direction": "INCREASED",
+            "event_key": "elevating",
+            "polarity": "AFFIRMED",
+            "statistical_type": "NONE",
+            "uncertainty": "ASSERTED"
+          },
+          {
+            "acceptable_statistical_texts": [],
+            "author_interpretation": "NOT_CLAIMED",
+            "comparison": "NOT_APPLICABLE",
+            "direction": "OBSERVED",
+            "event_key": "levels",
+            "polarity": "AFFIRMED",
+            "statistical_type": "NONE",
+            "uncertainty": "ASSERTED"
+          }
+        ],
+        "events": [
+          {
+            "acceptable_triggers": [
+              "responsible"
+            ],
+            "event_key": "responsible",
+            "event_type": "REGULATION"
+          },
+          {
+            "acceptable_triggers": [
+              "elevating"
+            ],
+            "event_key": "elevating",
+            "event_type": "POSITIVE_REGULATION"
+          },
+          {
+            "acceptable_triggers": [
+              "levels"
+            ],
+            "event_key": "levels",
+            "event_type": "GENE_EXPRESSION"
+          }
+        ],
+        "participants": [
+          {
+            "acceptable_texts": [
+              "HCMV immediate-early proteins",
+              "immediate-early proteins"
+            ],
+            "entity_type": "GENE_OR_PROTEIN",
+            "participant_key": "proteins"
+          },
+          {
+            "acceptable_texts": [
+              "p53"
+            ],
+            "entity_type": "GENE_OR_PROTEIN",
+            "participant_key": "p53"
+          }
+        ],
+        "reference_basis": "public CG dependency-closed graph plus source-semantic roles",
+        "root_event_key": "responsible"
+      },
+      "source": "Human cytomegalovirus elevates levels of the cellular protein p53 in infected fibroblasts. \nHuman cytomegalovirus (HCMV), like other DNA tumor viruses, induces morphological transformation of cells in vitro and stimulates host cell macromolecular synthesis in infected cells. Since other DNA tumor viruses, such as simian virus 40 and adenovirus, have previously been shown to interact with cellular protein p53, we investigated whether infection of cells by HCMV would modulate cellular p53 levels. Our results indicate that HCMV elevates cellular p53 levels on the order of 10- to 20-fold in infected fibroblasts. The induction of elevated p53 levels was dependent upon the presence of active virus and was prevented by neutralizing antibody. The induction of elevated p53 levels was determined not to be due to virus-receptor interactions or HCMV late events. The induction of elevated p53 levels commenced at immediate-early times of the HCMV multiplication cycle (6 h postinfection) and reached maximal levels by 24 h postinfection, before most of the HCMV DNA synthesis was initiated. HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts. This is the first report of increased p53 levels caused by HCMV in infected fibroblasts.\n",
+      "source_id": "PMID-7966592",
+      "source_sha256": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02"
+    }
+  ],
+  "exposed_only": true,
+  "selection_policy": "Fixed previously exposed source families selected before execution; agent packets omit references, expected counts, labels, and projections."
+}

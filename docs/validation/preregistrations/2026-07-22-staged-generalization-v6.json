@@ -1,0 +1,139 @@
+{
+  "acceptance": {
+    "all_cases_pass": true,
+    "all_required_core_complete": true,
+    "ambiguous_context_count": 0,
+    "contradiction_count": 0,
+    "receipt_and_budget_validity": "ALL_CALLS",
+    "source_meaning_preserved": true,
+    "unsupported_claim_count": 0
+  },
+  "authorization": "EXPOSED_DEVELOPMENT_ONLY",
+  "change_control": {
+    "grader_changed": false,
+    "historical_v5_rescored": false,
+    "model_changed": false,
+    "panel_changed": false,
+    "referential_rule": "Resolve referring grammar to a unique explicit antecedent and ground the participant to the antecedent source span.",
+    "schema_changed": false,
+    "single_scientific_change": "SOURCE_GENERAL_REFERENTIAL_GROUNDING",
+    "uncertainty_rule": "Classify uncertainty from proposition content independently from whether the sentence asserts that content."
+  },
+  "experiment_id": "staged-generalization-v6",
+  "frozen_state": {
+    "budgets": {
+      "global_max_cost_usd": 0.9,
+      "global_max_creation_calls": 6,
+      "per_call_max_cost_usd": 0.15,
+      "per_call_max_latency_seconds": 900.0,
+      "per_call_max_output_tokens": 20000,
+      "per_call_max_total_tokens": 24000,
+      "provider_retries": 0
+    },
+    "canary_case_id": "generalization-comparison-canary",
+    "case_order": [
+      "generalization-comparison-canary",
+      "generalization-null-statistics",
+      "generalization-negated-association",
+      "generalization-uncertainty",
+      "generalization-drug-sensitivity",
+      "generalization-explicit-nested-cause"
+    ],
+    "code_sha256": {
+      "scripts/run_staged_generalization_v6.py": "be1d81f477401b0eb267f1cf5cb9cbb16e7221716f50a1f402c5ec9659d93aa8",
+      "scripts/validation/provider_receipt_boundary/__init__.py": "f5352623348b5b3a2d30a217c535a9c4a19bd50eadeec2d583218337bff7260a",
+      "scripts/validation/provider_receipt_boundary/background/__init__.py": "6d9be1be575586dd43cad0a7703f9a14cb72d67fe38d8e33b9c67931c3e411f7",
+      "scripts/validation/provider_receipt_boundary/background/contracts.py": "51a79ab28fa381bb6e6692040e0781ab68a6e029c8facc72bf2266e9f82460d8",
+      "scripts/validation/provider_receipt_boundary/background/execution.py": "c84f2c67cce1a1bed25190592e8b2cd1716dec73142283e97a152af90d79783d",
+      "scripts/validation/provider_receipt_boundary/background/polling.py": "3bd5f043c3e2f1be764b6d9e92dfff649e5ad8089aa8b2d1047c273e3cd06b90",
+      "scripts/validation/provider_receipt_boundary/background/states.py": "958a34fa0ab25fd7fb9f877c23bedbd83a1b00e59836b8799f3659b5fc60f2ba",
+      "scripts/validation/provider_receipt_boundary/canonical_payload.py": "61294b3278b3d7bb6c8ba9127404658ca4c24fe30234e46a989931206f50f908",
+      "scripts/validation/provider_receipt_boundary/contracts.py": "1d3b4fe0612923e26af166a790ef30217788a363b17e5bc0264ba4f167befed5",
+      "scripts/validation/provider_receipt_boundary/identity.py": "a07f468ae572ab07ef4b70e7661dcdb416860a71fc1be1b509518aeda1ad8d30",
+      "scripts/validation/provider_receipt_boundary/structural_diff.py": "46e778decc1d15172cfaaa898ae53f693846b779bc9cf84a0ed2415cd2da2e55",
+      "scripts/validation/provider_receipt_boundary/validation.py": "a0f21c6a6a882a2647763cd13f23ef4eb19518ac03ef409d23caf17b5b2b708a",
+      "scripts/validation/public_gold/lossless_event_provider.py": "3504289a8b225b44a11d95dbaa31ea517c50eb829f8732645400e7bad108db5a",
+      "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/policy.py": "8d1ea3a8ea64f53f25e99d3130c13939931b620247d515944dabdb00e8c9bb62",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/attempts.py": "c579a40c0d6739a090e2ce673e5ffcb1c5833c97d36341f7ed310ad3c809f7de",
+      "scripts/validation/public_gold/staged_event/context_experiment/source_first/custody.py": "8a569b13078af044fa7399c2f237c2a340e76553849d6c0d0fa38d3d6f8bcfb6",
+      "scripts/validation/public_gold/staged_event/generalization/anchors.py": "abecbd8b816e0e927d0ce490a54066e42adff42666810294babf6d1adbd76ab6",
+      "scripts/validation/public_gold/staged_event/generalization/contracts.py": "94127ba08dbc8d4efbb1d57ebfb90ba0e4f36c5a22369031ec903fa149431bac",
+      "scripts/validation/public_gold/staged_event/generalization/grading/agreement.py": "b0358f0d6b7a328cb17b6dc7d0482044b77650243136a9c01064f29494d76dda",
+      "scripts/validation/public_gold/staged_event/generalization/grading/artifacts.py": "4bbd831cae66dafac9f0be32693edd393de76cefb72b487cd3b4ef6542240759",
+      "scripts/validation/public_gold/staged_event/generalization/grading/config.py": "046176a558e96471bd2dc24bd4ddd151c16f0d38930ef40554a0dc4816d74e6c",
+      "scripts/validation/public_gold/staged_event/generalization/grading/contracts.py": "24428bd5bf901712600912bcfc287edbc61ecff5c4d36aa8c3ba26ccfaff2faa",
+      "scripts/validation/public_gold/staged_event/generalization/grading/evaluation.py": "6dc6186cb262d3494e3decc8143790bcbb1132ad62173b807155c5eb905dc1e9",
+      "scripts/validation/public_gold/staged_event/generalization/grading/policy.py": "cd630f3c4dc8a7725a53ab0fec063413ec932fc39b4cc3dccf279a53da795e4b",
+      "scripts/validation/public_gold/staged_event/generalization/panel.py": "299ab554981194720e7e86cb8a16688cfd7eaa180682d916a499324ee5f2dde2",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v6/config.py": "a6f645c8d516c2b16ded03de9d5462537da86c609031a5ff58ebabe4d3b3e7fc",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v6/preflight.py": "2abcfc7060680758cbe10484462944cb1f2d991ca11644b8ec1bcbcee6bd565c",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v6/provider.py": "4b5e4df0d86af1e3156f06627220876d533a5997f8b4c341e22c5b15862cae68",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v6/runner.py": "34f660c02de66196573ab273c5564e0ae355f01793d379017ef7bd1e581fdeac",
+      "scripts/validation/public_gold/staged_event/generalization/span_identity.py": "b9d21433557c763e8f905827e31f450e1141677d827384b532bd9b49940e541e"
+    },
+    "grading": {
+      "benchmark_lane": "SEPARATE_EVALUATION_ONLY_REVIEW_ONLY",
+      "graph_promotion_allowed": false,
+      "policy_sha256": "da315ef20300e669fbbfb2565f26faad7ba2ba1336de5d7939a7b22b34a2420c",
+      "qualification_credit": false,
+      "review_artifact_sha256": {
+        "v5-internet-grader-a": "e49307a293e3cfa8f93cfb75ec6473e422f1d5dce8fa51331a53831ff6da764d",
+        "v5-internet-grader-b": "41f21ea0f50f941fc886dea3f772220580e29b2eba0b8fed221ac6db8cf30b45",
+        "v5-internet-grader-c": "388002786417b626fb21f77481e1d2b3b7526eaa7d8fe644b018a2e22bf11f5b"
+      }
+    },
+    "model": "openai:gpt-5.6-luna",
+    "panel_sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+    "pivot_basis_sha256": {
+      "docs/validation/preregistrations/2026-07-22-staged-generalization-v5.json": "1b145ed37ce004a6811c84c3bb92837f129b73af0f2dbae2d68d18dea414fd2e",
+      "docs/validation/reports/2026-07-22-staged-generalization-v5-grader-implementation.md": "6458ede34e405bbbb9dc63411efb6f8ea3e283cee5d5d2773e3b0265ed36bcf3",
+      "docs/validation/results/2026-07-22-staged-generalization-v5-generalization-uncertainty-raw.json": "4e02be0a160f6c5e7efedbefddc263e82f8afdd164f28f93f67b3e0dbff0ad83",
+      "docs/validation/results/2026-07-22-staged-generalization-v5.json": "d60249165d26778a603f60c91ad8cf676907dfbc63246a49c8506fae0b574f10"
+    },
+    "prompt_sha256": "0d0b2abbb514ec9c094a1c95110efa2fe3338627fdfa6bcf2a1f0446032e225b",
+    "provider_format_sha256": "2cbadbd1a52e0b608a6186d09b8a1a275b2dbc62736c96d83120293d3b931c23",
+    "provider_input_sha256_by_case": {
+      "generalization-comparison-canary": "863b629ebaa2b04b9dbada57cf14411781cc927e6dee7a7c5edf8b02347f66dc",
+      "generalization-drug-sensitivity": "b36c56ff417594dc2bed0ba32b831db4409c22e1eaad933025a3a04f6d2fb3af",
+      "generalization-explicit-nested-cause": "4e85cd030d46ba4f7751a242fb2bb19846c7617937906a3e8878de7735ced847",
+      "generalization-negated-association": "37bf6012be0eabe86f2c7592c834bf6af6072acb7a4ffed31d1d438880f38be7",
+      "generalization-null-statistics": "095267d3cb0e22e421cb9f49a861fc644fefb4e54d246b3b848b0c976d54889b",
+      "generalization-uncertainty": "a4de9835bd636e0d0d7fb506511cdec9e856fbc9088cf9554b27035c0e0f3345"
+    },
+    "reasoning_effort": "high",
+    "schema_sha256": "d9878b31de38f44c9cb0864bd73e9b72b1ecf919f72c8a7e74c0bf23dd36236a",
+    "source_sha256_by_case": {
+      "generalization-comparison-canary": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-drug-sensitivity": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880",
+      "generalization-explicit-nested-cause": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+      "generalization-negated-association": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-null-statistics": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-uncertainty": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b"
+    }
+  },
+  "rules": {
+    "agent_inputs_exclude": [
+      "grader policy",
+      "expected roles",
+      "event counts",
+      "gold labels",
+      "benchmark projections",
+      "V5 output",
+      "case-specific correction"
+    ],
+    "benchmark_projection": "SEPARATE_EVALUATION_ONLY_REVIEW_ONLY",
+    "canary_first": true,
+    "fallback": false,
+    "graph_writes": false,
+    "one_creation_call_per_case": true,
+    "promotion": false,
+    "silent_retries": 0,
+    "terminal_decisions": [
+      "ADVANCE_STAGED_GENERALIZATION",
+      "PIVOT_WITH_EVIDENCE"
+    ],
+    "untouched_sources": false
+  },
+  "schema_version": "artana.staged_generalization.v6",
+  "supersedes_terminal": "PIVOT_WITH_EVIDENCE"
+}
