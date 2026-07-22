@@ -1,0 +1,182 @@
+{
+  "acceptance": {
+    "control_regressions_maximum": 0,
+    "modifier_scope_event_id": "E-2773996d557442a07d58",
+    "modifier_scope_must_be_correct": true,
+    "nested_matches_must_increase": true,
+    "receipts_must_verify": true,
+    "typed_role_matches_must_increase": true,
+    "unsupported_claims_maximum": 0,
+    "verifier_false_acceptances_must_decrease": true,
+    "wrong_to_correct_minimum": 2
+  },
+  "budgets": {
+    "acknowledgement_timeout_seconds": 30.0,
+    "fallbacks": 0,
+    "max_agent_calls": 4,
+    "max_output_tokens_per_call": 50000,
+    "max_polling_seconds_per_call": 900.0,
+    "max_total_cost_usd": 3.0,
+    "max_total_latency_seconds": 3600.0,
+    "max_total_tokens": 300000,
+    "polling_interval_seconds": 5.0,
+    "pricing_usd_per_token": {
+      "cached_input": 1e-07,
+      "input": 1e-06,
+      "output": 6e-06
+    },
+    "provider_retries": 0
+  },
+  "execution_authorized": true,
+  "frozen_state": {
+    "code": {
+      "files": {
+        "scripts/validation/public_gold/staged_event/context_experiment/compact_input.py": "83065bef1fe510482d81e003912ef0120f4d86d106718161364017b858b0de73",
+        "scripts/validation/public_gold/staged_event/context_experiment/contracts.py": "e850c1bc3a56dc9b6e51b6022aa6bb2368b036b89ff2ad991ee186c265e700ad",
+        "scripts/validation/public_gold/staged_event/context_experiment/live_execution.py": "c1cc157342a3c36679fae6fe3f2c99c4a63ff605daa4d8c9757f57c8dd01ae7d",
+        "scripts/validation/public_gold/staged_event/context_experiment/panel.py": "64fe896b13832c1e70a4e615bcc3effe7651066daf0ac1c8377d3a06cdd7bd80",
+        "scripts/validation/public_gold/staged_event/context_experiment/participant_grounding.py": "980983788ca954c8e34faccbe0bde606215c562880a1422e74de7c7d9552d660",
+        "scripts/validation/public_gold/staged_event/context_experiment/preflight.py": "d6f01b8e46bdf38889e0262c42eac398ba718e77a247d51a2d8fd408887aa51b"
+      }
+    },
+    "dependencies": {
+      "openai": "2.44.0",
+      "pydantic": "2.13.4",
+      "python": "3.13.12"
+    },
+    "guidelines": {
+      "path": "docs/validation/prompts/bionlp-cg-ontology-and-role-guidelines.md",
+      "sha256": "0f3a6e79e2cc39ab20a8b18426af1818bd71e45dc08c5761c2d826c28f1d6a5c"
+    },
+    "inputs": {
+      "input_token_estimation_method": "ceil(utf8_bytes/4)",
+      "participant_estimated_input_tokens": 11268,
+      "participant_provider_input_bytes": 45071,
+      "participant_provider_input_sha256": "7456aea40f0afb662ad06ad09be2b68aa62040461bfe6f2f331fb1cc070c514a",
+      "provider_input_byte_ceiling_per_stage": 200000,
+      "shared_context_sha256": "88ed1c7f8b4c14f71387b49cfe3b21518e0940ac292617f6089fe98e34caab2d",
+      "target_packets_sha256": "c93ef2e73d8027d2a567d100196f08c8db0a6e44c4db8ba77c479bbf6e88425d",
+      "v1_participant_provider_input_bytes": 483322,
+      "v2_consensus_path": "docs/validation/adjudications/2026-07-22-staged-event-v2-consensus.json",
+      "v2_consensus_sha256": "ba0404d884abb109f9e12253e63766093a7e794537ac45ec143b59e70680855c",
+      "v2_result_path": "docs/validation/reports/2026-07-22-staged-event-comparison-v2-result.json",
+      "v2_result_sha256": "f136f6bf439704991db13d72d2691323ac601212ee40e4cab0a19235a9abbb58"
+    },
+    "model": {
+      "identity": "openai:gpt-5.6-luna",
+      "provider_model_id": "gpt-5.6-luna",
+      "reasoning_effort": "high",
+      "verifier_independence": "SAME_MODEL_FRESH_INDEPENDENT_CALL"
+    },
+    "panel": {
+      "control_ids": [
+        "E-0effc9409e12ed77b198",
+        "E-205f021ad42236e5f142",
+        "E-2d5bd3d8506d519d2d69",
+        "E-60b0d54816b0585893d1"
+      ],
+      "event_ids": [
+        "E-0effc9409e12ed77b198",
+        "E-11f3a0578efc0b883103",
+        "E-205f021ad42236e5f142",
+        "E-2773996d557442a07d58",
+        "E-2d5bd3d8506d519d2d69",
+        "E-544748ccc8e6c17eb290",
+        "E-60b0d54816b0585893d1",
+        "E-66488a62883bb758e80b",
+        "E-7c96d5ccc6b62c1f4602",
+        "E-8498b84a9b3bb3e93c2f",
+        "E-94edf9d8896d3f0729cb",
+        "E-9b071863693a57dae92b",
+        "E-a00865ea42e6f577581d",
+        "E-b43186fccd287bbb1cd5",
+        "E-c1c8f47ea535c511fb62",
+        "E-cf483c0e6ea43235f767",
+        "E-d96f3f94563f9fce3286",
+        "E-dc2596d35c7a939787a6",
+        "E-e2a89e97c05e2b8d93d2",
+        "E-fd23ca8aac731381622e"
+      ],
+      "non_creditable_ids": [
+        "E-7c96d5ccc6b62c1f4602",
+        "E-c1c8f47ea535c511fb62",
+        "E-cf483c0e6ea43235f767",
+        "E-fd23ca8aac731381622e"
+      ],
+      "repair_target_ids": [
+        "E-11f3a0578efc0b883103",
+        "E-2773996d557442a07d58",
+        "E-544748ccc8e6c17eb290",
+        "E-66488a62883bb758e80b",
+        "E-8498b84a9b3bb3e93c2f",
+        "E-94edf9d8896d3f0729cb",
+        "E-9b071863693a57dae92b",
+        "E-a00865ea42e6f577581d",
+        "E-b43186fccd287bbb1cd5",
+        "E-d96f3f94563f9fce3286",
+        "E-dc2596d35c7a939787a6",
+        "E-e2a89e97c05e2b8d93d2"
+      ]
+    },
+    "prompts": {
+      "modifiers": {
+        "effective_sha256": "738227be32dfc115a557b9416c93a00818c90879079dac0f01a1602e1b4b5330",
+        "path": "docs/validation/prompts/2026-07-22-luna-context-modifiers.md",
+        "sha256": "57004625e1819f25961351a0b8bbdd4f12cc3663f558efc5ae9a72396909feef"
+      },
+      "participants": {
+        "effective_sha256": "2d07c2ce0ee09e15b20e3ac191aaacbae1ec5de22971232a69620f82c140b997",
+        "path": "docs/validation/prompts/2026-07-22-luna-context-participants.md",
+        "sha256": "0919644748e1e40a4e180e58062e0e74df8e6b0b33970f9e66c3cb92409765c5"
+      },
+      "roles": {
+        "effective_sha256": "74adb5f0607fd3bd4aa9171eb2674a94458e2473cbfc07e2dda138c1d282d44a",
+        "path": "docs/validation/prompts/2026-07-22-luna-context-roles.md",
+        "sha256": "00b0dce97e02ee26705859fc866c3672112fa67e76383351e7e3299c9dd4e73f"
+      },
+      "verification": {
+        "effective_sha256": "81120de99d4c1aba480fe9193ac71fa73025c8f9f4bf35296b6281190301c5f2",
+        "path": "docs/validation/prompts/2026-07-22-luna-context-verification.md",
+        "sha256": "9aaf69e94591b2ea6947861ec421ccf829d54a6c86705d5c2906206ba39aa340"
+      }
+    },
+    "provider_formats": {
+      "modifiers": "9170ddcd2e79108cad7ce1480bf82f5ac1b8f26393486be9a40ceb21b7869192",
+      "participants": "7c461544476e8409d9bb80f72110aa6664993c98aa41e283ea4dfb59eedfb71d",
+      "roles": "2ade277575c11221b349bee29a82d4974289501c6ff30619f472d29d1cab718a",
+      "verification": "af6d18a70cef6c8db2ec1f3f30aaff370d3024ac1459159fceb4d03fa471d2f1"
+    },
+    "schemas": {
+      "modifiers": "f13518cfd21c001a504e46e24c682c1015864cbf87eb5ebe0a82a0262d8e1b58",
+      "participants": "49a21b7b72b611d3a6aa524c8623eba01975f8dbce1dd47569bc51987ec9b0fb",
+      "roles": "7f59eee54ffff882994e4b65aca9721be43cab98eb7649b65668d5a4dbfc206e",
+      "verification": "cc80365e089792c102739d524fb87a69105f7210eee99cd7a8629b6735215cf3"
+    },
+    "source": {
+      "classification": "EXPOSED_DEVELOPMENT",
+      "document_id": "PMID-16428936",
+      "path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-16428936.txt",
+      "sealed_test_access": "DISABLED",
+      "sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab"
+    }
+  },
+  "qualification_status": "EXPOSED_DEVELOPMENT_NON_QUALIFYING",
+  "schema_version": "artana.public_gold.luna_context_experiment.v2",
+  "stage_order": [
+    "participants",
+    "roles",
+    "modifiers",
+    "verification"
+  ],
+  "status": "FROZEN_AUTHORIZED_FOR_ONE_EXECUTION",
+  "terminal_rules": {
+    "completion_calls": 0,
+    "discovery_calls": 0,
+    "fallbacks": 0,
+    "graph_writes": 0,
+    "promotion": 0,
+    "retries": 0,
+    "sol_calls": 0,
+    "untouched_sources": 0
+  }
+}
