@@ -1,0 +1,39 @@
+{
+  "addendum_status": "NON_CREDITABLE_DIAGNOSTIC_ONLY",
+  "formal_results": {
+    "role_alignment_v1": "INVALID_PROVIDER_EXECUTION",
+    "role_alignment_v2": "INVALID_PROVIDER_EXECUTION",
+    "terminal": "STOP_OPERATIONAL_BLOCKER"
+  },
+  "immutable_inputs": {
+    "role_alignment_v1_result_sha256": "84b75c1b4c66c4ef6834d44c564ee308529f9c94d8dae75040b4ff03a2746ad7",
+    "role_alignment_v1_raw_sha256": "694bff44180897ad802ecf3ac20727acb2d01ac3ccd101a5c3f66dae3dd2a9f4",
+    "role_alignment_v2_result_sha256": "2039e5e53bb7527d84ad6d9961fce81efd3f788a332a805f2054778672b0d171",
+    "role_alignment_v2_raw_sha256": "6b55ed9df716a294de7703ba76faf827afb0ac2a2209b40da4a3040183f2aa6a",
+    "terminal_result_sha256": "f2db5cf1f58a9099ceccb5896fe0c01c8c9b7766edf4edc3c49d38ffdb68dca1"
+  },
+  "diagnostic_observations": {
+    "shared_case_count": 7,
+    "shared_role_agreement": "6/7",
+    "shared_role_disagreement_case_ids": [
+      "role-case-14"
+    ],
+    "target_sensitivity_case_ids": [
+      "role-case-01",
+      "role-case-02",
+      "role-case-03"
+    ],
+    "target_sensitivity_source_role": "STIMULUS_OR_OBJECT",
+    "target_sensitivity_agreement": "3/3",
+    "explicit_causal_control_case_id": "role-case-11",
+    "explicit_causal_wording_source_role": "CAUSAL_AGENT"
+  },
+  "interpretation_limits": {
+    "qualification_metric": false,
+    "scientific_gate_credit": false,
+    "benchmark_projection_credit": false,
+    "graph_promotion_allowed": false,
+    "reason": "Both provider executions violated frozen receipt budgets. Their raw categorical outputs are preserved only as non-creditable diagnostics and are not reinterpreted as valid reviews."
+  },
+  "changes_to_prior_results": false
+}

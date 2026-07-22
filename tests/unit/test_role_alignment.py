@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import json
 from pathlib import Path
 from typing import TypeVar, cast
@@ -237,8 +238,10 @@ def test_projection_is_dual_role_evaluation_only_and_cannot_promote() -> None:
 
     assert projection.source_semantic_role == "STIMULUS_OR_OBJECT"
     assert projection.benchmark_projection_role == "CAUSE"
+    assert projection.policy_rule_id == "CG-CORPUS-SENSITIVITY-OBJECT-AS-CAUSE"
     assert projection.projection_basis == "EVALUATION_ONLY_CORPUS_INFERENCE"
     assert projection.graph_promotion_allowed is False
+    assert projection.scientific_causal_verbalization_allowed is False
     assert DualRoleProjection.__dataclass_fields__["review_only"].init is False
     assert (
         DualRoleProjection.__dataclass_fields__["graph_promotion_allowed"].init is False
@@ -250,6 +253,80 @@ def test_projection_is_dual_role_evaluation_only_and_cannot_promote() -> None:
             benchmark_projection_role="CAUSE",
             policy_rule_id="INVENTED-RULE",
         )
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"source_semantic_role": "CAUSAL_AGENT"}, "source role"),
+        ({"benchmark_projection_role": "THEME"}, "benchmark role"),
+        ({"projection_scope": "SCIENTIFIC_GRAPH"}, "projection scope"),
+    ],
+)
+def test_corpus_projection_rejects_unauthorized_uses(
+    overrides: dict[str, object], message: str
+) -> None:
+    values: dict[str, object] = {
+        "case_id": "target",
+        "source_semantic_role": "STIMULUS_OR_OBJECT",
+        "benchmark_projection_role": "CAUSE",
+        "policy_rule_id": "CG-CORPUS-SENSITIVITY-OBJECT-AS-CAUSE",
+    }
+    values.update(overrides)
+    with pytest.raises(ValueError, match=message):
+        create_projection(**values)  # type: ignore[arg-type]
+
+
+def test_projection_contract_has_no_mutation_verbalization_or_promotion_inputs() -> (
+    None
+):
+    parameters = inspect.signature(create_projection).parameters
+
+    assert "replace_source_meaning" not in parameters
+    assert "scientific_causal_verbalization" not in parameters
+    assert "graph_promotion" not in parameters
+    assert DualRoleProjection.__dataclass_fields__["source_semantic_role"].init is True
+    assert (
+        DualRoleProjection.__dataclass_fields__[
+            "scientific_causal_verbalization_allowed"
+        ].init
+        is False
+    )
+    assert (
+        DualRoleProjection.__dataclass_fields__["graph_promotion_allowed"].init is False
+    )
+
+
+@pytest.mark.parametrize(
+    ("rule_id", "source_role", "benchmark_role"),
+    [
+        ("CG-OFFICIAL-THEME", "AFFECTED_ENTITY", "THEME"),
+        ("CG-OFFICIAL-CAUSE", "CAUSAL_AGENT", "CAUSE"),
+        ("CG-OFFICIAL-PARTICIPANT", "CONTEXTUAL_PARTICIPANT", "OTHER"),
+        ("CG-OFFICIAL-INSTRUMENT", "INSTRUMENT", "INSTRUMENT"),
+        (
+            "CG-CORPUS-SENSITIVITY-OBJECT-AS-CAUSE",
+            "OTHER_EXPLICIT",
+            "CAUSE",
+        ),
+    ],
+)
+def test_each_policy_rule_accepts_only_its_authorized_projection(
+    rule_id: str,
+    source_role: SourceSemanticRole,
+    benchmark_role: BenchmarkRole,
+) -> None:
+    projection = create_projection(
+        case_id="authorized",
+        source_semantic_role=source_role,
+        benchmark_projection_role=benchmark_role,
+        policy_rule_id=rule_id,
+    )
+
+    assert projection.source_semantic_role == source_role
+    assert projection.benchmark_projection_role == benchmark_role
+    assert projection.review_only is True
+    assert projection.graph_promotion_allowed is False
 
 
 def test_deterministic_evaluation_advances_without_relabeling_source_meaning() -> None:

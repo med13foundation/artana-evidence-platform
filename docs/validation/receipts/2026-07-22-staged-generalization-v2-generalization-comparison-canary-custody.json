@@ -1,0 +1,182 @@
+{
+  "output_sha256": "91f1eacd6976b3bd1096fca3de71369ed389ef31c5c76f8c5f1329f00f2913df",
+  "provider_input_sha256": "a5b5261625be5b5434fc0339d0f25cbf44ca7ab5022038ddf575e1e27534c237",
+  "receipt": {
+    "acknowledgement_envelope_sha256": "2d3268be4e77d29aed750c7386cb4546f3afa8368b52f3764dfcc587403dd464",
+    "acknowledgement_seconds": 0.7712529590062331,
+    "budgets": {
+      "cost": "PASS",
+      "latency": "PASS",
+      "observed_cost_usd": 0.011156000000000001,
+      "observed_latency_seconds": 79.99234245799016,
+      "observed_output_tokens": 1574,
+      "observed_total_tokens": 3286,
+      "output_tokens": "PASS",
+      "requested_max_cost_usd": 0.15,
+      "requested_max_latency_seconds": 900.0,
+      "requested_max_output_tokens": 20000,
+      "requested_max_total_tokens": 24000,
+      "total_tokens": "PASS"
+    },
+    "confirmation_retrieval_requests": 1,
+    "creation_envelope_sha256": "a3101211d804204dc1c2839a28d768ee93cda86044d4e2a21993faeb99e89109",
+    "differences": [],
+    "duplicate_creation_calls": 0,
+    "identity": {
+      "created_at": 1784751843.0,
+      "model": "gpt-5.6-luna",
+      "object_type": "response",
+      "output_items": [
+        [
+          "reasoning",
+          "rs_0125f93882cd210b006a6126e726088198896898c785c15df3"
+        ],
+        [
+          "message",
+          "msg_0125f93882cd210b006a612703831481988187282131a78f1c"
+        ]
+      ],
+      "response_id": "resp_0125f93882cd210b006a6126e31f308198996448e634f970ec",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "polling_does_not_count_as_model_generation": true,
+    "polling_retrieval_requests": 15,
+    "polling_seconds": 78.82763816701481,
+    "provider_creation_calls": 1,
+    "provider_input_sha256": "a5b5261625be5b5434fc0339d0f25cbf44ca7ab5022038ddf575e1e27534c237",
+    "provider_retries": 0,
+    "provider_schema_sha256": "20738510ef96bec775c6268a5056ff3b385897426d43f9aac0781759011a376b",
+    "retrieval_envelope_sha256": "a3101211d804204dc1c2839a28d768ee93cda86044d4e2a21993faeb99e89109",
+    "scientific_payload_sha256": "91f1eacd6976b3bd1096fca3de71369ed389ef31c5c76f8c5f1329f00f2913df",
+    "status": "VERIFIED_LIVE",
+    "status_history": [
+      "queued",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "completed"
+    ],
+    "usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.011156000000000001,
+      "input_tokens": 1712,
+      "latency_seconds": 79.99234245799016,
+      "output_tokens": 1574,
+      "reasoning_tokens": 513,
+      "total_tokens": 3286
+    }
+  },
+  "requested_and_observed_budgets": {
+    "cost": "PASS",
+    "latency": "PASS",
+    "observed_cost_usd": 0.011156000000000001,
+    "observed_latency_seconds": 79.99234245799016,
+    "observed_output_tokens": 1574,
+    "observed_total_tokens": 3286,
+    "output_tokens": "PASS",
+    "requested_max_cost_usd": 0.15,
+    "requested_max_latency_seconds": 900.0,
+    "requested_max_output_tokens": 20000,
+    "requested_max_total_tokens": 24000,
+    "total_tokens": "PASS"
+  },
+  "response_id": "resp_0125f93882cd210b006a6126e31f308198996448e634f970ec",
+  "schema_sha256": "d9878b31de38f44c9cb0864bd73e9b72b1ecf919f72c8a7e74c0bf23dd36236a",
+  "stage": "GENERALIZATION:generalization-comparison-canary",
+  "typed_output": {
+    "case_id": "generalization-comparison-canary",
+    "completeness": "COMPLETE",
+    "inventory": [
+      {
+        "event_id": "E1",
+        "event_type": "COMPARISON",
+        "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+        "explanation": "This event represents the explicit comparison of comorbidity burden between patients with RA and patients without RA.",
+        "trigger_text": "had more comorbidities than"
+      }
+    ],
+    "links": [
+      {
+        "arguments": [
+          {
+            "explanation": "Patients with RA are the population whose comorbidity burden is described.",
+            "role": "AFFECTED_ENTITY",
+            "target_id": "P1",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "Comorbidities are the characteristic being compared.",
+            "role": "OUTCOME",
+            "target_id": "P2",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "Patients without RA are the comparison population.",
+            "role": "COMPARATOR",
+            "target_id": "P3",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "E1"
+      }
+    ],
+    "participants": [
+      {
+        "entity_type": "POPULATION",
+        "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+        "exact_text": "Patients with RA",
+        "explanation": "The population reported to have the greater comorbidity burden.",
+        "participant_id": "P1"
+      },
+      {
+        "entity_type": "OUTCOME",
+        "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+        "exact_text": "comorbidities",
+        "explanation": "The compared clinical characteristic.",
+        "participant_id": "P2"
+      },
+      {
+        "entity_type": "POPULATION",
+        "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+        "exact_text": "patients without RA",
+        "explanation": "The comparator population.",
+        "participant_id": "P3"
+      }
+    ],
+    "root_event_id": "E1",
+    "semantic_axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "GREATER",
+        "direction": "INCREASED",
+        "event_id": "E1",
+        "evidence_items": [
+          "Patients with RA were more likely to be female and had more comorbidities than patients without RA."
+        ],
+        "explanation": "The source explicitly states that patients with RA had more comorbidities than patients without RA. No statistical significance interpretation is stated.",
+        "polarity": "AFFIRMED",
+        "statistical_observations": [
+          {
+            "exact_text": null,
+            "observation_type": "NONE"
+          }
+        ],
+        "uncertainty": "ASSERTED"
+      }
+    ],
+    "structure_explanation": "The highlighted comparison is represented by one comparison event with explicit affected population, outcome, and comparator."
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "acceptance": {
+    "all_cases_pass": true,
+    "contradiction_count": 0,
+    "receipt_and_budget_validity": "ALL_CALLS",
+    "source_meaning_preserved": true,
+    "unsupported_claim_count": 0
+  },
+  "authorization": "EXPOSED_DEVELOPMENT_ONLY",
+  "frozen_state": {
+    "budgets": {
+      "global_max_cost_usd": 0.9,
+      "global_max_creation_calls": 6,
+      "per_call_max_cost_usd": 0.15,
+      "per_call_max_latency_seconds": 900.0,
+      "per_call_max_output_tokens": 20000,
+      "per_call_max_total_tokens": 24000,
+      "provider_retries": 0
+    },
+    "canary_case_id": "generalization-comparison-canary",
+    "case_order": [
+      "generalization-comparison-canary",
+      "generalization-null-statistics",
+      "generalization-negated-association",
+      "generalization-uncertainty",
+      "generalization-drug-sensitivity",
+      "generalization-explicit-nested-cause"
+    ],
+    "code_sha256": {
+      "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/policy.py": "8d1ea3a8ea64f53f25e99d3130c13939931b620247d515944dabdb00e8c9bb62",
+      "scripts/validation/public_gold/staged_event/generalization/anchors.py": "cbd983a6c2fe25d18aeb771b090d04b8137cb8c650984ec86d982a988ca975f8",
+      "scripts/validation/public_gold/staged_event/generalization/config.py": "ba38ff74569fc0e3b752d06432b1b89de9fce165abc9f4583e17c0713e520510",
+      "scripts/validation/public_gold/staged_event/generalization/contracts.py": "94127ba08dbc8d4efbb1d57ebfb90ba0e4f36c5a22369031ec903fa149431bac",
+      "scripts/validation/public_gold/staged_event/generalization/evaluation.py": "18af8b3387dc77d0b4e04ba314351ca926d67d0483ab0a20861353de3f483200",
+      "scripts/validation/public_gold/staged_event/generalization/panel.py": "5c44dbec7cd44ced6c39acd6fbdc67cc483a6bf5ba931332079901deb63ad8de",
+      "scripts/validation/public_gold/staged_event/generalization/preflight.py": "6bc88b9ce2c93a6bb7b9be4aa65fcf28629129fe9c589fe136313db886aaa315",
+      "scripts/validation/public_gold/staged_event/generalization/provider.py": "ad349f5e74a54640a209a4cd976a3c66d5a8fac34fc32ac00ea1b4fd2880f8be",
+      "scripts/validation/public_gold/staged_event/generalization/runner.py": "a0299dacfe1d7782cc980aa1276a2a51f6e69b3494e577d576d4959531068fe6"
+    },
+    "model": "openai:gpt-5.6-luna",
+    "panel_sha256": "74e2d96ed0e65e2625d5a4e4d3c5ce2ef1d35c93f2143848070307196ec60234",
+    "prompt_sha256": "092bbfabd6c8f5be8f4ba23495165a3011c2fe8453987ef11fcbbfc3f58f4b82",
+    "provider_format_sha256": "20738510ef96bec775c6268a5056ff3b385897426d43f9aac0781759011a376b",
+    "provider_input_sha256_by_case": {
+      "generalization-comparison-canary": "a5b5261625be5b5434fc0339d0f25cbf44ca7ab5022038ddf575e1e27534c237",
+      "generalization-drug-sensitivity": "da7f58544d00ac54b43d5bc03310653c6e776381b5285d3e037ce883430ebf03",
+      "generalization-explicit-nested-cause": "1849a8d3b2373bb048ee2c18a8665cfd6afadf0665f8f6e430c633bfd8843c04",
+      "generalization-negated-association": "81f130d29497ceb16873418edd38471affe411fb8996f14ad873525f7d6bccff",
+      "generalization-null-statistics": "7d0bef2715ea7cfbe156fc132ea652c9abf025a1fd44e0011b5f33713ac4d717",
+      "generalization-uncertainty": "aa4231883a2e4b1684c5dc54d97c19f48140513fc2d25959e56cd172de7ae955"
+    },
+    "reasoning_effort": "high",
+    "schema_sha256": "d9878b31de38f44c9cb0864bd73e9b72b1ecf919f72c8a7e74c0bf23dd36236a",
+    "source_sha256_by_case": {
+      "generalization-comparison-canary": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-drug-sensitivity": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880",
+      "generalization-explicit-nested-cause": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+      "generalization-negated-association": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-null-statistics": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-uncertainty": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b"
+    }
+  },
+  "rules": {
+    "agent_inputs_exclude": [
+      "expected roles",
+      "event counts",
+      "gold labels",
+      "benchmark projections"
+    ],
+    "benchmark_projection": "EVALUATION_ONLY_REVIEW_ONLY",
+    "canary_first": true,
+    "fallback": false,
+    "graph_writes": false,
+    "one_creation_call_per_case": true,
+    "promotion": false,
+    "silent_retries": 0,
+    "terminal_decisions": [
+      "ADVANCE_STAGED_GENERALIZATION",
+      "PIVOT_WITH_EVIDENCE"
+    ],
+    "untouched_sources": false
+  },
+  "schema_version": "artana.staged_generalization.v2"
+}

@@ -1,0 +1,83 @@
+{
+  "case_id": "generalization-comparison-canary",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "E1",
+      "event_type": "COMPARISON",
+      "exact_evidence": "had more comorbidities than patients without RA",
+      "explanation": "The finding explicitly compares the number of comorbidities in patients with RA with that in patients without RA.",
+      "trigger_text": "had more comorbidities than"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "Patients with RA are the population evaluated.",
+          "role": "POPULATION",
+          "target_id": "P1",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "Patients without RA are the comparison population.",
+          "role": "COMPARATOR",
+          "target_id": "P2",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "Comorbidities are the characteristic compared between the populations.",
+          "role": "OUTCOME",
+          "target_id": "P3",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "E1"
+    }
+  ],
+  "participants": [
+    {
+      "entity_type": "POPULATION",
+      "exact_evidence": "Patients with RA",
+      "exact_text": "Patients with RA",
+      "explanation": "The population being evaluated in the comparison.",
+      "participant_id": "P1"
+    },
+    {
+      "entity_type": "POPULATION",
+      "exact_evidence": "patients without RA",
+      "exact_text": "patients without RA",
+      "explanation": "The population serving as the comparison group.",
+      "participant_id": "P2"
+    },
+    {
+      "entity_type": "OUTCOME",
+      "exact_evidence": "more comorbidities",
+      "exact_text": "comorbidities",
+      "explanation": "The measured characteristic being compared between the two populations.",
+      "participant_id": "P3"
+    }
+  ],
+  "root_event_id": "E1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "GREATER",
+      "direction": "INCREASED",
+      "event_id": "E1",
+      "evidence_items": [
+        "had more comorbidities than patients without RA"
+      ],
+      "explanation": "The source asserts that the RA population had a greater number of comorbidities than the population without RA, without reporting or interpreting statistical significance.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    }
+  ],
+  "structure_explanation": "The highlighted comparison is fully represented by one comparison event linking the RA population, the non-RA comparator population, and the comorbidity outcome. Other claims in the surrounding passage are outside the highlighted finding."
+}

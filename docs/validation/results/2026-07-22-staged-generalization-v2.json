@@ -1,0 +1,58 @@
+{
+  "all_receipts_valid": true,
+  "case_count": 1,
+  "cases": [
+    {
+      "benchmark_fidelity_after_projection": "NOT_APPLICABLE",
+      "benchmark_fidelity_before_projection": "NOT_APPLICABLE",
+      "case_id": "generalization-comparison-canary",
+      "comparison_fidelity": true,
+      "complete_event_recovery": false,
+      "contradiction_count": 0,
+      "direction_fidelity": true,
+      "exact_evidence_grounding": true,
+      "failure_reasons": [
+        "typed event arguments differ from frozen reference"
+      ],
+      "family": "COMPARISON_DIRECTION",
+      "nested_event_structure": true,
+      "participant_role_fidelity": false,
+      "passed": false,
+      "polarity_fidelity": true,
+      "projection_review_only": true,
+      "statistical_fidelity": true,
+      "uncertainty_fidelity": true,
+      "unsupported_claim_count": 1
+    }
+  ],
+  "comparison_fidelity": "1/1",
+  "complete_event_recovery": "0/1",
+  "contradiction_count": 0,
+  "cost_usd": 0.011156000000000001,
+  "decision": "PIVOT_WITH_EVIDENCE",
+  "direction_fidelity": "1/1",
+  "exact_evidence_grounding": "1/1",
+  "graph_writes": 0,
+  "input_tokens": 1712,
+  "latency_seconds": 79.99234245799016,
+  "model": "openai:gpt-5.6-luna",
+  "nested_event_structure": "1/1",
+  "output_tokens": 1574,
+  "participant_role_fidelity": "0/1",
+  "passed_case_count": 0,
+  "planned_case_count": 6,
+  "polarity_fidelity": "1/1",
+  "provider_calls": 1,
+  "qualification_credit": false,
+  "reasoning_effort": "high",
+  "response_ids": [
+    "resp_0125f93882cd210b006a6126e31f308198996448e634f970ec"
+  ],
+  "review_only": true,
+  "statistical_fidelity": "1/1",
+  "stopped_after_case_id": "generalization-comparison-canary",
+  "total_tokens": 3286,
+  "trusted_promotion": false,
+  "uncertainty_fidelity": "1/1",
+  "unsupported_claim_count": 1
+}
