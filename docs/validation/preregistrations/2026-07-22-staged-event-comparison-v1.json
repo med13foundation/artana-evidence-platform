@@ -1,0 +1,197 @@
+{
+  "acceptance": {
+    "complete_events_minimum": 10,
+    "completion_unsupported_increase_maximum": 0,
+    "nested_arguments_minimum": 5,
+    "triggers_minimum": 24,
+    "typed_arguments_minimum": 15,
+    "unsupported_or_invented_events_maximum": 15,
+    "valid_receipts_required": true
+  },
+  "baseline": {
+    "classification": "PRESERVED_V6_DIAGNOSTIC",
+    "complete_events": {
+      "gold": 30,
+      "matched": 2
+    },
+    "modifiers": {
+      "gold": 2,
+      "matched": 0
+    },
+    "nested_arguments": {
+      "gold": 12,
+      "matched": 1
+    },
+    "triggers": {
+      "gold": 30,
+      "matched": 21
+    },
+    "typed_arguments": {
+      "gold": 37,
+      "matched": 1
+    },
+    "unauthorized_semantic_mappings": 19,
+    "unsupported_or_invented_events": 31
+  },
+  "budgets": {
+    "acknowledgement_timeout_seconds": 30.0,
+    "alternate_models": 0,
+    "fallbacks": 0,
+    "max_agent_calls": 6,
+    "max_output_tokens_per_call": 20000,
+    "max_polling_seconds_per_call": 600.0,
+    "max_total_cost_usd": 12.0,
+    "max_total_latency_seconds": 1800.0,
+    "max_total_tokens": 400000,
+    "polling_interval_seconds": 5.0,
+    "pricing_usd_per_token": {
+      "cached_input": 5e-07,
+      "input": 5e-06,
+      "output": 3e-05
+    },
+    "provider_retries": 0
+  },
+  "execution_authorized": true,
+  "frozen_state": {
+    "dependencies": {
+      "bundle_sha256": "b820d99460b5c5c95239b9f258b53026733598506bc272fd0d06f0d6960d7de8",
+      "packages": {
+        "openai": "2.44.0",
+        "pydantic": "2.13.4"
+      },
+      "pyproject_sha256": "991632643e70dfbdc049a6211b69bc614c6f84d6625adcff96ab0ba1bc362fab",
+      "python": "3.13.12"
+    },
+    "discovery_input_sha256": "f4f85f8210203d32457c71ebec7700147ada59e9c09a251e4868f13da3f22712",
+    "gold_isolation": {
+      "annotations_in_agent_input": false,
+      "event_counts_in_agent_input": false,
+      "event_ids_in_agent_input": false,
+      "gold_phrases_in_agent_input": false,
+      "roles_in_agent_input": false,
+      "triggers_in_agent_input": false
+    },
+    "implementation": {
+      "code_bundle_sha256": "76752e68a3959e163eca84691d04b6c4ee1f5ffe32337a957a0f3ebaef312588",
+      "code_files": {
+        "scripts/validation/provider_receipt_boundary/background/contracts.py": "4541a3d188bff44e0799ccd8d989314ddbf64e1a1ce7df7aa07e28271e6065ae",
+        "scripts/validation/provider_receipt_boundary/background/execution.py": "14a445aef4d23421459bc462fa3c6495f2a39871aa87df1f22ca0a94ddde70b2",
+        "scripts/validation/provider_receipt_boundary/background/polling.py": "b382aac66ab0b00b545a5385667a88e60d37a80253ef914b0b5988d311cec321",
+        "scripts/validation/provider_receipt_boundary/background/states.py": "958a34fa0ab25fd7fb9f877c23bedbd83a1b00e59836b8799f3659b5fc60f2ba",
+        "scripts/validation/provider_receipt_boundary/canonical_payload.py": "61294b3278b3d7bb6c8ba9127404658ca4c24fe30234e46a989931206f50f908",
+        "scripts/validation/provider_receipt_boundary/contracts.py": "4ab68deed23135d1feeb26ece321254573f02ce0b4139037f63e2a303ab8d054",
+        "scripts/validation/provider_receipt_boundary/identity.py": "a07f468ae572ab07ef4b70e7661dcdb416860a71fc1be1b509518aeda1ad8d30",
+        "scripts/validation/provider_receipt_boundary/structural_diff.py": "46e778decc1d15172cfaaa898ae53f693846b779bc9cf84a0ed2415cd2da2e55",
+        "scripts/validation/provider_receipt_boundary/validation.py": "bd8ada04350eea9fdc121ec9876fe159362e315fc60f9a3b656760d15d6f0ecc",
+        "scripts/validation/public_gold/bionlp_cg_adapter.py": "083f20b1ecf06e66f29163fc5ccf5a30b7030184ceca594d4657e92b73e0bd3c",
+        "scripts/validation/public_gold/bionlp_cg_event_projection.py": "c7887203169d6b72d019e91eaacc99edfe9851c3a84d3f331aa363369c1235b7",
+        "scripts/validation/public_gold/lossless_event_experiment_contracts.py": "94b11628ffe4a983023ab071e43f3294a530a4482df1d5932027705c857268e7",
+        "scripts/validation/public_gold/lossless_event_offset_resolution.py": "0b533c22860b91c6cc07cb6c419002562f52341a925c3271fd481114f683d195",
+        "scripts/validation/public_gold/lossless_event_provider.py": "7d7caaf0dbb1ad539335e16461bc8d1e1dd58fb9514c5d3093ffbe0274e86d9a",
+        "scripts/validation/public_gold/lossless_event_scoring.py": "23c0de70726329b1d994a47e98f19c449a0d26850bd9fc6f906972e953b4486d",
+        "scripts/validation/public_gold/source_selection.py": "82ccbd5a9d152223c8f9b0e453820102b1a96f94849e1d4450259d25508615c4",
+        "scripts/validation/public_gold/staged_event/assembly.py": "0df79fdbc606c8c1b613b688e8fb6847d56fdf7706d30e7e48506620f3b420e8",
+        "scripts/validation/public_gold/staged_event/contracts.py": "e319036d686ee30216036aabc23de08ef705698e125a8ae051af582d7139444d",
+        "scripts/validation/public_gold/staged_event/live_execution.py": "1247e198a89151df6510c05705186a2c81d86a679ebf3f1ae68a41c15448b9ff",
+        "scripts/validation/public_gold/staged_event/paths.py": "f483f57a0e2e5d757c86e26a92c300ff9c853e990dee4255d189b54645a8c8df",
+        "scripts/validation/public_gold/staged_event/preflight.py": "9206b1c7d6b86184fcc99053b9ad51b89752ea0dcd1da144d7f4748a54d2222d",
+        "scripts/validation/public_gold/staged_event/prompting.py": "8b004a5c486cfb8d2c26d5bcf009944822e122ec0df076b47073bff683d69249",
+        "scripts/validation/public_gold/staged_event/registry.py": "4d5dd91c10402c23fcc538f70190c167ca565dc721253de4324d37b494f20b5a",
+        "services/artana_evidence_api/document_extraction_support/scientific_events/contracts.py": "3590fb5b5a3f7d05fb0632f01ea1e9be95264fad56826e29018e27644044805c",
+        "services/artana_evidence_api/document_extraction_support/scientific_events/validation.py": "87fd91991ec432d9bb5367fd35efb9ce41c700c8a5d04fef492070394e5db2c5"
+      }
+    },
+    "model": {
+      "identity": "openai:gpt-5.6-sol",
+      "provider_model_id": "gpt-5.6-sol",
+      "reasoning_effort": "high",
+      "temperature": "provider_default_not_set"
+    },
+    "optional_stage": "completion",
+    "prompts": {
+      "completion": {
+        "path": "docs/validation/prompts/2026-07-22-staged-event-completion.md",
+        "sha256": "9a5c953bdab782ec8227f24a662a75feea683f851faec33588abfa3b84a42272"
+      },
+      "discovery": {
+        "path": "docs/validation/prompts/2026-07-22-staged-event-discovery.md",
+        "sha256": "f15bdce6497de5572ffe81edc85b460e2444c03625aa98c15361c6c221785243"
+      },
+      "modifiers": {
+        "path": "docs/validation/prompts/2026-07-22-staged-event-modifiers.md",
+        "sha256": "f615adf26d5adb9548b1d2c9d7ffe9095829f8190fe3093f08a4c2b81c742bc6"
+      },
+      "participants": {
+        "path": "docs/validation/prompts/2026-07-22-staged-event-participants.md",
+        "sha256": "989b4adc8bdc9e8486c321bc0b195c42d5e3cb14a14c11abd9a67ee578a3dd8b"
+      },
+      "roles": {
+        "path": "docs/validation/prompts/2026-07-22-staged-event-roles.md",
+        "sha256": "276b33dc906b83c0ab3f50da57b1a5dea0b76af92fa3cd13499b99b1f4edeead"
+      },
+      "verification": {
+        "path": "docs/validation/prompts/2026-07-22-staged-event-verification.md",
+        "sha256": "d3f57c8c1f99aac4a9a75e571679beb7efbd7e610ee3216d5dde7b84d10f1135"
+      }
+    },
+    "provider_formats": {
+      "completion": "c70423eebd25fba021ae74231cf06dad10cf83fa2db419340a24bdbb9017f39d",
+      "discovery": "8d872edecdea1a757f85b00eb14dd42e4a156bc9ce837150c132773d05d70a5b",
+      "modifiers": "044dc407b97b0b0e1ab3952cb5e339a451dfac21aec1d50b23a8819f1c237fd7",
+      "participants": "bc5bf43a1f6553bed7d2a3b1b43b0e5ea77bc90535858055fb360261ade3967b",
+      "roles": "c89cdf6bbdf4dc1b5af1a1d848059ffedcd4c135e7eaf887195224f3913dabcc",
+      "verification": "bf22f388ae76ca98652a38082df80327c41fab3c00d1c1f6b945a632336f0677"
+    },
+    "schemas": {
+      "completion": "a90797d9256027e1ccfe0f486ccd549ad90afac10a921a42db3263ca981415aa",
+      "discovery": "1526ef0d649fbdd3e6e42be78b19869d5949bf9715e9bf2d1d43a7a18977a5e0",
+      "modifiers": "f13518cfd21c001a504e46e24c682c1015864cbf87eb5ebe0a82a0262d8e1b58",
+      "participants": "57b97d5eea4e9eee5c55532ed1e007abeae4c729107b333ae5aa45c4f17433ca",
+      "roles": "7f59eee54ffff882994e4b65aca9721be43cab98eb7649b65668d5a4dbfc206e",
+      "verification": "e2a0e733ba5d45f799e743ce3670d8d1ce3dc62fca69bc4b7ccb8911020cf4c4"
+    },
+    "source": {
+      "archive_sha256": "7da78deacb2d567875cc0db7af5af3dca0d54197d904ef36701eccedaf56c07c",
+      "development_documents": 100,
+      "development_tree_sha256": "6b9480ad79eab31be9b3a769bc21e1033bfb482ea14c47ab639e18e08778040d",
+      "selected_document_id": "PMID-16428936",
+      "selected_source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+      "selection_rule": "minimum (source_sha256, document_id)",
+      "source_inventory_sha256": "77e267c30d4f74875d816f28b4b43b7ae861f8d87c9331a9f2e237fef440b4bf",
+      "test_access": "SEALED_NOT_READ"
+    },
+    "stage_order": [
+      "discovery",
+      "participants",
+      "roles",
+      "modifiers",
+      "verification"
+    ]
+  },
+  "qualification_status": "EXPOSED_DEVELOPMENT_NON_QUALIFYING",
+  "rules": {
+    "alternate_model_allowed": false,
+    "deterministic_semantic_inference_allowed": false,
+    "fallback_allowed": false,
+    "graph_write_allowed": false,
+    "maximum_completion_passes": 1,
+    "one_execution_per_required_stage": true,
+    "one_shot_baseline_rerun_allowed": false,
+    "promotion_allowed": false,
+    "prompt_or_schema_change_after_freeze_allowed": false,
+    "provider_retry_allowed": false,
+    "sealed_test_access_allowed": false
+  },
+  "schema_version": "artana.public_gold.staged_event_comparison.v1",
+  "status": "FROZEN_AUTHORIZED_FOR_ONE_EXECUTION",
+  "stop_rules": [
+    "stop before calls on custody or hash mismatch",
+    "stop at the first provider receipt or schema failure",
+    "stop on a missing required stage",
+    "stop on ambiguous offsets, unresolved references, or cycles",
+    "stop when aggregate calls, tokens, latency, or cost exceed budget",
+    "never retry, fallback, change model, or patch during execution",
+    "stop after one optional completion pass",
+    "never access sealed sources, write to graph, or promote"
+  ]
+}
