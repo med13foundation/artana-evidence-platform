@@ -1,0 +1,46 @@
+{
+  "acknowledgement_envelope_sha256": "02b385caa5c2ebeffcafc36d46103af78a149b170f9e874f20f0b12f8e7809ad",
+  "acknowledgement_seconds": 1.2453170839871746,
+  "confirmation_retrieval_requests": 1,
+  "creation_envelope_sha256": "d4daa5fc88791189c4a87a25e5a29ce708d1c3133d74f02c47041b09f8a450fb",
+  "differences": [],
+  "duplicate_creation_calls": 0,
+  "identity": {
+    "created_at": 1784678033.0,
+    "model": "gpt-5.6-sol",
+    "object_type": "response",
+    "output_items": [
+      [
+        "message",
+        "msg_0fd479fc75226c82006a600693a66c819a9bea558b4066cbad"
+      ]
+    ],
+    "response_id": "resp_0fd479fc75226c82006a600691b668819a87ea2db3dabfcec6",
+    "status": "completed"
+  },
+  "input_item_retrieval_requests": 1,
+  "model_generation_calls": 1,
+  "polling_does_not_count_as_model_generation": true,
+  "polling_retrieval_requests": 1,
+  "polling_seconds": 5.250819500011858,
+  "provider_creation_calls": 1,
+  "provider_input_sha256": "242007c3e6813c9d7ba9fa70d6b87b110b78dcc7d15cacdf94621e2ff49260cb",
+  "provider_retries": 0,
+  "provider_schema_sha256": "24e6633065f1d3506f4fca9e624c8bdedeed5172d9bf25fa842d26096ea116ac",
+  "retrieval_envelope_sha256": "d4daa5fc88791189c4a87a25e5a29ce708d1c3133d74f02c47041b09f8a450fb",
+  "scientific_payload_sha256": "b085e4863220a624d609043b70b978c468b4d96e9a8952d6a715de8b5085cc9f",
+  "status": "VERIFIED_LIVE",
+  "status_history": [
+    "queued",
+    "completed"
+  ],
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.0012100000000000001,
+    "input_tokens": 110,
+    "latency_seconds": 8.394585250003729,
+    "output_tokens": 22,
+    "reasoning_tokens": 0,
+    "total_tokens": 132
+  }
+}

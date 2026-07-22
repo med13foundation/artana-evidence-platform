@@ -1,0 +1,161 @@
+{
+  "acceptance": {
+    "complete_event_exact_recovery": "ALL",
+    "cycles_allowed": 0,
+    "invalid_offsets_allowed": 0,
+    "modifier_fidelity": "ALL",
+    "nested_event_recovery": "ALL",
+    "trigger_recovery": "ALL",
+    "typed_argument_role_fidelity": "ALL",
+    "unauthorized_semantic_mappings_allowed": 0,
+    "unresolved_references_allowed": 0,
+    "unsupported_or_invented_events_allowed": 0
+  },
+  "budgets": {
+    "acknowledgement_timeout_seconds": 30.0,
+    "duplicate_creation_calls": 0,
+    "fallbacks": 0,
+    "max_cost_usd": 5.0,
+    "max_latency_seconds": 900.0,
+    "max_output_tokens": 20000,
+    "max_polling_seconds": 900.0,
+    "max_total_tokens": 40000,
+    "polling_interval_seconds": 5.0,
+    "pricing_usd_per_token": {
+      "cached_input": 5e-07,
+      "input": 5e-06,
+      "output": 3e-05
+    },
+    "provider_calls": 1,
+    "provider_retries": 0,
+    "repairs": 0
+  },
+  "deterministic_metrics": [
+    "complete_event_exact_recovery",
+    "exact_trigger_recovery",
+    "typed_argument_and_participant_role_fidelity",
+    "nested_event_recovery",
+    "negation_and_speculation_fidelity",
+    "unsupported_or_invented_events",
+    "invalid_offsets_unresolved_references_and_cycles"
+  ],
+  "execution_authorized": false,
+  "frozen_state": {
+    "dependencies": {
+      "dependency_bundle_sha256": "855bf175688d7cc191c5fc7c5e97a541e47db59d9997595a278998f494e70a39",
+      "files": {
+        "pyproject.toml": "991632643e70dfbdc049a6211b69bc614c6f84d6625adcff96ab0ba1bc362fab"
+      },
+      "packages": {
+        "litellm": "1.83.0",
+        "openai": "2.44.0",
+        "pydantic": "2.13.4"
+      },
+      "python": "3.13.12"
+    },
+    "implementation": {
+      "code_bundle_sha256": "3380c7b6fd1bb0865d7c41eb5ee2d4f458b864badaa23c573018bf2e68e2b0bf",
+      "code_files": {
+        "scripts/validation/provider_receipt_boundary/__init__.py": "c8d2bb5865b9d85274660e85845ece6ee015af62218bb421bcccb705bebda1dd",
+        "scripts/validation/provider_receipt_boundary/background/__init__.py": "6d9be1be575586dd43cad0a7703f9a14cb72d67fe38d8e33b9c67931c3e411f7",
+        "scripts/validation/provider_receipt_boundary/background/contracts.py": "4541a3d188bff44e0799ccd8d989314ddbf64e1a1ce7df7aa07e28271e6065ae",
+        "scripts/validation/provider_receipt_boundary/background/execution.py": "14a445aef4d23421459bc462fa3c6495f2a39871aa87df1f22ca0a94ddde70b2",
+        "scripts/validation/provider_receipt_boundary/background/polling.py": "b382aac66ab0b00b545a5385667a88e60d37a80253ef914b0b5988d311cec321",
+        "scripts/validation/provider_receipt_boundary/background/states.py": "958a34fa0ab25fd7fb9f877c23bedbd83a1b00e59836b8799f3659b5fc60f2ba",
+        "scripts/validation/provider_receipt_boundary/canonical_payload.py": "85f47eaa3ded69c85e84d93cf93039cec8d9c6708ad2d9590f34eef00f959b69",
+        "scripts/validation/provider_receipt_boundary/contracts.py": "4ab68deed23135d1feeb26ece321254573f02ce0b4139037f63e2a303ab8d054",
+        "scripts/validation/provider_receipt_boundary/identity.py": "a07f468ae572ab07ef4b70e7661dcdb416860a71fc1be1b509518aeda1ad8d30",
+        "scripts/validation/provider_receipt_boundary/structural_diff.py": "46e778decc1d15172cfaaa898ae53f693846b779bc9cf84a0ed2415cd2da2e55",
+        "scripts/validation/provider_receipt_boundary/validation.py": "bd8ada04350eea9fdc121ec9876fe159362e315fc60f9a3b656760d15d6f0ecc",
+        "scripts/validation/public_gold/bionlp_cg_adapter.py": "083f20b1ecf06e66f29163fc5ccf5a30b7030184ceca594d4657e92b73e0bd3c",
+        "scripts/validation/public_gold/bionlp_cg_event_projection.py": "97df47682e5b6c9311a696862f1707aaafa1523a720215c900b1dfac8863b33e",
+        "scripts/validation/public_gold/lossless_event_experiment_contracts.py": "9c8991b4c4686a4755e2d12d312f2236b2cabe544e4578fafe3874a8b2b84e54",
+        "scripts/validation/public_gold/lossless_event_live_execution.py": "40a505470049b4eec84f868072cf1c9fc9e3d03d757f8a6021f3cf6cbafee99a",
+        "scripts/validation/public_gold/lossless_event_preflight.py": "a197b65044dc2a5f88d51875300239d453ad6b61d70f3f811e92bebc3003b2f8",
+        "scripts/validation/public_gold/lossless_event_provider.py": "7d7caaf0dbb1ad539335e16461bc8d1e1dd58fb9514c5d3093ffbe0274e86d9a",
+        "scripts/validation/public_gold/lossless_event_provider_format.py": "d9cec212799f41807f89f045d5ea4d469bf54477a91860e6144c8be837c713b1",
+        "scripts/validation/public_gold/lossless_event_scoring.py": "2096d27018ccf3d369a6ce4380d89d12a5b4d80ccfcb659439759fc13388641b",
+        "scripts/validation/public_gold/source_selection.py": "82ccbd5a9d152223c8f9b0e453820102b1a96f94849e1d4450259d25508615c4",
+        "services/artana_evidence_api/document_extraction_support/scientific_events/__init__.py": "9a8a46279cf20fb7d45d7763919de7cb8c6bd3304c407ddfff628520117a62b4",
+        "services/artana_evidence_api/document_extraction_support/scientific_events/contracts.py": "3590fb5b5a3f7d05fb0632f01ea1e9be95264fad56826e29018e27644044805c",
+        "services/artana_evidence_api/document_extraction_support/scientific_events/validation.py": "87fd91991ec432d9bb5367fd35efb9ce41c700c8a5d04fef492070394e5db2c5"
+      }
+    },
+    "model": {
+      "identity": "openai:gpt-5.6-sol",
+      "provider_model_id": "gpt-5.6-sol",
+      "reasoning_effort": "high",
+      "temperature": "provider_default_not_set"
+    },
+    "model_input": {
+      "components": [
+        "frozen_generic_prompt",
+        "document_id",
+        "source_sha256",
+        "source_text"
+      ],
+      "gold_annotations_included": false,
+      "gold_arguments_included": false,
+      "gold_counts_included": false,
+      "gold_event_ids_included": false,
+      "sha256": "b3b97864190a7583ca9305fc8547b88657103a9517de30e13fe7f8009b974dd7"
+    },
+    "prompt": {
+      "path": "docs/validation/prompts/2026-07-21-lossless-scientific-event-development-prompt.md",
+      "sha256": "b571f42135138f75b9a23fede02c66db27270caca7fa2dd3b8ac3aa5f929cd76"
+    },
+    "schemas": {
+      "output_contract_accepted_by_ir": true,
+      "provider_output_contract_sha256": "842a1184c09d6fcec7fc870820a7316f5b9532680794d254e72378d27208cf79",
+      "provider_response_format_sha256": "310af422ee1ebf47bb9524b0055be4c2d23fecb7b3dc97ee92b92bd25751f64a",
+      "provider_response_format_strict": true,
+      "scientific_event_ir_sha256": "77f1ca5ac9167c4d9976ff859d8a9da039346384e5ba8a6692b3fde3f9da8d8f"
+    },
+    "source": {
+      "archive_sha256": "7da78deacb2d567875cc0db7af5af3dca0d54197d904ef36701eccedaf56c07c",
+      "development_directory": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel",
+      "development_documents": 100,
+      "development_tree_sha256": "6b9480ad79eab31be9b3a769bc21e1033bfb482ea14c47ab639e18e08778040d",
+      "selected_document_id": "PMID-16428936",
+      "selected_source_sha256": "00da32aa63d3aa0f48d3c02f806e8db9ca2cd10bda0357280674a188a04523ab",
+      "selection_rule": "minimum (source_sha256, document_id)",
+      "source_inventory_sha256": "77e267c30d4f74875d816f28b4b43b7ae861f8d87c9331a9f2e237fef440b4bf",
+      "test_access": "SEALED_NOT_READ"
+    },
+    "transport": {
+      "acknowledgement_timeout_seconds": 30.0,
+      "background": true,
+      "creation_idempotency_claimed": false,
+      "duplicate_creation_calls": 0,
+      "max_polling_seconds": 900.0,
+      "mode": "OPENAI_RESPONSES_BACKGROUND_POLLING",
+      "polling_interval_seconds": 5.0,
+      "provider_creation_calls": 1,
+      "provider_retries": 0
+    }
+  },
+  "invalid_predecessor": "docs/validation/preregistrations/2026-07-21-lossless-event-ir-development-experiment-v3.json",
+  "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
+  "rules": {
+    "agent_numeric_metrics_allowed": false,
+    "creation_idempotency_claimed": false,
+    "fallback_allowed": false,
+    "graph_write_allowed": false,
+    "promotion_allowed": false,
+    "prompt_or_schema_change_after_freeze_allowed": false,
+    "repair_allowed": false,
+    "retry_allowed": false,
+    "sealed_test_access_allowed": false
+  },
+  "schema_version": "artana.public_gold.lossless_event_experiment.v4",
+  "status": "FROZEN_UNAUTHORIZED_AWAITING_EXPLICIT_AUTHORIZATION",
+  "stop_rules": [
+    "stop before the call on any deterministic preflight failure",
+    "stop on provider response or receipt verification failure",
+    "never repeat creation after an acknowledgement timeout",
+    "poll only the acknowledged response ID",
+    "stop on schema, offset, reference, cycle, provenance, custody, or budget failure",
+    "stop after exactly one provider call regardless of scientific result",
+    "never retry, repair, patch, reinterpret, or select another source"
+  ]
+}
