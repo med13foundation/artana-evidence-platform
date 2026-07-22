@@ -77,8 +77,8 @@ class LosslessEventScore:
             "modifiers",
         ):
             count = getattr(self, field)
-            payload[field]["precision"] = count.precision  # type: ignore[index]
-            payload[field]["recall"] = count.recall  # type: ignore[index]
+            payload[field]["precision"] = count.precision
+            payload[field]["recall"] = count.recall
         payload["scientific_gate_passed"] = self.scientific_gate_passed
         return payload
 

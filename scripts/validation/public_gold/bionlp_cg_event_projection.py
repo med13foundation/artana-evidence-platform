@@ -237,15 +237,15 @@ def _count_mismatches(
     mismatches = abs(len(source_mentions) - len(projected.mentions))
     mismatches += abs(len(source.events) - len(projected.events))
     for mention in source_mentions:
-        candidate = projected_mentions.get(mention.annotation_id)
-        if candidate is None:
+        mention_candidate = projected_mentions.get(mention.annotation_id)
+        if mention_candidate is None:
             mismatches += 1
             continue
         actual_mention = (
-            candidate.source_type,
-            candidate.span.start,
-            candidate.span.end,
-            candidate.span.exact_text,
+            mention_candidate.source_type,
+            mention_candidate.span.start,
+            mention_candidate.span.end,
+            mention_candidate.span.exact_text,
         )
         expected_mention = (
             mention.annotation_type,
@@ -255,11 +255,11 @@ def _count_mismatches(
         )
         mismatches += actual_mention != expected_mention
     for event in source.events:
-        candidate = projected_events.get(event.event_id)
-        if candidate is None:
+        event_candidate = projected_events.get(event.event_id)
+        if event_candidate is None:
             mismatches += 1
             continue
-        trigger = projected_mentions[candidate.trigger_id]
+        trigger = projected_mentions[event_candidate.trigger_id]
         expected_trigger = next(
             item for item in source.triggers if item.annotation_id == event.trigger_id
         )
@@ -269,18 +269,18 @@ def _count_mismatches(
             if item.target_id == event.event_id
         )
         actual = (
-            candidate.source_event_type,
-            candidate.trigger_id,
+            event_candidate.source_event_type,
+            event_candidate.trigger_id,
             trigger.span.start,
             trigger.span.end,
             trigger.span.exact_text,
             tuple(
                 (argument.source_role, argument.target_id)
-                for argument in candidate.arguments
+                for argument in event_candidate.arguments
             ),
             tuple(
                 (modifier.annotation_id, modifier.source_modifier_type)
-                for modifier in candidate.modifiers
+                for modifier in event_candidate.modifiers
             ),
         )
         expected = (
