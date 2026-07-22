@@ -17,9 +17,14 @@ from scripts.validation.public_gold.bionlp_cg_event_projection import (
     project_development_directory,
 )
 from scripts.validation.public_gold.lossless_event_experiment_contracts import (
+    ExtractionProvenance,
     ScientificEventExtraction,
     assemble_scientific_event_document,
     build_provider_input,
+)
+from scripts.validation.public_gold.lossless_event_offset_resolution import (
+    OffsetResolutionError,
+    resolve_extraction_offsets,
 )
 from scripts.validation.public_gold.lossless_event_preflight import (
     ACKNOWLEDGEMENT_TIMEOUT_SECONDS,
@@ -88,7 +93,7 @@ def run_experiment(
     )
     preregistration_sha256 = _file_sha256(preregistration_path)
     metadata = {
-        "artana_experiment": "lossless-event-development-v5",
+        "artana_experiment": "lossless-event-development-v6",
         "artana_preregistration_sha256": preregistration_sha256,
         "artana_source_sha256": selected.source_sha256,
     }
@@ -155,12 +160,35 @@ def run_experiment(
         encoding="utf-8",
     )
     try:
-        predicted = assemble_scientific_event_document(
+        offset_resolution = resolve_extraction_offsets(
             execution.extraction,
+            source_text=selected.source_text,
+        )
+    except OffsetResolutionError as exc:
+        result = _invalid_result(
+            preregistration_sha256=preregistration_sha256,
+            preflight=preflight,
+            stage="SCIENTIFIC_OFFSET_RESOLUTION",
+            root_cause=str(exc),
+        )
+        _write_artifacts(
+            receipt_path=artifacts.receipt,
+            receipt=execution.receipt,
+            result_path=artifacts.result,
+            result=result,
+            report_path=artifacts.report,
+        )
+        return "INVALID_EXPERIMENT"
+    try:
+        predicted = assemble_scientific_event_document(
+            offset_resolution.extraction,
             document_id=selected.document_id,
             source_text=selected.source_text,
             source_sha256=selected.source_sha256,
-            producer_identity=_required_string(model_state, "identity"),
+            provenance=ExtractionProvenance(
+                producer_identity=_required_string(model_state, "identity"),
+                annotation_source_sha256=(offset_resolution.original_extraction_sha256),
+            ),
         )
     except Exception as exc:  # noqa: BLE001 - structural failures invalidate execution.
         result = _invalid_result(
@@ -193,7 +221,7 @@ def run_experiment(
         else "DEVELOPMENT_GATE_FAILED"
     )
     final_result: dict[str, object] = {
-        "schema_version": "artana.public_gold.lossless_event_result.v4",
+        "schema_version": "artana.public_gold.lossless_event_result.v5",
         "decision": decision,
         "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
         "preregistration_sha256": preregistration_sha256,
@@ -206,6 +234,7 @@ def run_experiment(
         "predicted_document_sha256": canonical_sha256(
             predicted.model_dump(mode="json")
         ),
+        "offset_resolution": offset_resolution.as_json(),
         "score": score.as_json(),
         "terminal_rules": {
             "provider_calls": 1,
@@ -235,7 +264,7 @@ def _invalid_result(
     root_cause: str,
 ) -> dict[str, object]:
     return {
-        "schema_version": "artana.public_gold.lossless_event_result.v4",
+        "schema_version": "artana.public_gold.lossless_event_result.v5",
         "decision": "INVALID_EXPERIMENT",
         "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
         "preregistration_sha256": preregistration_sha256,
@@ -266,9 +295,10 @@ def _write_artifacts(
     if decision not in DECISIONS:
         raise ValueError("result decision is invalid")
     score = result.get("score")
+    offset_resolution = result.get("offset_resolution")
     failure = result.get("failure")
     report = [
-        "# Lossless Scientific Event Development Experiment V5",
+        "# Lossless Scientific Event Development Experiment V6",
         "",
         f"**Decision:** `{decision}`",
         "",
@@ -290,6 +320,17 @@ def _write_artifacts(
                 "",
                 "```json",
                 json.dumps(score, indent=2, sort_keys=True),
+                "```",
+            ]
+        )
+    if isinstance(offset_resolution, dict):
+        report.extend(
+            [
+                "",
+                "## Deterministic Offset Resolution",
+                "",
+                "```json",
+                json.dumps(offset_resolution, indent=2, sort_keys=True),
                 "```",
             ]
         )

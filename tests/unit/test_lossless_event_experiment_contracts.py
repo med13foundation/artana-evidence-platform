@@ -11,6 +11,7 @@ from scripts.validation.public_gold.lossless_event_experiment_contracts import (
     ExtractedEvent,
     ExtractedMention,
     ExtractedModifier,
+    ExtractionProvenance,
     ScientificEventExtraction,
     SourceEventType,
     assemble_scientific_event_document,
@@ -70,7 +71,7 @@ def test_agent_output_assembles_without_relabeling_semantics() -> None:
         document_id="PMID-1",
         source_text=source,
         source_sha256=hashlib.sha256(source.encode()).hexdigest(),
-        producer_identity="openai:gpt-5.6-sol",
+        provenance=ExtractionProvenance(producer_identity="openai:gpt-5.6-sol"),
     )
 
     assert document.events[0].source_event_type == "Growth"
@@ -95,7 +96,7 @@ def test_assembly_rejects_invalid_offsets_and_references() -> None:
             document_id="PMID-1",
             source_text="Cells grow",
             source_sha256=hashlib.sha256(b"Cells grow").hexdigest(),
-            producer_identity="openai:gpt-5.6-sol",
+            provenance=ExtractionProvenance(producer_identity="openai:gpt-5.6-sol"),
         )
 
 

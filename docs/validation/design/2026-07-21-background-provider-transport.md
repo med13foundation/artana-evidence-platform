@@ -68,3 +68,27 @@ still requires exactly one completed final assistant message with exactly one
 structured `output_text` part. Receipt identity includes every output item in
 order, so an added, removed, reordered, or changed reasoning item still fails
 closed between completed and confirmation retrievals.
+
+## V5 Budget And Offset Findings
+
+Scientific development V5 passed the corrected topology boundary and completed
+with a stable structured payload. Its receipt remained invalid because the
+provider reported `161,166` total tokens against the frozen `40,000`-token
+ceiling, even though the same frozen pricing formula placed the call below the
+unchanged `$5.00` cost ceiling. V5 stays terminal and is not reinterpreted.
+
+A read-only replay also showed that every returned mention text occurred in the
+source, while `54/66` supplied character ranges had arithmetic drift of at most
+three characters. The scientific prompt and output categories are therefore
+unchanged in V6. A separate deterministic resolver may replace offsets only
+when the agent's exact text has one unique nearest source occurrence and both
+boundaries move no more than eight characters. Missing text, tied nearest
+occurrences, and more distant corrections fail closed. The resolver preserves
+the hash of the raw extraction in event lineage and records a second hash for
+the resolved extraction. It never edits event types, roles, references, exact
+text, negation, speculation, or any other scientific field.
+
+V6 raises only the total-token accounting ceiling to `200,000`, based on the
+preserved V5 provider usage. The request output limit and `$5.00` cost ceiling
+remain unchanged. This corrects experiment validity; it does not make a
+scientific result more likely to pass.

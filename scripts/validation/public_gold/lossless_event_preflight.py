@@ -14,6 +14,7 @@ from artana_evidence_api.document_extraction_support.scientific_events import (
 )
 
 from scripts.validation.public_gold.lossless_event_experiment_contracts import (
+    ExtractionProvenance,
     ScientificEventExtraction,
     assemble_scientific_event_document,
     build_provider_input,
@@ -51,6 +52,7 @@ EXPERIMENT_CODE_FILES = (
     "scripts/validation/public_gold/bionlp_cg_event_projection.py",
     "scripts/validation/public_gold/source_selection.py",
     "scripts/validation/public_gold/lossless_event_experiment_contracts.py",
+    "scripts/validation/public_gold/lossless_event_offset_resolution.py",
     "scripts/validation/public_gold/lossless_event_scoring.py",
     "scripts/validation/public_gold/lossless_event_preflight.py",
     "scripts/validation/public_gold/lossless_event_provider.py",
@@ -215,13 +217,13 @@ def build_preregistration(repository_root: Path) -> dict[str, object]:
     """Create a new candidate; callers freeze it as a new immutable file."""
 
     return {
-        "schema_version": "artana.public_gold.lossless_event_experiment.v5",
+        "schema_version": "artana.public_gold.lossless_event_experiment.v6",
         "status": "FROZEN_UNAUTHORIZED_AWAITING_EXPLICIT_AUTHORIZATION",
         "execution_authorized": False,
         "qualification_status": "DEVELOPMENT_ONLY_NON_QUALIFYING",
         "invalid_predecessor": (
             "docs/validation/preregistrations/"
-            "2026-07-21-lossless-event-ir-development-experiment-v4.json"
+            "2026-07-21-lossless-event-ir-development-experiment-v5.json"
         ),
         "frozen_state": compute_frozen_state(repository_root),
         "budgets": {
@@ -231,7 +233,7 @@ def build_preregistration(repository_root: Path) -> dict[str, object]:
             "fallbacks": 0,
             "repairs": 0,
             "max_output_tokens": 20000,
-            "max_total_tokens": 40000,
+            "max_total_tokens": 200000,
             "max_cost_usd": 5.0,
             "max_latency_seconds": 900.0,
             "acknowledgement_timeout_seconds": ACKNOWLEDGEMENT_TIMEOUT_SECONDS,
@@ -242,6 +244,15 @@ def build_preregistration(repository_root: Path) -> dict[str, object]:
                 "cached_input": 0.0000005,
                 "output": 0.00003,
             },
+        },
+        "budget_basis": {
+            "predecessor_experiment": "V5",
+            "observed_input_tokens": 1794,
+            "observed_output_tokens": 159372,
+            "observed_total_tokens": 161166,
+            "maximum_total_tokens": 200000,
+            "maximum_cost_usd_unchanged": 5.0,
+            "source": "read-only retrieval of the terminal V5 response",
         },
         "deterministic_metrics": [
             "complete_event_exact_recovery",
@@ -312,9 +323,23 @@ def _verify_safety_contract(
         "provider_retries": 0,
         "fallbacks": 0,
         "repairs": 0,
+        "max_output_tokens": 20000,
+        "max_total_tokens": 200000,
+        "max_cost_usd": 5.0,
     }
     if any(budgets.get(key) != value for key, value in expected_budgets.items()):
         raise ExperimentPreflightError("one-call budget or zero-recovery rules changed")
+    expected_budget_basis = {
+        "predecessor_experiment": "V5",
+        "observed_input_tokens": 1794,
+        "observed_output_tokens": 159372,
+        "observed_total_tokens": 161166,
+        "maximum_total_tokens": 200000,
+        "maximum_cost_usd_unchanged": 5.0,
+        "source": "read-only retrieval of the terminal V5 response",
+    }
+    if preregistration.get("budget_basis") != expected_budget_basis:
+        raise ExperimentPreflightError("total-token budget basis changed")
     prohibited = (
         "retry_allowed",
         "fallback_allowed",
@@ -345,7 +370,7 @@ def _prove_ir_accepts_output_contract(document_id: str, source_text: str) -> Non
         document_id=document_id,
         source_text=source_text,
         source_sha256=source_sha256,
-        producer_identity=MODEL_IDENTITY,
+        provenance=ExtractionProvenance(producer_identity=MODEL_IDENTITY),
     )
 
 

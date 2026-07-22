@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import dataclass
 from enum import Enum
 from typing import Literal
 
@@ -27,6 +28,12 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 SCHEMA_VERSION = "artana.scientific_event_graph.v1"
 CORPUS_NAME = "BioNLP-ST 2013 Cancer Genetics"
 CORPUS_VERSION = "1.0.0"
+
+
+@dataclass(frozen=True, slots=True)
+class ExtractionProvenance:
+    producer_identity: str
+    annotation_source_sha256: str | None = None
 
 
 class SourceEventType(str, Enum):
@@ -161,7 +168,7 @@ def assemble_scientific_event_document(
     document_id: str,
     source_text: str,
     source_sha256: str,
-    producer_identity: str,
+    provenance: ExtractionProvenance,
 ) -> ScientificEventDocument:
     """Add immutable custody fields without changing agent semantic decisions."""
 
@@ -211,10 +218,12 @@ def assemble_scientific_event_document(
                     split="development",
                     document_id=document_id,
                     source_sha256=source_sha256,
-                    annotation_source_sha256=extraction_hash,
+                    annotation_source_sha256=(
+                        provenance.annotation_source_sha256 or extraction_hash
+                    ),
                     annotation_id=event.annotation_id,
                     producer_type="AGENT_EXTRACTION",
-                    producer_identity=producer_identity,
+                    producer_identity=provenance.producer_identity,
                     schema_version=SCHEMA_VERSION,
                 ),
             )
@@ -237,6 +246,7 @@ __all__ = [
     "ExtractedEvent",
     "ExtractedMention",
     "ExtractedModifier",
+    "ExtractionProvenance",
     "ScientificEventExtraction",
     "SourceEventType",
     "assemble_scientific_event_document",

@@ -7,6 +7,7 @@ from scripts.validation.public_gold.lossless_event_experiment_contracts import (
     ExtractedEvent,
     ExtractedMention,
     ExtractedModifier,
+    ExtractionProvenance,
     ScientificEventExtraction,
     SourceEventType,
     assemble_scientific_event_document,
@@ -88,7 +89,7 @@ def _document(*, id_prefix: str, nested_role: str = "Cause"):
         document_id="PMID-1",
         source_text=source,
         source_sha256=hashlib.sha256(source.encode()).hexdigest(),
-        producer_identity="test",
+        provenance=ExtractionProvenance(producer_identity="test"),
     )
 
 
