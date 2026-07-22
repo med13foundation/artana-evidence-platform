@@ -1,0 +1,68 @@
+{
+  "acknowledgement_envelope_sha256": "8703778346ef024b81727c9b574fb97db223b10c21f54903f9e9085ac3615cb5",
+  "acknowledgement_seconds": 0.8677809999990131,
+  "budgets": {
+    "cost": "PASS",
+    "latency": "PASS",
+    "observed_cost_usd": 0.012001000000000001,
+    "observed_latency_seconds": 27.607580874999258,
+    "observed_output_tokens": 1567,
+    "observed_total_tokens": 4166,
+    "output_tokens": "PASS",
+    "requested_max_cost_usd": 0.15,
+    "requested_max_latency_seconds": 900.0,
+    "requested_max_output_tokens": 20000,
+    "requested_max_total_tokens": 24000,
+    "total_tokens": "PASS"
+  },
+  "confirmation_retrieval_requests": 1,
+  "creation_envelope_sha256": "0c8c56e32c93d596cbccfa57683180e8148b08d610f3880f6515709ea3bc6818",
+  "differences": [],
+  "duplicate_creation_calls": 0,
+  "identity": {
+    "created_at": 1784762780.0,
+    "model": "gpt-5.6-luna",
+    "object_type": "response",
+    "output_items": [
+      [
+        "reasoning",
+        "rs_0878d83b4d6d1896006a61519fda7c81998aee947498d2c6f1"
+      ],
+      [
+        "message",
+        "msg_0878d83b4d6d1896006a6151a88c28819994591a5990312c2c"
+      ]
+    ],
+    "response_id": "resp_0878d83b4d6d1896006a61519c6f6c8199829ffa9ec428852d",
+    "status": "completed"
+  },
+  "input_item_retrieval_requests": 1,
+  "model_generation_calls": 1,
+  "polling_does_not_count_as_model_generation": true,
+  "polling_retrieval_requests": 5,
+  "polling_seconds": 26.22863962500014,
+  "provider_creation_calls": 1,
+  "provider_input_sha256": "54881d84cd8ee6fbe2ea0d56f4d594ba5ff79cf1af610f04762d69d205bdab79",
+  "provider_retries": 0,
+  "provider_schema_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+  "retrieval_envelope_sha256": "0c8c56e32c93d596cbccfa57683180e8148b08d610f3880f6515709ea3bc6818",
+  "scientific_payload_sha256": "6aa2b5dafea29ecf120c130d721a5d5923e07d770ff38acee0ac3824beed0fc5",
+  "status": "VERIFIED_LIVE",
+  "status_history": [
+    "queued",
+    "in_progress",
+    "in_progress",
+    "in_progress",
+    "in_progress",
+    "completed"
+  ],
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.012001000000000001,
+    "input_tokens": 2599,
+    "latency_seconds": 27.607580874999258,
+    "output_tokens": 1567,
+    "reasoning_tokens": 516,
+    "total_tokens": 4166
+  }
+}

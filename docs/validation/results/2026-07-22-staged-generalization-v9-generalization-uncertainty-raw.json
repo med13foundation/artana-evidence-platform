@@ -1,0 +1,70 @@
+{
+  "case_id": "generalization-uncertainty",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "E1",
+      "event_type": "CLASSIFICATION",
+      "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+      "explanation": "The highlighted finding classifies the majority of the antecedent variants as being of uncertain significance.",
+      "trigger_text": "the majority of which were classified as of uncertain significance"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "The variants are the entities receiving the classification.",
+          "role": "AFFECTED_ENTITY",
+          "target_id": "P1",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "The SLC12A3 gene specifies the scope of the classified variants.",
+          "role": "CONTEXTUAL_PARTICIPANT",
+          "target_id": "P2",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "E1"
+    }
+  ],
+  "participants": [
+    {
+      "entity_type": "VARIANT",
+      "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+      "exact_text": "947 variants",
+      "explanation": "The referring expression \u201cwhich\u201d resolves to the explicit antecedent \u201c947 variants\u201d; the majority qualifier identifies the classified subset.",
+      "participant_id": "P1"
+    },
+    {
+      "entity_type": "GENE_OR_PROTEIN",
+      "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+      "exact_text": "SLC12A3 gene",
+      "explanation": "The gene explicitly restricts the identity and scope of the classified variant set.",
+      "participant_id": "P2"
+    }
+  ],
+  "root_event_id": "E1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "NOT_APPLICABLE",
+      "event_id": "E1",
+      "evidence_items": [
+        "the majority of which were classified as of uncertain significance"
+      ],
+      "explanation": "The classification is explicitly asserted, while the assigned significance status is explicitly uncertain. No statistical observation or author interpretation of significance is reported.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "UNCERTAIN"
+    }
+  ],
+  "structure_explanation": "The focused classification is fully represented by the grounded antecedent variant set and the explicitly named SLC12A3 gene that restricts that set. No neighboring detection or clinical-rate findings are included."
+}

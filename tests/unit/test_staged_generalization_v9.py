@@ -10,12 +10,27 @@ import pytest
 from scripts.validation.provider_receipt_boundary.background import (
     BackgroundProviderExecution,
 )
+from scripts.validation.public_gold.staged_event.generalization.anchors import (
+    GeneralizationAnchorError,
+    resolve_in_context,
+)
 from scripts.validation.public_gold.staged_event.generalization.contracts import (
     EventArgument,
     EventLinks,
 )
+from scripts.validation.public_gold.staged_event.generalization.grading.artifacts import (
+    verify_frozen_policy,
+)
 from scripts.validation.public_gold.staged_event.generalization.grading.config import (
     DEFAULT_PATHS as V5_PATHS,
+)
+from scripts.validation.public_gold.staged_event.generalization.grading.evaluation import (
+    aggregate,
+    evaluate_case,
+)
+from scripts.validation.public_gold.staged_event.generalization.grading.policy import (
+    case_policy,
+    policy_sha256,
 )
 from scripts.validation.public_gold.staged_event.generalization.panel import (
     build_panel,
@@ -290,3 +305,107 @@ def test_v9_runner_stops_on_scientific_canary_with_separate_custody(
     assert result["graph_writes"] == 0
     assert paths.case(calls[0]).raw_output.exists()
     assert not V5_PATHS.case(calls[0]).attempt.samefile(paths.case(calls[0]).attempt)
+
+
+def test_v9_exposes_frozen_drug_span_as_deterministically_ambiguous() -> None:
+    case = next(
+        item for item in build_panel() if item.case_id == "generalization-drug-sensitivity"
+    )
+    sentence = case.local_context.strip()
+
+    assert sentence.count("5-FU") == 2
+    with pytest.raises(GeneralizationAnchorError, match="child text.*ambiguous"):
+        resolve_in_context(
+            source=case.source,
+            context_start=case.context_start,
+            context_end=case.context_end,
+            exact_evidence=sentence,
+            exact_text="5-FU",
+        )
+
+
+def test_checked_in_v9_result_recomputes_and_preserves_fail_fast_custody() -> None:
+    result = json.loads(DEFAULT_PATHS.result.read_text(encoding="utf-8"))
+    panel = {case.case_id: case for case in build_panel()}
+    policy = verify_frozen_policy(DEFAULT_PATHS.grading)
+    case_ids = [item["case_id"] for item in result["cases"]]
+    outputs = [
+        V9StagedGeneralizationOutput.model_validate_json(
+            DEFAULT_PATHS.case(case_id).raw_output.read_text(encoding="utf-8")
+        )
+        for case_id in case_ids
+    ]
+    metrics = tuple(
+        evaluate_case(
+            panel[output.case_id],
+            output,
+            case_policy(policy, output.case_id),
+        )
+        for output in outputs
+    )
+    recomputed = json.loads(json.dumps(aggregate(metrics)))
+
+    assert all(result[key] == value for key, value in recomputed.items())
+    assert result["decision"] == "PIVOT_WITH_EVIDENCE"
+    assert result["stopped_after_case_id"] == "generalization-drug-sensitivity"
+    assert result["provider_calls"] == len(case_ids) == 5
+    assert result["grading_policy_sha256"] == policy_sha256(policy)
+    assert result["passed_case_count"] == 4
+    assert result["unsupported_claim_count"] == 5
+    assert result["all_receipts_valid"] is True
+    assert result["qualification_credit"] is False
+    assert result["trusted_promotion"] is False
+    assert result["graph_writes"] == 0
+
+    preregistration_sha256 = hashlib.sha256(
+        DEFAULT_PATHS.preregistration.read_bytes()
+    ).hexdigest()
+    schema_sha256 = hashlib.sha256(
+        json.dumps(
+            V9StagedGeneralizationOutput.model_json_schema(),
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+    response_ids: list[str] = []
+    for case_id in case_ids:
+        paths = DEFAULT_PATHS.case(case_id)
+        attempt = json.loads(paths.attempt.read_text(encoding="utf-8"))
+        bundle = json.loads(paths.bundle.read_text(encoding="utf-8"))
+        receipt = json.loads(paths.receipt.read_text(encoding="utf-8"))
+        raw = json.loads(paths.raw_output.read_text(encoding="utf-8"))
+        response_id = receipt["identity"]["response_id"]
+        expected_input_sha256 = hashlib.sha256(
+            provider_input(DEFAULT_PATHS, case_id).encode()
+        ).hexdigest()
+
+        assert attempt["preregistration_sha256"] == preregistration_sha256
+        assert attempt["provider_creation_limit"] == 1
+        assert attempt["provider_retries"] == 0
+        assert attempt["response_id"] == response_id
+        assert bundle["response_id"] == response_id
+        assert bundle["provider_input_sha256"] == expected_input_sha256
+        assert bundle["schema_sha256"] == schema_sha256
+        assert bundle["typed_output"] == raw
+        assert bundle["receipt"] == receipt
+        assert receipt["status"] == "VERIFIED_LIVE"
+        assert receipt["provider_creation_calls"] == 1
+        assert receipt["duplicate_creation_calls"] == 0
+        assert receipt["provider_retries"] == 0
+        assert all(
+            receipt["budgets"][key] == "PASS"
+            for key in ("output_tokens", "total_tokens", "latency", "cost")
+        )
+        response_ids.append(response_id)
+
+    assert result["response_ids"] == response_ids
+    uncalled = DEFAULT_PATHS.case("generalization-explicit-nested-cause")
+    assert not any(
+        path.exists()
+        for path in (
+            uncalled.attempt,
+            uncalled.bundle,
+            uncalled.receipt,
+            uncalled.raw_output,
+        )
+    )

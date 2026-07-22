@@ -1,0 +1,83 @@
+{
+  "case_id": "generalization-null-statistics",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "e1",
+      "event_type": "COMPARISON",
+      "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "explanation": "The highlighted finding compares OS between the RA and non-RA NSCLC cohorts and reports no difference.",
+      "trigger_text": "no difference"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "The RA cohort is one population in the comparison.",
+          "role": "POPULATION",
+          "target_id": "p1",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "The non-RA NSCLC cohort is the comparison population.",
+          "role": "COMPARATOR",
+          "target_id": "p2",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "OS is the outcome on which the comparison is made.",
+          "role": "OUTCOME",
+          "target_id": "p3",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "e1"
+    }
+  ],
+  "participants": [
+    {
+      "entity_type": "POPULATION",
+      "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "exact_text": "RA",
+      "explanation": "RA identifies the first cohort in the comparison.",
+      "participant_id": "p1"
+    },
+    {
+      "entity_type": "POPULATION",
+      "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "exact_text": "non-RA NSCLC",
+      "explanation": "non-RA NSCLC identifies the comparison cohort.",
+      "participant_id": "p2"
+    },
+    {
+      "entity_type": "OUTCOME",
+      "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+      "exact_text": "OS",
+      "explanation": "OS is the survival outcome being compared.",
+      "participant_id": "p3"
+    }
+  ],
+  "root_event_id": "e1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NO_DIFFERENCE",
+      "direction": "NO_DIFFERENCE",
+      "event_id": "e1",
+      "evidence_items": [
+        "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08)"
+      ],
+      "explanation": "The source explicitly reports no difference, which is a null result. The P value is recorded without inferring a significance interpretation, and the finding is stated without explicit uncertainty.",
+      "polarity": "NULL_RESULT",
+      "statistical_observations": [
+        {
+          "exact_text": "log-rank P = 0.08",
+          "observation_type": "P_VALUE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    }
+  ],
+  "structure_explanation": "The graph represents the highlighted null comparison of OS between the RA and non-RA NSCLC cohorts, including its explicit log-rank P value. The neighboring adjusted-model result is not separately extracted because the highlighted finding is atomic."
+}

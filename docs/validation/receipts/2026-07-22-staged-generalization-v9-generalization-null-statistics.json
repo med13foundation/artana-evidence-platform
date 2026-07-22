@@ -1,0 +1,84 @@
+{
+  "acknowledgement_envelope_sha256": "6391c07d68fec6da282ffe5ee59deda9664eada7412c033c160f5e3c1b4e404d",
+  "acknowledgement_seconds": 0.6218114580005931,
+  "budgets": {
+    "cost": "PASS",
+    "latency": "PASS",
+    "observed_cost_usd": 0.066294,
+    "observed_latency_seconds": 27.223608042000706,
+    "observed_output_tokens": 10614,
+    "observed_total_tokens": 13224,
+    "output_tokens": "PASS",
+    "requested_max_cost_usd": 0.15,
+    "requested_max_latency_seconds": 900.0,
+    "requested_max_output_tokens": 20000,
+    "requested_max_total_tokens": 24000,
+    "total_tokens": "PASS"
+  },
+  "confirmation_retrieval_requests": 1,
+  "creation_envelope_sha256": "e13cbed4bf00099755f4cacff7e8f555cc39fed5379d2370ac6f7dd42385dc4e",
+  "differences": [],
+  "duplicate_creation_calls": 0,
+  "identity": {
+    "created_at": 1784762753.0,
+    "model": "gpt-5.6-luna",
+    "object_type": "response",
+    "output_items": [
+      [
+        "reasoning",
+        "rs_0ed9829380389b97006a61518263f881988d640143d2382f26"
+      ],
+      [
+        "reasoning",
+        "rs_0ed9829380389b97006a61518632708198a090128d008f9a63"
+      ],
+      [
+        "reasoning",
+        "rs_0ed9829380389b97006a61518bfc6c819893be51b45c61b927"
+      ],
+      [
+        "reasoning",
+        "rs_0ed9829380389b97006a61518eb0f4819885a48c32a16de93b"
+      ],
+      [
+        "reasoning",
+        "rs_0ed9829380389b97006a61519303448198bdc4f6f170c51f93"
+      ],
+      [
+        "message",
+        "msg_0ed9829380389b97006a61519506888198b0cf48cd7f5f2a39"
+      ]
+    ],
+    "response_id": "resp_0ed9829380389b97006a6151811e4481989525b7898f73d90c",
+    "status": "completed"
+  },
+  "input_item_retrieval_requests": 1,
+  "model_generation_calls": 1,
+  "polling_does_not_count_as_model_generation": true,
+  "polling_retrieval_requests": 5,
+  "polling_seconds": 26.283154374999867,
+  "provider_creation_calls": 1,
+  "provider_input_sha256": "a702cab19c6a6cb63cbe8c5aeed81107755d69dd8481e340ec7e38ed1ee5c41b",
+  "provider_retries": 0,
+  "provider_schema_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+  "retrieval_envelope_sha256": "e13cbed4bf00099755f4cacff7e8f555cc39fed5379d2370ac6f7dd42385dc4e",
+  "scientific_payload_sha256": "f245a8e69ce79844bfe9405bfaf8a8de04aad6ec3cfeb293db0693ba98887026",
+  "status": "VERIFIED_LIVE",
+  "status_history": [
+    "queued",
+    "in_progress",
+    "in_progress",
+    "in_progress",
+    "in_progress",
+    "completed"
+  ],
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.066294,
+    "input_tokens": 2610,
+    "latency_seconds": 27.223608042000706,
+    "output_tokens": 10614,
+    "reasoning_tokens": 2344,
+    "total_tokens": 13224
+  }
+}
