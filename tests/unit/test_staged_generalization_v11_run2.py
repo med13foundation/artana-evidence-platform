@@ -40,11 +40,14 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.
     QualificationPaths,
     V11Run2Paths,
 )
-from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.reporting import (
-    render_final_report,
+from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.prior_qualification import (
+    verify_prior_qualification,
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.qualification import (
     verify_qualification_preregistration,
+)
+from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.reporting import (
+    render_final_report,
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.runner import (
     V11Run2Runtime,
@@ -119,7 +122,23 @@ def test_foreground_qualification_is_preregistered_without_scientific_credit() -
     assert provider["application_max_output_tokens"] is None
     assert provider["application_max_total_tokens"] is None
     assert acceptance["one_creation_call"] is True
+    assert acceptance["confirmation_usage_is_authoritative"] is True
+    assert acceptance["creation_usage_snapshot_may_differ"] is True
     assert acceptance["scientific_credit"] is False
+
+
+def test_invalid_qualification_v1_is_sealed_and_globally_accounted() -> None:
+    addendum = verify_prior_qualification()
+    usage = _object(addendum["usage"])
+
+    assert addendum["decision"] == "INVALID_FOREGROUND_TRANSPORT_QUALIFICATION"
+    assert addendum["failure_stage"] == "RECEIPT_USAGE"
+    assert addendum["provider_creation_calls"] == 1
+    assert addendum["provider_retries"] == 0
+    assert addendum["duplicate_creation_calls"] == 0
+    assert usage["total_tokens"] == 1646
+    assert usage["cost_usd"] == pytest.approx(0.003086)
+    assert addendum["scientific_credit"] is False
 
 
 def test_large_scientific_usage_is_admitted_before_global_budget_stop(
@@ -143,6 +162,11 @@ def test_large_scientific_usage_is_admitted_before_global_budget_stop(
         return _execution(canary, response_id, cost_usd=5.25)
 
     monkeypatch.setattr(runner, "verify", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(
+        runner,
+        "verify_prior_qualification",
+        lambda *_args, **_kwargs: _prior_addendum(),
+    )
     monkeypatch.setenv("OPENAI_API_KEY", "redacted-test-key")
     decision = execute(V11Run2Runtime(call), paths=paths, remote_gate=False)
     result = _object(json.loads(paths.result.read_text(encoding="utf-8")))
@@ -152,12 +176,12 @@ def test_large_scientific_usage_is_admitted_before_global_budget_stop(
     assert calls == ["generalization-comparison-canary"]
     assert result["failure_stage"] == "OPERATIONAL_BUDGET_STOP"
     assert result["failed_case_id"] == "generalization-uncertainty"
-    assert result["provider_calls"] == 2
-    assert result["transport_qualification_provider_calls"] == 1
+    assert result["provider_calls"] == 3
+    assert result["transport_qualification_provider_calls"] == 2
     assert result["scientific_provider_calls"] == 1
     assert result["provider_retries"] == 0
     assert result["duplicate_creation_calls"] == 0
-    assert result["cost_usd"] == pytest.approx(5.30)
+    assert result["cost_usd"] == pytest.approx(5.303086)
     assert cast("dict[str, object]", outcomes[0]["v11_acceptance"])["passed"] is True
     assert result["scientific_contract_validated_during_run"] is False
     assert not paths.case("generalization-uncertainty").attempt.exists()
@@ -192,6 +216,11 @@ def test_run2_reaches_boundary_then_fails_fast_on_grounding(
         return _execution(outputs[case_id], response_id, cost_usd=0.01)
 
     monkeypatch.setattr(runner, "verify", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(
+        runner,
+        "verify_prior_qualification",
+        lambda *_args, **_kwargs: _prior_addendum(),
+    )
     monkeypatch.setenv("OPENAI_API_KEY", "redacted-test-key")
     decision = execute(V11Run2Runtime(call), paths=paths, remote_gate=False)
     result = _object(json.loads(paths.result.read_text(encoding="utf-8")))
@@ -205,7 +234,7 @@ def test_run2_reaches_boundary_then_fails_fast_on_grounding(
         "SEMANTIC_EVIDENCE_GROUNDING_FAILURE"
     )
     assert result["slc12a3_corrected_by_actual_model_call"] is True
-    assert result["provider_calls"] == 4
+    assert result["provider_calls"] == 5
     assert result["scientific_provider_calls"] == 3
     assert result["provider_retries"] == 0
     assert result["duplicate_creation_calls"] == 0
@@ -330,3 +359,22 @@ def _execution(
 def _object(value: object) -> dict[str, object]:
     assert isinstance(value, dict)
     return value
+
+
+def _prior_addendum() -> dict[str, object]:
+    return {
+        "decision": "INVALID_FOREGROUND_TRANSPORT_QUALIFICATION",
+        "response_id": "response-qualification-v1",
+        "provider_creation_calls": 1,
+        "provider_retries": 0,
+        "duplicate_creation_calls": 0,
+        "usage": {
+            "input_tokens": 1358,
+            "cached_input_tokens": 0,
+            "output_tokens": 288,
+            "reasoning_tokens": 79,
+            "total_tokens": 1646,
+            "latency_seconds": 6.5658,
+            "cost_usd": 0.003086,
+        },
+    }

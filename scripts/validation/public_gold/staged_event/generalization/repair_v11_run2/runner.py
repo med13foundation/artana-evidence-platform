@@ -50,6 +50,7 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v11.accep
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.accounting import (
     V11Run2OperationalLedger,
+    prior_qualification_accounting,
     qualification_accounting,
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.config import (
@@ -63,6 +64,9 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.
     ordered_cases,
     provider_input,
     verify,
+)
+from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.prior_qualification import (
+    verify_prior_qualification,
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.provider import (
     execute_case,
@@ -133,7 +137,10 @@ def execute(
         json.loads(paths.qualification.result.read_text(encoding="utf-8"))
     )
     ledger = V11Run2OperationalLedger(
-        qualification=qualification_accounting(qualification_result)
+        qualifications=(
+            prior_qualification_accounting(verify_prior_qualification(paths)),
+            qualification_accounting(qualification_result),
+        )
     )
     active = runtime or V11Run2Runtime(_live_call)
     outcomes: list[CaseOutcome] = []

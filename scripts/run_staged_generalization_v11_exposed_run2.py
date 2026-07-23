@@ -22,6 +22,9 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.
     verify,
     write_candidate,
 )
+from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.prior_qualification import (  # noqa: E402
+    write_usage_addendum,
+)
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.qualification import (  # noqa: E402
     execute_qualification,
     verify_qualification_preregistration,
@@ -49,6 +52,7 @@ def main() -> int:
 
     if args.action == "qualification-preregister":
         write_operational_artifacts(DEFAULT_PATHS)
+        write_usage_addendum(DEFAULT_PATHS)
         write_qualification_preregistration(DEFAULT_PATHS)
         result = verify_qualification_preregistration(DEFAULT_PATHS)
         status = "V11_FOREGROUND_QUALIFICATION_PREREGISTERED"

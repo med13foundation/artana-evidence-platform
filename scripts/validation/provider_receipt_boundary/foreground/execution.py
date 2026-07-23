@@ -13,7 +13,6 @@ from pydantic import BaseModel
 from scripts.validation.provider_receipt_boundary import (
     ReceiptBoundaryError,
     UsageAccounting,
-    validate_provider_receipt_telemetry_v2,
 )
 from scripts.validation.provider_receipt_boundary.canonical_payload import (
     StructuredPayloadError,
@@ -22,6 +21,9 @@ from scripts.validation.provider_receipt_boundary.canonical_payload import (
 from scripts.validation.provider_receipt_boundary.foreground.contracts import (
     ForegroundExecutionRuntime,
     ForegroundProviderExecution,
+)
+from scripts.validation.provider_receipt_boundary.foreground.validation import (
+    validate_foreground_provider_receipt_telemetry_v3,
 )
 from scripts.validation.public_gold.lossless_event_provider import (
     ProviderExecutionError,
@@ -181,9 +183,9 @@ def execute_foreground_provider_call_telemetry_v2(
 
     latency_seconds = active.monotonic() - started
     try:
-        validation = validate_provider_receipt_telemetry_v2(
+        validation = validate_foreground_provider_receipt_telemetry_v3(
             creation=creation,
-            retrieval=confirmation,
+            confirmation=confirmation,
             input_items=input_items,
             expectations=request.receipt_expectations(),
             latency_seconds=latency_seconds,
@@ -241,7 +243,7 @@ def execute_foreground_provider_call_telemetry_v2(
                 "observed_usage": asdict(validation.usage),
             },
         ) from exc
-    receipt = validation.as_json()
+    receipt = validation.receipt
     receipt.update(
         {
             **_counts(

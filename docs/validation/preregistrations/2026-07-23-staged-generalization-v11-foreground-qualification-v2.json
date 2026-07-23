@@ -1,0 +1,43 @@
+{
+  "acceptance": {
+    "complete_usage": true,
+    "confirmation_usage_is_authoritative": true,
+    "creation_usage_snapshot_may_differ": true,
+    "duplicate_creation_calls": 0,
+    "fallback": false,
+    "hidden_token_ceiling": false,
+    "one_confirmation_retrieval": true,
+    "one_creation_call": true,
+    "one_input_item_retrieval": true,
+    "one_response_id": true,
+    "provider_retries": 0,
+    "scientific_credit": false,
+    "strict_v11_schema": true
+  },
+  "authorization": "TRANSPORT_ONLY_SYNTHETIC_NO_SCIENTIFIC_CREDIT",
+  "experiment_id": "staged-generalization-v11-foreground-qualification-v2",
+  "implementation_sha256": {
+    "scripts/run_staged_generalization_v11_exposed_run2.py": "33b3261896a2ef62d4300b1abe8ac60b54675c65c379549eb808b9ddb7e4cc53",
+    "scripts/validation/provider_receipt_boundary/foreground/__init__.py": "8a249844458010d9e7bafd76e8c6ab6b43840235db418986d7b733ce64eb58df",
+    "scripts/validation/provider_receipt_boundary/foreground/contracts.py": "990e6d8df267ae997344061e3e6fcccb0afc8ecb7edb19d668825b70eca86bc6",
+    "scripts/validation/provider_receipt_boundary/foreground/execution.py": "c02b775763baf65ecec3c154b077600aa98f8be190aa1a439f465346a84093b3",
+    "scripts/validation/provider_receipt_boundary/foreground/validation.py": "75dfb5d82a21b93db0c715148e765d06122ce0ba97e54462dd2fc653368dab56",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/qualification.py": "08826cfdf11df445b5929100fccceaffd756a5ba07357d948832fb80c6e13f88"
+  },
+  "input_sha256": "932858926c74af15aaee09c2a70c44e0df6a02e89f727015f0e4034c6d879a9a",
+  "provider": {
+    "application_max_output_tokens": null,
+    "application_max_total_tokens": null,
+    "background": false,
+    "fallback": false,
+    "model": "openai:gpt-5.6-luna",
+    "provider_retries": 0,
+    "reasoning_effort": "high",
+    "request_timeout_seconds": 600.0,
+    "store": true,
+    "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES"
+  },
+  "provider_format_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+  "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+  "schema_version": "artana.staged_generalization.v11_foreground_qualification.v2"
+}

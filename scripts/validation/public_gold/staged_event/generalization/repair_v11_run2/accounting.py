@@ -32,6 +32,8 @@ class V11Run2AccountingError(ValueError):
 class QualificationAccounting:
     """Frozen telemetry from the synthetic transport prerequisite."""
 
+    case_id: str
+    status: str
     response_id: str
     usage: UsageTotals
     provider_retries: int
@@ -39,8 +41,8 @@ class QualificationAccounting:
 
     def as_call_json(self) -> dict[str, object]:
         return {
-            "case_id": "transport-qualification",
-            "status": "TRANSPORT_QUALIFICATION_NO_SCIENTIFIC_CREDIT",
+            "case_id": self.case_id,
+            "status": self.status,
             "response_id": self.response_id,
             "usage": self.usage.as_json(),
             "provider_retries": self.provider_retries,
@@ -52,7 +54,7 @@ class QualificationAccounting:
 class V11Run2OperationalLedger:
     """Append-only global budget ledger with a frozen prerequisite call."""
 
-    qualification: QualificationAccounting
+    qualifications: tuple[QualificationAccounting, ...]
     _scientific: OperationalLedger = OperationalLedger()
 
     @property
@@ -65,7 +67,10 @@ class V11Run2OperationalLedger:
 
     @property
     def cumulative_usage(self) -> UsageTotals:
-        return self.qualification.usage.plus(self._scientific.cumulative_usage)
+        usage = self._scientific.cumulative_usage
+        for qualification in self.qualifications:
+            usage = qualification.usage.plus(usage)
+        return usage
 
     def record_execution(
         self,
@@ -78,7 +83,7 @@ class V11Run2OperationalLedger:
             cast("object", execution),
         )
         return V11Run2OperationalLedger(
-            qualification=self.qualification,
+            qualifications=self.qualifications,
             _scientific=self._scientific.record_execution(
                 case_id=case_id,
                 execution=background_view,
@@ -93,7 +98,7 @@ class V11Run2OperationalLedger:
         diagnostics: dict[str, object],
     ) -> V11Run2OperationalLedger:
         return V11Run2OperationalLedger(
-            qualification=self.qualification,
+            qualifications=self.qualifications,
             _scientific=self._scientific.record_rejected(
                 case_id=case_id,
                 response_id=response_id,
@@ -119,13 +124,18 @@ class V11Run2OperationalLedger:
             "operational_policy_version": (
                 "artana.staged_generalization.v11_exposed_run2_operational_policy.v1"
             ),
-            "provider_calls": 1 + len(self.records),
-            "transport_qualification_provider_calls": 1,
+            "provider_calls": len(self.qualifications) + len(self.records),
+            "transport_qualification_provider_calls": len(self.qualifications),
             "scientific_provider_calls": len(self.records),
-            "provider_retries": self.qualification.provider_retries
+            "provider_retries": sum(
+                item.provider_retries for item in self.qualifications
+            )
             + sum(item.provider_retries for item in self.records),
             "duplicate_creation_calls": (
-                self.qualification.duplicate_creation_calls
+                sum(
+                    item.duplicate_creation_calls
+                    for item in self.qualifications
+                )
                 + sum(item.duplicate_creation_calls for item in self.records)
             ),
             "input_tokens": usage.input_tokens,
@@ -142,11 +152,23 @@ class V11Run2OperationalLedger:
             ),
             "token_latency_and_cost_affect_scientific_scoring": False,
             "per_call": [
-                self.qualification.as_call_json(),
+                *(
+                    qualification.as_call_json()
+                    for qualification in self.qualifications
+                ),
                 *scientific_calls,
             ],
-            "response_ids": [self.qualification.response_id, *response_ids],
-            "qualification_usage": self.qualification.usage.as_json(),
+            "response_ids": [
+                *(item.response_id for item in self.qualifications),
+                *response_ids,
+            ],
+            "qualification_usage": [
+                {
+                    "case_id": item.case_id,
+                    **item.usage.as_json(),
+                }
+                for item in self.qualifications
+            ],
             "scientific_usage": {
                 key: scientific[key]
                 for key in (
@@ -174,6 +196,8 @@ def qualification_accounting(result: dict[str, object]) -> QualificationAccounti
     if calls != 1:
         raise V11Run2AccountingError("qualification creation count is not one")
     return QualificationAccounting(
+        case_id="transport-qualification-v2",
+        status="TRANSPORT_QUALIFICATION_NO_SCIENTIFIC_CREDIT",
         response_id=_required_str(result, "response_id"),
         usage=UsageTotals(
             input_tokens=_required_int(usage, "input_tokens"),
@@ -186,6 +210,38 @@ def qualification_accounting(result: dict[str, object]) -> QualificationAccounti
         ),
         provider_retries=retries,
         duplicate_creation_calls=duplicates,
+    )
+
+
+def prior_qualification_accounting(
+    addendum: dict[str, object],
+) -> QualificationAccounting:
+    """Convert the rejected v1 qualification into cumulative telemetry."""
+
+    if addendum.get("decision") != "INVALID_FOREGROUND_TRANSPORT_QUALIFICATION":
+        raise V11Run2AccountingError("prior qualification disposition changed")
+    usage = _required_dict(addendum, "usage")
+    calls = addendum.get("provider_creation_calls")
+    if calls != 1:
+        raise V11Run2AccountingError("prior qualification call count is not one")
+    return QualificationAccounting(
+        case_id="transport-qualification-v1",
+        status="REJECTED_QUALIFICATION_NO_SCIENTIFIC_CREDIT",
+        response_id=_required_str(addendum, "response_id"),
+        usage=UsageTotals(
+            input_tokens=_required_int(usage, "input_tokens"),
+            cached_input_tokens=_required_int(usage, "cached_input_tokens"),
+            output_tokens=_required_int(usage, "output_tokens"),
+            reasoning_tokens=_required_int(usage, "reasoning_tokens"),
+            total_tokens=_required_int(usage, "total_tokens"),
+            latency_seconds=_required_float(usage, "latency_seconds"),
+            cost_usd=_required_float(usage, "cost_usd"),
+        ),
+        provider_retries=_required_zero(addendum, "provider_retries"),
+        duplicate_creation_calls=_required_zero(
+            addendum,
+            "duplicate_creation_calls",
+        ),
     )
 
 
@@ -228,5 +284,6 @@ __all__ = [
     "QualificationAccounting",
     "V11Run2AccountingError",
     "V11Run2OperationalLedger",
+    "prior_qualification_accounting",
     "qualification_accounting",
 ]

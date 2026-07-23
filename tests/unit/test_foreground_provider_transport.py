@@ -180,6 +180,34 @@ def test_foreground_creation_failure_never_retries() -> None:
     assert client.responses.input_items.list_calls == 0
 
 
+def test_foreground_confirmation_usage_is_record_only_authority() -> None:
+    creation = _response(output_tokens=25)
+    confirmation = copy.deepcopy(creation)
+    confirmation_usage = confirmation["usage"]
+    assert isinstance(confirmation_usage, dict)
+    details = confirmation_usage["input_tokens_details"]
+    assert isinstance(details, dict)
+    details["cache_write_tokens"] = 0
+    client = _Client(creation, confirmation)
+
+    execution = _execute(client)
+
+    policy = execution.receipt["foreground_usage_policy"]
+    assert isinstance(policy, dict)
+    assert policy["authoritative_snapshot"] == "CONFIRMATION_RETRIEVAL"
+    assert policy["scientific_validity_dependency"] is False
+    assert policy["snapshots_differ"] is True
+    assert execution.receipt["usage"]["output_tokens"] == 25
+    differences = execution.receipt["differences"]
+    assert isinstance(differences, list)
+    assert any(
+        item["path"] == "$.usage" and item["allowlisted"] is True
+        for item in differences
+    )
+    assert client.responses.create_calls == 1
+    assert client.responses.retrieve_calls == 1
+
+
 def _execute(
     client: _Client,
     *,

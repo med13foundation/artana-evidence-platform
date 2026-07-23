@@ -1,0 +1,28 @@
+{
+  "decision": "INVALID_FOREGROUND_TRANSPORT_QUALIFICATION",
+  "diagnostics": {
+    "actual_sha256": "15b2959be68bfe977785a1dcdcd4c0b4fd308d9048659724011aad1871363bc5",
+    "confirmation_retrieval_requests": 1,
+    "differences": [
+      {
+        "actual_sha256": "15b2959be68bfe977785a1dcdcd4c0b4fd308d9048659724011aad1871363bc5",
+        "difference": "VALUE_CHANGED",
+        "expected_sha256": "e0f9dff546902a290d6e1d0da7e763e1cbcae803cb2e9e67a953bead74f55407",
+        "path": "$.usage"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "expected_sha256": "e0f9dff546902a290d6e1d0da7e763e1cbcae803cb2e9e67a953bead74f55407",
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "provider_creation_calls": 1,
+    "provider_retries": 0,
+    "response_id": "resp_04e41854e026a9cb006a62315dcc7481999537dce276482960"
+  },
+  "experiment_id": "staged-generalization-v11-foreground-qualification-v1",
+  "failure_stage": "RECEIPT_USAGE",
+  "graph_writes": 0,
+  "root_cause": "creation and retrieval usage differ",
+  "schema_version": "artana.staged_generalization.v11_foreground_qualification_result.v1",
+  "scientific_credit": false
+}

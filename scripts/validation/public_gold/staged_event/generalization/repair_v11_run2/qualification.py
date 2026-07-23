@@ -53,6 +53,7 @@ _IMPLEMENTATION_FILES = (
     "scripts/validation/provider_receipt_boundary/foreground/__init__.py",
     "scripts/validation/provider_receipt_boundary/foreground/contracts.py",
     "scripts/validation/provider_receipt_boundary/foreground/execution.py",
+    "scripts/validation/provider_receipt_boundary/foreground/validation.py",
     "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/"
     "qualification.py",
 )
@@ -82,7 +83,7 @@ def build_qualification_preregistration() -> dict[str, object]:
     value = qualification_input()
     return {
         "schema_version": (
-            "artana.staged_generalization.v11_foreground_qualification.v1"
+            "artana.staged_generalization.v11_foreground_qualification.v2"
         ),
         "experiment_id": QUALIFICATION_ID,
         "authorization": "TRANSPORT_ONLY_SYNTHETIC_NO_SCIENTIFIC_CREDIT",
@@ -112,6 +113,8 @@ def build_qualification_preregistration() -> dict[str, object]:
             "one_confirmation_retrieval": True,
             "one_input_item_retrieval": True,
             "complete_usage": True,
+            "confirmation_usage_is_authoritative": True,
+            "creation_usage_snapshot_may_differ": True,
             "strict_v11_schema": True,
             "provider_retries": 0,
             "duplicate_creation_calls": 0,
@@ -215,7 +218,7 @@ def execute_qualification(
             {
                 "schema_version": (
                     "artana.staged_generalization."
-                    "v11_foreground_qualification_result.v1"
+                    "v11_foreground_qualification_result.v2"
                 ),
                 "experiment_id": QUALIFICATION_ID,
                 "decision": QUALIFICATION_INVALID,
@@ -240,7 +243,7 @@ def execute_qualification(
             {
                 "schema_version": (
                     "artana.staged_generalization."
-                    "v11_foreground_qualification_result.v1"
+                    "v11_foreground_qualification_result.v2"
                 ),
                 "experiment_id": QUALIFICATION_ID,
                 "decision": QUALIFICATION_INVALID,
@@ -270,6 +273,7 @@ def execute_qualification(
     )
     identity = _object(execution.receipt["identity"])
     usage = _object(execution.receipt["usage"])
+    usage_policy = _object(execution.receipt["foreground_usage_policy"])
     passed = (
         execution.extraction.case_id == "transport-qualification"
         and execution.creation_response.get("background") is False
@@ -279,10 +283,13 @@ def execute_qualification(
         and execution.receipt.get("duplicate_creation_calls") == 0
         and execution.receipt.get("confirmation_retrieval_requests") == 1
         and execution.receipt.get("input_item_retrieval_requests") == 1
+        and usage_policy.get("authoritative_snapshot")
+        == "CONFIRMATION_RETRIEVAL"
+        and usage_policy.get("scientific_validity_dependency") is False
     )
     result = {
         "schema_version": (
-            "artana.staged_generalization.v11_foreground_qualification_result.v1"
+            "artana.staged_generalization.v11_foreground_qualification_result.v2"
         ),
         "experiment_id": QUALIFICATION_ID,
         "decision": QUALIFICATION_PASS if passed else QUALIFICATION_INVALID,
@@ -291,6 +298,7 @@ def execute_qualification(
         "reasoning_effort": REASONING_EFFORT,
         "response_id": identity["response_id"],
         "usage": usage,
+        "foreground_usage_policy": usage_policy,
         "provider_creation_calls": execution.receipt["provider_creation_calls"],
         "provider_retries": execution.receipt["provider_retries"],
         "duplicate_creation_calls": execution.receipt[

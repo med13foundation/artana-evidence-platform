@@ -21,6 +21,7 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v11.prefl
     verify as verify_v11,
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.accounting import (
+    prior_qualification_accounting,
     qualification_accounting,
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.artifacts import (
@@ -38,6 +39,9 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.
     REASONING_EFFORT,
     REPO,
     V11Run2Paths,
+)
+from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.prior_qualification import (
+    verify_prior_qualification,
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.qualification import (
     QUALIFICATION_PASS,
@@ -71,6 +75,8 @@ _IMPLEMENTATION_FILES = (
     "scripts/validation/public_gold/staged_event/generalization/"
     "repair_v11_run2/preflight.py",
     "scripts/validation/public_gold/staged_event/generalization/"
+    "repair_v11_run2/prior_qualification.py",
+    "scripts/validation/public_gold/staged_event/generalization/"
     "repair_v11_run2/provider.py",
     "scripts/validation/public_gold/staged_event/generalization/"
     "repair_v11_run2/qualification.py",
@@ -93,6 +99,7 @@ _FOREGROUND_RECEIPT_FILES = (
     "scripts/validation/provider_receipt_boundary/foreground/__init__.py",
     "scripts/validation/provider_receipt_boundary/foreground/contracts.py",
     "scripts/validation/provider_receipt_boundary/foreground/execution.py",
+    "scripts/validation/provider_receipt_boundary/foreground/validation.py",
 )
 _QUALIFICATION_ARTIFACT_NAMES = (
     "preregistration",
@@ -131,6 +138,7 @@ def build_preregistration(
 
     verify_operational_artifacts(paths)
     run1 = verify_v11(V11_SCIENCE_PATHS)
+    prior_qualification_result = verify_prior_qualification(paths)
     verify_qualification_preregistration(paths)
     qualification_result = _object(
         json.loads(paths.qualification.result.read_text(encoding="utf-8"))
@@ -138,6 +146,9 @@ def build_preregistration(
     if qualification_result.get("decision") != QUALIFICATION_PASS:
         raise V11Run2PreflightError("foreground transport qualification failed")
     qualification = qualification_accounting(qualification_result)
+    prior_qualification = prior_qualification_accounting(
+        prior_qualification_result
+    )
     run1_frozen = _object(run1["frozen_state"])
     if tuple(cast("list[str]", run1_frozen["case_order"])) != CASE_ORDER:
         raise V11Run2PreflightError("run-1 frozen case order changed")
@@ -214,6 +225,14 @@ def build_preregistration(
             "qualification_credit": False,
             "qualification_artifact_sha256": qualification_hashes,
             "qualification_response_id": qualification.response_id,
+            "prior_invalid_qualification": {
+                "usage_addendum_sha256": _sha256(
+                    paths.prior_qualification_usage_addendum
+                ),
+                "response_id": prior_qualification.response_id,
+                "cost_usd": prior_qualification.usage.cost_usd,
+                "scientific_credit": False,
+            },
             "implementation_sha256": _hash_files(
                 REPO,
                 _FOREGROUND_RECEIPT_FILES,
@@ -226,9 +245,15 @@ def build_preregistration(
         "operational_budget": {
             "cumulative_max_cost_usd": GLOBAL_MAX_COST_USD,
             "includes_transport_qualification": True,
-            "qualification_cost_usd": qualification.usage.cost_usd,
+            "qualification_cost_usd": (
+                prior_qualification.usage.cost_usd
+                + qualification.usage.cost_usd
+            ),
+            "qualification_provider_calls": 2,
             "remaining_before_scientific_calls_usd": max(
-                GLOBAL_MAX_COST_USD - qualification.usage.cost_usd,
+                GLOBAL_MAX_COST_USD
+                - prior_qualification.usage.cost_usd
+                - qualification.usage.cost_usd,
                 0.0,
             ),
             "maximum_scientific_creation_calls": GLOBAL_MAX_CALLS,
