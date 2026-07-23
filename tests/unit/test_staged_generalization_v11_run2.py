@@ -42,6 +42,7 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.prior_qualification import (
     verify_prior_qualification,
+    verify_prior_qualifications,
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.qualification import (
     verify_qualification_preregistration,
@@ -139,6 +140,10 @@ def test_invalid_qualification_v1_is_sealed_and_globally_accounted() -> None:
     assert usage["total_tokens"] == 1646
     assert usage["cost_usd"] == pytest.approx(0.003086)
     assert addendum["scientific_credit"] is False
+    first, second = verify_prior_qualifications()
+    assert first == addendum
+    assert second["failure_stage"] == "RECEIPT_ENVELOPE"
+    assert _object(second["usage"])["cost_usd"] == pytest.approx(0.0016385)
 
 
 def test_large_scientific_usage_is_admitted_before_global_budget_stop(
@@ -164,8 +169,8 @@ def test_large_scientific_usage_is_admitted_before_global_budget_stop(
     monkeypatch.setattr(runner, "verify", lambda *_args, **_kwargs: {})
     monkeypatch.setattr(
         runner,
-        "verify_prior_qualification",
-        lambda *_args, **_kwargs: _prior_addendum(),
+        "verify_prior_qualifications",
+        lambda *_args, **_kwargs: _prior_addenda(),
     )
     monkeypatch.setenv("OPENAI_API_KEY", "redacted-test-key")
     decision = execute(V11Run2Runtime(call), paths=paths, remote_gate=False)
@@ -176,12 +181,12 @@ def test_large_scientific_usage_is_admitted_before_global_budget_stop(
     assert calls == ["generalization-comparison-canary"]
     assert result["failure_stage"] == "OPERATIONAL_BUDGET_STOP"
     assert result["failed_case_id"] == "generalization-uncertainty"
-    assert result["provider_calls"] == 3
-    assert result["transport_qualification_provider_calls"] == 2
+    assert result["provider_calls"] == 4
+    assert result["transport_qualification_provider_calls"] == 3
     assert result["scientific_provider_calls"] == 1
     assert result["provider_retries"] == 0
     assert result["duplicate_creation_calls"] == 0
-    assert result["cost_usd"] == pytest.approx(5.303086)
+    assert result["cost_usd"] == pytest.approx(5.3047245)
     assert cast("dict[str, object]", outcomes[0]["v11_acceptance"])["passed"] is True
     assert result["scientific_contract_validated_during_run"] is False
     assert not paths.case("generalization-uncertainty").attempt.exists()
@@ -218,8 +223,8 @@ def test_run2_reaches_boundary_then_fails_fast_on_grounding(
     monkeypatch.setattr(runner, "verify", lambda *_args, **_kwargs: {})
     monkeypatch.setattr(
         runner,
-        "verify_prior_qualification",
-        lambda *_args, **_kwargs: _prior_addendum(),
+        "verify_prior_qualifications",
+        lambda *_args, **_kwargs: _prior_addenda(),
     )
     monkeypatch.setenv("OPENAI_API_KEY", "redacted-test-key")
     decision = execute(V11Run2Runtime(call), paths=paths, remote_gate=False)
@@ -234,7 +239,7 @@ def test_run2_reaches_boundary_then_fails_fast_on_grounding(
         "SEMANTIC_EVIDENCE_GROUNDING_FAILURE"
     )
     assert result["slc12a3_corrected_by_actual_model_call"] is True
-    assert result["provider_calls"] == 5
+    assert result["provider_calls"] == 6
     assert result["scientific_provider_calls"] == 3
     assert result["provider_retries"] == 0
     assert result["duplicate_creation_calls"] == 0
@@ -361,20 +366,44 @@ def _object(value: object) -> dict[str, object]:
     return value
 
 
-def _prior_addendum() -> dict[str, object]:
-    return {
-        "decision": "INVALID_FOREGROUND_TRANSPORT_QUALIFICATION",
-        "response_id": "response-qualification-v1",
-        "provider_creation_calls": 1,
-        "provider_retries": 0,
-        "duplicate_creation_calls": 0,
-        "usage": {
-            "input_tokens": 1358,
-            "cached_input_tokens": 0,
-            "output_tokens": 288,
-            "reasoning_tokens": 79,
-            "total_tokens": 1646,
-            "latency_seconds": 6.5658,
-            "cost_usd": 0.003086,
+def _prior_addenda() -> tuple[dict[str, object], dict[str, object]]:
+    return (
+        {
+            "experiment_id": (
+                "staged-generalization-v11-foreground-qualification-v1"
+            ),
+            "decision": "INVALID_FOREGROUND_TRANSPORT_QUALIFICATION",
+            "response_id": "response-qualification-v1",
+            "provider_creation_calls": 1,
+            "provider_retries": 0,
+            "duplicate_creation_calls": 0,
+            "usage": {
+                "input_tokens": 1358,
+                "cached_input_tokens": 0,
+                "output_tokens": 288,
+                "reasoning_tokens": 79,
+                "total_tokens": 1646,
+                "latency_seconds": 6.5658,
+                "cost_usd": 0.003086,
+            },
         },
-    }
+        {
+            "experiment_id": (
+                "staged-generalization-v11-foreground-qualification-v2"
+            ),
+            "decision": "INVALID_FOREGROUND_TRANSPORT_QUALIFICATION",
+            "response_id": "response-qualification-v2",
+            "provider_creation_calls": 1,
+            "provider_retries": 0,
+            "duplicate_creation_calls": 0,
+            "usage": {
+                "input_tokens": 1358,
+                "cached_input_tokens": 1355,
+                "output_tokens": 250,
+                "reasoning_tokens": 43,
+                "total_tokens": 1608,
+                "latency_seconds": 3.545299667006475,
+                "cost_usd": 0.0016385,
+            },
+        },
+    )

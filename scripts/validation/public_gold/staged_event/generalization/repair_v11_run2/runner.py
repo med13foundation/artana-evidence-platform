@@ -66,7 +66,7 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.
     verify,
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.prior_qualification import (
-    verify_prior_qualification,
+    verify_prior_qualifications,
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.provider import (
     execute_case,
@@ -138,7 +138,10 @@ def execute(
     )
     ledger = V11Run2OperationalLedger(
         qualifications=(
-            prior_qualification_accounting(verify_prior_qualification(paths)),
+            *(
+                prior_qualification_accounting(result)
+                for result in verify_prior_qualifications(paths)
+            ),
             qualification_accounting(qualification_result),
         )
     )

@@ -17,7 +17,7 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v10.execu
 
 REPO = Path(__file__).resolve().parents[6]
 EXPERIMENT_ID = "staged-generalization-v11-exposed-run-v2"
-QUALIFICATION_ID = "staged-generalization-v11-foreground-qualification-v2"
+QUALIFICATION_ID = "staged-generalization-v11-foreground-qualification-v3"
 MODEL = "gpt-5.6-luna"
 REASONING_EFFORT = "high"
 FOREGROUND_REQUEST_TIMEOUT_SECONDS = 1800.0
@@ -63,6 +63,8 @@ class V11Run2Paths:
     v10_result: Path
     prior_qualification: QualificationPaths
     prior_qualification_usage_addendum: Path
+    prior_qualification_v2: QualificationPaths
+    prior_qualification_v2_usage_addendum: Path
     qualification: QualificationPaths
     result: Path
     report: Path
@@ -148,7 +150,7 @@ DEFAULT_PATHS = V11Run2Paths(
     / "docs/validation/receipts/"
     "2026-07-23-staged-generalization-v11-foreground-qualification-v1-"
     "usage-addendum.json",
-    qualification=QualificationPaths(
+    prior_qualification_v2=QualificationPaths(
         preregistration=REPO
         / "docs/validation/preregistrations/"
         "2026-07-23-staged-generalization-v11-foreground-qualification-v2.json",
@@ -170,6 +172,33 @@ DEFAULT_PATHS = V11Run2Paths(
         result=REPO
         / "docs/validation/results/"
         "2026-07-23-staged-generalization-v11-foreground-qualification-v2.json",
+    ),
+    prior_qualification_v2_usage_addendum=REPO
+    / "docs/validation/receipts/"
+    "2026-07-23-staged-generalization-v11-foreground-qualification-v2-"
+    "usage-addendum.json",
+    qualification=QualificationPaths(
+        preregistration=REPO
+        / "docs/validation/preregistrations/"
+        "2026-07-23-staged-generalization-v11-foreground-qualification-v3.json",
+        attempt=REPO
+        / "docs/validation/receipts/"
+        "2026-07-23-staged-generalization-v11-foreground-qualification-v3-"
+        "attempt.json",
+        bundle=REPO
+        / "docs/validation/receipts/"
+        "2026-07-23-staged-generalization-v11-foreground-qualification-v3-"
+        "custody.json",
+        receipt=REPO
+        / "docs/validation/receipts/"
+        "2026-07-23-staged-generalization-v11-foreground-qualification-v3.json",
+        raw_output=REPO
+        / "docs/validation/results/"
+        "2026-07-23-staged-generalization-v11-foreground-qualification-v3-"
+        "raw.json",
+        result=REPO
+        / "docs/validation/results/"
+        "2026-07-23-staged-generalization-v11-foreground-qualification-v3.json",
     ),
     result=REPO
     / "docs/validation/results/"

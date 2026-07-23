@@ -41,7 +41,7 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.
     V11Run2Paths,
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.prior_qualification import (
-    verify_prior_qualification,
+    verify_prior_qualifications,
 )
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.qualification import (
     QUALIFICATION_PASS,
@@ -138,7 +138,7 @@ def build_preregistration(
 
     verify_operational_artifacts(paths)
     run1 = verify_v11(V11_SCIENCE_PATHS)
-    prior_qualification_result = verify_prior_qualification(paths)
+    prior_qualification_results = verify_prior_qualifications(paths)
     verify_qualification_preregistration(paths)
     qualification_result = _object(
         json.loads(paths.qualification.result.read_text(encoding="utf-8"))
@@ -146,9 +146,11 @@ def build_preregistration(
     if qualification_result.get("decision") != QUALIFICATION_PASS:
         raise V11Run2PreflightError("foreground transport qualification failed")
     qualification = qualification_accounting(qualification_result)
-    prior_qualification = prior_qualification_accounting(
-        prior_qualification_result
+    prior_qualifications = tuple(
+        prior_qualification_accounting(result)
+        for result in prior_qualification_results
     )
+    prior_cost = sum(item.usage.cost_usd for item in prior_qualifications)
     run1_frozen = _object(run1["frozen_state"])
     if tuple(cast("list[str]", run1_frozen["case_order"])) != CASE_ORDER:
         raise V11Run2PreflightError("run-1 frozen case order changed")
@@ -225,14 +227,22 @@ def build_preregistration(
             "qualification_credit": False,
             "qualification_artifact_sha256": qualification_hashes,
             "qualification_response_id": qualification.response_id,
-            "prior_invalid_qualification": {
-                "usage_addendum_sha256": _sha256(
-                    paths.prior_qualification_usage_addendum
-                ),
-                "response_id": prior_qualification.response_id,
-                "cost_usd": prior_qualification.usage.cost_usd,
-                "scientific_credit": False,
-            },
+            "prior_invalid_qualifications": [
+                {
+                    "usage_addendum_sha256": _sha256(path),
+                    "response_id": prior.response_id,
+                    "cost_usd": prior.usage.cost_usd,
+                    "scientific_credit": False,
+                }
+                for path, prior in zip(
+                    (
+                        paths.prior_qualification_usage_addendum,
+                        paths.prior_qualification_v2_usage_addendum,
+                    ),
+                    prior_qualifications,
+                    strict=True,
+                )
+            ],
             "implementation_sha256": _hash_files(
                 REPO,
                 _FOREGROUND_RECEIPT_FILES,
@@ -245,14 +255,11 @@ def build_preregistration(
         "operational_budget": {
             "cumulative_max_cost_usd": GLOBAL_MAX_COST_USD,
             "includes_transport_qualification": True,
-            "qualification_cost_usd": (
-                prior_qualification.usage.cost_usd
-                + qualification.usage.cost_usd
-            ),
-            "qualification_provider_calls": 2,
+            "qualification_cost_usd": prior_cost + qualification.usage.cost_usd,
+            "qualification_provider_calls": 3,
             "remaining_before_scientific_calls_usd": max(
                 GLOBAL_MAX_COST_USD
-                - prior_qualification.usage.cost_usd
+                - prior_cost
                 - qualification.usage.cost_usd,
                 0.0,
             ),

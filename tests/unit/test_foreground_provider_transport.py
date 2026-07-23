@@ -208,6 +208,44 @@ def test_foreground_confirmation_usage_is_record_only_authority() -> None:
     assert client.responses.retrieve_calls == 1
 
 
+def test_foreground_opaque_reasoning_omission_is_non_scientific() -> None:
+    creation = _response(output_tokens=25)
+    output = creation["output"]
+    assert isinstance(output, list)
+    output.insert(
+        0,
+        {
+            "id": "reasoning-foreground",
+            "type": "reasoning",
+            "status": "completed",
+            "summary": [],
+            "encrypted_content": "opaque-provider-transport-value",
+        },
+    )
+    confirmation = copy.deepcopy(creation)
+    confirmation_output = confirmation["output"]
+    assert isinstance(confirmation_output, list)
+    confirmation_reasoning = confirmation_output[0]
+    assert isinstance(confirmation_reasoning, dict)
+    confirmation_reasoning.pop("encrypted_content")
+    client = _Client(creation, confirmation)
+
+    execution = _execute(client)
+
+    differences = execution.receipt["differences"]
+    assert isinstance(differences, list)
+    encrypted_difference = next(
+        item
+        for item in differences
+        if item["path"] == "$.output[0].encrypted_content"
+    )
+    assert encrypted_difference["allowlisted"] is True
+    assert execution.receipt["scientific_payload_sha256"]
+    assert execution.extraction.status == "OK"
+    assert client.responses.create_calls == 1
+    assert client.responses.retrieve_calls == 1
+
+
 def _execute(
     client: _Client,
     *,

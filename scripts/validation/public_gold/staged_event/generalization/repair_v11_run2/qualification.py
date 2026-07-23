@@ -83,7 +83,7 @@ def build_qualification_preregistration() -> dict[str, object]:
     value = qualification_input()
     return {
         "schema_version": (
-            "artana.staged_generalization.v11_foreground_qualification.v2"
+            "artana.staged_generalization.v11_foreground_qualification.v3"
         ),
         "experiment_id": QUALIFICATION_ID,
         "authorization": "TRANSPORT_ONLY_SYNTHETIC_NO_SCIENTIFIC_CREDIT",
@@ -115,6 +115,8 @@ def build_qualification_preregistration() -> dict[str, object]:
             "complete_usage": True,
             "confirmation_usage_is_authoritative": True,
             "creation_usage_snapshot_may_differ": True,
+            "opaque_reasoning_transport_may_be_omitted_on_confirmation": True,
+            "scientific_payload_and_identity_must_remain_exact": True,
             "strict_v11_schema": True,
             "provider_retries": 0,
             "duplicate_creation_calls": 0,
@@ -218,7 +220,7 @@ def execute_qualification(
             {
                 "schema_version": (
                     "artana.staged_generalization."
-                    "v11_foreground_qualification_result.v2"
+                    "v11_foreground_qualification_result.v3"
                 ),
                 "experiment_id": QUALIFICATION_ID,
                 "decision": QUALIFICATION_INVALID,
@@ -243,7 +245,7 @@ def execute_qualification(
             {
                 "schema_version": (
                     "artana.staged_generalization."
-                    "v11_foreground_qualification_result.v2"
+                    "v11_foreground_qualification_result.v3"
                 ),
                 "experiment_id": QUALIFICATION_ID,
                 "decision": QUALIFICATION_INVALID,
@@ -289,7 +291,7 @@ def execute_qualification(
     )
     result = {
         "schema_version": (
-            "artana.staged_generalization.v11_foreground_qualification_result.v2"
+            "artana.staged_generalization.v11_foreground_qualification_result.v3"
         ),
         "experiment_id": QUALIFICATION_ID,
         "decision": QUALIFICATION_PASS if passed else QUALIFICATION_INVALID,

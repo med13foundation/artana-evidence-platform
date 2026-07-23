@@ -33,15 +33,17 @@ def validate_foreground_provider_receipt_telemetry_v3(
 ) -> ForegroundTelemetryValidationV3:
     """Validate immutable custody while allowing usage snapshot convergence."""
 
+    normalized_creation = copy.deepcopy(creation)
+    transport_differences = _normalize_foreground_transport(
+        normalized_creation,
+        confirmation,
+    )
     creation_usage = creation.get("usage")
     confirmation_usage = confirmation.get("usage")
-    if not isinstance(creation_usage, dict) or not isinstance(
+    if isinstance(creation_usage, dict) and isinstance(
         confirmation_usage,
         dict,
     ):
-        normalized_creation = creation
-    else:
-        normalized_creation = copy.deepcopy(creation)
         normalized_creation["usage"] = copy.deepcopy(confirmation_usage)
     validation = validate_provider_receipt_telemetry_v2(
         creation=normalized_creation,
@@ -56,6 +58,7 @@ def validate_foreground_provider_receipt_telemetry_v3(
         raise TypeError("validated foreground differences are malformed")
     differences = list(raw_differences)
     receipt["differences"] = differences
+    differences.extend(transport_differences)
     usage_changed = creation_usage != confirmation_usage
     if usage_changed:
         differences.append(
@@ -94,6 +97,54 @@ def validate_foreground_provider_receipt_telemetry_v3(
         usage=validation.usage,
         receipt=receipt,
     )
+
+
+def _normalize_foreground_transport(
+    creation: dict[str, object],
+    confirmation: dict[str, object],
+) -> list[dict[str, object]]:
+    creation_output = creation.get("output")
+    confirmation_output = confirmation.get("output")
+    if not isinstance(creation_output, list) or not isinstance(
+        confirmation_output,
+        list,
+    ):
+        return []
+    differences: list[dict[str, object]] = []
+    for index, creation_item in enumerate(creation_output):
+        if index >= len(confirmation_output):
+            continue
+        confirmation_item = confirmation_output[index]
+        if not isinstance(creation_item, dict) or not isinstance(
+            confirmation_item,
+            dict,
+        ):
+            continue
+        if (
+            creation_item.get("type") != "reasoning"
+            or confirmation_item.get("type") != "reasoning"
+            or "encrypted_content" not in creation_item
+            or "encrypted_content" in confirmation_item
+        ):
+            continue
+        encrypted_content = creation_item.pop("encrypted_content")
+        differences.append(
+            {
+                "path": f"$.output[{index}].encrypted_content",
+                "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+                "creation_sha256": canonical_sha256(encrypted_content),
+                "retrieval_sha256": canonical_sha256(
+                    {"presence": "MISSING"}
+                ),
+                "allowlisted": True,
+                "rationale": (
+                    "foreground creation may include opaque encrypted reasoning "
+                    "transport content that confirmation retrieval omits; the "
+                    "reasoning item identity and scientific payload remain exact"
+                ),
+            }
+        )
+    return differences
 
 
 __all__ = [

@@ -1,0 +1,9 @@
+{
+  "preregistration_sha256": "cad8378b5a869cab21c230dd84aac50d3587603111ec1335addd11c61e81b4aa",
+  "provider_creation_limit": 1,
+  "provider_input_sha256": "932858926c74af15aaee09c2a70c44e0df6a02e89f727015f0e4034c6d879a9a",
+  "provider_retries": 0,
+  "response_id": "resp_066d3cf239bde6c7006a6233276d84819b96e7d31389334b8d",
+  "stage": "TRANSPORT_QUALIFICATION:staged-generalization-v11-foreground-qualification-v2",
+  "state": "ACKNOWLEDGED"
+}

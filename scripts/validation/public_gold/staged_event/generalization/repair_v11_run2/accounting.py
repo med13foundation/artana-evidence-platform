@@ -196,7 +196,7 @@ def qualification_accounting(result: dict[str, object]) -> QualificationAccounti
     if calls != 1:
         raise V11Run2AccountingError("qualification creation count is not one")
     return QualificationAccounting(
-        case_id="transport-qualification-v2",
+        case_id="transport-qualification-v3",
         status="TRANSPORT_QUALIFICATION_NO_SCIENTIFIC_CREDIT",
         response_id=_required_str(result, "response_id"),
         usage=UsageTotals(
@@ -220,12 +220,19 @@ def prior_qualification_accounting(
 
     if addendum.get("decision") != "INVALID_FOREGROUND_TRANSPORT_QUALIFICATION":
         raise V11Run2AccountingError("prior qualification disposition changed")
+    experiment_id = _required_str(addendum, "experiment_id")
+    if experiment_id.endswith("-v1"):
+        case_id = "transport-qualification-v1"
+    elif experiment_id.endswith("-v2"):
+        case_id = "transport-qualification-v2"
+    else:
+        raise V11Run2AccountingError("prior qualification identity changed")
     usage = _required_dict(addendum, "usage")
     calls = addendum.get("provider_creation_calls")
     if calls != 1:
         raise V11Run2AccountingError("prior qualification call count is not one")
     return QualificationAccounting(
-        case_id="transport-qualification-v1",
+        case_id=case_id,
         status="REJECTED_QUALIFICATION_NO_SCIENTIFIC_CREDIT",
         response_id=_required_str(addendum, "response_id"),
         usage=UsageTotals(
