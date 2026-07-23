@@ -1,0 +1,107 @@
+{
+  "schema_version": "artana.provider_boundary.enforcement_escalation.v1",
+  "incident_id": "fresh-cg-occurrence-v2-v1-provider-output-ceiling",
+  "classification": {
+    "primary": "B_PROVIDER_ENFORCEMENT_DEFECT",
+    "request_serialization_defect": false,
+    "usage_finalization_or_custody_defect": false,
+    "local_accounting_caused_overrun": false,
+    "multiple_causal_defects": false,
+    "secondary_local_operational_reporting_omission": true
+  },
+  "sealed_experiment": {
+    "experiment_id": "fresh-cg-occurrence-v2-v1",
+    "response_id": "resp_0a5d38355364c776006a6172bb3e28819a9ea5ec64c53b1df4",
+    "preregistration_sha256": "2b26d580422efedcb44b7de8d8b7e973f2dae04bff020cdce85f3b2b8d4c1b98",
+    "reference_sha256": "d1c9f7368008ff7c91f0dab9bf37acfcd92b049b29078661f3c880a56b79aa91",
+    "attempt_sha256": "52a66f88efbda9982f7d90ff8b83b3eefcfed838e2ea622435ef867ada8538db",
+    "result_sha256": "2a006ea527ef2f22670dd1ec61d9a39e099cac415047852a3f44cd4b8b67544a",
+    "decision": "INVALID_EXPERIMENT_EXECUTION",
+    "scientific_admission": false,
+    "provider_creation_calls": 1,
+    "provider_retries": 0
+  },
+  "installed_sdk": {
+    "package": "openai",
+    "version": "2.44.0",
+    "generated_resource": "openai/resources/responses/responses.py",
+    "serialization": "maybe_transform then POST /responses"
+  },
+  "offline_final_http_capture": {
+    "external_request_made": false,
+    "authorization_headers_captured": false,
+    "request_count": 1,
+    "path": "/v1/responses",
+    "body_sha256": "e426158fe3eee9a398e74e7fbcfa626fccc13bf7b29fb6c441d667cd5691f744",
+    "input_sha256": "1ca1ceb39c70adaf12c5e858d2299bdc7e900909c3e2fc5406d59bc56ddcd63a",
+    "structured_format_sha256": "aa5875e90ff7066bdb729f8f226067f6c8af22e3425f892c02355d9fe6c16f54",
+    "redacted_parameters": {
+      "model": "gpt-5.6-luna",
+      "reasoning": {
+        "effort": "high"
+      },
+      "max_output_tokens": 20000,
+      "background": true,
+      "store": true,
+      "metadata": {
+        "artana_case_id": "fresh-cg-pmid-21963494-e3",
+        "artana_experiment": "fresh-cg-occurrence-v2-v1",
+        "artana_instrumentation_change": "ABSOLUTE_SOURCE_OCCURRENCE_BINDINGS_V2",
+        "artana_preregistration_sha256": "2b26d580422efedcb44b7de8d8b7e973f2dae04bff020cdce85f3b2b8d4c1b98",
+        "artana_scientific_change": "NONE"
+      }
+    }
+  },
+  "provider_response": {
+    "created_at_epoch": 1784771259.0,
+    "created_at_utc": "2026-07-23T01:47:39+00:00",
+    "completed_at_epoch": 1784771306.0,
+    "completed_at_utc": "2026-07-23T01:48:26+00:00",
+    "status": "completed",
+    "incomplete_details": null,
+    "error": null,
+    "reported_max_output_tokens": 20000,
+    "usage": {
+      "input_tokens": 3489,
+      "cached_input_tokens": 0,
+      "output_tokens": 40443,
+      "reasoning_tokens": 5544,
+      "visible_and_other_output_tokens": 34899,
+      "total_tokens": 43932,
+      "cost_usd": 0.246147
+    }
+  },
+  "usage_finalization": {
+    "original_terminal_and_confirmation_usage_equal": true,
+    "evidence": "RECEIPT_BUDGET is reachable only after strict terminal-confirmation usage equality validation",
+    "read_only_retrieval_count": 2,
+    "retrieval_1_at_utc": "2026-07-23T01:58:52.250737+00:00",
+    "retrieval_2_at_utc": "2026-07-23T01:58:52.588756+00:00",
+    "retrieval_1_envelope_sha256": "8c71b25e50a3ee8fece83010f9bab57e1dcc44150461f6eda7f25ae59cfe10ec",
+    "retrieval_2_envelope_sha256": "8c71b25e50a3ee8fece83010f9bab57e1dcc44150461f6eda7f25ae59cfe10ec",
+    "retrieved_status_equal": true,
+    "retrieved_usage_equal": true,
+    "retrieved_reported_ceiling_equal": true,
+    "retrieval_was_read_only": true
+  },
+  "official_semantics": {
+    "max_output_tokens": "upper bound including visible output and reasoning tokens",
+    "output_tokens": "contains reasoning tokens; reasoning_tokens is a breakdown",
+    "limit_terminal_behavior": "reaching the configured limit should yield status incomplete with reason max_output_tokens",
+    "responses_reference": "https://developers.openai.com/api/reference/resources/responses/methods/create#responses-create-max_output_tokens",
+    "reasoning_guide": "https://developers.openai.com/api/docs/guides/reasoning#managing-the-context-window"
+  },
+  "operational_accounting_correction": {
+    "artifact": "docs/validation/results/2026-07-22-fresh-cg-occurrence-v2-v1-operational-accounting-v2.json",
+    "artifact_sha256": "f05903753ffaab57489b4eb8716f24292dc364e80db6a54533db9584949052ff",
+    "admitted_scientific_cost_usd": 0.0,
+    "rejected_unadmitted_cost_usd": 0.246147,
+    "global_budget_consumed_cost_usd": 0.246147
+  },
+  "authorization": {
+    "provider_execution_authorized": false,
+    "reason": "primary provider enforcement defect is not locally correctable",
+    "replacement_case_selection_started": false,
+    "replacement_scientific_experiment_started": false
+  }
+}

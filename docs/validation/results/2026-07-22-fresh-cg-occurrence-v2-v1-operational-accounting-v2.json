@@ -1,0 +1,53 @@
+{
+  "admitted_provider_calls": 0,
+  "experiment_id": "fresh-cg-occurrence-v2-v1",
+  "global_budget_accounting": {
+    "consumed_cost_usd": 0.246147,
+    "includes_rejected_provider_spend": true,
+    "maximum_cost_usd": 1.2,
+    "remaining_cost_usd": 0.953853
+  },
+  "historical_artifacts_rewritten": false,
+  "operational_observed_accounting": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.246147,
+    "input_tokens": 3489,
+    "latency_seconds": 49.645407459000126,
+    "output_tokens": 40443,
+    "reasoning_tokens": 5544,
+    "total_tokens": 43932
+  },
+  "provider_boundary_root_cause_class": "B_PROVIDER_ENFORCEMENT_DEFECT",
+  "provider_creation_calls": 1,
+  "provider_execution_authorized": false,
+  "provider_execution_blocker": "documented max_output_tokens ceiling was not enforced by provider",
+  "rejected_provider_calls": 1,
+  "rejected_unadmitted_accounting": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.246147,
+    "input_tokens": 3489,
+    "latency_seconds": 49.645407459000126,
+    "output_tokens": 40443,
+    "reasoning_tokens": 5544,
+    "total_tokens": 43932
+  },
+  "schema_version": "artana.provider_receipt_boundary.operational_accounting.v2",
+  "scientific_admission": false,
+  "scientific_admitted_accounting": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.0,
+    "input_tokens": 0,
+    "latency_seconds": 0.0,
+    "output_tokens": 0,
+    "reasoning_tokens": 0,
+    "total_tokens": 0
+  },
+  "scientific_credit": false,
+  "source_decision": "INVALID_EXPERIMENT_EXECUTION",
+  "source_failure_stage": "RECEIPT_BUDGET",
+  "source_response_ids": [
+    "resp_0a5d38355364c776006a6172bb3e28819a9ea5ec64c53b1df4"
+  ],
+  "source_result_sha256": "2a006ea527ef2f22670dd1ec61d9a39e099cac415047852a3f44cd4b8b67544a",
+  "unaccounted_provider_calls": 0
+}

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import copy
+import json
 from collections.abc import Callable
 
+import httpx
 import pytest
+from openai import OpenAI
 from pydantic import BaseModel, ConfigDict
 
 from scripts.validation.provider_receipt_boundary.background import (
@@ -11,6 +14,9 @@ from scripts.validation.provider_receipt_boundary.background import (
     BackgroundExecutionRuntime,
     BackgroundProviderExecution,
     execute_background_provider_call,
+)
+from scripts.validation.provider_receipt_boundary.background import (
+    execution as background_execution,
 )
 from scripts.validation.public_gold.lossless_event_provider import (
     ProviderExecutionError,
@@ -374,6 +380,54 @@ def test_acknowledgement_timeout_never_repeats_creation() -> None:
     assert client.responses.retrieve_calls == 0
 
 
+def test_final_sdk_http_json_contains_frozen_output_ceiling(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_bodies: list[dict[str, object]] = []
+
+    def capture(request: httpx.Request) -> httpx.Response:
+        loaded: object = json.loads(request.content)
+        assert isinstance(loaded, dict)
+        captured_bodies.append(loaded)
+        return httpx.Response(
+            400,
+            request=request,
+            json={
+                "error": {
+                    "message": "offline request capture",
+                    "type": "invalid_request_error",
+                    "code": "offline_capture",
+                    "param": None,
+                }
+            },
+        )
+
+    sdk_client = OpenAI(
+        api_key="offline-redacted-key",
+        max_retries=0,
+        http_client=httpx.Client(transport=httpx.MockTransport(capture)),
+    )
+    monkeypatch.setattr(
+        background_execution,
+        "OpenAI",
+        lambda **_kwargs: sdk_client,
+    )
+
+    with pytest.raises(ProviderExecutionError) as error:
+        execute_background_provider_call(
+            api_key="offline-redacted-key",
+            request=_request(),
+            transport_budgets=_budgets(),
+            output_model=_Output,
+        )
+
+    assert error.value.stage == "BACKGROUND_CREATION_REJECTED"
+    assert len(captured_bodies) == 1
+    assert captured_bodies[0]["max_output_tokens"] == 100
+    assert captured_bodies[0]["background"] is True
+    assert captured_bodies[0]["store"] is True
+
+
 def test_polling_timeout_never_repeats_creation() -> None:
     client = _Client(_response("queued"), [_response("queued")])
 
@@ -427,6 +481,48 @@ def test_missing_usage_after_completion_fails_accounting() -> None:
 
     assert error.value.stage == "RECEIPT_USAGE"
     assert client.responses.create_calls == 1
+
+
+def test_terminal_and_confirmation_usage_change_fails_after_one_creation() -> None:
+    terminal = _response("completed")
+    confirmation = copy.deepcopy(terminal)
+    usage = confirmation["usage"]
+    assert isinstance(usage, dict)
+    usage["output_tokens"] = 11
+    usage["total_tokens"] = 31
+    client = _Client(terminal, [confirmation])
+
+    with pytest.raises(ProviderExecutionError) as error:
+        _execute(client, _Clock())
+
+    assert error.value.stage == "RECEIPT_USAGE"
+    assert client.responses.create_calls == 1
+    assert client.responses.retrieve_calls == 1
+
+
+def test_completed_over_budget_response_fails_closed_after_one_creation() -> None:
+    completed = _response("completed")
+    usage = completed["usage"]
+    assert isinstance(usage, dict)
+    usage["output_tokens"] = 101
+    usage["total_tokens"] = 121
+    client = _Client(completed, [copy.deepcopy(completed)])
+
+    with pytest.raises(ProviderExecutionError) as error:
+        _execute(client, _Clock())
+
+    assert error.value.stage == "RECEIPT_BUDGET"
+    assert error.value.diagnostics["observed_usage"] == {
+        "input_tokens": 20,
+        "cached_input_tokens": 5,
+        "output_tokens": 101,
+        "reasoning_tokens": 4,
+        "total_tokens": 121,
+        "latency_seconds": pytest.approx(0.0),
+        "cost_usd": pytest.approx(0.0031075),
+    }
+    assert client.responses.create_calls == 1
+    assert client.responses.retrieve_calls == 1
 
 
 def test_receipt_payload_mismatch_after_completion_fails() -> None:
