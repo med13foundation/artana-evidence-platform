@@ -1,0 +1,68 @@
+{
+  "cost_usd": 0,
+  "decision": "INVALID_EXPERIMENT_EXECUTION",
+  "diagnostics": {
+    "actual_sha256": "2bfdd4b65510513994411b619749a4b5ef77512b73e6883005ace10b88f123cf",
+    "budget_accounting": {
+      "cost": "FAIL",
+      "latency": "PASS",
+      "observed_cost_usd": 0.246147,
+      "observed_latency_seconds": 49.645407459000126,
+      "observed_output_tokens": 40443,
+      "observed_total_tokens": 43932,
+      "output_tokens": "FAIL",
+      "requested_max_cost_usd": 0.15,
+      "requested_max_latency_seconds": 900.0,
+      "requested_max_output_tokens": 20000,
+      "requested_max_total_tokens": 24000,
+      "total_tokens": "FAIL"
+    },
+    "confirmation_retrieval_requests": 1,
+    "differences": [
+      {
+        "actual_sha256": "2bfdd4b65510513994411b619749a4b5ef77512b73e6883005ace10b88f123cf",
+        "difference": "VALUE_CHANGED",
+        "expected_sha256": "876c9b16254e157d1eb645390dcfae6f29b9d3cd394e73a91de8ee5d0e67ee43",
+        "path": "$.usage.output_tokens"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "expected_sha256": "876c9b16254e157d1eb645390dcfae6f29b9d3cd394e73a91de8ee5d0e67ee43",
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "observed_usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.246147,
+      "input_tokens": 3489,
+      "latency_seconds": 49.645407459000126,
+      "output_tokens": 40443,
+      "reasoning_tokens": 5544,
+      "total_tokens": 43932
+    },
+    "polling_retrieval_requests": 9,
+    "provider_creation_calls": 1,
+    "provider_retries": 0,
+    "receipt_status": "REJECTED_BUDGET",
+    "response_id": "resp_0a5d38355364c776006a6172bb3e28819a9ea5ec64c53b1df4"
+  },
+  "evaluator_governance_readiness": "FAIL_CLOSED",
+  "experiment_id": "fresh-cg-occurrence-v2-v1",
+  "failed_case_id": "fresh-cg-pmid-21963494-e3",
+  "failure_stage": "RECEIPT_BUDGET",
+  "graph_writes": 0,
+  "input_tokens": 0,
+  "latency_seconds": 0,
+  "output_tokens": 0,
+  "production_readiness": "NOT_READY",
+  "provider_calls": 1,
+  "qualification_credit": false,
+  "response_ids": [
+    "resp_0a5d38355364c776006a6172bb3e28819a9ea5ec64c53b1df4"
+  ],
+  "root_cause": "output token ceiling exceeded",
+  "schema_version": "artana.staged_generalization.fresh_cg_invalid.v1",
+  "scientific_metrics_calculated": false,
+  "scientific_readiness": "UNSCORED_INVALID_EXECUTION",
+  "total_tokens": 0,
+  "trusted_graph_ready": false
+}
