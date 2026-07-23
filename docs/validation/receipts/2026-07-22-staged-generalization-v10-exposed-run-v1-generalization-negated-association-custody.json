@@ -1,0 +1,193 @@
+{
+  "output_sha256": "6df316396a9d777720400408bf362bf7ba12adaece0e0603d61426d7db18551d",
+  "provider_input_sha256": "565d49aa3beaa168d93658c77b6d9fbf66ff3c3b4d51890e5e2a961441988f05",
+  "receipt": {
+    "acknowledgement_envelope_sha256": "5b67c29faf32d9fdfcb7bf27f83db926e5d176776ab98fdf0202a9acb4fb2823",
+    "acknowledgement_seconds": 0.6000482080016809,
+    "budgets": {
+      "cost": "RECORD_ONLY",
+      "latency": "RECORD_ONLY",
+      "observed_cost_usd": 0.08754400000000001,
+      "observed_latency_seconds": 69.10701804099881,
+      "observed_output_tokens": 14137,
+      "observed_total_tokens": 16859,
+      "output_tokens": "RECORD_ONLY",
+      "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+      "requested_max_cost_usd": null,
+      "requested_max_latency_seconds": null,
+      "requested_max_output_tokens": null,
+      "requested_max_total_tokens": null,
+      "total_tokens": "RECORD_ONLY"
+    },
+    "confirmation_retrieval_requests": 1,
+    "creation_envelope_sha256": "ba881e54327840325ed2f95729bd3af8bc58c0633250f169744e17aac11257f5",
+    "differences": [],
+    "duplicate_creation_calls": 0,
+    "identity": {
+      "created_at": 1784783776.0,
+      "model": "gpt-5.6-luna",
+      "object_type": "response",
+      "output_items": [
+        [
+          "reasoning",
+          "rs_064a391455f7c0bb006a61a3a11768819bbf75de020df6646f"
+        ],
+        [
+          "reasoning",
+          "rs_064a391455f7c0bb006a61a3a5ce3c819b893267aafa3cb0f7"
+        ],
+        [
+          "reasoning",
+          "rs_064a391455f7c0bb006a61a3ac6de8819b964689ed49c21fdd"
+        ],
+        [
+          "reasoning",
+          "rs_064a391455f7c0bb006a61a3b89ee0819bb534246aea0058ef"
+        ],
+        [
+          "reasoning",
+          "rs_064a391455f7c0bb006a61a3c68988819b93146db295be17e9"
+        ],
+        [
+          "reasoning",
+          "rs_064a391455f7c0bb006a61a3d0cda4819ba9714ec7b4a540d5"
+        ],
+        [
+          "message",
+          "msg_064a391455f7c0bb006a61a3d73504819b9721c9bd19225b5f"
+        ]
+      ],
+      "response_id": "resp_064a391455f7c0bb006a61a3a02ad4819b87238e6efaa7072b",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "polling_does_not_count_as_model_generation": true,
+    "polling_retrieval_requests": 13,
+    "polling_seconds": 68.1073705830022,
+    "provider_creation_calls": 1,
+    "provider_input_sha256": "565d49aa3beaa168d93658c77b6d9fbf66ff3c3b4d51890e5e2a961441988f05",
+    "provider_retries": 0,
+    "provider_schema_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+    "retrieval_envelope_sha256": "ba881e54327840325ed2f95729bd3af8bc58c0633250f169744e17aac11257f5",
+    "schema_version": "artana.provider_receipt_boundary.telemetry_only.v2",
+    "scientific_payload_sha256": "6df316396a9d777720400408bf362bf7ba12adaece0e0603d61426d7db18551d",
+    "status": "VERIFIED_LIVE",
+    "status_history": [
+      "queued",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "in_progress",
+      "completed"
+    ],
+    "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+    "usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.08754400000000001,
+      "input_tokens": 2722,
+      "latency_seconds": 69.10701804099881,
+      "output_tokens": 14137,
+      "reasoning_tokens": 2925,
+      "total_tokens": 16859
+    }
+  },
+  "requested_and_observed_budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.08754400000000001,
+    "observed_latency_seconds": 69.10701804099881,
+    "observed_output_tokens": 14137,
+    "observed_total_tokens": 16859,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "response_id": "resp_064a391455f7c0bb006a61a3a02ad4819b87238e6efaa7072b",
+  "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+  "stage": "GENERALIZATION_V10_EXPOSED:generalization-negated-association",
+  "typed_output": {
+    "case_id": "generalization-negated-association",
+    "completeness": "COMPLETE",
+    "inventory": [
+      {
+        "event_id": "E1",
+        "event_type": "ASSOCIATION",
+        "exact_evidence": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS.",
+        "explanation": "This event represents the reported null association between steroid dose before ICI initiation and worse OS.",
+        "trigger_text": "was no longer associated with"
+      }
+    ],
+    "links": [
+      {
+        "arguments": [
+          {
+            "explanation": "Steroid dose before ICI initiation is the exposure in the association.",
+            "role": "EXPOSURE",
+            "target_id": "P1",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "OS is the outcome in the association.",
+            "role": "OUTCOME",
+            "target_id": "P2",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "E1"
+      }
+    ],
+    "participants": [
+      {
+        "entity_type": "EXPOSURE",
+        "exact_evidence": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS.",
+        "exact_text": "steroid dose before ICI initiation",
+        "explanation": "This is the exposure whose association with OS is evaluated.",
+        "participant_id": "P1"
+      },
+      {
+        "entity_type": "OUTCOME",
+        "exact_evidence": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS.",
+        "exact_text": "OS",
+        "explanation": "OS is the explicitly named outcome; the preceding word 'worse' describes the direction of the absent association.",
+        "participant_id": "P2"
+      }
+    ],
+    "root_event_id": "E1",
+    "semantic_axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "NO_ASSOCIATION",
+        "event_id": "E1",
+        "evidence_items": [
+          "steroid dose before ICI initiation",
+          "was no longer associated with",
+          "OS"
+        ],
+        "explanation": "The phrase 'no longer associated with' reports absence of the association, so this is a null result rather than an affirmative harmful association. No statistical value or explicit significance interpretation is provided.",
+        "polarity": "NULL_RESULT",
+        "statistical_observations": [
+          {
+            "exact_text": null,
+            "observation_type": "NONE"
+          }
+        ],
+        "uncertainty": "ASSERTED"
+      }
+    ],
+    "structure_explanation": "The highlighted finding is represented by one association event linking the explicitly stated steroid-dose exposure to the OS outcome. The surrounding sensitivity-analysis and conclusion statements are not needed for the atomic finding."
+  }
+}

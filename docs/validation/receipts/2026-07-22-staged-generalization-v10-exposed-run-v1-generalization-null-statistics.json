@@ -1,0 +1,82 @@
+{
+  "acknowledgement_envelope_sha256": "b806644c41ece3a94caecc36801acefeb5abe955e478be8518b762dcc0899038",
+  "acknowledgement_seconds": 0.47086091700111865,
+  "budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.050907,
+    "observed_latency_seconds": 22.1068799579989,
+    "observed_output_tokens": 8029,
+    "observed_total_tokens": 10762,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "confirmation_retrieval_requests": 1,
+  "creation_envelope_sha256": "8cebf4f895db891ebb269e580a6930031a2bb08dc15944ca93c4527ed127bd96",
+  "differences": [],
+  "duplicate_creation_calls": 0,
+  "identity": {
+    "created_at": 1784783754.0,
+    "model": "gpt-5.6-luna",
+    "object_type": "response",
+    "output_items": [
+      [
+        "reasoning",
+        "rs_0834285f1f7a0be9006a61a38ae658819b838e5b08d5f9032b"
+      ],
+      [
+        "reasoning",
+        "rs_0834285f1f7a0be9006a61a38f339c819b8e5c3332cec3436d"
+      ],
+      [
+        "reasoning",
+        "rs_0834285f1f7a0be9006a61a3931378819ba5389609258dc801"
+      ],
+      [
+        "reasoning",
+        "rs_0834285f1f7a0be9006a61a396ddec819b91903ce27b477ce4"
+      ],
+      [
+        "message",
+        "msg_0834285f1f7a0be9006a61a39b0b90819ba3f1f4c21600806a"
+      ]
+    ],
+    "response_id": "resp_0834285f1f7a0be9006a61a389fe68819b851f4fc6f3ff3fb7",
+    "status": "completed"
+  },
+  "input_item_retrieval_requests": 1,
+  "model_generation_calls": 1,
+  "polling_does_not_count_as_model_generation": true,
+  "polling_retrieval_requests": 4,
+  "polling_seconds": 21.07025666700065,
+  "provider_creation_calls": 1,
+  "provider_input_sha256": "e5180abec814df646c0eaaf1cee227f60488b0b196d5596c2efec93c0571ca04",
+  "provider_retries": 0,
+  "provider_schema_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+  "retrieval_envelope_sha256": "8cebf4f895db891ebb269e580a6930031a2bb08dc15944ca93c4527ed127bd96",
+  "schema_version": "artana.provider_receipt_boundary.telemetry_only.v2",
+  "scientific_payload_sha256": "1e127305fbc1706060f68c77c95d6a375d8e4a6350e71609e1cffe95e63b3cf1",
+  "status": "VERIFIED_LIVE",
+  "status_history": [
+    "queued",
+    "in_progress",
+    "in_progress",
+    "in_progress",
+    "completed"
+  ],
+  "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.050907,
+    "input_tokens": 2733,
+    "latency_seconds": 22.1068799579989,
+    "output_tokens": 8029,
+    "reasoning_tokens": 2070,
+    "total_tokens": 10762
+  }
+}

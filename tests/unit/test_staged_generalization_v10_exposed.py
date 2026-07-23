@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import replace
+from dataclasses import asdict, replace
 from pathlib import Path
 from typing import cast
 
@@ -22,6 +22,7 @@ from scripts.validation.public_gold.staged_event.generalization.grading.evaluati
 )
 from scripts.validation.public_gold.staged_event.generalization.grading.policy import (
     case_policy,
+    policy_sha256,
 )
 from scripts.validation.public_gold.staged_event.generalization.panel import build_panel
 from scripts.validation.public_gold.staged_event.generalization.repair_v9.config import (
@@ -314,6 +315,157 @@ def test_v10_stops_after_first_scientific_regression_and_persists_evaluation(
     assert not paths.case("generalization-null-statistics").attempt.exists()
     assert result["provider_retries"] == 0
     assert result["duplicate_creation_calls"] == 0
+
+
+def test_checked_in_v10_result_recomputes_and_preserves_fail_fast_custody() -> None:
+    result = cast(
+        "dict[str, object]",
+        json.loads(DEFAULT_PATHS.result.read_text(encoding="utf-8")),
+    )
+    outcomes = cast("list[dict[str, object]]", result["case_outcomes"])
+    case_ids = [cast("str", item["case_id"]) for item in outcomes]
+    panel = {case.case_id: case for case in build_panel()}
+    policy = verify_frozen_policy(DEFAULT_PATHS.grading)
+    preregistration_sha256 = hashlib.sha256(
+        DEFAULT_PATHS.execution_preregistration.read_bytes()
+    ).hexdigest()
+    schema_sha256 = cast(
+        "dict[str, object]",
+        cast(
+            "dict[str, object]",
+            json.loads(
+                DEFAULT_PATHS.execution_preregistration.read_text(encoding="utf-8")
+            ),
+        )["frozen_state"],
+    )["schema_sha256"]
+    response_ids: list[str] = []
+
+    assert result["decision"] == (
+        "V10_EXPOSED_GATE_FAIL_MODEL_CORRECTION_REQUIRED"
+    )
+    assert case_ids == [
+        "generalization-comparison-canary",
+        "generalization-null-statistics",
+        "generalization-negated-association",
+    ]
+    assert result["first_failure_classification"] == (
+        "UNRELATED_SCIENTIFIC_REGRESSION"
+    )
+    assert result["slc12a3_corrected_by_actual_model_call"] is False
+    assert result["provider_calls"] == 3
+    assert result["provider_retries"] == 0
+    assert result["duplicate_creation_calls"] == 0
+    assert result["cost_usd"] == pytest.approx(0.150774)
+    assert result["remaining_cost_usd"] == pytest.approx(4.849226)
+    assert result["fresh_cases_consumed"] == 0
+    assert result["graph_writes"] == 0
+    assert result["trusted_promotion"] is False
+    assert result["optional_consumed_case_diagnostic"] == (
+        "SKIPPED_PUBLIC_GATE_FAILED"
+    )
+    assert result["grading_policy_sha256"] == policy_sha256(policy)
+
+    for outcome, case_id in zip(outcomes, case_ids, strict=True):
+        case_paths = DEFAULT_PATHS.case(case_id)
+        output = V9StagedGeneralizationOutput.model_validate_json(
+            case_paths.raw_output.read_text(encoding="utf-8")
+        )
+        metrics = evaluate_case(
+            panel[case_id],
+            output,
+            case_policy(policy, case_id),
+        )
+        baseline = _baseline(case_id)
+        comparison = compare_with_v9(metrics, baseline)
+        acceptance = evaluate_acceptance(
+            output,
+            metrics,
+            comparison,
+            v9_baseline_passed=cast("bool", baseline["passed"]),
+        )
+        attempt = cast(
+            "dict[str, object]",
+            json.loads(case_paths.attempt.read_text(encoding="utf-8")),
+        )
+        bundle = cast(
+            "dict[str, object]",
+            json.loads(case_paths.bundle.read_text(encoding="utf-8")),
+        )
+        receipt = cast(
+            "dict[str, object]",
+            json.loads(case_paths.receipt.read_text(encoding="utf-8")),
+        )
+        identity = cast("dict[str, object]", receipt["identity"])
+        budgets = cast("dict[str, object]", receipt["budgets"])
+        response_id = cast("str", identity["response_id"])
+
+        assert outcome["scientific_grader"] == json.loads(
+            json.dumps(asdict(metrics))
+        )
+        assert outcome["v9_comparison"] == json.loads(
+            json.dumps(asdict(comparison))
+        )
+        assert outcome["boundary_acceptance"] == json.loads(
+            json.dumps(acceptance.as_json())
+        )
+        assert attempt["preregistration_sha256"] == preregistration_sha256
+        assert attempt["provider_creation_limit"] == 1
+        assert attempt["provider_retries"] == 0
+        assert attempt["response_id"] == response_id
+        assert bundle["response_id"] == response_id
+        assert bundle["provider_input_sha256"] == hashlib.sha256(
+            provider_input(DEFAULT_PATHS, case_id).encode()
+        ).hexdigest()
+        assert bundle["schema_sha256"] == schema_sha256
+        assert bundle["typed_output"] == output.model_dump(mode="json")
+        assert bundle["receipt"] == receipt
+        assert receipt["status"] == "VERIFIED_LIVE"
+        assert receipt["provider_creation_calls"] == 1
+        assert receipt["provider_retries"] == 0
+        assert receipt["duplicate_creation_calls"] == 0
+        assert receipt["confirmation_retrieval_requests"] == 1
+        assert receipt["input_item_retrieval_requests"] == 1
+        assert budgets["requested_max_output_tokens"] is None
+        assert budgets["requested_max_total_tokens"] is None
+        assert budgets["output_tokens"] == "RECORD_ONLY"
+        assert budgets["total_tokens"] == "RECORD_ONLY"
+        assert budgets["latency"] == "RECORD_ONLY"
+        assert budgets["cost"] == "RECORD_ONLY"
+        response_ids.append(response_id)
+
+    assert len(response_ids) == len(set(response_ids)) == 3
+    failed = cast("dict[str, object]", outcomes[-1]["scientific_grader"])
+    assert failed["failure_reasons"] == [
+        "evidence grounding failed: evidence item is absent or ambiguous in context"
+    ]
+    assert failed["exact_evidence_grounding"] is False
+    assert failed["required_core_complete"] is True
+    failed_output = V9StagedGeneralizationOutput.model_validate_json(
+        DEFAULT_PATHS.case("generalization-negated-association").raw_output.read_text(
+            encoding="utf-8"
+        )
+    )
+    assert failed_output.semantic_axes[0].evidence_items == (
+        "steroid dose before ICI initiation",
+        "was no longer associated with",
+        "OS",
+    )
+    for uncalled in (
+        "generalization-uncertainty",
+        "generalization-drug-sensitivity",
+        "generalization-explicit-nested-cause",
+    ):
+        case_paths = DEFAULT_PATHS.case(uncalled)
+        assert not any(
+            path.exists()
+            for path in (
+                case_paths.attempt,
+                case_paths.bundle,
+                case_paths.receipt,
+                case_paths.raw_output,
+                case_paths.evaluation,
+            )
+        )
 
 
 def test_sealed_v1_v2_artifacts_remain_byte_identical() -> None:

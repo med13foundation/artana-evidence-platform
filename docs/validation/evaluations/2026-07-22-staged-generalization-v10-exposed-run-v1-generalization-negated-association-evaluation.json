@@ -1,0 +1,80 @@
+{
+  "boundary_acceptance": {
+    "failure_classification": "UNRELATED_SCIENTIFIC_REGRESSION",
+    "forbidden_suffix_absent": null,
+    "passed": false,
+    "protected_lexicalized_name_preserved": null,
+    "protected_lexicalized_name_required": false,
+    "scientific_grader_passed": false,
+    "target_case": false,
+    "target_correction_observed": null,
+    "target_correction_required": false,
+    "v9_count_regressions": [],
+    "v9_fields_regressed": [
+      "exact_evidence_grounding"
+    ]
+  },
+  "case_id": "generalization-negated-association",
+  "experiment_id": "staged-generalization-v10-exposed-run-v1",
+  "gene_or_protein_occurrences": [],
+  "graph_writes": 0,
+  "qualification_credit": false,
+  "response_id": "resp_064a391455f7c0bb006a61a3a02ad4819b87238e6efaa7072b",
+  "schema_version": "artana.staged_generalization.v10_exposed_case_evaluation.v1",
+  "scientific_grader": {
+    "ambiguous_context_count": 0,
+    "benchmark_fidelity_after_projection": "NOT_APPLICABLE",
+    "benchmark_fidelity_before_projection": "NOT_APPLICABLE",
+    "benchmark_lane_separate": true,
+    "case_id": "generalization-negated-association",
+    "comparison_fidelity": true,
+    "complete_event_recovery": true,
+    "contradiction_count": 0,
+    "direction_fidelity": true,
+    "exact_evidence_grounding": false,
+    "failure_reasons": [
+      "evidence grounding failed: evidence item is absent or ambiguous in context"
+    ],
+    "family": "NEGATION",
+    "nested_event_structure": true,
+    "participant_role_fidelity": true,
+    "passed": false,
+    "permitted_context_count": 0,
+    "polarity_fidelity": true,
+    "projection_review_only": true,
+    "required_core_complete": true,
+    "source_discovery_validity": "FAIL",
+    "statistical_fidelity": true,
+    "uncertainty_fidelity": true,
+    "unsupported_claim_count": 0
+  },
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.08754400000000001,
+    "input_tokens": 2722,
+    "latency_seconds": 69.10701804099881,
+    "output_tokens": 14137,
+    "reasoning_tokens": 2925,
+    "total_tokens": 16859
+  },
+  "v9_comparison": {
+    "count_regressions": [],
+    "improved_fields": [],
+    "preserved_fields": [
+      "required_core_complete",
+      "complete_event_recovery",
+      "participant_role_fidelity",
+      "nested_event_structure",
+      "direction_fidelity",
+      "comparison_fidelity",
+      "polarity_fidelity",
+      "uncertainty_fidelity",
+      "statistical_fidelity"
+    ],
+    "regressed_fields": [
+      "exact_evidence_grounding"
+    ],
+    "status": "COMPARED",
+    "unchanged_failure_fields": []
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "preregistration_sha256": "bdcb5127609c2f2c491e0cae2089e1bae593ee85ab86c4fb03ca8ba04142a18a",
+  "provider_creation_limit": 1,
+  "provider_input_sha256": "c7eb99cc9251d0b363be01d2a43dfb439d13fc3948eae007b1f4557d973bdb27",
+  "provider_retries": 0,
+  "response_id": "resp_0526290261e58e5a006a61a37e4980819aae736559ab60d533",
+  "stage": "GENERALIZATION_V10_EXPOSED:generalization-comparison-canary",
+  "state": "ACKNOWLEDGED"
+}

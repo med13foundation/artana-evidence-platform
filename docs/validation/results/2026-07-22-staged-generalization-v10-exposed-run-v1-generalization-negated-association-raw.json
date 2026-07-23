@@ -1,0 +1,72 @@
+{
+  "case_id": "generalization-negated-association",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "E1",
+      "event_type": "ASSOCIATION",
+      "exact_evidence": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS.",
+      "explanation": "This event represents the reported null association between steroid dose before ICI initiation and worse OS.",
+      "trigger_text": "was no longer associated with"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "Steroid dose before ICI initiation is the exposure in the association.",
+          "role": "EXPOSURE",
+          "target_id": "P1",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "OS is the outcome in the association.",
+          "role": "OUTCOME",
+          "target_id": "P2",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "E1"
+    }
+  ],
+  "participants": [
+    {
+      "entity_type": "EXPOSURE",
+      "exact_evidence": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS.",
+      "exact_text": "steroid dose before ICI initiation",
+      "explanation": "This is the exposure whose association with OS is evaluated.",
+      "participant_id": "P1"
+    },
+    {
+      "entity_type": "OUTCOME",
+      "exact_evidence": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS.",
+      "exact_text": "OS",
+      "explanation": "OS is the explicitly named outcome; the preceding word 'worse' describes the direction of the absent association.",
+      "participant_id": "P2"
+    }
+  ],
+  "root_event_id": "E1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "NO_ASSOCIATION",
+      "event_id": "E1",
+      "evidence_items": [
+        "steroid dose before ICI initiation",
+        "was no longer associated with",
+        "OS"
+      ],
+      "explanation": "The phrase 'no longer associated with' reports absence of the association, so this is a null result rather than an affirmative harmful association. No statistical value or explicit significance interpretation is provided.",
+      "polarity": "NULL_RESULT",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    }
+  ],
+  "structure_explanation": "The highlighted finding is represented by one association event linking the explicitly stated steroid-dose exposure to the OS outcome. The surrounding sensitivity-analysis and conclusion statements are not needed for the atomic finding."
+}
