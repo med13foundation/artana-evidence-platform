@@ -308,6 +308,87 @@ def test_v1_through_v10_sealed_artifacts_remain_byte_identical() -> None:
         )
 
 
+def test_checked_in_v11_timeout_is_invalid_unscored_and_exactly_once() -> None:
+    result = cast(
+        "dict[str, object]",
+        json.loads(DEFAULT_PATHS.result.read_text(encoding="utf-8")),
+    )
+    attempt = cast(
+        "dict[str, object]",
+        json.loads(
+            DEFAULT_PATHS.case("generalization-comparison-canary").attempt.read_text(
+                encoding="utf-8"
+            )
+        ),
+    )
+    late_status = cast(
+        "dict[str, object]",
+        json.loads(
+            (
+                REPO / "docs/validation/receipts/"
+                "2026-07-22-staged-generalization-v11-exposed-run-v1-"
+                "generalization-comparison-canary-late-status.json"
+            ).read_text(encoding="utf-8")
+        ),
+    )
+
+    assert result["decision"] == "INVALID_V11_EXECUTION"
+    assert result["failure_stage"] == "BACKGROUND_POLLING_TIMEOUT"
+    assert result["failed_case_id"] == "generalization-comparison-canary"
+    assert result["planned_case_count"] == 6
+    assert result["executed_case_count"] == 0
+    assert result["case_outcomes"] == []
+    assert result["scientific_metrics_calculated_for_admitted_cases"] is False
+    assert result["provider_calls"] == 1
+    assert result["provider_retries"] == 0
+    assert result["duplicate_creation_calls"] == 0
+    assert result["input_tokens"] == 0
+    assert result["output_tokens"] == 0
+    assert result["total_tokens"] == 0
+    assert result["cost_usd"] == pytest.approx(0.0)
+    assert result["remaining_cost_usd"] == pytest.approx(5.0)
+    assert result["fresh_cases_consumed"] == 0
+    assert result["remaining_fresh_cases_preserved"] == 7
+    assert result["graph_writes"] == 0
+    assert result["trusted_promotion"] is False
+    diagnostics = cast("dict[str, object]", result["diagnostics"])
+    assert diagnostics["polling_retrieval_requests"] == 170
+    assert diagnostics["creation_repeated"] is False
+
+    assert attempt["state"] == "ACKNOWLEDGED"
+    assert attempt["provider_creation_limit"] == 1
+    assert attempt["provider_retries"] == 0
+    assert (
+        attempt["preregistration_sha256"]
+        == hashlib.sha256(DEFAULT_PATHS.preregistration.read_bytes()).hexdigest()
+    )
+    assert late_status["response_id"] == attempt["response_id"]
+    assert late_status["provider_status"] == "queued"
+    assert late_status["provider_usage"] is None
+    assert late_status["creation_calls_after_terminal"] == 0
+    assert late_status["provider_retries_after_terminal"] == 0
+    assert late_status["scientific_admission"] is False
+    assert late_status["scientific_rescore"] is False
+
+    canary_paths = DEFAULT_PATHS.case("generalization-comparison-canary")
+    assert not canary_paths.bundle.exists()
+    assert not canary_paths.receipt.exists()
+    assert not canary_paths.raw_output.exists()
+    assert not canary_paths.evaluation.exists()
+    for case_id in CASE_ORDER[1:]:
+        case_paths = DEFAULT_PATHS.case(case_id)
+        assert not any(
+            path.exists()
+            for path in (
+                case_paths.attempt,
+                case_paths.bundle,
+                case_paths.receipt,
+                case_paths.raw_output,
+                case_paths.evaluation,
+            )
+        )
+
+
 def _acceptance(
     case_id: str,
     output: V9StagedGeneralizationOutput,

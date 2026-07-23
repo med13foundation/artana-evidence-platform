@@ -1,0 +1,17 @@
+{
+  "creation_calls_after_terminal": 0,
+  "experiment_id": "staged-generalization-v11-exposed-run-v1",
+  "provider_error": null,
+  "provider_incomplete_details": null,
+  "provider_retries_after_terminal": 0,
+  "provider_status": "queued",
+  "provider_usage": null,
+  "response_id": "resp_0ea84656be41ad54006a61b0916e4c8199bec1041422465f06",
+  "retrieval_at": "2026-07-23T06:27:21Z",
+  "retrieval_kind": "READ_ONLY_POST_TERMINAL_STATUS",
+  "schema_version": "artana.staged_generalization.v11_late_status.v1",
+  "scientific_admission": false,
+  "scientific_rescore": false,
+  "sealed_result_changed": false,
+  "usage_disposition": "UNAVAILABLE_RESPONSE_NOT_COMPLETED"
+}
