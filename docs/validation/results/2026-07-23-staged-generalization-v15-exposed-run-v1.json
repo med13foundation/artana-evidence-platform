@@ -1,0 +1,567 @@
+{
+  "admitted_provider_calls": 3,
+  "all_evaluations_persisted": true,
+  "all_provider_spend_accounted": true,
+  "all_receipts_valid": true,
+  "attempted_provider_calls": 3,
+  "benchmark_projection_affects_scientific_decision": false,
+  "benchmark_projection_is_review_only": true,
+  "budget_accounting_status": "FULLY_ACCOUNTED",
+  "budget_exhausted": false,
+  "cached_input_tokens": 0,
+  "called_but_unevaluated_case_ids": [],
+  "case_outcomes": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "custody": {
+        "bundle_sha256": "fafe8e26e6f8a82304281a4858590c23e43f6661b229e3d3ec2f3603a1b85ba0",
+        "output_sha256": "011931e44ecf30f313fa86f0c0f92aed175b4884638f40546b6e8614e6e611ea",
+        "provider_input_sha256": "bd3f1f246265550d4d959dddf14b6ee88f2d0b26ca225a1b2d65f8d04f482d64",
+        "raw_output_sha256": "34345f016d2872a7d2fa77368135ac47abc5408daf11c9301e9a769ee1cbdbd2",
+        "receipt_sha256": "4b50cbed645e1a9a89a8d820f77db0d80c3408e4119617725fdccdcc02e7ca47",
+        "response_id": "resp_0b925bd38372394c006a629816746c8198950e17903ce30f02",
+        "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+        "stage": "GENERALIZATION_V15_EXPOSED:generalization-comparison-canary"
+      },
+      "failure_classification": null,
+      "response_id": "resp_0b925bd38372394c006a629816746c8198950e17903ce30f02",
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 0.010631,
+        "input_tokens": 4175,
+        "latency_seconds": 8.486940582995885,
+        "output_tokens": 1076,
+        "reasoning_tokens": 516,
+        "total_tokens": 5251
+      },
+      "v14_evaluation": {
+        "effective_metrics": {
+          "benchmark_projection": null,
+          "benchmark_projection_scope": "NOT_APPLICABLE",
+          "benchmark_projection_status": "NOT_APPLICABLE",
+          "case_id": "generalization-comparison-canary",
+          "completeness": "COMPLETE",
+          "exact_evidence_grounding": true,
+          "failure_reasons": [],
+          "focus_event_passed": true,
+          "full_focus_cg_status": "NOT_APPLICABLE",
+          "graph_writes": 0,
+          "historical_grader_passed": true,
+          "mandatory_participants_passed": true,
+          "participant_roles_passed": true,
+          "passed": true,
+          "permitted_context_count": 0,
+          "qualification_credit": false,
+          "root_only_failure": false,
+          "root_selection_status": "PASS",
+          "semantic_axes_passed": true,
+          "source_dimensions_except_root_passed": true,
+          "source_semantic_status": "PASS",
+          "trusted_promotion": false,
+          "unsupported_extraction_count": 0
+        },
+        "optional_source_entailed_edge": {
+          "accepted_count": 0,
+          "event_key": "elevating",
+          "normalization_status": "NOT_APPLICABLE",
+          "observed_count": 0,
+          "role": "CAUSAL_AGENT",
+          "target_key": "proteins",
+          "target_kind": "PARTICIPANT"
+        },
+        "raw_bionlp_cg_projection_preserved": true,
+        "raw_v13_metrics": {
+          "benchmark_projection": null,
+          "benchmark_projection_scope": "NOT_APPLICABLE",
+          "benchmark_projection_status": "NOT_APPLICABLE",
+          "case_id": "generalization-comparison-canary",
+          "completeness": "COMPLETE",
+          "exact_evidence_grounding": true,
+          "failure_reasons": [],
+          "focus_event_passed": true,
+          "full_focus_cg_status": "NOT_APPLICABLE",
+          "graph_writes": 0,
+          "historical_grader_passed": true,
+          "mandatory_participants_passed": true,
+          "participant_roles_passed": true,
+          "passed": true,
+          "permitted_context_count": 0,
+          "qualification_credit": false,
+          "root_only_failure": false,
+          "root_selection_status": "PASS",
+          "semantic_axes_passed": true,
+          "source_dimensions_except_root_passed": true,
+          "source_semantic_status": "PASS",
+          "trusted_promotion": false,
+          "unsupported_extraction_count": 0
+        }
+      }
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "custody": {
+        "bundle_sha256": "8d9e33299471e801a2437b2abeafe6a515317aa8e5d920b46176adf57476ea5c",
+        "output_sha256": "b03f938112d04ea12c90f98a8e214e10fe66ae0f56d25846768a9baecadd571f",
+        "provider_input_sha256": "52e732d62f231127dc38b0207eb4ccf0c5596e8a61e25fd408caf70bd96542d1",
+        "raw_output_sha256": "1be167468d8bb2dd71aaf0a0c6fb06138ebc4448460c55068906b1e712ab93a7",
+        "receipt_sha256": "b84d5278e7bd20a74c8676789220faa8de5fe4cf8eda905891511d050519e3e8",
+        "response_id": "resp_03e70ee30b77fa39006a62981e4a3c819bb7a8ba273ac7d248",
+        "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+        "stage": "GENERALIZATION_V15_EXPOSED:generalization-drug-sensitivity"
+      },
+      "failure_classification": null,
+      "response_id": "resp_03e70ee30b77fa39006a62981e4a3c819bb7a8ba273ac7d248",
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 0.017386,
+        "input_tokens": 4162,
+        "latency_seconds": 18.575621666997904,
+        "output_tokens": 2204,
+        "reasoning_tokens": 1552,
+        "total_tokens": 6366
+      },
+      "v14_evaluation": {
+        "effective_metrics": {
+          "benchmark_projection": {
+            "arguments": [
+              {
+                "cg_role": "Theme",
+                "end": 378,
+                "entity_type": "CANCER",
+                "exact_text": "carcinoma",
+                "start": 369
+              },
+              {
+                "cg_role": "Cause",
+                "end": 395,
+                "entity_type": "SIMPLE_CHEMICAL",
+                "exact_text": "5-FU",
+                "start": 391
+              }
+            ],
+            "event": {
+              "trigger": {
+                "end": 365,
+                "exact_text": "sensitivity",
+                "start": 354
+              },
+              "type": "REGULATION"
+            },
+            "graph_promotion_allowed": false,
+            "qualification_credit": false,
+            "review_only": true,
+            "scope": "BIONLP_CG_EVALUATION_ONLY"
+          },
+          "benchmark_projection_scope": "DRUG_FOCUS_EVENT",
+          "benchmark_projection_status": "PASS",
+          "case_id": "generalization-drug-sensitivity",
+          "completeness": "COMPLETE",
+          "exact_evidence_grounding": true,
+          "failure_reasons": [],
+          "focus_event_passed": true,
+          "full_focus_cg_status": "NOT_APPLICABLE",
+          "graph_writes": 0,
+          "historical_grader_passed": null,
+          "mandatory_participants_passed": true,
+          "participant_roles_passed": true,
+          "passed": true,
+          "permitted_context_count": 0,
+          "qualification_credit": false,
+          "root_only_failure": false,
+          "root_selection_status": "PASS",
+          "semantic_axes_passed": true,
+          "source_dimensions_except_root_passed": true,
+          "source_semantic_status": "PASS",
+          "trusted_promotion": false,
+          "unsupported_extraction_count": 0
+        },
+        "optional_source_entailed_edge": {
+          "accepted_count": 0,
+          "event_key": "elevating",
+          "normalization_status": "NOT_APPLICABLE",
+          "observed_count": 0,
+          "role": "CAUSAL_AGENT",
+          "target_key": "proteins",
+          "target_kind": "PARTICIPANT"
+        },
+        "raw_bionlp_cg_projection_preserved": true,
+        "raw_v13_metrics": {
+          "benchmark_projection": {
+            "arguments": [
+              {
+                "cg_role": "Theme",
+                "end": 378,
+                "entity_type": "CANCER",
+                "exact_text": "carcinoma",
+                "start": 369
+              },
+              {
+                "cg_role": "Cause",
+                "end": 395,
+                "entity_type": "SIMPLE_CHEMICAL",
+                "exact_text": "5-FU",
+                "start": 391
+              }
+            ],
+            "event": {
+              "trigger": {
+                "end": 365,
+                "exact_text": "sensitivity",
+                "start": 354
+              },
+              "type": "REGULATION"
+            },
+            "graph_promotion_allowed": false,
+            "qualification_credit": false,
+            "review_only": true,
+            "scope": "BIONLP_CG_EVALUATION_ONLY"
+          },
+          "benchmark_projection_scope": "DRUG_FOCUS_EVENT",
+          "benchmark_projection_status": "PASS",
+          "case_id": "generalization-drug-sensitivity",
+          "completeness": "COMPLETE",
+          "exact_evidence_grounding": true,
+          "failure_reasons": [],
+          "focus_event_passed": true,
+          "full_focus_cg_status": "NOT_APPLICABLE",
+          "graph_writes": 0,
+          "historical_grader_passed": null,
+          "mandatory_participants_passed": true,
+          "participant_roles_passed": true,
+          "passed": true,
+          "permitted_context_count": 0,
+          "qualification_credit": false,
+          "root_only_failure": false,
+          "root_selection_status": "PASS",
+          "semantic_axes_passed": true,
+          "source_dimensions_except_root_passed": true,
+          "source_semantic_status": "PASS",
+          "trusted_promotion": false,
+          "unsupported_extraction_count": 0
+        }
+      }
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "custody": {
+        "bundle_sha256": "6fcc6bd7678737ade360e09b0f9b8d73a9eb231d47cba9f8e93539f47623b41c",
+        "output_sha256": "aaaed649d16a809355db7d2a519b01d8b3abf56901e80c773da4c1baa285a20a",
+        "provider_input_sha256": "f6f6a3f5148d156913a03835070ae168cd9ed06c828a0704c24b1de1a2c95f59",
+        "raw_output_sha256": "486fd2394cbff2b04737e487c23a9fa0deea069b8517ab576e73fa5e5fc878ad",
+        "receipt_sha256": "24ab53d5713513c83e4bea93b9bc8ce73bd06fa99ddcf885dc5418787ce77145",
+        "response_id": "resp_0ce65718ea22f429006a629830cb38819baf516b6a07d95700",
+        "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+        "stage": "GENERALIZATION_V15_EXPOSED:generalization-uncertainty"
+      },
+      "failure_classification": "UNRELATED_REGRESSION",
+      "response_id": "resp_0ce65718ea22f429006a629830cb38819baf516b6a07d95700",
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 0.028437,
+        "input_tokens": 4233,
+        "latency_seconds": 28.99031350000587,
+        "output_tokens": 4034,
+        "reasoning_tokens": 3624,
+        "total_tokens": 8267
+      },
+      "v14_evaluation": {
+        "effective_metrics": {
+          "benchmark_projection": null,
+          "benchmark_projection_scope": "NOT_APPLICABLE",
+          "benchmark_projection_status": "NOT_APPLICABLE",
+          "case_id": "generalization-uncertainty",
+          "completeness": "COMPLETE",
+          "exact_evidence_grounding": true,
+          "failure_reasons": [
+            "missing required core participants: ['gene']",
+            "required core event arguments are missing"
+          ],
+          "focus_event_passed": false,
+          "full_focus_cg_status": "NOT_APPLICABLE",
+          "graph_writes": 0,
+          "historical_grader_passed": false,
+          "mandatory_participants_passed": false,
+          "participant_roles_passed": false,
+          "passed": false,
+          "permitted_context_count": 0,
+          "qualification_credit": false,
+          "root_only_failure": false,
+          "root_selection_status": "FAIL",
+          "semantic_axes_passed": true,
+          "source_dimensions_except_root_passed": false,
+          "source_semantic_status": "FAIL",
+          "trusted_promotion": false,
+          "unsupported_extraction_count": 0
+        },
+        "optional_source_entailed_edge": {
+          "accepted_count": 0,
+          "event_key": "elevating",
+          "normalization_status": "NOT_APPLICABLE",
+          "observed_count": 0,
+          "role": "CAUSAL_AGENT",
+          "target_key": "proteins",
+          "target_kind": "PARTICIPANT"
+        },
+        "raw_bionlp_cg_projection_preserved": true,
+        "raw_v13_metrics": {
+          "benchmark_projection": null,
+          "benchmark_projection_scope": "NOT_APPLICABLE",
+          "benchmark_projection_status": "NOT_APPLICABLE",
+          "case_id": "generalization-uncertainty",
+          "completeness": "COMPLETE",
+          "exact_evidence_grounding": true,
+          "failure_reasons": [
+            "missing required core participants: ['gene']",
+            "required core event arguments are missing"
+          ],
+          "focus_event_passed": false,
+          "full_focus_cg_status": "NOT_APPLICABLE",
+          "graph_writes": 0,
+          "historical_grader_passed": false,
+          "mandatory_participants_passed": false,
+          "participant_roles_passed": false,
+          "passed": false,
+          "permitted_context_count": 0,
+          "qualification_credit": false,
+          "root_only_failure": false,
+          "root_selection_status": "FAIL",
+          "semantic_axes_passed": true,
+          "source_dimensions_except_root_passed": false,
+          "source_semantic_status": "FAIL",
+          "trusted_promotion": false,
+          "unsupported_extraction_count": 0
+        }
+      }
+    }
+  ],
+  "completed_provider_calls": 3,
+  "confirmation_retrieval_requests": 3,
+  "cost_usd": 0.056454000000000004,
+  "decision": "V15_EXPOSED_GATE_FAIL_UNRELATED_REGRESSION",
+  "duplicate_creation_calls": 0,
+  "evaluator_changed_from_v14": false,
+  "evaluator_implementation": "repair_v14.evaluate_v14_case",
+  "executed_case_count": 3,
+  "experiment_id": "staged-generalization-v15-exposed-run-v1",
+  "failed_case_id": "generalization-uncertainty",
+  "failure_stage": null,
+  "failure_stages": [],
+  "first_failure_classification": "UNRELATED_REGRESSION",
+  "fresh_cases_consumed": 0,
+  "fresh_qualification_status": "NOT_STARTED",
+  "global_max_cost_usd": 5.0,
+  "grading_policy_sha256": "da315ef20300e669fbbfb2565f26faad7ba2ba1336de5d7939a7b22b34a2420c",
+  "graph_writes": 0,
+  "historical_results_rescored": false,
+  "input_item_retrieval_requests": 3,
+  "input_tokens": 12570,
+  "latency_seconds": 56.05287574999966,
+  "model": "openai:gpt-5.6-luna",
+  "nested_raw_benchmark_projection_outcome": "NOT_REACHED",
+  "nested_root_selection_outcome": "NOT_REACHED",
+  "nested_source_semantic_outcome": "NOT_REACHED",
+  "observed_accounted_cost_usd": 0.056454000000000004,
+  "operational_policy_version": "artana.staged_generalization.v15_operational_policy.v1",
+  "output_tokens": 7314,
+  "per_call": [
+    {
+      "admitted_provider_calls": 1,
+      "attempted_provider_calls": 1,
+      "case_id": "generalization-comparison-canary",
+      "completed_provider_calls": 1,
+      "confirmation_retrieval_requests": 1,
+      "duplicate_creation_calls": 0,
+      "failure_stage": null,
+      "input_item_retrieval_requests": 1,
+      "provider_retries": 0,
+      "rejected_custody": null,
+      "rejected_provider_calls": 0,
+      "response_ids": [
+        "resp_0b925bd38372394c006a629816746c8198950e17903ce30f02"
+      ],
+      "reused_response_ids": [],
+      "status": "ADMITTED_SCIENTIFIC_CUSTODY",
+      "unaccounted_provider_calls": 0,
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 0.010631,
+        "input_tokens": 4175,
+        "latency_seconds": 8.486940582995885,
+        "output_tokens": 1076,
+        "reasoning_tokens": 516,
+        "total_tokens": 5251
+      },
+      "usage_accounting_status": "ACCOUNTED"
+    },
+    {
+      "admitted_provider_calls": 1,
+      "attempted_provider_calls": 1,
+      "case_id": "generalization-drug-sensitivity",
+      "completed_provider_calls": 1,
+      "confirmation_retrieval_requests": 1,
+      "duplicate_creation_calls": 0,
+      "failure_stage": null,
+      "input_item_retrieval_requests": 1,
+      "provider_retries": 0,
+      "rejected_custody": null,
+      "rejected_provider_calls": 0,
+      "response_ids": [
+        "resp_03e70ee30b77fa39006a62981e4a3c819bb7a8ba273ac7d248"
+      ],
+      "reused_response_ids": [],
+      "status": "ADMITTED_SCIENTIFIC_CUSTODY",
+      "unaccounted_provider_calls": 0,
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 0.017386,
+        "input_tokens": 4162,
+        "latency_seconds": 18.575621666997904,
+        "output_tokens": 2204,
+        "reasoning_tokens": 1552,
+        "total_tokens": 6366
+      },
+      "usage_accounting_status": "ACCOUNTED"
+    },
+    {
+      "admitted_provider_calls": 1,
+      "attempted_provider_calls": 1,
+      "case_id": "generalization-uncertainty",
+      "completed_provider_calls": 1,
+      "confirmation_retrieval_requests": 1,
+      "duplicate_creation_calls": 0,
+      "failure_stage": null,
+      "input_item_retrieval_requests": 1,
+      "provider_retries": 0,
+      "rejected_custody": null,
+      "rejected_provider_calls": 0,
+      "response_ids": [
+        "resp_0ce65718ea22f429006a629830cb38819baf516b6a07d95700"
+      ],
+      "reused_response_ids": [],
+      "status": "ADMITTED_SCIENTIFIC_CUSTODY",
+      "unaccounted_provider_calls": 0,
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 0.028437,
+        "input_tokens": 4233,
+        "latency_seconds": 28.99031350000587,
+        "output_tokens": 4034,
+        "reasoning_tokens": 3624,
+        "total_tokens": 8267
+      },
+      "usage_accounting_status": "ACCOUNTED"
+    }
+  ],
+  "planned_case_count": 6,
+  "provider_attempted_case_ids": [
+    "generalization-comparison-canary",
+    "generalization-drug-sensitivity",
+    "generalization-uncertainty"
+  ],
+  "provider_calls": 3,
+  "provider_fallback_allowed": false,
+  "provider_retries": 0,
+  "provider_retries_allowed": 0,
+  "qualification_credit": false,
+  "raw_bionlp_cg_projection_lane": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "projection": null,
+      "status": "NOT_APPLICABLE"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "projection": {
+        "arguments": [
+          {
+            "cg_role": "Theme",
+            "end": 378,
+            "entity_type": "CANCER",
+            "exact_text": "carcinoma",
+            "start": 369
+          },
+          {
+            "cg_role": "Cause",
+            "end": 395,
+            "entity_type": "SIMPLE_CHEMICAL",
+            "exact_text": "5-FU",
+            "start": 391
+          }
+        ],
+        "event": {
+          "trigger": {
+            "end": 365,
+            "exact_text": "sensitivity",
+            "start": 354
+          },
+          "type": "REGULATION"
+        },
+        "graph_promotion_allowed": false,
+        "qualification_credit": false,
+        "review_only": true,
+        "scope": "BIONLP_CG_EVALUATION_ONLY"
+      },
+      "status": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "projection": null,
+      "status": "NOT_APPLICABLE"
+    }
+  ],
+  "reasoning_effort": "high",
+  "reasoning_tokens": 5692,
+  "rejected_provider_calls": 0,
+  "remaining_cost_usd": 4.9435459999999996,
+  "remaining_fresh_cases_preserved": 7,
+  "response_ids": [
+    "resp_0b925bd38372394c006a629816746c8198950e17903ce30f02",
+    "resp_03e70ee30b77fa39006a62981e4a3c819bb7a8ba273ac7d248",
+    "resp_0ce65718ea22f429006a629830cb38819baf516b6a07d95700"
+  ],
+  "root_cause_classification": "FOCUS_CLOSURE_AND_OCCURRENCE_CUSTODY",
+  "schema_version": "artana.staged_generalization.v15_exposed_result.v1",
+  "scientific_change_kind": "PROVIDER_PROMPT_ONLY",
+  "scientific_provider_calls": 3,
+  "scientific_scoring_affected_by_tokens_latency_or_cost": false,
+  "scientifically_evaluated_case_count": 3,
+  "scientifically_evaluated_case_ids": [
+    "generalization-comparison-canary",
+    "generalization-drug-sensitivity",
+    "generalization-uncertainty"
+  ],
+  "sealed_v14_head": "f4aea428aaf7105d9bb8a2f90a1dc52accab44ab",
+  "sealed_v14_preserved": true,
+  "single_scientific_change": "FOCUS_CLOSURE_AND_ROLE_BEARING_OCCURRENCE_CUSTODY_V1",
+  "source_semantic_lane": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "failure_reasons": [],
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "failure_reasons": [],
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "failure_reasons": [
+        "missing required core participants: ['gene']",
+        "required core event arguments are missing"
+      ],
+      "passed": false,
+      "status": "FAIL"
+    }
+  ],
+  "stopped_after_case_id": "generalization-uncertainty",
+  "total_tokens": 19884,
+  "transport_qualification_provider_calls_in_v15": 0,
+  "transport_qualification_reused": true,
+  "trusted_promotion": false,
+  "unaccounted_provider_calls": 0,
+  "v15_authorization_head": "ba56285a7187199414451319cc7e448a15e78003",
+  "v15_authorization_sha256": "ae53055301947346995308a3fda01b6e547265d1e61ca3930e41d829a1b57898"
+}

@@ -1,0 +1,1352 @@
+{
+  "output_sha256": "aaaed649d16a809355db7d2a519b01d8b3abf56901e80c773da4c1baa285a20a",
+  "provider_input_sha256": "f6f6a3f5148d156913a03835070ae168cd9ed06c828a0704c24b1de1a2c95f59",
+  "raw_output_sha256": "486fd2394cbff2b04737e487c23a9fa0deea069b8517ab576e73fa5e5fc878ad",
+  "receipt": {
+    "budgets": {
+      "cost": "RECORD_ONLY",
+      "latency": "RECORD_ONLY",
+      "observed_cost_usd": 0.028437,
+      "observed_latency_seconds": 28.99031350000587,
+      "observed_output_tokens": 4034,
+      "observed_total_tokens": 8267,
+      "output_tokens": "RECORD_ONLY",
+      "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+      "requested_max_cost_usd": null,
+      "requested_max_latency_seconds": null,
+      "requested_max_output_tokens": null,
+      "requested_max_total_tokens": null,
+      "total_tokens": "RECORD_ONLY"
+    },
+    "completed_provider_calls": 1,
+    "confirmation_retrieval_requests": 1,
+    "creation_envelope_sha256": "297a75734af55c67dbce3a0e79347b684e814cc89f6e9feca2d375c740c285c2",
+    "differences": [
+      {
+        "allowlisted": true,
+        "creation_sha256": "1888c327cd8fe6dce452a811febd472aa28a87ff1d9cce34ab9729a18f5a3a91",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[0].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "e544ec66a7c00c788123ff76af819fb86aa41b65fd01e54b24c68fd0b3df72ed",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[1].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "ad915e87b9dfc56fe870812ccb3c22cdbeefd4ab79fe427f0d0263761d50ae13",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[2].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "0125058093c0cda47bc9ad8e90ca8fa550fe2aa0370ddf7bd23391e1ff5c0330",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[3].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "3fd160a288996346d239cbff33b029c4974ffd6c339bd2ba811093d33dc36f45",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[4].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "43e25757de6f7b76f95087c54e55da2737cc30c538fc9bdc12d89cbcca8a1f37",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[5].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "c5158372e60f5616d632f07cb488c958640b6d1949fa1ac56c88edd7320841fc",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[6].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "a2acd417b5f187925b51260e297dfdae565d2b7006c029eac692d5b79ac6aeb0",
+        "difference": "FOREGROUND_USAGE_SNAPSHOT_CHANGED",
+        "path": "$.usage",
+        "rationale": "usage is record-only telemetry and confirmation is the authoritative completed snapshot",
+        "retrieval_sha256": "e89cc7319e7d597a4796df65c4a1aedcd2ae5bdc72637a775aec38d8b87466ec"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "foreground_request_timeout_seconds": 1800.0,
+    "foreground_usage_policy": {
+      "authoritative_snapshot": "CONFIRMATION_RETRIEVAL",
+      "confirmation_usage_sha256": "e89cc7319e7d597a4796df65c4a1aedcd2ae5bdc72637a775aec38d8b87466ec",
+      "creation_usage_sha256": "a2acd417b5f187925b51260e297dfdae565d2b7006c029eac692d5b79ac6aeb0",
+      "scientific_validity_dependency": false,
+      "snapshots_differ": true
+    },
+    "identity": {
+      "created_at": 1784846384.0,
+      "model": "gpt-5.6-luna",
+      "object_type": "response",
+      "output_items": [
+        [
+          "reasoning",
+          "rs_0ce65718ea22f429006a6298316e40819bb532b33bb49d1d41"
+        ],
+        [
+          "reasoning",
+          "rs_0ce65718ea22f429006a62983574cc819bb17da82490905532"
+        ],
+        [
+          "reasoning",
+          "rs_0ce65718ea22f429006a629838bc58819bbcb0c7457ba723eb"
+        ],
+        [
+          "reasoning",
+          "rs_0ce65718ea22f429006a62983c91a0819bb6448703c043e8bc"
+        ],
+        [
+          "reasoning",
+          "rs_0ce65718ea22f429006a6298400b00819b9eee2f08abd571ea"
+        ],
+        [
+          "reasoning",
+          "rs_0ce65718ea22f429006a629843c80c819bb3c975eeb4876b0a"
+        ],
+        [
+          "reasoning",
+          "rs_0ce65718ea22f429006a629847107c819b8d4cd20e64359d68"
+        ],
+        [
+          "message",
+          "msg_0ce65718ea22f429006a62984abe94819b803aea0db562ff2e"
+        ]
+      ],
+      "response_id": "resp_0ce65718ea22f429006a629830cb38819baf516b6a07d95700",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "provider_creation_calls": 1,
+    "provider_input_sha256": "f6f6a3f5148d156913a03835070ae168cd9ed06c828a0704c24b1de1a2c95f59",
+    "provider_retries": 0,
+    "provider_schema_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+    "retrieval_envelope_sha256": "3aa94cf858d36689847c7d07ccd52a6636db5ad473f3ac40aeda55cc62545cec",
+    "schema_version": "artana.provider_receipt_boundary.foreground_telemetry.v3",
+    "scientific_payload_sha256": "aaaed649d16a809355db7d2a519b01d8b3abf56901e80c773da4c1baa285a20a",
+    "status": "VERIFIED_LIVE",
+    "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+    "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+    "usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.028437,
+      "input_tokens": 4233,
+      "latency_seconds": 28.99031350000587,
+      "output_tokens": 4034,
+      "reasoning_tokens": 3624,
+      "total_tokens": 8267
+    },
+    "v13_transport_custody": {
+      "confirmation_response": {
+        "background": false,
+        "billing": {
+          "payer": "openai"
+        },
+        "completed_at": 1784846412.0,
+        "created_at": 1784846384.0,
+        "error": null,
+        "frequency_penalty": 0.0,
+        "id": "resp_0ce65718ea22f429006a629830cb38819baf516b6a07d95700",
+        "incomplete_details": null,
+        "instructions": null,
+        "max_output_tokens": null,
+        "max_tool_calls": null,
+        "metadata": {
+          "artana_case_id": "generalization-uncertainty",
+          "artana_evaluation_contract": "V14_LOCAL_EVALUATOR_REUSED_BYTE_IDENTICAL_WITH_RAW_REVIEW_ONLY_CG",
+          "artana_experiment": "staged-generalization-v15-exposed-run-v1",
+          "artana_operational_policy": "RECORD_ONLY_USAGE_CUMULATIVE_5_USD",
+          "artana_preregistration_sha256": "50573a5894b6649408572ab89ac1de13bcbb88290231ab3c1930c61a0b66cf2b",
+          "artana_scientific_change": "FOCUS_CLOSURE_AND_ROLE_BEARING_OCCURRENCE_CUSTODY_V1",
+          "artana_transport_implementation": "V13_REUSED_BYTE_IDENTICAL"
+        },
+        "model": "gpt-5.6-luna",
+        "moderation": null,
+        "object": "response",
+        "output": [
+          {
+            "content": [],
+            "id": "rs_0ce65718ea22f429006a6298316e40819bb532b33bb49d1d41",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "id": "rs_0ce65718ea22f429006a62983574cc819bb17da82490905532",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "id": "rs_0ce65718ea22f429006a629838bc58819bbcb0c7457ba723eb",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "id": "rs_0ce65718ea22f429006a62983c91a0819bb6448703c043e8bc",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "id": "rs_0ce65718ea22f429006a6298400b00819b9eee2f08abd571ea",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "id": "rs_0ce65718ea22f429006a629843c80c819bb3c975eeb4876b0a",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "id": "rs_0ce65718ea22f429006a629847107c819b8d4cd20e64359d68",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [
+              {
+                "annotations": [],
+                "logprobs": [],
+                "text": "{\"case_id\":\"generalization-uncertainty\",\"inventory\":[{\"event_id\":\"e1\",\"event_type\":\"CLASSIFICATION\",\"trigger_text\":\"were classified as of uncertain significance\",\"exact_evidence\":\"RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.\",\"explanation\":\"The highlighted finding explicitly classifies the majority of the variants as having uncertain significance.\"}],\"participants\":[{\"participant_id\":\"p1\",\"entity_type\":\"VARIANT\",\"exact_text\":\"947 variants\",\"exact_evidence\":\"RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.\",\"explanation\":\"The referring expression \\\"which\\\" uniquely resolves to the antecedent occurrence \\\"947 variants\\\".\"}],\"links\":[{\"event_id\":\"e1\",\"arguments\":[{\"role\":\"AFFECTED_ENTITY\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"p1\",\"explanation\":\"The variants are the entities being classified.\"}]}],\"semantic_axes\":[{\"event_id\":\"e1\",\"direction\":\"NOT_APPLICABLE\",\"comparison\":\"NOT_APPLICABLE\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"UNCERTAIN\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.\"],\"explanation\":\"The classification is explicitly asserted, and the assigned classification is uncertain significance. The finding reports no statistical observation and does not explicitly interpret statistical significance.\"}],\"root_event_id\":\"e1\",\"completeness\":\"COMPLETE\",\"structure_explanation\":\"The highlighted finding is fully represented by one classification event with its uniquely resolvable affected variant participant.\"}",
+                "type": "output_text"
+              }
+            ],
+            "id": "msg_0ce65718ea22f429006a62984abe94819b803aea0db562ff2e",
+            "phase": "final_answer",
+            "role": "assistant",
+            "status": "completed",
+            "type": "message"
+          }
+        ],
+        "parallel_tool_calls": true,
+        "presence_penalty": 0.0,
+        "previous_response_id": null,
+        "prompt_cache_key": null,
+        "prompt_cache_retention": "24h",
+        "reasoning": {
+          "context": "all_turns",
+          "effort": "high",
+          "mode": "standard",
+          "summary": null
+        },
+        "safety_identifier": null,
+        "service_tier": "default",
+        "status": "completed",
+        "store": true,
+        "temperature": 1.0,
+        "text": {
+          "format": {
+            "description": "Source-grounded staged scientific event inventory, referential grounding, linking, and versioned classification-argument semantics.",
+            "name": "V9StagedGeneralizationOutput",
+            "schema": {
+              "$defs": {
+                "InventoryEvent": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    },
+                    "event_type": {
+                      "enum": [
+                        "REGULATION",
+                        "POSITIVE_REGULATION",
+                        "NEGATIVE_REGULATION",
+                        "GENE_EXPRESSION",
+                        "COMPARISON",
+                        "ASSOCIATION",
+                        "CLASSIFICATION",
+                        "OBSERVATION"
+                      ],
+                      "title": "Event Type",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "description": "Complete exact source sentence containing trigger_text.",
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "trigger_text": {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "title": "Trigger Text",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "event_type",
+                    "trigger_text",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "InventoryEvent",
+                  "type": "object"
+                },
+                "ParticipantNode": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_type": {
+                      "enum": [
+                        "POPULATION",
+                        "OUTCOME",
+                        "EXPOSURE",
+                        "VARIANT",
+                        "GENE_OR_PROTEIN",
+                        "CANCER",
+                        "SIMPLE_CHEMICAL",
+                        "MEASUREMENT"
+                      ],
+                      "title": "Entity Type",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "description": "Complete exact source sentence containing exact_text.",
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "exact_text": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Exact Text",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "participant_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Participant Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "participant_id",
+                    "entity_type",
+                    "exact_text",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "ParticipantNode",
+                  "type": "object"
+                },
+                "StatisticalObservation": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "exact_text": {
+                      "anyOf": [
+                        {
+                          "maxLength": 1000,
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Exact Text"
+                    },
+                    "observation_type": {
+                      "enum": [
+                        "P_VALUE",
+                        "CONFIDENCE_INTERVAL",
+                        "EFFECT_ESTIMATE",
+                        "NONE"
+                      ],
+                      "title": "Observation Type",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "observation_type",
+                    "exact_text"
+                  ],
+                  "title": "StatisticalObservation",
+                  "type": "object"
+                },
+                "V8SemanticAxes": {
+                  "additionalProperties": false,
+                  "description": "Semantic axes with the preregistered polarity boundary in the schema.",
+                  "properties": {
+                    "author_interpretation": {
+                      "enum": [
+                        "SIGNIFICANT",
+                        "NOT_SIGNIFICANT",
+                        "NOT_CLAIMED"
+                      ],
+                      "title": "Author Interpretation",
+                      "type": "string"
+                    },
+                    "comparison": {
+                      "enum": [
+                        "GREATER",
+                        "LESS",
+                        "NO_DIFFERENCE",
+                        "NOT_APPLICABLE"
+                      ],
+                      "title": "Comparison",
+                      "type": "string"
+                    },
+                    "direction": {
+                      "enum": [
+                        "INCREASED",
+                        "DECREASED",
+                        "NO_DIFFERENCE",
+                        "NO_ASSOCIATION",
+                        "ENABLES",
+                        "OBSERVED",
+                        "NOT_APPLICABLE"
+                      ],
+                      "title": "Direction",
+                      "type": "string"
+                    },
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    },
+                    "evidence_items": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "maxItems": 8,
+                      "minItems": 1,
+                      "title": "Evidence Items",
+                      "type": "array"
+                    },
+                    "explanation": {
+                      "maxLength": 1500,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "polarity": {
+                      "description": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+                      "enum": [
+                        "AFFIRMED",
+                        "NEGATED",
+                        "NULL_RESULT"
+                      ],
+                      "title": "Polarity",
+                      "type": "string"
+                    },
+                    "statistical_observations": {
+                      "items": {
+                        "$ref": "#/$defs/StatisticalObservation"
+                      },
+                      "maxItems": 8,
+                      "title": "Statistical Observations",
+                      "type": "array"
+                    },
+                    "uncertainty": {
+                      "enum": [
+                        "ASSERTED",
+                        "PROVISIONAL",
+                        "UNCERTAIN",
+                        "HYPOTHESIS"
+                      ],
+                      "title": "Uncertainty",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "direction",
+                    "comparison",
+                    "polarity",
+                    "uncertainty",
+                    "statistical_observations",
+                    "author_interpretation",
+                    "evidence_items",
+                    "explanation"
+                  ],
+                  "title": "V8SemanticAxes",
+                  "type": "object"
+                },
+                "V9EventArgument": {
+                  "additionalProperties": false,
+                  "description": "Event argument with the classification boundary in the role schema.",
+                  "properties": {
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "role": {
+                      "description": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+                      "enum": [
+                        "AFFECTED_ENTITY",
+                        "CAUSAL_AGENT",
+                        "STIMULUS_OR_OBJECT",
+                        "POPULATION",
+                        "COMPARATOR",
+                        "OUTCOME",
+                        "EXPOSURE",
+                        "MEASUREMENT",
+                        "CONTEXTUAL_PARTICIPANT",
+                        "EFFECT_EVENT"
+                      ],
+                      "title": "Role",
+                      "type": "string"
+                    },
+                    "target_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Target Id",
+                      "type": "string"
+                    },
+                    "target_kind": {
+                      "enum": [
+                        "PARTICIPANT",
+                        "EVENT"
+                      ],
+                      "title": "Target Kind",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "role",
+                    "target_kind",
+                    "target_id",
+                    "explanation"
+                  ],
+                  "title": "V9EventArgument",
+                  "type": "object"
+                },
+                "V9EventLinks": {
+                  "additionalProperties": false,
+                  "description": "V9 links using the versioned event-argument role description.",
+                  "properties": {
+                    "arguments": {
+                      "items": {
+                        "$ref": "#/$defs/V9EventArgument"
+                      },
+                      "maxItems": 16,
+                      "title": "Arguments",
+                      "type": "array"
+                    },
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "arguments"
+                  ],
+                  "title": "V9EventLinks",
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false,
+              "description": "V9 output retaining V8 polarity semantics and the same JSON shape.",
+              "properties": {
+                "case_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "title": "Case Id",
+                  "type": "string"
+                },
+                "completeness": {
+                  "enum": [
+                    "COMPLETE",
+                    "INCOMPLETE",
+                    "CONTRADICTED",
+                    "ABSTAIN"
+                  ],
+                  "title": "Completeness",
+                  "type": "string"
+                },
+                "inventory": {
+                  "items": {
+                    "$ref": "#/$defs/InventoryEvent"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Inventory",
+                  "type": "array"
+                },
+                "links": {
+                  "items": {
+                    "$ref": "#/$defs/V9EventLinks"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Links",
+                  "type": "array"
+                },
+                "participants": {
+                  "items": {
+                    "$ref": "#/$defs/ParticipantNode"
+                  },
+                  "maxItems": 32,
+                  "title": "Participants",
+                  "type": "array"
+                },
+                "root_event_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "title": "Root Event Id",
+                  "type": "string"
+                },
+                "semantic_axes": {
+                  "items": {
+                    "$ref": "#/$defs/V8SemanticAxes"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Semantic Axes",
+                  "type": "array"
+                },
+                "structure_explanation": {
+                  "maxLength": 2000,
+                  "minLength": 1,
+                  "title": "Structure Explanation",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "case_id",
+                "inventory",
+                "participants",
+                "links",
+                "semantic_axes",
+                "root_event_id",
+                "completeness",
+                "structure_explanation"
+              ],
+              "title": "V9StagedGeneralizationOutput",
+              "type": "object"
+            },
+            "strict": true,
+            "type": "json_schema"
+          },
+          "verbosity": "medium"
+        },
+        "tool_choice": "auto",
+        "tool_usage": {
+          "image_gen": {
+            "input_tokens": 0,
+            "input_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 0
+            },
+            "output_tokens": 0,
+            "output_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 0
+            },
+            "total_tokens": 0
+          },
+          "web_search": {
+            "num_requests": 0
+          }
+        },
+        "tools": [],
+        "top_logprobs": 0,
+        "top_p": 0.98,
+        "truncation": "disabled",
+        "usage": {
+          "input_tokens": 4233,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 4034,
+          "output_tokens_details": {
+            "reasoning_tokens": 3624
+          },
+          "total_tokens": 8267
+        },
+        "user": null
+      },
+      "creation_response": {
+        "background": false,
+        "billing": {
+          "payer": "openai"
+        },
+        "completed_at": 1784846412.0,
+        "created_at": 1784846384.0,
+        "error": null,
+        "frequency_penalty": 0.0,
+        "id": "resp_0ce65718ea22f429006a629830cb38819baf516b6a07d95700",
+        "incomplete_details": null,
+        "instructions": null,
+        "max_output_tokens": null,
+        "max_tool_calls": null,
+        "metadata": {
+          "artana_case_id": "generalization-uncertainty",
+          "artana_evaluation_contract": "V14_LOCAL_EVALUATOR_REUSED_BYTE_IDENTICAL_WITH_RAW_REVIEW_ONLY_CG",
+          "artana_experiment": "staged-generalization-v15-exposed-run-v1",
+          "artana_operational_policy": "RECORD_ONLY_USAGE_CUMULATIVE_5_USD",
+          "artana_preregistration_sha256": "50573a5894b6649408572ab89ac1de13bcbb88290231ab3c1930c61a0b66cf2b",
+          "artana_scientific_change": "FOCUS_CLOSURE_AND_ROLE_BEARING_OCCURRENCE_CUSTODY_V1",
+          "artana_transport_implementation": "V13_REUSED_BYTE_IDENTICAL"
+        },
+        "model": "gpt-5.6-luna",
+        "moderation": null,
+        "object": "response",
+        "output": [
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYphMrCMcJ4d97x1OubmtYPcU3wI7ibpsb0jLZTm7X4L3xrWV-EWKF6prSUG5St_Lij3hpp-IrIeGxlBZHIKMGTPuEFtfEKOh3Z09xoOASWb2plq5zOtaaBcEwlMZ_3bseEUgU714eVrQhf6PAfjS3eTfPlNpyKDLYtgSO7T8h0gnozjTH7fFO2vaT4dq28TeDpLvxcYmzkC7mzVy_HyNAujbYPe76oQdDV4o7qKK8vhNj7eO6dnae8zCkQhkZakWQOb9n175eS-hUOjoR5Ad3q_HeTPG-lDTrTsFZr3cnJ6MkX4x8oRRQq5vAnZdXNAZd2x9zugC0PI3ICZTQGuTsh1SM-ZH1eH7I9VJ8-rwB5Pq-rY5bYaj2TuVFBS2rB5xzAiSxgZt77JWui8BtXBbF1hzhTbmXOtiYuVA_LHsBMRm5E_N-BjnFVfQU0AFuaw_njVmQsUMVcbdcawU9zJqRn0BpgvNgRIxKhTI4iwlgutxc9wVPuEUTvtIMDeLJSozm2uvHbafvfefLPYtZvOGELPMsKs0n4TOdAH2lhseH0vaiLZF8Mkxx114evj-KmIUtDviSNlyTNVSIFgfZEZKaqb4MG5yIMUfgo0OJ_6xc3g1l_lCIubpewvqNLwBJkHH4MFjdVULV2VVD9ec9vYlTfWPRMyuPy9LCxSvq5YXMU20fpYTY9cTYRro_aLMdoXOHJsENU8Sj1l-V5brlbRNqt1fnV9bbyRrJCviZirj0CY0ABZhc-dnw2Ftqojg0fngoagxelQJ3yhSWBfdBF5t5NzdHdqOyDJ7GybeaYaKukZPQKpqCKiDU0uJvzC9Wo4MUuDLk8P-UvEYSS3ZH0-xbnMJT0kEBLvgtlClMW1Aasx5bUoRtOK3_pxHkaVwt04qjj7MgXbIx1ICZfTSZzTM0seMF01KstFc_lk3rhiMkDieau0o0o6uCFqGs9-zumjG3WEUHOqq8hV5nU1qSqMdHotoT4yVkyH84r27yAbKApgdJVRfgM1bSyC9CKVQ6fiDjJjfP7bvT0y5J1xD8tGusUQmAQJZvn6y7FFFpsxnBYyjBspvrsWQmPUA0Q0tk0qxDIWw8wAiw9IJLAgxcaitOtB6_C0-Arw_a0Kyjefb7thiN2QxBKBKWIohChMYpzTLaES8aO3SOIT3bOgcPHN6KQxvnQqrGPa9c3QmWKBOwFiNvUUJvDk01AqNPWiwRzprpR1L56_cbIUjdGdU3M6UmnrZE3AJY-wuymI20LMdgd1vpQoRfdFjHcNIthC_iNzecx83B_U0TKw86LFM7O2h9arh1YILCJcwN0zfz3k_EGsWuby66G28EmlCFWoGoQLgiR06L3Vyxa0KnKzYf3sS8KEgprdnviD5lhx2X_sQt8gNXJMllEPaXFmOXjJJ2dAxsZHtpYgza0cAGvbRCfSi-VRvd7rjdBkp8GYvVBOcMZac5flFoSfbIEY09TNLxjWqaEfKqqQQRtUGEhDM8b-nJaCkRIHX6gnNrITV4RTI5_RxHn-NcGmwYlKx-Oq3zQYf1eq7JHiVCKxp2_QJSZhzvLllsgLHb6RTwhTlze1oQ5c0i_elHz9C6Q4Ke3r3iC7HkKHJWsjgkEQi3_QvFafzN1l44SuPmNuoNZ0tVh5Ocxyg9lx1JwXDPZIJQO7yEooNVuKH_Q3sMJoPf_CqggeD4J5PO4ztttEAsQd-MOgN03U3jW536PdhL3fo2KomBo2HLCO1NxewCvQD5FJinqzNHLFZnvXPRPea-z1TRhxJeM2rQrcusT182Nmnr1agDAbk0oSodliPe2gheyXGqiO5aeNctPCxLFyy3qCo9AupIpgqmN3c5eYQwO34i11PnwtbkCimvGYQQqCm8xo3dtBry5uUv1FCis1ifUZ5_Hru4yTQ6Tnlu8BBPLFV5MrAn1YS4x6gmEwyBGYyG-wkbOrUlWgD7CX0-43DPWKBwiwxGtoqActbEGOQolBegiWa6HHFzk9vplE9YMqSEfcZ3hvOkb4cO12yCUMPTqpJOzQYVkmZbWWp3-Np3wQhxveVa5WEeQ8hQqAiiG2b_z0ks9BzRxZwh0dlsMHiNqcFMFAVdlAb9HqSGLWOputQ6LYdu__jX1S3P7a4lTKwMVAuPbDjyItCZpW_wT_wfeUlG71zB5zLysM9Xuz1nURjpPl3M8Aw_pZnqrO4NS33MJDjkdjEvLnl0rj0a0wg_ZNru7fEEZz3Zmj0-4YQxn2rJkiQJexq55o5q1abejI6lk_2sbbrl2xf0_Sok6DZnuffOOJHHpIZN861NxGatp0Nn6zZdIBPkbcKwPSZNvWIyRWTUW5ZqKhRSu-aIQ8s0nIi9-EZgnaNuHFFrw5Jx1GBwNvC6nKS0duMEftlwwzveoAA9goLkOznZvwn8Ws-lewltjUmMXqszpY8DLtnt7KQ6Ugd6O7pVKoQZFg_67NRQfdbCHQrvGEq1gngZ8qCc8rgkeIT7hm2kE7l7RSW2AKxn6QHlXYZDIY5bwkgMORHYkO_OQ1benn5cyysJ8-tdnemDfJynBJ6tRUY68S69kpoO8fl_pQHu2kkFUT-ABiTeMquVIn7LrXnf9AsMAURe5B5pvKEb0yx51hmawHN-CogytObedcOgaISp0JAWid9hac78hdhQiZKPpaFab0WFCvnEwR6QBxKDEk2rYlOk4mHHCzu8o6I3o9qQHsQR_bVbWLg1xL9qxChKG3klLIs-_jX_Hew311k_I0xixLKzHzwWyBwv64eAn3s7X8A6d8lHCt4VM3qejTMoTxlKOgCyCkLa5S1POGyZ2zeEkAEKSm0KuefNGnAh0m71VrIFvAckmiTSht5-trZ2n8SuXL2Q6ZKXKbS4b8dgxgMiwROK1VCCG9I9STYbB3LQ1UvqFqL8B-XKsjjpbm9S1WNVtl8_hlTHRLSV-mK1fy3Qur1payz-K48hRZe-aZ1RihqJv7e79raprAzu3evvl65tXHj33ZEmJnEmZ0DK7v-Vnu_tOag6typ4vZb5aMfrM6_yTsXiSOS__uXTgsPnj0sPC82d1hGUhh5dSvwOd9EXMKedvvgQLdW5hz5ScNQcmBAy_YJ9EJXG298unheFC3crvVvM3pA3nuB_U3DtEHubJLkfLTZczxPBHX-AXGmYcG67szPPtq1tOwUkdyUX7jZ21_2x3KPMx-tkPwuv8yq1Q4vVNTUGp5Iz48UT2UGUiS12jyuNEAekNoayCRfsEA6QM08d1KULnoiDjgNLegWzYkp213SoPXDnoQO2c__to7sNgsDjna3iyDebdKK1-ukMWh3Lp-A2Jc4QxBWoVZnwv-uAqjPEH0G_YyJARGxvgu8ltIv5bxcRQq51VPy49H4bzxWvACBQKJh0Ju8haNwOW_oqbRMmPeLPyIgF0P-vQ2EpXihKRMsS3OL2SelhMmU_nQyx3pfmll5K1L8By26x4POyURrced4CvXwMGrV4DJTG53p3YbHJDy-3BbwkWmuzr6Dmf8oJFaKvUpi0oADQTD7KV5PsxtL_mmmwoBm-PggwFsmIt8sRuebTaSpTOovMpcRMRG688ECvTH8Ixx7_e1TgEUMYyuxPLbl3EFDOb-Akf69C0EkOkwOoaQ2x9B4FvAgQeVOoBXdnjtA1f9JIpiUHOzf9OhtPA9Kgc6A02Sta33SJfFUnd0nmK_cD5QKGrunAKpvWQUVr-wDy8eDzt3ZeYQxBZs3Uzl3MsyfU-aGbfTyVArQxXbMcSezZcH8Cxr28MCEugQGeSKkrh0DbKu83xXVQ96H9Jh38kU7eDQF2UBUs53P7QaRtl_aoQIBnbnBxQgudGLnCuYmbbhEAwJZWWfk6kLuGmvTCmYbSi9TsLI5AClLmlfDgYilxTZ5SLJ76O6S-6t9CQZJ-XM5Id6UQ0Og415xFX5MLJaG3Lb7YwD2wnz1pKKRJCHLa9LMWGrbRxNaiwCQz_mRnFa9rAm17G6IO1EULMTLHp4HO3bGeFBPI8KLzYe9VPlONKbGW386TnroTEEDIAx21OKcgU0PCS2lx2MxyvJuIWeQ80banUuDKEquE11j5KrxhbgGNgSjDhn16DC7m1koUKiBrEmfkrgza2hKaXxO80FLPmF-HF93hd8YuryG_GbL3chMZa_a-RUOLDGQ0g89XP8WQcwVbx9g9PKK6j24XureuQtxwOjzAN98HBKDjste4plTYJz3cGgo7hpjDCRXYcJ8F-GxSRTY9Y6soqEZc7q_-Qyng4s0sd16O3FudnKdMIePjwGUydNSVHDuDHjUdjtIqNjftVQUQ97y9L_G5BPWpNwDyi00ObmTdRqcPhr7JhBd1rFuactrGbSkf_mia9Lywka0l92IMAlKllYxo0Bd4ho2ol2oFclMuBO8yFLn1sHiVmEzjzG44yJMmhSKGyc5v7EEvlEEee84T9zrwXSicpGQ8XOI4tv6k7hIIH2SLe9-3MgHQ69MCqKjBYAWBwuLs0CPFJJU4KpGFq37xcsmETRtKGpa9V5UvWr-JH6syTBckUzvLHkVBeoN5HbtYzcSAu-obufATGTMbDwej_FEad1rD6gx3V305AVvM91X2P1k4JWmAkd7RCuB1Fl0Ka1BXt8i9hKbAA_WyF7nnKJOv67wWZ7DgnSW477EJ7RF2Bt8vuTm6fDEhzBc0e6ob_R4FSB8SFCH3_0U1n44EKO43hq4xH065o-LHMp3mjSWlpcp892txeR37s2OvfuIz3DV5etJ1QOLM370j-Q1UgXlsju3EnG-nvJhnaSk3ovdI1LWo49Sv0SQ3ElDQ6IfhCs=",
+            "id": "rs_0ce65718ea22f429006a6298316e40819bb532b33bb49d1d41",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYphMiVw1D2sa1Qic7ZmuPzwLnG4q94V2TCE_RYotYGyURXjY1oevcLkaaxIyQ99jV89rm-k9dwXz5OG3H-y9DZ05mwlMOH-U5mLWgzIlxjPtWfm_spHaY-aT6uXnkZh7vAT-jG8uNgoCqtPbX7iGoxr6KnuFUN_oJ9ADyy2-hgb-6inOdK9mwgQyNvn1gpJnhIEooAkMmFmVaiz3zG0doa6ZHvSxOUnQ0eaxPvJfYm90lExFtZMEF_Z95qs4TN7aK-KIRPjtTvdR1De_r9oZSO1cDN1-dTUUIQS1ZncnHPVsRcNcdF1zZe_RDT3z4aa1wyfiMoIR9tnLnwEJbNNCdj92KhOio58XuX9tTznpY9nTbRm6g3Bneu2IYszBXFjS96mKGk_ZrjlMwcOitIi9DgnVvQwRECVM-1Ll0_7XTCsKmkapgV69kQgXhsCyh_zi849Okr2cGLe7WTYv7v84PfQTMZzB3RtVqT6_6YR4NgBprMIsXaROWsDMT6n7qgcT-nnYB33aDpispSZHzsqk1DBMvoa5Q4IcHy3iQ05bnWhQGxazUNWVgBGs3fokMwHgy10zW2BQ7ggLAQ7xEcFawX4ew4GHWRuKLY9NQaS9lTeqnUEdcVlmZDp2dQLoPWHPJ1NkT260H0L-tsF_8--r8bgymEVsXu8TNoVe6cgD3VqyU_FmU0D9fk_o8jTJa1AmRkFN_LaOV6vjU89MpNZ6HJwfExuaglokDpR5hfRNXPB1rqUeYp8Vl4n0i5ZMO_f-9MNVxfO_GKqIY7Yt0TZniBRl3nSJP07c2kY2RY95fsgBygX9pbrI-aUp9xKQk0RuOVWVq0NdERQLQTOP6ObCeW96zGFnzNiUbcqOulruMnkUWjI0ObFcpW1HUMREDhOMN7XidIiL1s8QqQAtGHAX22qp7vslZ-3XmArpo6bZAoG61Yku15DnbK_gqJNZIhkKr3Gq41DHbY8Z5U6EB0G55P-v9idcEk3ayc9gTfRY4xZIlByKo7C_6mN1Q-q5cRJOWWb4D1lSlkrBadCxrWXizkgb_ihsOLw6IsXY1ZOEaHQGA0hwoSJ3ILT5u-pT3nIc30BHIGYQLB4eFfncwJXSQNP9N8PCEeeoR5AVQN9L8ZxKiiWLSVdbjyWkvj3KHfGCIovZZkn4LjRSE1Npc0va0qXaegCjaFszAGAHLE8_DbdmyLrCSWbLvZi_Mai4OYMwZ1LQ-UDDCe0NA3hOm1XcoOL9KNiIfY7d_ivFCRJMiZFk5M8lsOLoaBKWsCGn_q8pmaW4Covz3NkCngTMaGpvscqyENuJcIrNuIwKVgtynLt2vewgKdfYHVzHVzxY16Xa17qK5gYSpAJzjjUlH8c6VAmK-1OhHMOI1CEPNVn0qNhlH6ydCEhxcnj4eVTprP_DMMHqIoifgMABEhNWzfy1abmuyO_P7ftdX7j73DZp_DTG4a5s0OfQvTRM4fzcvW2edy7fcpzrBqtO9OSyCxlcyp2urYylXTCMbF-AQAjgZzgFPLFzyU2Fi3t_pFdFJrVb4Rkgy7PkykPBURbPuqBTyX1HZFZ-boFp6pzW7muumxtCyslMqYN_9aU6ugKfQUiDF75iO_u86HR0MTXXIiNvU2fRnzUbyyhUpQrhEA8z1PI7HTTE2-JnUnzpDUZ5jJUa4kQBjHdhGTn5NUQQxeEO7O0k1D5XwhLfrzxU4W7m6yPagfX41WrNmdGwcnqqHla4ent5qG3777Ax6Ii7QA6bF-Sa6xIzLM84mkoRQJ9srfA5HpaO7oLXC9a190Xj-V4kvAl5J-xmPyC6Sfm03a66d1j3S7ALv1oYmOpv5YeRoNWkj-hvVqqfzTOVBifVxYg4Cixa5v-p_F2sri2bECa6Ls4HhAQFqIpU3PpQmFs9dpmMkUOfCImOMbYeciYzcqGsp_M3lHqwFk_Cy2bHCUBAeU79aTZPLA0oXD9UB5y-rx4wuvex4EqFwd9L-YDubU4qEzZcg2uiy0oaZArsjuxni1p6oQ3f9NXKJMpRrKkdp-56kbncbNcQ3THgzVbI3JXgLCwM_8EPJwF19paBUYH8e4h9fy2Mz0bDQ3vVkBbqg0Oh1h_ahe-9E9AVDTGHWUeiy5ZGokiSPq-EL0XPXV7cOOiZerO05rWo9dRDTiMLK7UROMXB91BS5GUedTwGdLPYLq3emG_2RMo2YuckyvJPVXr6HALfv8_fZVvzM24qTqt275g7iplZBiz-ENMIsgHrTRmrr3OixKWu_DithYgGS3Gxv223aZVZoWXwWMfnxjRAbYlrI7E4IQshLLqEsQNuoqbNTYrCE6hGtme9B-SFlXwPt81aSu-bGIJeC-zEPtg_sjT-srJ3MJEEfF36p2FUjFEJtvp1rwTkR7SnSRy8c8TlMJWsBeAJQB4u_bMswvERWPovXhfTPR9-DRFY_9E0hAQLwnGFlbPPrKrsIdo9reykYW0TSrXzPjIKcGzpBt7yS8wz-fgmcxj7y23jYIcfB8SFdvLWGkYY7mYxLtDd4waHse4080hiHszInUnU__skM60W9HrSME3KaL6lfPf1CgsKWOamc7bwKpiA1Zmf4ku1a4w6vptJBhKzGuGZSxDJ8aoj4mpL0eTA_SP45r507wmwCCR0G-IQud26KlhRnjyseKS3luVgyXuyrkmbH_K6d28P-tW9LVXa-mR6j_GPsu9piq60HipWgQN3ztH5Lxt3ljtnjdjaSXJPf_KBOreypI1ZcRsd4lRIGxZKEECzq11--C7Jad-U3xsF1KsiZJVNO00WyJJRLdryGH4m743pkye5y8FuWy9kbUoISvXOCo32jyVLGTrFAHaWLK-lO3wY52c3TVrVH-SEkvWqdJEShHDV3FrcInleu6TIcedDWGuXRZyBDXFfqv9lZjhTPIWtYGWRNo1Z50VP3nPP4HaXqP9gn9-TGdtr679Na-IYLeJQoSaV3NTRWGRXLH1cfrTvlm7WdByJASlRXK8VwlX8f1a1Idc-AuuF6ok6r6Nu99ZbAX0HodNYWh0NbMTbGSZE0qXUBLoqUeKn26Uc3-uYyzk5EX1ZUCVYYOgvFVBjR9ASx8w7rFuNlWrrhHDjIe6nvBc7EB5EcEv_0R7MWz6Te7M4xNDuJ-gqBobrPboe4MXSdPvDbYNrVJJiOX76gl2pbFNhegpKDgSGrHiG5IYXCvDQC1z3kxn3F3JvxEZJ4VbuvUH4lz3oxatiI4gL0PYzoAIc4zZLD2gxK4oeMeZ2yxoRUoChezHNyMGo73bVBvep3OcbUDUYN9yPfQGikCLD2q9DfTnwGq24mRjeHYL04avygoAgwWEPwwcK7D0PTb-4E8Zz-0oDLeKFH7ZG8HKCfX5YoH_U7EzLok9RvWyNC-lPsfmofSycjNbcUPrqARTp8bkbFOuuk3NFdhsE8fudvWurIJf4CpzcNRGe7BzWLmv0w5x8if2JpJpEmE4U-cHEE3j8MCWVs1wHFzSHGqoWIVeWGRGEE8U4YSr2032eIig98FNB5J2jN0LkcOz3xDHthQ8L7gyLANEHk-9iul0sUy7lPRpzd2XX-DWvtQHgsY894TFQP6W_3qYZRN7E7foE82VMQpfKVPXGfH2rKHq2bfQENL5lgXX6DyzBvjCrNi3fFAzGjcJ27LZkf25rgWXcj8NpPt-uzSKysMqMhIRv2Grs6iFT9kDr-fRnBMBbf5WoMh-21GiiHGl__BRGBWhKLhuntf7MhYh9pnMzBZyqI2iAlJ4YqgsoWkb-enJ5_1vWgKrqm0DPDax3YpPFvYxeefJHkZ2K2egPr7XNDclkaeaTatkv1auSfPmVoRQInVkmBWxuqlAr73L8nMVXRvuj0qo9r_71GvdzrxHvCosA4221bYnpwo35aci8Zf92ripgMe2sTEAJ3ADRag4coon7hSTGoLmdHG-T47dQkrMwbeKpq8H1cKIPvIF9OMLS9LtHtknFYN3zNUZ_QWI57BnrwA8e9ZHp4bVRhVcGn1mKiHryC8EIge-zUwtey6oNlOGrKZDz6Nn6fzLPCr_z7PeL4_LSNVb8-OXDGVlR7_4goNR-7h-vOnAgTSv47HWtQOvXOlAiJeNRHnQhLz3QlqNMdS_EKlnxsKf3e88CS6aD4OY1yDFNISZaOJqUN9dUiotv7VXZP2ajU3PVVX_VBGYf52ef2WGCRD515muIq8-Dqhj3MZCNOWbIcn_lXsZKX-pkruL2BcxcGP3qlpmNybejG64kaX26-Q0o_pJ1ETFAt-pvY08p7Qi95vwaLYAjLnEZckctSGU-eLxqmeHAjQdgCkYrto1Me-EkHafCwrM8XoWRs7EUPwYTQisXdLfjgAgi9OdcPK4xWVoJfHsbiUtYrgknhyVWXncGZKaJUxg8dGc8efxSxqglmw83HDlFOCuFSOCGuDMHU8X6qDocWDxs1nlkWCbjP6x734iw5-lECXRqXoRL3CiQRG1wa03w8w2bC-BSxBZHhdQ_CcOCQF9cktge6D7nm_M8UgXQjWJnnQ==",
+            "id": "rs_0ce65718ea22f429006a62983574cc819bb17da82490905532",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYphM4H9rq5_5bEvFjiuo2b74_U3zMDXryWddcBMRuH95LznIbRi0_4mzOd0q31dGoftYS_qWHEQ9aktrr5j4-931A7RpbvVNwUXsLWP1HX9UddWshDRr01-cnWCW4Mz_BAFZpIOEKquzO8h41dnMw-Cl82hW4eMrevcS3nlSK-QHk63m_NfEQLkDBeK6IF11HnphJSlGHPXEghF3fIKjl4-6pWryehXkKlHjhlzIsEg6bYo1AUdMY7TbH2SQC9C1VRCIPkrKLK2-0aGOtplC04vvH3NFcmUKraDkmArZJuf2U3azOft6jCoz1As3RZht_9_g7XLoy4RtXKK8zTyvxDyVtcZtTywXp2OqSLE1BYcaaLLSSCR8FPpasPJIIZWblwXw-6P9GaprvNEiYqTy7BCV4xPm4aj_NlRHREGo7qteVuocBaNilvgpgVzj2cJNdTTXG-Ha35Z2vMW_umw7AReKoUlky1dUpjp0hClNA_H23VKd4x91bU2iCFt_3VFnaQ5lFDAsP0p0rxs1A_tdiapTseXIh4RFydvIG4ALIzIZgewrWzRqiB3I50Kh7He3Cyvjo_THi5Xy51ELusU__iR__qy50zttrkdJmAFi8RQeWu-oecAix8UxEROK_VF9iujT8KhSbFJNlfcx3NAw3KnwTT2xERlZzSpiFoWqyLsQDx4I9wgGzQBDz4WloBjGeKzrZIe8lfd3MV517qKs2tsJzmHjLEwodvU704ckvq_bWnnPmHm1Y2org2DpiT4zlr39M4J3JXeF5p2jQEWryxW-xK701nQKiB-kSgzz4q0HgC-OdKsYE2PUnY-ag5wj5ylUdjdmB0zd86rNp_1nmD8pG5RNjk8uXNB899yCr546A1Uw1Cp6mw-GuUfY448nEZRaVHTk_HZDhmK-0MIDJH5Q_E5rSiM18XtZ7jBEFbmWNzvKclQkbQch50_rXgnz8vE74dPvYbTug-blyrQ76ehNa2bMMEleIkF68Oiem2HBAVUrESZJUPWY3_3kux_lMh6sI7lrEmF4UhKi9cTo3Z5QwrSRsWOpfHlKxHGKEx3m_Kv1ZDAgLI651ITmrxUL6IfZRknkpnBwrMEMjbzBGajcpIi8qRzVGnCLfM2lVQLwV9o3JTweI4O5IlMxwCLccZHbUFeF8LDpa_meT0NV4EnuzWbJVCEDoEmBkFV1refYrf78Pnkxc9Ue6FqmGIYW6wIme2qW5sgLtWY-ChqKxh6SzzA2AL5wt0759IjR8gO18zP7qZEM1D1ysMDKB4DYjbbllnsiYBW3wBkx60232r7oH6dFlHXlSEt2Dvfvz3kea-dOk_7qeL1Y9nnBxPGJCbg_56BOAxTjcIsHmbDYRMEF71LpN4rzHtVUYVVlwycBglhnjjqkew7hEhv99zpzIYKlUK0xe0lA2SA41-X1t5ciAeGuPEogON3cquOT3yPWOdINje6w8Bjud3KATQ2usU4iPZXPnfafjK2KYKXhSzvjK64KBxvujVoXLREJdFRQgpBbniag6GbE803EFxh1y-Ce_k6bRo2IT6le2XBKFhVwdghTVEmNTIdIPqZzkjKDO1y5QDGd_N4RX_4pk3IreE0kyNPAUy0YxZ6j0TaP3-5mC272WVJQwBfdGxKBpKl2NRbV1sOumytgIbRTMppKKc9Sb3sM4GwVNqwWLDqGAaRwKWOl-oXPI8gitnoH6OsECcA_4XbmbObL5-MYkzkCT4zDO1K-P5yDrNbDOnxUjUlulp2QO_S0PPK5MWMcvAsInKYcfOik52PQDNhe-7BAE999vopSZNFhH3SP4qQ2scgtlyMQO2YPHcGU-zTdCu5h_kHsiUxAopE4pVwtC5859mrjL42KLTKhOyWU2JIcuHQlq1UWGfMBwiGZV7-6m7jl7Q29vXdYj4x5IQmaHRBMrxfzpsp4HRjB0KDINU4UztwUjWHx321mZ5RUHR41JRdrvNqvT3OhD0QiuqC1W9R5JZDWy9HSRkHOpSKRfUuC6Gw1hvQVvdn0cH__1UjxeYYiHHOsFzPe3mU_OHwNN-9upSLaZbqx03YAVnqKo6lbJjl8d55CsYsFrJXIwNv519UWme4qEfNW5nufKCWwYosvrIRkGLTKHDxn-heuSwwqtCwQU3LJEaWcJV-sRJt3sawkFZfsXji2adg_vFvup5TrLZBXpkELC7rSdnxSKOElzCV8YIjD0DZA9GZSK7JS4o0NMGctZE1o3ENJ_t67lH34e0KpLk9dvEotkT5HCla344IeKDQcd4-oix_0HDfeAhhS-e7PcCCDMnN2x-YeerqoSxwbwFfcdUDdmVx--d0wZpUL03Z3KNVCMR-rFZq7E1IdMhFQcq0DDBWlJGcMdasge85ruGnDC1Iwjp_F8I-lgrXTr9wYDMfsHdDDVhFj__BkOJHjeBqqgIVwp_aCptdiVgEAy-vv99qK-_YjnKkWAsDQHu99L80NU9iwgASPVilSqudopiGJyiyuCbkWy_rTrFWEjgWj8JSqOQv0T_A_obiLOF4lgnCjjBU598tP5HwEAwj5ozvgVmeGpDwxziCudUzvGdqKNRlDG9hOKtMMMNDp2rqDDM2ifSUrB2Phi6VUjGQEdHNVmjibPLta-vGAUevpg2PHEUvLwrMYLVXTQsqmxZXrib-ZFcpCS1_YgoGfjmMp4SpgAEBxGFLUWbNb7TWMeJlClFoxUs8FnrFe0yJTexeHHQwBryktHf_Ok7xOAj7mas6twnsHHBwCm0XAFRzkmUyLKh3wmdUHu6z0Uq7LpHL-ElW0A52lsEqjPc_sysZSwpPQx13XdG3S0f5omojL5pncfDe1QjsnRFSYLe5dBqMwbRcWfWR6ZOVfF1lBUXvCDJ_dQD-wrlMYCh-gfjBMt0_p7DMmWShMogyfPuTV9RfBIQbRPZoPnZBQy4b0KfxDaGvBcU_K0YfAah38nhOFyhm2bD7Kjy3v8-k_GvwxYk8Qw0i9VIlaVVeXwpABaeKImImNHGduj-bOEIC46Iw7shk0UEXLaUIi8-1Uw-HSrMxib1PvvSkRH6vWO-yHTX7lkEd0kfqH5q6xR9nVSuUwNYcHbkbWeuYEm-iUyyktx1TsXKBe4PPPMHdP4bEI3HA9fEdQbouA3845sO5P1cCmBngLA4k3gv2XmyQQXLdP28uLDRx3W6-J63kuZQO9T0BJd5kJRhqQqXrRzzk50Z83wmA_Rgs4bCeT1Ruhizx_IQDzTaAGeB7jyDdvCCXLL-NQSueSU139Z-Kn_6G3AcRQbA1iEDVGfpgDXcwJUGQDQRW8-c-U3xYjSg1-lhZJjSzTZ5r6NaRy1hVJiAm4IX6PvEGfbc81lzX377uVk4lT1jm_scogLVcPsvtRNC55Aw_UGNoo_UZngRvLGBhiwNYOhP8J55Lu5EV9L9K2LnNQJygGZ9gTgZ-S-oNf_pChyH3NarugBqvO4XonPhlMOvdfFBTJvuXd0iAfEHvwWmI5ttiFKB2pTdOwio4sJaUjfddJfYX-89AZ1nGjBICeBsZrnIFEpJn_WfPj_mKErDFMYQb7M95rI6zuGKBnRTtDnSWRi11XWo1GA5NKdAmI86338GDUwdoH7jkYP81dABv96b-n7HSSso6Eoetsl-1kwa68-YV6Oj2i_mhTpBcsBGsIUAGdiiRwfInCWnj6TAdKCz00DdRvZAd-nOYXnM23tjwG43r792wqB9JeTYzgFBBM5qduYpusNO0kfqbKLrVW3G27niS1ykHz9NO0dIEtAUV-RKDrbvKGJODPzMjCs2t1XGW5hregAVTts3fzT4Ovg7fF48FnWmJNw6Uydc81tyP7lfDqsGvckeRSKqWeXuFgUH7DSc0E3Nhbtn_5F-44K6ooyrOrP3mS_LGXe3uTt9UD3R1nPzjjQurX6uEVlN-D53sInrWm-8pyPn4AB37to-yd8_RUQ1T25zzV6sa79pi0GsSFNfKQKRWIB5VyjRIZL9iB_5591Zfx0uxbHMEDL0Isi3Di3W7deKtZTlU7V6ckRnMbj1bNGYsFLA15WxKLawVA2LW9b7cPFkjXt7gXvokqq0WXItCvZQmhvELAUo4c126u-zr8NgKRRyIlqno0DHibiTJ-iRDjqHdx5PTzqt-WPfGVjxN2cfdGvn-VdrUv_45jOnOxHQ4uRWNZPwUg11HrRizssZjlOn5tX-f60lx4d6ZRvuvNdlvOqHeR-ctDVw6r0x_pUzogMUqXGoUv3DwDwlpUCOFCZQ_Fz_FokfWSugTW2qHlbGgfjCbULATxh4XICuZ_7jLfVfJe4ZUFWFlUVlCpOx3n5U9IKagfra9y8sfFRDUpkzZde8z7A_p42qOnpgHvEYep07a0pIPvl5iUb2sno0G4dTUzi3gcZnYrug_-ZW5TPGxDrvHQOcUk-5X_bTViKVq4LC4DXj9jMZV-VRRuGZM9vhmyV6XyKbazAxhyK6uywqCXqAm37jeQpkjdtBlN3-RyhgJdVLCNvNsKpYHokF2IT9PcwleQcxALrz94M3xpkQbb4qfIdg0yJC_ZtTMNU2Yk1ePM9WX_VBQr1vR38Rb7BUyIn2D5QP77dLO4FIggse_bfduikdy1AuwOH5W2KX1NNN346B7Z6L3WHJOb9uPXG9zyvFLaJO8IAOqVqxC9VOevO7xyyV17cxYxQmu3CAmablNMPg6k9yNAHa2hhOJo3M8CCR7W6wX8pRnK2AVM3E0UgBRHBL-NYaWSLcnnDuw4YsMEGyWFet2adiF_zeFm-CyT-fmMvtjMlMymzP6EehzB5DRl5LfqKaCBk4CnS1z5Psf2XUWH3cQUqJ9nRAsPXamVHy1q9neybOkhXqEHkuiBl2tqMsJnraKUeUrtpPXVLpjuup92ARRqkV9yvWAKzrWjM7O2O4tH8VZPCwSAe9zxV8kkJAc=",
+            "id": "rs_0ce65718ea22f429006a629838bc58819bbcb0c7457ba723eb",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYphM7gLzXGAtjztkw-wCcL2UHUe21I6NnreHw3n34g0SoZDWMYlUSmZlmL1Ei8BXPZGUsEOfmz077m88e7u3LNuV3r8ftnIVG3ronkXyXBfU_-0bXx14EJ49uAr9jY-V2sGKqHBt0XZZWx9FaLJmpQAhwLX7KSiDPdt1RnS23WWmc6dX89NIkYX60hvuDyGP0HZXmh_UxnqsPedzThF1vX1qn154WUxYHsbgwNXwCgzkSb3rBCyEYuBr4kTaXSkkYNxksp0FQZHiqzirraVvwGvpuMGKXO3F65xEUZcGnsUhQY2hO_hhz8hMeyoquFzSRfVx0zgrHGqrVlIYbx4RksMh9LIlJYrWa6XLVz1ZRiVR58M_LFnPiJrZRh91btiSEHqEIkQIlxMh5WJZtP85iBqW82BdiLhMoxniW4RwoniwTGFcTVO7fOLtltZMRU4rrtYvjmVPkmtLYXfNVJioMGK7Z9IJmzRjUJ0wB30cNVjfrjvVOUknRaWFfblKjrIDiASE3joPCNK4dC9x__sjx6zlFpr4xYWAWcl21HXg-DKJSnzSZ29-vQTghZcAJ5dIhv2Ye8yXOJ7TgSX_ZAlKDAsQAFyQtv096NDHezB-Qg9ckn77bGy84iO3S-bGlY8tGiJC2QAMrrrS8mKJ9LJjLrt6PAJcUcdDETiKv_udLnbzVE5pqudH7SuRlSotqU-biokqiaYMGjB169Hg51zILDgY7FRHoNoJzGnA2j1TzO51vMX4RX37Hkxasm93OQwnyC6Pgz6Mn5KceHHZE1l8jSgLxi7ba2CfWb2LQut6qA88uvgRrFqGZj_KnXZWStvBSpteLuKL1g8VOdjVbR4fwzgHVXVthGGf0NgZiVDIAQohg7WjJcrkPHGmLw3hq1Zayx5IQR65Wc9_ElCIGHQ_CgDJpDYzvHyO5aehStJjMjNeSzlX9BZfiBT2A-Xdr3Q4A7VfDoxzVdB1mXT_w_R1lLVZqKViA_7Ylarmu6cRL97xxGNN1aANmUQBR_ysbDKSbKH63sGF3ZRP9n40vU8IsCb7vFQluf-55HJnd4IstyzS8kUOJAFryfM7G4T8G8fG9iX_QeAldgZn9wABafg915hGanEvxfMZgTq02xaEyFxOl0xmxYC0e5Cu5F2k1gMey859TKavtdvsTSkCvFrxubQ-wxO1MxZc2-E2tEdFGuv_7jcZuGcJ_XpW42Aq8-G1ktMJcER1w8CluKIh8cuFivzWJSp6K44qUrgRZ-CdteR1nVbxWcG5953Mg7NeutAp5LOkEr5Ynl4xh-mTLXdtadoRBGI9wlluZMJH2sktKWGYlFPkhnshui3_kJxoOXg7v2COfn94cB945YB1H6XBIQNOMg_ou6yVKxVbB6U3Kq7rzkovqdgpWRWuiBg4eoDzdgQRAZpKZOM9nZ8Sio2QvEm3VXhBb91Pnnz6Az-IipeCj9iXF9WC10mqMioaGgMvnm79VlJuxOyfjI7g40b_pF1qzoc0YWSVyUoFiCGoOycNp2EZEbfpncD_ZLyqDbd07LmArHgBALWufc9OEiI9ZiplUbVC1jpergwmjr41HWJh67GSPivvIpl-sTWOeUYSrBxLWTMlp1WF-5aZvQG8JeEK5040Ohgl5bMop1BsmZRAYcEQb4xfc6vJgCWM2Dpm3WgazVUcRRU7hFL0QqjUaxyEnhbsb2nYjTW65eBJ8ymXs49K57UG0EVWloqLQhIjhF8xb1OJEi04VmCntFRQ9QLVOjxLoVLRxH8R5PUjus5qAxlOpATq88r12-XahHs7UKgSYEOwVxWuXLogqUyeS3BqK1bN-zx5Zurwcx72z8xVJk0I7fH7kkEkf97NN_Wgm-yD9xMR2ih2oHxRxRSrLGEExrKSURbokgD2GDeVheZvMQNkmqDEn2Byb-xx_1Ujvo19dmlDe4RWacTeeWXyNo_9rxokOcScvDw_ycmnhDh8iOeij2u2juH3oZ66BRF961tbguhDYBeEHX3mks2eHm1Odf_yUBlv8KbQ-nCKd4KkvJNYedXvinsMq61NpUspoKGhori77r_hL7ZfsmDYdjbrxm8IKTZiXMXDZVn2GSKB4YEFQhiRbtKS7nsglg5nziH9EXEtr_hQW4cVu0KpVDUHe_TaQY-Wh0NnDAf2HYK8ZEKbW5oigpUsxfzYbyhr55mCjBculyw2bTZaGpFRuOeh6ekvs3NmbNguToikYpDUXP_NHrLpc1ckfD9I5p6n8qc8OP3I7SGc9ETfHocg7Fek8rH0ufIXpXNC30bhDmIHlFovhV2KKqgwP4lOQIsrYRp-HM7hE7uvCqw8DOq0nM8_CK4WhI7cSY8Q8UhQ_jrF4ZwMn6WtfIqNHG94-nRtONEp1-sNoQTFPF3bdz2cbCTiV0uIBpMS0uPKW9P9Ts9XWAfF5D6Uw01lol5SKCB6LFMNQvPqED_QOrMLN9R4XVTruwIzmh_Hpvw4RWoDpelsWJHfvkervdJlpOskn3G9xKWIwORbGdt7HBOG1wN4LJSbYbeRWLtyyBZ8GUVJA5eAhTbWemiCM8tVZnE330FxV8OJ6FT_tF8O4XwAotD9x1ljs7omXtiaowLYFObL3JUJhfo2pENqkQyDcGgoMTczXNfRCm2nYCOqmj2Sgn6TIgGPAzf7UHCgnGZDRoba-t2wBEACNe5JMbfaPhooXOYf5c1OBMJhehLHE-doSbVlotHk5s6-EG6JuZBhZ45PGdHo9EA5xN0n77lJr0nxP5GFO5UjTiAwtA8oK7oLtgkjRCwakXILKQmZiNeRX49HVRD3UIesnWrQ2nYhGVh_sqcqBoYal4njsgfYAuUeuA6I_UnjsG3qfNfj_lmNePMfcKcP8NlS4zo1Nfi2vAdRVomS48DKU0yIi1j2iNU7MA1r8B6JZNPqBJdxCXVKR2HSQ1kZL-ekxET-jE7EShnTX4NlSkuVlVfHJpq-frZwaLgNHINh7hOq2JVal50qW6Nv_ZeEuRpZu5NF6QloOMCbFVRJjgtxPf5my7h96K_YeMVz2IRqwy-xtGUUVGDKFjNsb6tvAtt5cvVZnb3ts8ZA1ZpOxVCmlUzlQXp66cDINSmwBpae1oDwUbIuB-XUkLIIF9LltVLn0NdFwMo82nNDexUmsk58g7BKAMElk4DodLtJRvaI8Nokk35Er6Z8pITUJbiME9dfQAKGfAqO6TQnL9BikZH4J5Ur1dwnLCM4eAnWflxeey5m7mXF8SmqqQDQHzanh5cVhqk97wqOXmW4YmoelGZCf4fIPVrntXQ0CALUwkrqpLFpSA-RFzWrXmesnps-hlDui8gs99FteMVika1ph1A3gVkjbxtmJKRehxoPFY7I-Cp7c1vFUR45y9WxEdM0sKrXc1QGgmOng2FrXao7zuxMnHOpoeuuvxsyWwpSCNuBlQkvCneeZUMI5e-SdB20Vbb3x-AH6S8asppS4K2H5il3lKSIYZluiA3zxwEqIBHUTTfA6eK6NrjNMTiuhRhGaM6DUCU97qgxwGGrDMeUNUm5Dgp2PAdf8tD8uMSuQ_GZGBjy_A3sU3jmIXZ7b_7iWTYZ2xkJerxoyTuWJxclyHvvJ1UIronwZyUgDrqGr87iqoe5I3sleyfCrhmtlwRz7tFnSjLPcXOhAR-_ubepbyNIHDNIDNerj5r6_OoeD56lCzpnN0u8al-czv_eMEbqrR-wvNQMuYYLgMnexdwWow8Ybo9mQrcP5u-ogDvXhTVy2AIW1p8nB8cWDa5upxYQhtlL1_pakaQtWYspczw0032HxfWz-0rAX0T3KJJBhBDXZccnn3FA_cWlIzscTBZyOaXM0sl402Yy1_elyLh-Ud8iLvmUArXsILYEPkU-duRiVeSxFe5jZBIXRhySVMXM1ONaLWxRT3mIH5-zNMCIErSS6ud0W4pTG5hDFaUk8AkYUiWZp44cUelFnXDksHVUKmMofkgETj3rkmax_s14V4MOLQ6_KQCCQCffY0Oq1hrHtyAFIDmClvBqXvJEcY0VUoXyjA9Y1T5tku4O7YEbfKhTKJq2fseEcZ9r18uFooE7pRjkLjOR9VK8ldVDQzw-O5aWBKxdkU9oKjc2SdFJyeNmgLHgR7703xDoF7dEkJdaJdwW9FG9tI_Y4oNDyjXEEN79wiNKI6ZRLF2BFCzRfm1B0IsFlcpHmhEhskNNIDI2akFAwF7BHWFWZr2_JET5eS3dwzv7sfvpVFbOzQ5JBPdeb9BNgUaNYxFlmRKoiQbheDrlpXoQsnvyQkqBNWgCAVLEwT5AdzwYpuTKwQbbOlA5zUAdBJEs8X3kdGnYQCMTf5KYwuYIeVpPtWMw00mTM-Z6piqyMIG-FqdsFkuJeEZ89ma-c8wpsQVMdt8gzEZJb-AbEdxifqKqyJ1StKYuW7uya1-rs2XPp0OYlqIqqnrpL1T3pAhjPZkrFDQJwBtv0Q8JL2C4lviyLMcq0D94SEH6GMWEq6bwD7hfuAyazWdmRf9M3HT1qLUgre4P7MIq5SZlXawTjh94L4HveQpDRKcw4GEzZOb8QcatnV2sHrNZxxEF--U7dvycvX6knXjTOqztn55_FfQyttPn-0NbHWcqKSbyQ5gijaxipa3KAaoSIe-ZpRcqRzWOkrfBfYczCysIg4mZ1KaT_KOdR6GFF_lF0pg3xOyJn5_iLFusj51jfoCsaGbLfEj663C1Y6i_iA==",
+            "id": "rs_0ce65718ea22f429006a62983c91a0819bb6448703c043e8bc",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYphM6Yiz9sDASJ6cCwJknSiFmNrp0iLIFCGOuB720l4BYjWgqd_e_j2ZxLfsG3Yg0S9gE2atyMU8T7q1i_W0PMKGCqiWNXiNdK8jT-1ScRI7CP8IMwen1k6gQ4iLfRihfXR-S8RDl8OF6lzcvFTtHcc-EX4D9FQYIftyoLi-xFpalY3Tu6bJ7zkLkPFwzTzaeqqN3jhsg9DmvBEcYG0Myc8VWOuleDqy9ZEEajmxdcMB3a12iG8785OcvlmYsOmvDWpx8nq4VRINHYpjrRgqsF-NSGmVsRncBJfZCrML7q2ULCu63Lnq-RI-w8l2p2IKStF9A1u6DGSK5jHZrUz9Xq5I3Ftsv7ePZAwT8-lax-8pywv-qe8LtmWZEtSJ2ouEfNIarP5RbLNsikBEwsG--OzxczXSe7qN1feSa2OF0VqpXaM7Xpn11_F-sJlutAK_4z4dLQeAYtWwjLKEeWeOaqZ6j_izYNF13R0AjcvJ_KgYOYAvYAYQ3FG65YAA0_gaMBjaY7zKw8jbgvhOaCtr1gI5wcB5udZyQ31l3LoKgRReD9jPVO2txenEWASlcvWKEH66GrQsuk5DIn3wMu4t664bBBhUJETqMbFyIYGbKsFNAZNn5U1wNwSQIjO8Rb7tcPNAmJy0hJxH7IibqUNcP8Hd7VDXTBlgAp3Evki-ZBDcWsvEfdn-QYa_5HnKVSRsG2jEMH4H8hFk4Q1CY2P6-Q5AtikMEWAUD-6GINz5Nm3QNXE4zf3LuCWL_jJzVNK1i3vM2z2adOckkkbLdYJtHP-ogbXDHDzNxHFox9Zxk4JWORqbc0plgMJq7DFrwTgwbBCuypK6REMlzlxZ_iQ0nG6pplGDQIHiJXFL4gPfGt0Z999MM6QvSvgsHBZrSkHP1QaGDtK-_LfnSN0fh5PwZCo1uvynalts8kMRNWhqBe5ubgrnpODYHaOjDHn5oWHXJKqFo_pXvani3Pyirkq4Q20yFqWQMvqWU7V-gVFDr7R4FMRUzUvat8QgvBosODLkV7r7QqlNuLMyLUgZTdjorU_pfR8xqOfCTmPEQoO229lqX2SJq9m-vjFzypZI-GbqSnKeFtSgFHePsDqt58z_D1aDseEyZT7NlQNwcKJckSGqkwe4329_jultTdilOANRhj7WyBefn17XPVdhByibLCp2ry-WP3_wqPZFDb7Ew14ww3v3GTNjUEzOa5fMTZKK8mt3vMYzcGnmcI_MCT_Hc6kQoFLyykaU_wSl-iU3CKlLlrqToSbwZskc9d-npVUn8udCYN9T9GLb52g9_EiCw19KfSgtlRD8dP2L3SmDUBA7gOH0v_PrwYNrI8fnMwCQ52TVMgmsQdWHbiifN7LJ0_kfhIm3NKBNdjPn9IlPSTPyWPWAiKAzNELbY2bxt4uo8JVBCqP10vITGRUeGNrs0x1Oj2i6XaEok9UwFa-Acdz5szGmMWpV2YPoHaOwnh3xBb_VIJVXnDAulqph_9Dz0thfVUCQ7ZWPQ9Nik6-YO9X3JcAH78qgGu_8nV2zqlVk2uO12ikq2lqChz04cdMV3rYkcBFnMCqQDXIIFmDzP3Xsia7nsgeA2DfWWBynwGU8lezR5V7HZXzZcNLoFS1KgaESm08QMKrwZaMHPqeVVlm9RKZq332P5lmDA4oegefQOXQWttFM_i8_smLlARkqE2keInjGIk9A8UJGTa6OSJLPcWnH7GU8NAoRTDoylQ5IQJ04ywC-rad4iOmmxaUTZADzG-SaeLP5bIQqR6t6Gc2spPNscJliaUPlRMlGNk0hDBw352wyAByWjomc03uSodGPsOvOS0dOjfU0uaMS4BZ_y8-G9KkyJoZCqrDAZSuPhfaIHh91y2W2Ho7lr8Nq-7z5mMyAcMkX5n9yWR9RkQBPIKHCwJW6ydF5Tp1CVkg2DDNua2fPpx4ttNomPY_fNmoAnyVDYEUTIXqeczckv5UhHE0ZykywbMyFX7ohlFN75Ry3AJPF0SHnSYUVA-EMKVFDQt_1a2xnZZpiMRkUxIIKsPMHoX7QAX9QS4S2-yuV22ICxCB8B8t37fbVBmBbkrGMjNDloJF-XH9RdTbFir-IBXZ4tSJKVoR-3oz8upaQN-IcgmePP66Unc47MsitCpXvgvT8xmuLdtl-aklxH-4ryZBmB7WM2rEJDEdPjJkQysp41vztPBib-Lv1Pvycc3sul3BGDOF9lgCZL2KGfrurUVKnpBPCs7xE5zyISuYqkQoXBl0izg0dh0UfHPQ2OOqTZm4K1jkeyp2xbhuBUmZYVLiEzw0rvrLCgNjLxcri4rHBKnwObjm837RFrPLcx0fgtlCWVo18LihDHIrXen64AuRvx08qVjRaVIpnihPlIBgJB8QpuEDivkgCd1qrMb37A9QZU4qeVwJNqF9uzP086FHkBtRsrwFFL82PLktkas73w7rHpcwilbDxQbM8g-SibPwH-2725f3T9wNAb0HGGC1Vm89oQKllLWaCZhjOhx6YQdhw_eoaTVT0ukWo5ZHkEKuS-yXHgFh_fdGCNzXGEk0Yolrk9WougnAAd9wdfTwCC82rja4ZEztuZ_cADACooLIZCzEJpNdVFM04JsNtKPdxU-_8Nk2bOKrj0ivRcOtbLXRjYgMYhx9WYt0A1UcgrpVqP7g1_Ckbg1tSG95VtnlmimOyMtCQBh-oQya-XGXRioIRe0aBv6pz-djmLOHU5Jspm7kxZAE1oZS6--uMhfFFt1_Bn8wIhG0B3qGYnm5uO5UgPyGwc4GhQFGiZpcdVsYklHRVcnACZYpyeCbNJmnmr25exkXeQQBNZ9VaVKqKXxa8l3Qp8uOWPuxah6reQofd_GvCxXSQmulMYaa1xi05mzQnGp1nrRTlfnSbkbXXXksLRtT1HhLhVBoBIFv7qOc5gKDYQqNNX3afgKqv_pzOM4cz3U6ykCdBunygISrHJXKsR8nEKGRdvvu_cWAIwP4-JmeWMS1lReQygdE5mEX4nbm0sL4IamI-JuQqmflJi5ukjR4UPptdTyA6xohO3WFYm-3X0-rnAzyaM6iAbzm4zZOeCHbwNvFgvoev04l6FviJuoKC9O8fmdvDmw5F6E4PgUV5hkZlO0z0l_zbeqbyQFCp1X2NuVDv94cyLC5hzJRgUrjgVrjNbP2XMs_M6Ny66Qu18aDqXuWkAfInCDUp2A1twVYWtPVIKNsAReK_mio7k0GxTmQyo_TjVjL3VjSo6KTlAViztOAwXEWtDF0ciZNOLKeStdT-Kb1cfADEz2WRlNa1X4yWprWOlc5AP15GtNoOotKlhenCqNyu7QQMZPBYDryF-ptabJlHzE62XTn9jbEYGLlGeS5DQroySn1Rh83nX9vO3vC5m0585TAuML1OeeYAA2ALrTuhQzIUDxLueZ8J-o4Huwi6eJzqlZkabi4ML1OuuppAaeqdJbYRhpkPs4FNM_20fte7X2nr5uQhZQfb1bE_Z8YEKBamaWjvlziHRJONJLaWJHIH62iFG7c42jufSvNUfXqR_x8yVSGhPoVt30TaNOHc7qKddxgif6zY4_UuUMWq6V9oEpX52sf-KvCffwx42ka54aFOjHQkT6ATj8jferxFmwNqXKR_MI8Lirfn2AjIytTBk8dlRhQHCibGkvjEVPRpskNi_7cXzrC-r_tYCbVePpinlvAVF9rLaJvraVQUvzHMRi4XYsLfZnzFeZ8kXj2gT_mwaeZslsnJr87rl455QQYQUy7uKevuas9lTsiylnZsA7JWf95jIyE4HGEjDoTLDFIMC6YMUYdHbbLVwr3hta5ufggO1rGilzAROtjf1VIwW2PTsK8SiZ_T6XdlQnA63PH8N7qMl5FFD72P6vNR1dSAIOY8ThOh3W3gJ_NOPOD4V8GegK4XAcrMpAWvkB4KMn2_Ew-m0TlFrrtonKmyXdbu7PMbSgipFCi9NqaHj4gbjiHAnI7yxdBOsH5oQkETJ8AQBwdPqfcw96IH1acJedMhy1xBGSOlpKrnV8byESLKzpIryIcrq-bIAxt7ZE8mVpfJgc664N0tTOyT7oSABv3Y33fYbUuftevrQkSOUdN9gpjDGXgXNAj4odL7FoiL4PHv6U9hBf4nmcwBzXJzfdyvTYLGnkzJnUupQBhBPlZ8qrXdjVGSZ1lTJE6Q19zjHQ665JyUle06FOJfmq1LoYVP9v2ZKoD4qk6BKgvy-cGSE06d3p06f3Pf2P0qCJo-Kxu7HHYLspKvZX_uWxIUsHA3U4w2xzDIlkC3SVFmIbjkCWkdHP2qQqGBEnUjk5Ro3vHHZ5kS2gxv3Bgz903VnjR71ljaO-AUOSKxOiCN97LY7BmLpfI-lydhYoq6mIKs2cRTlsD4CKycLYPP74aTaaphzCfuUwXr-FiNIk797aTOQGPLQNOpbIfnkhXtUOSIswBfMeJyXh_eOwHm5rDxDjP6oQ==",
+            "id": "rs_0ce65718ea22f429006a6298400b00819b9eee2f08abd571ea",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYphMzDyVOeaQ84NhlttxZi1r1kvqhvYErVFO9eOLjrsKDbT2XAPaXN9QfmwYCdTtybm8XktSQ9AXvni0CrLE5T3yNGeVPzYkqYRNO2YAmlE7fBzsMpktbIB6cz1FqgNtgakSkkByuTuSRsqx0LobGIwSnNorK4JCA0qjYf8yhafQiECiqoeEDw2wfS1CZKdBXPJUh2Wh5sGjdAh8Dj6Pfj3ovELNSwMTQZUkNoSb8OH3fl9mG0oftGxg1HdWu2FnewjGMDOSIpwp8heQJzEPePJw8nSi3wP5akVHUKkVppRUyOGj1Clu_696-vAFVqYlF6PfcMh14uth27-dhpZmvK6XfLTc98H7AF61Z2E2VcaX2Zz3lYa8B_M3atpS0R-A2jIim6wGsumcQCea3yGbHm4dbWh7jGTrTRNFmLCnYNzPYXYyUgHiUT-5NVtVWCBvcrFNgPMmLz9_3jwvSh2o1n3C4qbdjkRpkG51tIfmIC4hQbq6GRuDvLyNKiMObP-eOTQHipNjrQzVcVNF6eKO1k5FCBmrt-9KX_WC7yib8OI4gG3QmG1os4VVvsDC_fuHsjHrs_GC_JOnFUsPQGPvxLX4OlSQicmyrcHP5OHVXHaaZb2Lda4ZYeR9JkWtHwlv8OzVqeNKFwzwobAFHQg1ZjqW2O3bTtPUPW44aJymoulj3GFFHUpbnCSgXC6T3moOGzCJ7vA2A_zsP4rh3AvfD6JsfYI-eZT0fZHz6iVoQLtnGQDXsJziICVvn9y6LKfQTBPmYFIa56LaqHBKFNAN-zeGH4JSFcnbXI7585JT2TvvfY_chXPO7_k0StDY8Fc4hEgunjDWJWRlBLGPLWodlc3enJ__56tdbwsXQ86aZ55Xy6_evr5wnu8lVauahw7gqdwMSCPavk6t5xAD1Y6tsFXxrWzCuR5G-xTHTVzLgYv_J45_g6_UHf6UajF4x7UKPslJbGjy8xfmJL5jzY70kCKip-oWj6oRpiuUl3wCht8JfvZJZUKSZNdccIntaR5FrxCRkFn2ZHqTlGlPeGzkovw7kus8qr26Vi3gbuMIERNCOrWuvcB_i5b1vUBsCxlLU3etqDZe9ZiqtdCQzGQPwEWaLfz2TLXQ7RFo1NuhA7j1tZ6CLrge4nrm1krMBx5lUVj7ITyztarkzAYnA0H0pgSF9uGbRCuWvq6z5ThmXT_hfiVBdJj9XZ67FlpwxfqTJsIEWHMdxD5bQQxusH5kjYcJ6NZAa7_1plfOnnBjVp9gTvOVkpKiMIPeJZRy-k0g2MN-viEdyDlMiAn4fmlyYUo6N21pplBEkn0IrL6UNotG7Q5oRetQzDLI0jOBfF8_df6jrqrHe6yM9RO0lxwS3-dXcrG-BYuNsiFThxFkHbrIMkMmtC69MRwIy4MHH_zYlvwzEhgeraL1xM3TBhi9GDzlwNgVlf8D5g2x2RkDI_5VMLp3F_QIWWQzER774bfUd8MldtTOBFKu0MRi1btevtV8M5mDMxDXYnd7cm-6tB0h7PQWloB308egll3LUFvF02rf666p_U3coYKTrDwbx4YQoj8r8g4L3cBub3fyycPXwGK3suQq2tkJj7lb1yja4s-7zwc0Ojr8Gf88VQjqY_cynvd0LFLm3wTRPpqE6hPhxKOtC6YsEaL_J3bdWI6qkJEICXF8lxdjBQ5X3wI_h2MBQzUsncpv9v3mfndXQRBmkOdzxaZdPt7-cUozfI1wSYSynXYgMXvbioeRB8FBoRuM-pJ3Y0IuHln_sONh8kKUeuM3IU3smVEffy2KVutTmKjJ01loOaiG7eiSUPk97vUCIPUjSBcbSEK3fBVgz5M5FvGVfKF0v983KMNyQanKR4GQZ50AK_nn4SPZI4sUgSKew1BJnRHzrUVBjaSgb1KOunINZIWcjE5xGYQiu1h-a5cHdz-IdYD6-IywBAQXAxlMt98FeBks6cdtoviXDvlccQWeqAWQ9_vfZSj3diZMOWIixtYPxm4I10XEbn_beqHmV6c-bwza4Ci7HMrFXQCe1asQVxvz4DcJMU4JJrBAUaVH59XDfVuAhRCCfoZPSsqdbjsCSaM4yNVpuxGLKs9y4CevjsUrQC7go2uTxc23QgQDCBLXF8CWdn3YmPnBtduuCZRvmZC2NUbk0afUjyYchvSe_V8lZKpqrxtn2cttKcmn-PHFHpI6f2Ds-BgVzfDaxtry4qO-e6nUbuMDQCFZr9FD-KFEVAlIz4grl3Glcx4Q0LUWIg22kkeCouBbH3_g2Cf_1tBls95eTJOI9RfJay6CtbAUiElMHya1WZ47axIqKnKFoAEJrLoftO87aUEV7kYUzfSgUv67MAphGwp2Ao4Oq7-_xBmP-GNOScIZB29VW60Djpfsm9MgdWWmb0faiRH1eZldvEBKh8fq9tcKPk_gF_PD10cZCSQyAjUhodU6qPsri0f-wkzTcPheznaUG5A4vvFf7SmryRTH25mzs0xEnVwmGgoM5ifpXKM-TbwcS_pzVcZpgOJK7JjHll2d378oe-dm5AgljCYWzDO7h3U2ZHbLdIszXTIBgi3MmnRzm2JSq4ruCI06t5xBTDrf0hznD1hOA4G6hvLSkEeBRlYA0VCFJ78abKyKYVtfzFy_kBFjJc4KxZh_xEQBt3eFfqruybeZ9Wt9z1sQxYJ2ZE3-R2ey38Q3NvbnJ8FxF-eXMErFqVV6aUf3wXRaQcVrvrohh2ttzMSJIuG0OOOslQjCixMcaBJIR_7mIu-ySEdihl6ARWl6a-XXpH1AUUcth7ezvdNJGP7DiC5UznvTCuEQ0cLcMU3XFXoISRunHgRrAKE_yvbpal_nkXE-y6MIub_Kq_vs2TJdGxdsjo7qMB3ISV40Dx0DGtjvqTIcJycDg2ago9dkQ46VxAUVo8VX1v47aqf7qgkKbL8z_4PMqHcVWOBPYQRKv2iX9QqSWwpiW1AvDhRkd-O3X-gc1gq1cfjoiu4mgeuOrjreBQK8cAnm0aLH70m9Ma3FACpKXLT-4oXZiPXpJDACpupSrTY7ACcwFSJZFn2sffr3-HgWS69Q_kBAmSXOClTWy8lmK3gTEQ9jXcXF_oLG7wbC_ZcBVxEH2NErrKsEr577q16ibKIRpFJqfrPAJDNqR_6xz85K-X8btnCNm_AM-OMhijZQ9qjmdLjk4isEucClvsP0ucC3APjUzSihdnFgbhv2SPC_h30xJmzjbDChMmmSxCQZqjR-7jnm7bQsFVNaHyJNQIc79PgELk6Hc1gHdP778K6HwWqUg-ybh5rk0WMQoqPHSZo5_PyoZDWTP6o2z7NOhA0RDCldVKabZryQB3CvraZOIyWZLvWO6fKZ_r_RidGCPi8DNW1OaMiqkiTv8unZqQrkBy4hNYEqz6m5UNsWG-FIwtHqgMazaP6BdKZi0B0sEgxjYohdgXThgUuQU-A73Sr0FXybdfLY0SqN5ndgrGhoHv73vT5J7v3_YQ0nAnPCKGYE3_QzPa6XXTfKrfEd7O_Mia8onYTrvdSk7DoHrp0ZgATUTg_9CHOpSIfNc8Mu3vPKGkqAaLoFq2LMoJ_k8iGmS2TB1gbw0oqKGbiLB5zkvXQ1o3BNpBZo10hB0IPY-9jW1uqMr8W6wmo7KjFh9NJTU-mVQ0qYJy8FmE85G6btRNgvi22hPTaMlgJP6WC3uIWP7MGRDNWaMKN4ObqqORzfkZsoQaBE-f28jP9jCgu-htFQlA5hx2kq5K5fJjn14M89YpQseZBWvc4OFiMmBSPt3GfPkVmkm-oxgW8F5HW4ZCBGsxyI5Qbd2pDQ2NL5Adlv7HN-yMudW0AiFpzGV66mSpvCXGL6eyXl_8mPlQjZPgSrVntxtnoPjWO-eN_Qryxa-h-TGmnnpqXzSAgw_e_77D1ANcxt2gJ2qbdceFls-qrb_u914mbzSnesu8djOtAIghvGBmo96gRk-Q3pw_7K5vWikgtbplMbm1daFo4maKa8O3FRFM9u5iIffcrNtMxHUaKlXDdbm28knCA_LYOKwUUAXLOB2pFrUonipokpgunMyFaQhRpSQOKGGY-OMnznscZ92fzT35whU1pFq8H1is-bOCFXtg_fAHsoYyj3nFqIOAM6i_x9Bhpq2BXI3EHPz3oI15WeAdjqxWRZd9Kmio17QEHCXWhClcnTw7EIRv79g2Xx59Yz8BPwYnh1DE707fPhWXSxiQCj4Dj_t4MUVlzpE4gYxTwn4soVl-lf8HHjXbiNqRx2tRm4F72fv5MRBOtZ9NOREC1rP6Muz2BOf-G8rnL3_-c6P7PKiT7w",
+            "id": "rs_0ce65718ea22f429006a629843c80c819bb3c975eeb4876b0a",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYphMLwMrBq0s8fjAu32o3_S8OV-RaTra8m0s7pETN8FfFv5lGOaOM3cM60gBeuYURVpcR9LwmtqA-AHb0IFbxvWvDrlupVuU3vzwsoe8RSzaCFH-Pxt7LhGESRqkMYa4Fe0j3MwyB4E1iAoRj-J2HrgAD00jg-uQBWsBAtVXMEN4j9jZcKj3dOgRCB9SOrkmOZoH8-K-4ESxkUKeVYOOc8QgVIGb89LuMtFBt9OnnSAn9D93EYLmgUD3lC7jHodIbsactY9rY3qyRRlkEe-Vq0op78WkJdcCpgPDibfGPf_CePfV7_ADqt4MlyaFO0_9FVZVW8yLEwCbwAi0nAoQpoGOa5Dn1Ur5ZNi0seEQq-5KUd4zsGRDpXPsqIrLC5ovI_Zk5hkFtuqd2yQyXsWknPCTqtdU7Qkirr4_qk6-WpDHqygRnL7UTZbrE1aH-6NVGeZkL1tcDq-2idCvsy1YNDKgN6Tg7m9omukmGTTAReO3iedKxmKWE5uWZ9TsP-Epuzs9MmqZsFCqKyh19v8C8bdGvfohcQBVkGyavgBY9b6tog0SaT8R9RcU51LJFydKXv1RXIRnT_MMo1VRsi-h579R3ch_958gka4x1KXyuM57M8aplRlpc4vXjCKuxo76Ygi6J_g0sh4RHmgtmZst4hPWFeGUCxcB8_aUieeim3pw9xvtCkm9VWqiwVMt_4WFrJoO6_Wj0Wl4kfIFg4WHbKoyMXNW9tZtT2R8EXGxlH5noZCHqqxp1GDZvM8WlMWbLJt9Ytbu25X2y57yTv9La3MZezCBZufrJ2iFleY_2wcYKGLPvMUjnbZCBTkv9YjiV0XTs-waDpK7pc9-K-PYJI_4iPcm0Sc_0dtmsD2IcgrwMxkpENB7a9JvyaYWlkcqL_v2Sq77Nv8kFnq3EcaBn5sncOj8ImXMty9OWs1HmwavaMLU5sEz_1Y2KZbg8Ql_n7u4cBgAaKuA80HEKLy8jVunTVOwI-3v4M5x0mzBcUf-6RbBCmJhEqPDd1nMt-qhrs4pf1dSRev_-WSpiLCew4-X6Ms7-aUfY20H6O9qupFnIA_zxOoSmyN212LphrKrfLLZVX-gefxDHFweJZVz-RwMDSAZOHVuxHLexw7kpHFLQKQHvD3MqqdwzpmyZCyDmxl3jUL6mBqb0CEqovQa8oOgGXHlRc4CnRjAHVTK_kKe9TBV2ymIVhNP1yPqippemnpSy5DCJW8cfnDGjHH9KSbB2g3Gq9Om9uObm687qJriIz-t6hx3x1MIeDyirCXE-luBTa1RK3Az9bDYyO92TAuxWq3m5Ga_7rFdAjMP8plJtQIG2WrpiDSd7w7t1YUPwucggvLV_oGySgIn92sl5vYg0T7TRHeX5HGAx0cAhm5zqYIgZI4UMatBA3-rC4bEaUG1ORyhON3ZAVN4RJVy3ulRxiKJHXN_x-ad2fERlC73EyRV6rfNY3Ku538KuuJ3DipUAghvwdP4_7jXUNOYv2b4hAgDq4JpQsqxyBTh0V_8lSEw5fk52xEpK-pk5DxiF7BnmLri6mjmxiv8WT4gsJQTeucfxbulK0yVyXzDeUnIoMtqu_FxRkOdmpfQsHzIdI-8k9tiMhZj8o77YROe3HU38vW0tmdPLmff5v5icSZU_ZglM3GRBbCwK2URJNaWGgngdivW88IJMrWJCVhQhOg5E0i2CKtnDU-F28AAwznDhoDNpRXWVCTnOnKBeMHoKDANlg6EhBdjfei8laXCgP93dmk6VBZU-P2VsvVaVRUEQdf-A_O7K8Nl3TivL-WN3ihJ6x-1Qf8jSCpeB0bDkIrr7TQxBODol0b4xkqpgm5VKgpbBdDC9xyt2dogvEopUTA-TDxh5bhfG1KDyuSwVtfPOs-LzqvP522t-fRBwDxrLATPcnIwS-gXwEolxNi6C02Hj7jWvi6AE5pwqAtcF9LUecc5cdJC4_0kUl0RkjF1MFDwd8SYlgSn2zdZV2ln4SR7Z8CeFySIsgbyiqpOpePYdnbFWQ5yJB4zDuX5r3pGOtfbTeKsqwT9Cmpl9aZn-y00mTbwzAChI-HD3SZUM0SVsEYv5MnVVqtFrNr83SS9zcr9g3-VlVUhxERXMD6FcaQmMTTumnSo4kFbDYgDK2VC9k_fn3wIyZo6uucSdRTMeDruTGsGUXVyT66NYOEzeKK8oQuzghg2KWMf2iHpkBTP7fATR1iSWe0vrlgV5mruc-b99vS93jpaMSiS2qjk4HzOQfQMQIJ7ZylYn5n8n7pISIz570hRkMeNygMkPUlYisApYwEMcQRgmRiMnKehwJUgSllKcEGBIgHK7RLvY7R_lpq5VLoyn2ly2QGxtn4XnXZiVdjRsaGxsYuw1mrpuggLfra9OjJCpF4swpkBCbIi1m0zinUbI3sK1xpgNb8l_vE9gYx_D6VnSeCdUkGAsNYDb0aDp-XoiljjYAnyzwg8Nce-JTKwbZTReJ026PQt6QbK4VuDuY6bAYl54Yc7PN4Wh3Ouz6VAQzc9_iSw1U5r_-1wE04Sw000U3Oa8CUJGXygNAxm940LT8KYgX0A76eXhbVUmEGT_HP9U1jvD9iaPi4MfKqKw85LKWePIIAA0fWbUyicRcQ-WaFToQDj_CoeVJqbsPu3hgb1HtaHLLXn8FKyFb6UCVjAYlVflEyDUpu8QHn-TcQas4jbunG_2Qybc3lL-cdZJtWCp2_WNorkAOugeOYh9nI1ZuabWodvTBr_Fmb1PkFx2llinkC2Am0wk8PmMScuu1fJh-nxlwZBNZq5Up5c3UIf95UptQBYnDbtrgYLeB2G8c79J5Fb7W8LBpnAs5xl9UinonA4anA4A5Kl0LY6DmrZT-JgwgXimlR4jxggvAW6U8wQbu3VdoLTJvXtTceYos0Ni7tYGNRY-P6Hert1WlFcU1SIJNAu9l-E-f1Rj6s2IeDf3syxLsAtNqt4rM6MkWaaTaHiy8xKYWyR72A5Mj-ZIn-IUIndE61RQ7PyY_siOCezdpFpSZtW9qTNSlwwikiX7BvT4GrY-xkCwl7kt5KOvSrtEU7kOGQ-obpxRgZ-qsR5t9OsjLisKEIG3IS4O-ytonaHdIvkYW2wrT-s7LsOwb-ZcFz8gIQ3JVx5Zf_jlE3ER8Cv81zCWWrLHsLh--b4mWNhFothjYueAIbUbflidz3l20t_QwDfAhDhcp0O270qFlHkm3PkbY5wCUPKnINGguXACnJ0tsLgpR1rpxibtByKYP1KYYI1VgkHYgoKC1UK302DXpTNUHdFufKrU5F7IKO28blqj-OL9RT0kmr511XyDtv0xvLXHcRP3fD2o1qmgaypk0az7WKGt-40a1c3QfVHcSnhJtxhfrsddGCY3BlFcQGO0ECYThAWTlAHmkVF_gmSyxpSCfOL41l6PvY4EY8dqyLdCaVPMrQgT02V-9SBsKWIDFsi-7v8gaqIlC6Y9Ii3__OTc5IqBTMMqa2z_NpRLvYFYpQh_HESeEb8btk1LJjfFDNxxkDjP-B0HLJoojg4HTGKqUdcW8jrjrq4-CcmRWto1eAefB-sKW-IPsLmc_lhRTzgLTVJCrAzuUeiv37Y1m-JK30us_nZQrTwLM-L4q6DH1zj1GHbn-4YVzQd5dTbDDuLnxsKWK_9mOcXD-MS8Gej3kQsl3l1MPx3rOYgqj33CfImgb1stppGnvwhKcJESrEpty-X6qXfZTM7dEq8Gx4wOPL1PGsZ_yUBK-etk09H5XHkS8sCz_nxVRBTee5EeH8OKAl9qVrwrNpzd7z6lIWu1lDV28uKLI-PSycaVrrKT38UKmEEgTqXQj9xX0WjN8fNfZbEvJmpk3WUM9R0WfWvhrdysV96xF_CmFvkhI8xwYcjpaDZ75I2uWlMBIPywltk4Blpgi03Y-xCaD6CkspOUSUUhAJ1-bbQYM1DzKkkgdHU4ktwQrIr60sVtMxOViY714MJlpfgjAc9rS6UIOSHrbf9aT4DAGR5FO3oYhsnlu3yj0LW2YXzuSCFNMXF9HtGD83W8djP7wkHjbQK_Njp2t_5hDsl_6iN6Zvy5iW2BajW8xZ2819qAcTmynLWIetIvDu_C2W5J95CK66c28gFHZwZ7LSU9vsnA-CcZbE_6wNuDFemc2PlBvwlfNK7whkH6-PcZxyTLuuDJmsptJo1yHwSJfwS747hYmJrfm8qjnbuYAmYvUC1ekKRoKLn8LJnRtyEbCxu9eYcQC6yyOF5Tlvo1xaziXQKqneHjUNmArlPmboTiFKYOcNV7MMO3ejlCVwaQNbjERUjdZSb2pxk7uE-tmS4Qq-P3HU28cGmMJXtGLEw6vx005dkJm_nYnFG8BdeLwKT66u6gMqE0Z1IqvypQEOxUBa-bjlb9AP-PVd5ZwkNH1ZUEPz19D5yfbgOEqOuHm9v8cTSLSLRiVFeP1THUoo_nSNrTmtCv3UkOd7m62UkQ7X2_J2Dbm-0HYZjKgcSMtlhaipjM718g0zzcvBmS5C3hFQQeZTOVCP_A8lD7Vm66gpVxdLiw0zGhLto8rAMOT3ICvWMFz5VdzirTWc1K4UWsV3xegMc9-Et7KuuHzuMOZ89QS5_vGUksAaR5K4wGUEoHxGqnBPrjdFKQajU1WXzArX0kdd8oJYEB44LEbIH40CBSMecIzDZtUOkruau3ane3zlwQTiSfwlp",
+            "id": "rs_0ce65718ea22f429006a629847107c819b8d4cd20e64359d68",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [
+              {
+                "annotations": [],
+                "logprobs": [],
+                "text": "{\"case_id\":\"generalization-uncertainty\",\"inventory\":[{\"event_id\":\"e1\",\"event_type\":\"CLASSIFICATION\",\"trigger_text\":\"were classified as of uncertain significance\",\"exact_evidence\":\"RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.\",\"explanation\":\"The highlighted finding explicitly classifies the majority of the variants as having uncertain significance.\"}],\"participants\":[{\"participant_id\":\"p1\",\"entity_type\":\"VARIANT\",\"exact_text\":\"947 variants\",\"exact_evidence\":\"RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.\",\"explanation\":\"The referring expression \\\"which\\\" uniquely resolves to the antecedent occurrence \\\"947 variants\\\".\"}],\"links\":[{\"event_id\":\"e1\",\"arguments\":[{\"role\":\"AFFECTED_ENTITY\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"p1\",\"explanation\":\"The variants are the entities being classified.\"}]}],\"semantic_axes\":[{\"event_id\":\"e1\",\"direction\":\"NOT_APPLICABLE\",\"comparison\":\"NOT_APPLICABLE\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"UNCERTAIN\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.\"],\"explanation\":\"The classification is explicitly asserted, and the assigned classification is uncertain significance. The finding reports no statistical observation and does not explicitly interpret statistical significance.\"}],\"root_event_id\":\"e1\",\"completeness\":\"COMPLETE\",\"structure_explanation\":\"The highlighted finding is fully represented by one classification event with its uniquely resolvable affected variant participant.\"}",
+                "type": "output_text"
+              }
+            ],
+            "id": "msg_0ce65718ea22f429006a62984abe94819b803aea0db562ff2e",
+            "phase": "final_answer",
+            "role": "assistant",
+            "status": "completed",
+            "type": "message"
+          }
+        ],
+        "parallel_tool_calls": true,
+        "presence_penalty": 0.0,
+        "previous_response_id": null,
+        "prompt_cache_key": null,
+        "prompt_cache_retention": "24h",
+        "reasoning": {
+          "context": "all_turns",
+          "effort": "high",
+          "mode": "standard",
+          "summary": null
+        },
+        "safety_identifier": null,
+        "service_tier": "default",
+        "status": "completed",
+        "store": true,
+        "temperature": 1.0,
+        "text": {
+          "format": {
+            "description": "Source-grounded staged scientific event inventory, referential grounding, linking, and versioned classification-argument semantics.",
+            "name": "V9StagedGeneralizationOutput",
+            "schema": {
+              "$defs": {
+                "InventoryEvent": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    },
+                    "event_type": {
+                      "enum": [
+                        "REGULATION",
+                        "POSITIVE_REGULATION",
+                        "NEGATIVE_REGULATION",
+                        "GENE_EXPRESSION",
+                        "COMPARISON",
+                        "ASSOCIATION",
+                        "CLASSIFICATION",
+                        "OBSERVATION"
+                      ],
+                      "title": "Event Type",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "description": "Complete exact source sentence containing trigger_text.",
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "trigger_text": {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "title": "Trigger Text",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "event_type",
+                    "trigger_text",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "InventoryEvent",
+                  "type": "object"
+                },
+                "ParticipantNode": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_type": {
+                      "enum": [
+                        "POPULATION",
+                        "OUTCOME",
+                        "EXPOSURE",
+                        "VARIANT",
+                        "GENE_OR_PROTEIN",
+                        "CANCER",
+                        "SIMPLE_CHEMICAL",
+                        "MEASUREMENT"
+                      ],
+                      "title": "Entity Type",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "description": "Complete exact source sentence containing exact_text.",
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "exact_text": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Exact Text",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "participant_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Participant Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "participant_id",
+                    "entity_type",
+                    "exact_text",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "ParticipantNode",
+                  "type": "object"
+                },
+                "StatisticalObservation": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "exact_text": {
+                      "anyOf": [
+                        {
+                          "maxLength": 1000,
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Exact Text"
+                    },
+                    "observation_type": {
+                      "enum": [
+                        "P_VALUE",
+                        "CONFIDENCE_INTERVAL",
+                        "EFFECT_ESTIMATE",
+                        "NONE"
+                      ],
+                      "title": "Observation Type",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "observation_type",
+                    "exact_text"
+                  ],
+                  "title": "StatisticalObservation",
+                  "type": "object"
+                },
+                "V8SemanticAxes": {
+                  "additionalProperties": false,
+                  "description": "Semantic axes with the preregistered polarity boundary in the schema.",
+                  "properties": {
+                    "author_interpretation": {
+                      "enum": [
+                        "SIGNIFICANT",
+                        "NOT_SIGNIFICANT",
+                        "NOT_CLAIMED"
+                      ],
+                      "title": "Author Interpretation",
+                      "type": "string"
+                    },
+                    "comparison": {
+                      "enum": [
+                        "GREATER",
+                        "LESS",
+                        "NO_DIFFERENCE",
+                        "NOT_APPLICABLE"
+                      ],
+                      "title": "Comparison",
+                      "type": "string"
+                    },
+                    "direction": {
+                      "enum": [
+                        "INCREASED",
+                        "DECREASED",
+                        "NO_DIFFERENCE",
+                        "NO_ASSOCIATION",
+                        "ENABLES",
+                        "OBSERVED",
+                        "NOT_APPLICABLE"
+                      ],
+                      "title": "Direction",
+                      "type": "string"
+                    },
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    },
+                    "evidence_items": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "maxItems": 8,
+                      "minItems": 1,
+                      "title": "Evidence Items",
+                      "type": "array"
+                    },
+                    "explanation": {
+                      "maxLength": 1500,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "polarity": {
+                      "description": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+                      "enum": [
+                        "AFFIRMED",
+                        "NEGATED",
+                        "NULL_RESULT"
+                      ],
+                      "title": "Polarity",
+                      "type": "string"
+                    },
+                    "statistical_observations": {
+                      "items": {
+                        "$ref": "#/$defs/StatisticalObservation"
+                      },
+                      "maxItems": 8,
+                      "title": "Statistical Observations",
+                      "type": "array"
+                    },
+                    "uncertainty": {
+                      "enum": [
+                        "ASSERTED",
+                        "PROVISIONAL",
+                        "UNCERTAIN",
+                        "HYPOTHESIS"
+                      ],
+                      "title": "Uncertainty",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "direction",
+                    "comparison",
+                    "polarity",
+                    "uncertainty",
+                    "statistical_observations",
+                    "author_interpretation",
+                    "evidence_items",
+                    "explanation"
+                  ],
+                  "title": "V8SemanticAxes",
+                  "type": "object"
+                },
+                "V9EventArgument": {
+                  "additionalProperties": false,
+                  "description": "Event argument with the classification boundary in the role schema.",
+                  "properties": {
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "role": {
+                      "description": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+                      "enum": [
+                        "AFFECTED_ENTITY",
+                        "CAUSAL_AGENT",
+                        "STIMULUS_OR_OBJECT",
+                        "POPULATION",
+                        "COMPARATOR",
+                        "OUTCOME",
+                        "EXPOSURE",
+                        "MEASUREMENT",
+                        "CONTEXTUAL_PARTICIPANT",
+                        "EFFECT_EVENT"
+                      ],
+                      "title": "Role",
+                      "type": "string"
+                    },
+                    "target_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Target Id",
+                      "type": "string"
+                    },
+                    "target_kind": {
+                      "enum": [
+                        "PARTICIPANT",
+                        "EVENT"
+                      ],
+                      "title": "Target Kind",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "role",
+                    "target_kind",
+                    "target_id",
+                    "explanation"
+                  ],
+                  "title": "V9EventArgument",
+                  "type": "object"
+                },
+                "V9EventLinks": {
+                  "additionalProperties": false,
+                  "description": "V9 links using the versioned event-argument role description.",
+                  "properties": {
+                    "arguments": {
+                      "items": {
+                        "$ref": "#/$defs/V9EventArgument"
+                      },
+                      "maxItems": 16,
+                      "title": "Arguments",
+                      "type": "array"
+                    },
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "arguments"
+                  ],
+                  "title": "V9EventLinks",
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false,
+              "description": "V9 output retaining V8 polarity semantics and the same JSON shape.",
+              "properties": {
+                "case_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "title": "Case Id",
+                  "type": "string"
+                },
+                "completeness": {
+                  "enum": [
+                    "COMPLETE",
+                    "INCOMPLETE",
+                    "CONTRADICTED",
+                    "ABSTAIN"
+                  ],
+                  "title": "Completeness",
+                  "type": "string"
+                },
+                "inventory": {
+                  "items": {
+                    "$ref": "#/$defs/InventoryEvent"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Inventory",
+                  "type": "array"
+                },
+                "links": {
+                  "items": {
+                    "$ref": "#/$defs/V9EventLinks"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Links",
+                  "type": "array"
+                },
+                "participants": {
+                  "items": {
+                    "$ref": "#/$defs/ParticipantNode"
+                  },
+                  "maxItems": 32,
+                  "title": "Participants",
+                  "type": "array"
+                },
+                "root_event_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "title": "Root Event Id",
+                  "type": "string"
+                },
+                "semantic_axes": {
+                  "items": {
+                    "$ref": "#/$defs/V8SemanticAxes"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Semantic Axes",
+                  "type": "array"
+                },
+                "structure_explanation": {
+                  "maxLength": 2000,
+                  "minLength": 1,
+                  "title": "Structure Explanation",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "case_id",
+                "inventory",
+                "participants",
+                "links",
+                "semantic_axes",
+                "root_event_id",
+                "completeness",
+                "structure_explanation"
+              ],
+              "title": "V9StagedGeneralizationOutput",
+              "type": "object"
+            },
+            "strict": true,
+            "type": "json_schema"
+          },
+          "verbosity": "medium"
+        },
+        "tool_choice": "auto",
+        "tool_usage": {
+          "image_gen": {
+            "input_tokens": 0,
+            "input_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 0
+            },
+            "output_tokens": 0,
+            "output_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 0
+            },
+            "total_tokens": 0
+          },
+          "web_search": {
+            "num_requests": 0
+          }
+        },
+        "tools": [],
+        "top_logprobs": 0,
+        "top_p": 0.98,
+        "truncation": "disabled",
+        "usage": {
+          "input_tokens": 4233,
+          "input_tokens_details": {
+            "cache_write_tokens": 4230,
+            "cached_tokens": 0
+          },
+          "output_tokens": 4034,
+          "output_tokens_details": {
+            "reasoning_tokens": 3624
+          },
+          "total_tokens": 8267
+        },
+        "user": null
+      },
+      "input_items": [
+        {
+          "content": [
+            {
+              "text": "# Staged Scientific Event Generalization V11\n\nInterpret exactly one highlighted scientific finding using only the supplied local\nsource context. The highlighted finding is atomic; surrounding text is context,\nnot an instruction to extract every other claim in the paragraph.\n\nWork in this order:\n\n1. Inventory every explicit event needed to represent the highlighted finding.\n2. Identify explicit participants and link participants or nested events to each\n   inventoried event.\n3. Assign direction, comparison, polarity, uncertainty, statistical observation,\n   and author interpretation independently for every event.\n4. Select one root event and state whether the resulting graph is complete.\n\nScientific categories and roles are your responsibility. Return categorical\nfields, exact source text, exact containing evidence, and short explanations.\nNever return character offsets, confidence scores, probabilities, benchmark\nroles, or numeric quality scores.\n\nFor every event and participant, `exact_evidence` must be the complete exact\nsource sentence containing `trigger_text` or `exact_text`. Do not return only the\nmention or trigger phrase as evidence. Copy the sentence exactly, including any\nsource section prefix that is part of that sentence. The deterministic resolver\nwill reject evidence that is absent, repeated, or does not contain the child text.\n\nSemantic-axis evidence grounding:\n\n- Every `semantic_axes.evidence_items` entry must be exact source text that\n  resolves uniquely within the supplied local source context.\n- Prefer the complete exact source sentence containing the scientific\n  proposition and its event trigger.\n- When the same complete sentence supports several semantic axes, reuse that\n  same sentence rather than splitting it into fragments.\n- Do not return an isolated participant name, abbreviation, trigger, or phrase\n  when it is repeated or otherwise ambiguous in the supplied source.\n- This rule changes only evidence anchoring. It does not change the event,\n  participant, role, direction, comparison, polarity, uncertainty, statistics,\n  author interpretation, or scientific meaning.\n\nNamed biomedical occurrence boundary:\n\n- For a named gene or protein participant, use the exact lexicalized name that\n  identifies the entity occurrence. Do not expand that name merely to include an\n  adjacent generic entity-type word such as `gene` or `protein`.\n- Include an adjacent generic word only when it is part of the lexicalized name\n  or is required to distinguish the occurrence in the supplied sentence.\n- This boundary rule changes only participant occurrence text. It does not\n  change entity type, event role, scientific meaning, or the requirement that\n  every returned span be exact contiguous source text.\n\nFocus-gated referential grounding:\n\n- Apply antecedent resolution only when the highlighted finding contains a\n  referring expression that cannot identify its entity or event without earlier\n  words in the supplied local context.\n- For such an expression, resolve one unique explicit antecedent and ground the\n  participant to the antecedent's exact contiguous source text. Do not use the\n  pronoun, relative phrase, demonstrative, ellipsis, or partitive grammar itself\n  as `exact_text`.\n- Preserve an explicitly named entity that restricts the antecedent only when\n  that relation is necessary to identify or interpret the focused event. Do not\n  add general paragraph context or participants from neighboring findings.\n- A source subspan already contained in a complete participant mention is not a\n  separate contextual participant unless it has an independent role in the\n  focused event.\n- An analytic method, model, curve, assay, or representation is not an event\n  participant merely because the finding was measured or displayed through it.\n  Include it only when the focused event independently predicates a state,\n  relation, or value about that item.\n- If no unique explicit antecedent can be resolved from the supplied context,\n  return `INCOMPLETE` or `ABSTAIN`; do not invent or guess an entity.\n\nRole guidance:\n\n- `POPULATION`: the focal cohort or group in a population comparison.\n- `COMPARATOR`: the cohort or group against which the focal population is compared.\n- In a `COMPARISON` event between cohorts, use `POPULATION` and `COMPARATOR` for\n  those cohorts. Do not use `AFFECTED_ENTITY` merely because one cohort has the\n  compared outcome.\n- `AFFECTED_ENTITY`: the entity whose state or behavior is described in a\n  non-comparative state, classification, or regulation event.\n- `CAUSAL_AGENT`: an explicitly causal actor.\n- `STIMULUS_OR_OBJECT`: the treatment, stimulus, or object to which sensitivity\n  or response is described when the source does not explicitly claim causation.\n- `EFFECT_EVENT`: an event whose occurrence or state is affected by another\n  event. Preserve nested events; do not replace them with their participants.\n- `OUTCOME`, `EXPOSURE`, and `MEASUREMENT`: use only for their literal source roles.\n- `CONTEXTUAL_PARTICIPANT`: an explicit participant whose narrower role is not\n  stated.\n\nClassification argument boundary:\n\n- In a `CLASSIFICATION` event, link the classified entity as `AFFECTED_ENTITY`.\n- If a named entity explicitly restricts the identity or scope of that\n  classified entity set, link the restricting entity as\n  `CONTEXTUAL_PARTICIPANT`.\n- A classification label or value belongs in the classification event trigger\n  and semantic axes. Do not duplicate it as `OUTCOME` unless it independently\n  participates in another event.\n\nSemantic guidance:\n\n- A null result is not an affirmative harmful or beneficial association.\n- A numeric P value is a `P_VALUE` observation. It does not by itself mean that\n  the authors claimed `SIGNIFICANT` or `NOT_SIGNIFICANT`.\n- Use `NOT_CLAIMED` unless the source explicitly interprets significance.\n- The `uncertainty` axis describes uncertainty conveyed by the scientific\n  proposition, status, or classification value. It is independent of whether\n  the sentence grammatically asserts that proposition.\n- Use `UNCERTAIN` when the event explicitly assigns an uncertain, unknown,\n  indeterminate, or unresolved scientific status. Use `PROVISIONAL` or\n  `HYPOTHESIS` only when that corresponding status is explicit. Use `ASSERTED`\n  for an unqualified event, not merely because uncertain content is stated\n  declaratively.\n- Polarity records scientific result status, not surface grammar, and is\n  independent of direction and uncertainty. Use `NULL_RESULT` when a study or\n  analysis reports absence of an association, difference, or effect, regardless\n  of negative grammatical form. Use `NEGATED` only for direct denial or\n  non-occurrence outside an analytic null finding. Use `AFFIRMED` for other\n  non-null findings.\n- Preserve scientific negation and uncertainty exactly.\n- Trigger and participant text must be exact contiguous source text. A trigger\n  may include adjacent grammatical words when needed to preserve source meaning.\n- Return `INCOMPLETE` or `ABSTAIN` when the highlighted finding cannot be\n  represented without guessing.\n\nThe output must conform exactly to the supplied strict schema.\n\n\n--- V12 PRESERVED SCIENTIFIC CHANGE ---\n# V12 Focus Event Anchoring\n\nFocus-event anchoring:\n\n- When the highlighted finding contains an explicit event-denoting noun or\n  phrase, inventory that highlighted event and keep it as the root event.\n- A surrounding predicate such as `associated with`, `involved in`, or\n  `related to` must not replace the highlighted event merely because it connects\n  contextual entities.\n- This rule changes only focus-event inventory and root selection. Preserve\n  every nested event required by the highlighted finding, and apply the existing\n  participant, link, role, and semantic-axis rules unchanged.\n- The rule does not prescribe an event type, participant identity,\n  semantic-axis value, benchmark label, or expected answer.\n--- END V12 PRESERVED SCIENTIFIC CHANGE ---\n\n--- V13 PRESERVED SCIENTIFIC CHANGE ---\n# V13 Compositional Focus Root Selection\n\nCompositional focus root selection:\n\n- Select the root only after constructing event links.\n- In the focus-internal event subgraph, when exactly one inventoried event is\n  not the target of another focus-internal inventoried event, choose it as root.\n- Predicates outside the highlighted finding cannot disqualify or replace that\n  root, and a nested effect cannot replace its explicit focus-internal parent.\n- Otherwise apply the existing root and completeness rules unchanged; do not\n  alter inventory or links to force uniqueness.\n- This rule changes root selection only. Preserve inventory, trigger\n  boundaries, participants, links, roles, semantic axes, evidence, and\n  completeness rules unchanged.\n- The rule does not prescribe an event count, event type, participant, role,\n  semantic-axis value, benchmark label, or expected answer.\n\nNon-scientific transport clarification for this exposed V13:\n\n- Every preregistered focus is upstream-eligible because it contains at least\n  one explicit source-supported event. An input with no such event is outside\n  this experiment and must not be sent to the provider.\n- When `completeness` is not `COMPLETE`, `root_event_id` is a required transport\n  anchor, not an asserted scientific root. Set it to the earliest\n  source-supported focus-internal inventoried event in source order.\n- Do not add, delete, relabel, or link events to create that transport anchor.\n  The universal schema still cannot represent a truly eventless abstention;\n  V13 does not claim to solve that residual limitation.\n--- END V13 PRESERVED SCIENTIFIC CHANGE ---\n\n--- V14 SINGLE SCIENTIFIC CHANGE ---\n# V14 Complete Biomedical Participant Denotation\n\nThis rule clarifies the existing named-biomedical occurrence boundary. It does\nnot replace any event, evidence, or semantic rule.\n\n- Select the smallest exact contiguous source span that independently denotes\n  the same biomedical participant occurrence while preserving its\n  scientifically restrictive identity and scope.\n- An adjacent entity-type noun may be omitted only when the retained text is an\n  independently referential lexicalized biomedical identifier that denotes the\n  same participant in that occurrence.\n- Retain the semantic noun head when removing it would leave only modifiers,\n  classifiers, stages, taxonomic restrictions, or other attributive text. Do\n  not reconstruct an omitted head from `entity_type`, the explanation, or\n  surrounding evidence.\n- Retain nonredundant restrictive modifiers unless the same output explicitly\n  represents and links an equivalent restriction. If the schema cannot\n  represent that relation, retain the modifier in the participant span.\n- If either denotation or restrictive scope would be lost, fail closed with\n  `INCOMPLETE` or `ABSTAIN`; do not shorten the participant.\n\nThis rule changes only participant occurrence text. It cannot create or remove\nevents, participants, entity types, roles, links, root choices, semantic axes,\nstatistics, evidence, completeness states, or scientific claims.\n--- END V14 SINGLE SCIENTIFIC CHANGE ---\n\n--- V15 SINGLE SCIENTIFIC CHANGE ---\n# V15 Focus Closure and Role-Bearing Occurrence Custody\n\nThis rule clarifies two boundaries of the existing focused graph.\n\n1. Focus closure. Construct the mandatory event graph from events denoted by the highlighted finding and the complete focus-internal dependency closure of nested events needed to represent that finding. Follow a dependency inward when a nested event is an argument of a focus-internal event. Do not traverse outward to inventory a predicate outside the highlighted finding merely because it governs, embeds, relates to, or takes the focused event as an argument. A genuinely dependent focus-internal referring expression may resolve under the existing unique-antecedent and ellipsis rules; that resolution does not authorize a neighboring or governing predicate as an event.\n\n2. Occurrence custody. For each participant role, bind the role-bearing source occurrence before minimizing its text. If the highlighted finding contains an explicit self-denoting name, symbol, abbreviation, independently referential lexicalized biomedical identifier, or head-complete nominal bearing that role, bind that exact focus-local occurrence. A definition, synonym, long form, abbreviation expansion, canonical alias, or repeated mention outside the highlighted finding may establish identity but cannot replace the bound occurrence. Only when no independently denoting focus-local occurrence bears the role may a genuinely non-self-denoting pronoun, relative phrase, demonstrative, ellipsis, partitive, or implicit argument resolve to one unique explicit antecedent in the supplied context; ground the participant to that antecedent\u2019s exact occurrence, or fail closed under the existing rules if no unique source-supported resolution exists. Within the bound occurrence, apply the existing complete participant denotation rule unchanged: select the smallest exact contiguous span that independently denotes the participant while retaining its semantic noun head and nonredundant restrictive identity.\n\nExisting source-supported optional contextual participants and optional edges remain permitted only where the frozen rules permit them, and they remain optional; this rule authorizes no new optional context. Optional material cannot add an outside event, compensate for a missing mandatory participant or link, change the root, or change semantic axes, evidence, or completeness.\n\nThis rule changes only the outward focus-closure boundary and participant occurrence custody. It does not prescribe or alter event types, entity types, mandatory participants or links, roles, root-selection rules, semantic axes, statistics, evidence grounding, completeness rules, or projection policy.\n--- END V15 SINGLE SCIENTIFIC CHANGE ---\n\n--- FROZEN EXPOSED CASE ---\n{\n  \"case_id\": \"generalization-uncertainty\",\n  \"focus_passage\": \"the majority of which were classified as of uncertain significance\",\n  \"local_context\": \"Variants in the SLC12A3 gene were analyzed using next generation sequencing and were compared with the clinical data.\\nRESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance. Hyponatremia was determined at a higher rate in patients with c.506-276A>G (75.00%), c.282+492G>A (85.70%), c.282+499G>C (87.00%), c.282+495G>A (85.00%), and c.505+375G>A (92.30%) variants in particular.\",\n  \"source_id\": \"exposed-human-genetics\",\n  \"source_sha256\": \"91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b\"\n}\n--- END FROZEN EXPOSED CASE ---\n",
+              "type": "input_text"
+            }
+          ],
+          "id": "msg_0ce65718ea22f429006a629830d1d4819ba7116740bad85bd9",
+          "role": "user",
+          "status": "completed",
+          "type": "message"
+        }
+      ]
+    }
+  },
+  "receipt_sha256": "24ab53d5713513c83e4bea93b9bc8ce73bd06fa99ddcf885dc5418787ce77145",
+  "requested_and_observed_budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.028437,
+    "observed_latency_seconds": 28.99031350000587,
+    "observed_output_tokens": 4034,
+    "observed_total_tokens": 8267,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "response_id": "resp_0ce65718ea22f429006a629830cb38819baf516b6a07d95700",
+  "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+  "stage": "GENERALIZATION_V15_EXPOSED:generalization-uncertainty",
+  "typed_output": {
+    "case_id": "generalization-uncertainty",
+    "completeness": "COMPLETE",
+    "inventory": [
+      {
+        "event_id": "e1",
+        "event_type": "CLASSIFICATION",
+        "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+        "explanation": "The highlighted finding explicitly classifies the majority of the variants as having uncertain significance.",
+        "trigger_text": "were classified as of uncertain significance"
+      }
+    ],
+    "links": [
+      {
+        "arguments": [
+          {
+            "explanation": "The variants are the entities being classified.",
+            "role": "AFFECTED_ENTITY",
+            "target_id": "p1",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "e1"
+      }
+    ],
+    "participants": [
+      {
+        "entity_type": "VARIANT",
+        "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+        "exact_text": "947 variants",
+        "explanation": "The referring expression \"which\" uniquely resolves to the antecedent occurrence \"947 variants\".",
+        "participant_id": "p1"
+      }
+    ],
+    "root_event_id": "e1",
+    "semantic_axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "NOT_APPLICABLE",
+        "event_id": "e1",
+        "evidence_items": [
+          "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance."
+        ],
+        "explanation": "The classification is explicitly asserted, and the assigned classification is uncertain significance. The finding reports no statistical observation and does not explicitly interpret statistical significance.",
+        "polarity": "AFFIRMED",
+        "statistical_observations": [
+          {
+            "exact_text": null,
+            "observation_type": "NONE"
+          }
+        ],
+        "uncertainty": "UNCERTAIN"
+      }
+    ],
+    "structure_explanation": "The highlighted finding is fully represented by one classification event with its uniquely resolvable affected variant participant."
+  }
+}

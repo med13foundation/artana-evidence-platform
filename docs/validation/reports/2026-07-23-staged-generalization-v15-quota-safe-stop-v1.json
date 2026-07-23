@@ -1,0 +1,109 @@
+{
+  "schema_version": "artana.staged_generalization.v15_quota_safe_stop.v1",
+  "recorded_at_utc": "2026-07-23T22:42:17Z",
+  "experiment_id": "staged-generalization-v15-exposed-run-v1",
+  "administrative_state": "QUOTA_PAUSED_PARTIAL_EXECUTION_AFTER_SCIENTIFIC_FAIL_FAST",
+  "safe_stop_reason": "CODEX_QUOTA_NEARLY_EXHAUSTED",
+  "scientific_terminal_preserved": true,
+  "scientific_result_rescored": false,
+  "scientific_terminal": {
+    "decision": "V15_EXPOSED_GATE_FAIL_UNRELATED_REGRESSION",
+    "failed_case_id": "generalization-uncertainty",
+    "first_failure_classification": "UNRELATED_REGRESSION",
+    "root_cause_classification": "FOCUS_CLOSURE_AND_OCCURRENCE_CUSTODY",
+    "result_path": "docs/validation/results/2026-07-23-staged-generalization-v15-exposed-run-v1.json",
+    "result_sha256": "a0f5a674b102521b5237fd37a840e98e601925813188fa0f36378a3dfb39ab7d"
+  },
+  "execution_accounting": {
+    "planned_case_count": 6,
+    "completed_case_ids": [
+      "generalization-comparison-canary",
+      "generalization-drug-sensitivity",
+      "generalization-uncertainty"
+    ],
+    "unstarted_case_ids": [
+      "generalization-nested-event",
+      "generalization-negated-association",
+      "generalization-null-association"
+    ],
+    "provider_attempt_records": [
+      {
+        "case_id": "generalization-comparison-canary",
+        "final_state": "ACKNOWLEDGED",
+        "provider_creation_calls": 1,
+        "provider_retries": 0
+      },
+      {
+        "case_id": "generalization-drug-sensitivity",
+        "final_state": "ACKNOWLEDGED",
+        "provider_creation_calls": 1,
+        "provider_retries": 0
+      },
+      {
+        "case_id": "generalization-uncertainty",
+        "final_state": "ACKNOWLEDGED",
+        "provider_creation_calls": 1,
+        "provider_retries": 0
+      }
+    ],
+    "currently_reserved_attempt": null,
+    "provider_request_in_flight": false,
+    "unresolved_provider_response": false,
+    "provider_response_recovery_needed": false,
+    "all_completed_responses_persisted": true,
+    "all_input_items_persisted": true,
+    "all_receipts_valid": true,
+    "all_evaluations_persisted": true,
+    "provider_calls": 3,
+    "completed_provider_calls": 3,
+    "provider_retries": 0,
+    "duplicate_creation_calls": 0
+  },
+  "telemetry": {
+    "input_tokens": 12570,
+    "cached_input_tokens": 0,
+    "output_tokens": 7314,
+    "reasoning_tokens": 5692,
+    "total_tokens": 19884,
+    "latency_seconds": 56.05287574999966,
+    "cost_usd": 0.056454000000000004,
+    "remaining_cost_usd": 4.9435459999999996,
+    "budget_exhausted": false,
+    "spend_fully_accounted": true
+  },
+  "safety_invariants": {
+    "fresh_cases_consumed": 0,
+    "remaining_fresh_cases_preserved": 7,
+    "graph_writes": 0,
+    "trusted_graph_promotion": false,
+    "next_provider_call_authorized": false,
+    "v16_authorized": false,
+    "fresh_validation_authorized": false
+  },
+  "resumption_gate": {
+    "reconcile_existing_drug_sensitivity_attempt_and_response_first": true,
+    "drug_sensitivity_reconciliation_status_at_seal": "COMPLETED_PERSISTED_EVALUATED_PASS",
+    "verify_all_sealed_hashes_before_any_future_request": true,
+    "continue_v15_identity": false,
+    "reason": "V15 already reached its frozen scientific fail-fast terminal before the quota safe stop"
+  },
+  "sealed_artifact_hashes": {
+    "docs/validation/evaluations/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-comparison-canary-evaluation.json": "18bf1ee42da95eac2c08014c0d097a0de2b45bdfddf2636fb7391503cab852dc",
+    "docs/validation/evaluations/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-drug-sensitivity-evaluation.json": "6522a1986893a0ed2fed5518084fca17b273e3a2e8c400e9e3a0ead6a1833552",
+    "docs/validation/evaluations/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-uncertainty-evaluation.json": "1be387c60e966aa959a0e30b8bade962ad6c1d13e0198ee912d3985d4ba3385b",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-comparison-canary-attempt.json": "16c053eceaca6c12c2bbc5c46e520d3d58f4cd1275838897c9322a74ae2a801d",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-comparison-canary-custody.json": "fafe8e26e6f8a82304281a4858590c23e43f6661b229e3d3ec2f3603a1b85ba0",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-comparison-canary.json": "4b50cbed645e1a9a89a8d820f77db0d80c3408e4119617725fdccdcc02e7ca47",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-drug-sensitivity-attempt.json": "101c36b190e96f1b8cfcd65f378d6bc0dbe3bf8302a0fd0400ec2482d9c31491",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-drug-sensitivity-custody.json": "8d9e33299471e801a2437b2abeafe6a515317aa8e5d920b46176adf57476ea5c",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-drug-sensitivity.json": "b84d5278e7bd20a74c8676789220faa8de5fe4cf8eda905891511d050519e3e8",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-uncertainty-attempt.json": "df80f16c70af4905f7bb8dea93fed0302d5128400c1c082424e17f4decada885",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-uncertainty-custody.json": "6fcc6bd7678737ade360e09b0f9b8d73a9eb231d47cba9f8e93539f47623b41c",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-uncertainty.json": "24ab53d5713513c83e4bea93b9bc8ce73bd06fa99ddcf885dc5418787ce77145",
+    "docs/validation/reports/2026-07-23-staged-generalization-v15-exposed-run-v1-final.md": "e31bc779b0a51d0d5831c6b13fac580a0d708f7c2fe14b75f0784d6ac8551587",
+    "docs/validation/results/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-comparison-canary-raw.json": "34345f016d2872a7d2fa77368135ac47abc5408daf11c9301e9a769ee1cbdbd2",
+    "docs/validation/results/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-drug-sensitivity-raw.json": "1be167468d8bb2dd71aaf0a0c6fb06138ebc4448460c55068906b1e712ab93a7",
+    "docs/validation/results/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-uncertainty-raw.json": "486fd2394cbff2b04737e487c23a9fa0deea069b8517ab576e73fa5e5fc878ad",
+    "docs/validation/results/2026-07-23-staged-generalization-v15-exposed-run-v1.json": "a0f5a674b102521b5237fd37a840e98e601925813188fa0f36378a3dfb39ab7d"
+  }
+}

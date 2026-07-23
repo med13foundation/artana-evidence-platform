@@ -1,0 +1,57 @@
+{
+  "case_id": "generalization-uncertainty",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "e1",
+      "event_type": "CLASSIFICATION",
+      "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+      "explanation": "The highlighted finding explicitly classifies the majority of the variants as having uncertain significance.",
+      "trigger_text": "were classified as of uncertain significance"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "The variants are the entities being classified.",
+          "role": "AFFECTED_ENTITY",
+          "target_id": "p1",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "e1"
+    }
+  ],
+  "participants": [
+    {
+      "entity_type": "VARIANT",
+      "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+      "exact_text": "947 variants",
+      "explanation": "The referring expression \"which\" uniquely resolves to the antecedent occurrence \"947 variants\".",
+      "participant_id": "p1"
+    }
+  ],
+  "root_event_id": "e1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "NOT_APPLICABLE",
+      "event_id": "e1",
+      "evidence_items": [
+        "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance."
+      ],
+      "explanation": "The classification is explicitly asserted, and the assigned classification is uncertain significance. The finding reports no statistical observation and does not explicitly interpret statistical significance.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "UNCERTAIN"
+    }
+  ],
+  "structure_explanation": "The highlighted finding is fully represented by one classification event with its uniquely resolvable affected variant participant."
+}

@@ -1,0 +1,100 @@
+{
+  "bionlp_cg_projection_lane": "RAW_REVIEW_ONLY",
+  "case_id": "generalization-uncertainty",
+  "custody": {
+    "bundle_sha256": "6fcc6bd7678737ade360e09b0f9b8d73a9eb231d47cba9f8e93539f47623b41c",
+    "output_sha256": "aaaed649d16a809355db7d2a519b01d8b3abf56901e80c773da4c1baa285a20a",
+    "provider_input_sha256": "f6f6a3f5148d156913a03835070ae168cd9ed06c828a0704c24b1de1a2c95f59",
+    "raw_output_sha256": "486fd2394cbff2b04737e487c23a9fa0deea069b8517ab576e73fa5e5fc878ad",
+    "receipt_sha256": "24ab53d5713513c83e4bea93b9bc8ce73bd06fa99ddcf885dc5418787ce77145",
+    "response_id": "resp_0ce65718ea22f429006a629830cb38819baf516b6a07d95700",
+    "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+    "stage": "GENERALIZATION_V15_EXPOSED:generalization-uncertainty"
+  },
+  "evaluator_implementation": "repair_v14.evaluate_v14_case",
+  "experiment_id": "staged-generalization-v15-exposed-run-v1",
+  "failure_classification": "UNRELATED_REGRESSION",
+  "graph_writes": 0,
+  "qualification_credit": false,
+  "response_id": "resp_0ce65718ea22f429006a629830cb38819baf516b6a07d95700",
+  "schema_version": "artana.staged_generalization.v15_case_evaluation.v1",
+  "scientific_decision_lane": "SOURCE_SEMANTICS",
+  "trusted_promotion": false,
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.028437,
+    "input_tokens": 4233,
+    "latency_seconds": 28.99031350000587,
+    "output_tokens": 4034,
+    "reasoning_tokens": 3624,
+    "total_tokens": 8267
+  },
+  "v14_evaluation": {
+    "effective_metrics": {
+      "benchmark_projection": null,
+      "benchmark_projection_scope": "NOT_APPLICABLE",
+      "benchmark_projection_status": "NOT_APPLICABLE",
+      "case_id": "generalization-uncertainty",
+      "completeness": "COMPLETE",
+      "exact_evidence_grounding": true,
+      "failure_reasons": [
+        "missing required core participants: ['gene']",
+        "required core event arguments are missing"
+      ],
+      "focus_event_passed": false,
+      "full_focus_cg_status": "NOT_APPLICABLE",
+      "graph_writes": 0,
+      "historical_grader_passed": false,
+      "mandatory_participants_passed": false,
+      "participant_roles_passed": false,
+      "passed": false,
+      "permitted_context_count": 0,
+      "qualification_credit": false,
+      "root_only_failure": false,
+      "root_selection_status": "FAIL",
+      "semantic_axes_passed": true,
+      "source_dimensions_except_root_passed": false,
+      "source_semantic_status": "FAIL",
+      "trusted_promotion": false,
+      "unsupported_extraction_count": 0
+    },
+    "optional_source_entailed_edge": {
+      "accepted_count": 0,
+      "event_key": "elevating",
+      "normalization_status": "NOT_APPLICABLE",
+      "observed_count": 0,
+      "role": "CAUSAL_AGENT",
+      "target_key": "proteins",
+      "target_kind": "PARTICIPANT"
+    },
+    "raw_bionlp_cg_projection_preserved": true,
+    "raw_v13_metrics": {
+      "benchmark_projection": null,
+      "benchmark_projection_scope": "NOT_APPLICABLE",
+      "benchmark_projection_status": "NOT_APPLICABLE",
+      "case_id": "generalization-uncertainty",
+      "completeness": "COMPLETE",
+      "exact_evidence_grounding": true,
+      "failure_reasons": [
+        "missing required core participants: ['gene']",
+        "required core event arguments are missing"
+      ],
+      "focus_event_passed": false,
+      "full_focus_cg_status": "NOT_APPLICABLE",
+      "graph_writes": 0,
+      "historical_grader_passed": false,
+      "mandatory_participants_passed": false,
+      "participant_roles_passed": false,
+      "passed": false,
+      "permitted_context_count": 0,
+      "qualification_credit": false,
+      "root_only_failure": false,
+      "root_selection_status": "FAIL",
+      "semantic_axes_passed": true,
+      "source_dimensions_except_root_passed": false,
+      "source_semantic_status": "FAIL",
+      "trusted_promotion": false,
+      "unsupported_extraction_count": 0
+    }
+  }
+}
