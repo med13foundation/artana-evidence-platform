@@ -1,0 +1,119 @@
+{
+  "case_id": "generalization-explicit-nested-cause",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "E1",
+      "event_type": "REGULATION",
+      "exact_evidence": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.",
+      "explanation": "This explicit causal relation states that the HCMV immediate-early proteins are responsible for the nested elevation event.",
+      "trigger_text": "responsible for"
+    },
+    {
+      "event_id": "E2",
+      "event_type": "POSITIVE_REGULATION",
+      "exact_evidence": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.",
+      "explanation": "This is the highlighted event: an increase in p53 levels in infected fibroblasts. It is retained as the root event.",
+      "trigger_text": "elevating p53 levels"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "The proteins are explicitly described as responsible for the effect.",
+          "role": "CAUSAL_AGENT",
+          "target_id": "P1",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "The causal relation affects the nested p53-elevation event.",
+          "role": "EFFECT_EVENT",
+          "target_id": "E2",
+          "target_kind": "EVENT"
+        }
+      ],
+      "event_id": "E1"
+    },
+    {
+      "arguments": [
+        {
+          "explanation": "p53 is the entity whose levels increase.",
+          "role": "AFFECTED_ENTITY",
+          "target_id": "P2",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "The elevation is specified to occur in infected fibroblasts.",
+          "role": "CONTEXTUAL_PARTICIPANT",
+          "target_id": "P3",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "E2"
+    }
+  ],
+  "participants": [
+    {
+      "entity_type": "GENE_OR_PROTEIN",
+      "exact_evidence": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.",
+      "exact_text": "HCMV immediate-early proteins",
+      "explanation": "These proteins are explicitly stated to be responsible for the elevation event.",
+      "participant_id": "P1"
+    },
+    {
+      "entity_type": "GENE_OR_PROTEIN",
+      "exact_evidence": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.",
+      "exact_text": "p53",
+      "explanation": "p53 is the protein whose levels are elevated.",
+      "participant_id": "P2"
+    },
+    {
+      "entity_type": "POPULATION",
+      "exact_evidence": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.",
+      "exact_text": "infected fibroblasts",
+      "explanation": "This names the cellular population or context in which the p53 elevation occurs.",
+      "participant_id": "P3"
+    }
+  ],
+  "root_event_id": "E2",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "ENABLES",
+      "event_id": "E1",
+      "evidence_items": [
+        "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts."
+      ],
+      "explanation": "The sentence affirms a causal responsibility relation, but gives no statistical observation or explicit statistical significance interpretation.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    },
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "INCREASED",
+      "event_id": "E2",
+      "evidence_items": [
+        "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts."
+      ],
+      "explanation": "The focused finding explicitly asserts elevation of p53 levels. No p-value, effect estimate, confidence interval, or statistical significance claim is provided.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    }
+  ],
+  "structure_explanation": "The graph represents the explicit causal relation as E1 and preserves the highlighted elevating event as the root E2, with the proteins as causal agent, p53 as affected entity, and infected fibroblasts as contextual population. The later semicolon-linked finding is not separately inventoried because the highlighted finding is atomic."
+}

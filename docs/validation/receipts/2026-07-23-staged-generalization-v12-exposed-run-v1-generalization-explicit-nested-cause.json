@@ -1,0 +1,156 @@
+{
+  "budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.031409,
+    "observed_latency_seconds": 37.33976554199762,
+    "observed_output_tokens": 4729,
+    "observed_total_tokens": 7764,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "confirmation_retrieval_requests": 1,
+  "creation_envelope_sha256": "392e6b6c7ccbe05d0ff0de03729096b6f56ea725e74c75b39f036697269cb651",
+  "differences": [
+    {
+      "allowlisted": true,
+      "creation_sha256": "1d8ab8d24e31d64b2d74b1f2eb9b3c18759ef8e503ab842d45cf092f7c09dd45",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[0].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "1aae18794ecd7a3bc3c5210a083f64943c17cde4e687496c197ac5f92cae0194",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[1].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "7045ff8843ac76bf1d9e475676de9de870899fe79176d41548ba36ff9370d21f",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[2].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "1f28a391ad63431cd59e236dfcbd70ff967910a485af7e98668b6d8ac9c364fc",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[3].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "7047a5a57b84b921ccd654b537370a24cbeee526ef4de2ad4a327e2c2407810e",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[4].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "b890675faf73ddb2ba55ab9916e00a8dfdf21b13f247fdf3068a69c728737026",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[5].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "0b4aa165833b2f67126437eff86ea4fb6b0d7220595052b91ae0ce82030e85ab",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[6].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "b45a34dfa95b57acd30412dcb9a2c020cf5a8ea208e152ae87371bd7cf66d649",
+      "difference": "FOREGROUND_USAGE_SNAPSHOT_CHANGED",
+      "path": "$.usage",
+      "rationale": "usage is record-only telemetry and confirmation is the authoritative completed snapshot",
+      "retrieval_sha256": "dda526062a08ae695b23e0355d7a22be78e15d6ac28189779c1be84fc3a4b499"
+    }
+  ],
+  "duplicate_creation_calls": 0,
+  "foreground_request_timeout_seconds": 1800.0,
+  "foreground_usage_policy": {
+    "authoritative_snapshot": "CONFIRMATION_RETRIEVAL",
+    "confirmation_usage_sha256": "dda526062a08ae695b23e0355d7a22be78e15d6ac28189779c1be84fc3a4b499",
+    "creation_usage_sha256": "b45a34dfa95b57acd30412dcb9a2c020cf5a8ea208e152ae87371bd7cf66d649",
+    "scientific_validity_dependency": false,
+    "snapshots_differ": true
+  },
+  "identity": {
+    "created_at": 1784825835.0,
+    "model": "gpt-5.6-luna",
+    "object_type": "response",
+    "output_items": [
+      [
+        "reasoning",
+        "rs_0b7ba39140df0f8b006a6247ebed60819982db85d699e557d2"
+      ],
+      [
+        "reasoning",
+        "rs_0b7ba39140df0f8b006a6247f08df88199bbff738e42d23d6a"
+      ],
+      [
+        "reasoning",
+        "rs_0b7ba39140df0f8b006a6247f5015881998117530485939400"
+      ],
+      [
+        "reasoning",
+        "rs_0b7ba39140df0f8b006a6247f909d881999f4d0eac559f9a54"
+      ],
+      [
+        "reasoning",
+        "rs_0b7ba39140df0f8b006a6247fd3f388199b7aaaacfa7a03467"
+      ],
+      [
+        "reasoning",
+        "rs_0b7ba39140df0f8b006a62480153188199a99a49e70798505f"
+      ],
+      [
+        "reasoning",
+        "rs_0b7ba39140df0f8b006a624805a56c819996bbea5d27308dfd"
+      ],
+      [
+        "message",
+        "msg_0b7ba39140df0f8b006a62480c9b34819983b6630ceda70cc4"
+      ]
+    ],
+    "response_id": "resp_0b7ba39140df0f8b006a6247eb84488199a33db58e96ce7712",
+    "status": "completed"
+  },
+  "input_item_retrieval_requests": 1,
+  "model_generation_calls": 1,
+  "provider_creation_calls": 1,
+  "provider_input_sha256": "7e9500ef7daafd19dc9759625f64a84dc1f736c3014cf2628d35bf173e4f1ba0",
+  "provider_retries": 0,
+  "provider_schema_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+  "retrieval_envelope_sha256": "d70b66246bf343ede2c6f1e3302477ff299531839f66ba2fa35e534e11dc3c89",
+  "schema_version": "artana.provider_receipt_boundary.foreground_telemetry.v3",
+  "scientific_payload_sha256": "6c89984f438147b6a6f6ce5c90b6e2dc20969b46f1efe0ecfee35b416a36759e",
+  "status": "VERIFIED_LIVE",
+  "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+  "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.031409,
+    "input_tokens": 3035,
+    "latency_seconds": 37.33976554199762,
+    "output_tokens": 4729,
+    "reasoning_tokens": 3624,
+    "total_tokens": 7764
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "preregistration_sha256": "12a0b0baf6e3a7134ef340091012805e343f799f148a8f3c104cc75da17831c4",
+  "provider_creation_limit": 1,
+  "provider_input_sha256": "7e9500ef7daafd19dc9759625f64a84dc1f736c3014cf2628d35bf173e4f1ba0",
+  "provider_retries": 0,
+  "response_id": "resp_0b7ba39140df0f8b006a6247eb84488199a33db58e96ce7712",
+  "stage": "GENERALIZATION_V12_EXPOSED:generalization-explicit-nested-cause",
+  "state": "ACKNOWLEDGED"
+}

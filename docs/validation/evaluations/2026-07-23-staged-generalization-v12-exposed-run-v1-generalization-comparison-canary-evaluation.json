@@ -1,0 +1,38 @@
+{
+  "case_id": "generalization-comparison-canary",
+  "experiment_id": "staged-generalization-v12-exposed-run-v1",
+  "failure_classification": null,
+  "graph_writes": 0,
+  "qualification_credit": false,
+  "response_id": "resp_0dd69883b4d99e4d006a6247c011c8819895890e105ed0e69b",
+  "schema_version": "artana.staged_generalization.v12_case_evaluation.v1",
+  "trusted_promotion": false,
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.011707,
+    "input_tokens": 3037,
+    "latency_seconds": 13.601307832999737,
+    "output_tokens": 1445,
+    "reasoning_tokens": 877,
+    "total_tokens": 4482
+  },
+  "v12_metrics": {
+    "case_id": "generalization-comparison-canary",
+    "cg_projection": null,
+    "cg_projection_status": "NOT_APPLICABLE",
+    "exact_evidence_grounding": true,
+    "failure_reasons": [],
+    "focus_event_passed": true,
+    "graph_writes": 0,
+    "historical_grader_passed": true,
+    "mandatory_participants_passed": true,
+    "participant_roles_passed": true,
+    "passed": true,
+    "permitted_context_count": 0,
+    "qualification_credit": false,
+    "semantic_axes_passed": true,
+    "source_semantic_status": "PASS",
+    "trusted_promotion": false,
+    "unsupported_extraction_count": 0
+  }
+}
