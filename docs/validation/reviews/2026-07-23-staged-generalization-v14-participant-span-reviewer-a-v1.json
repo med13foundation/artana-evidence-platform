@@ -1,0 +1,72 @@
+{
+  "schema_version": "artana.staged_generalization.v14_participant_span_review.v1",
+  "reviewer_id": "v14_participant_span_reviewer_a",
+  "case_id": "generalization-explicit-nested-cause",
+  "review_scope": "INDEPENDENT_SOURCE_SEMANTIC_PARTICIPANT_BOUNDARY",
+  "independence_assertions": {
+    "benchmark_projection_consulted_only_after_source_semantic_adjudication": true,
+    "fresh_cases_accessed": 0,
+    "graph_writes": 0,
+    "model_provider_calls": 0,
+    "provider_writes": 0,
+    "sealed_experiment_artifacts_modified": false,
+    "trusted_graph_promotion": false,
+    "review_artifact_is_the_only_repository_write": true
+  },
+  "source": {
+    "source_id": "PMID-7966592",
+    "source_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-7966592.txt",
+    "source_sha256": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+    "focus_start": 1091,
+    "focus_end": 1206,
+    "focus_text": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts"
+  },
+  "candidate_span_verdicts": [
+    {
+      "exact_text": "HCMV immediate-early proteins",
+      "start": 1091,
+      "end": 1120,
+      "source_semantic_verdict": "PASS",
+      "bionlp_cg_exact_projection_verdict": "FAIL",
+      "rationale": "This is the complete nominal participant mention. It retains the protein head and the scientifically restrictive HCMV origin, so it faithfully identifies the causal actor without relying on an external relation or benchmark convention."
+    },
+    {
+      "exact_text": "immediate-early proteins",
+      "start": 1096,
+      "end": 1120,
+      "source_semantic_verdict": "FAIL",
+      "bionlp_cg_exact_projection_verdict": "PASS",
+      "rationale": "The span is a well-formed protein-class phrase, but omitting the restrictive HCMV modifier broadens or under-specifies the causal actor. It is not a complete standalone representation of the source participant unless an equivalent HCMV qualification is separately represented and linked."
+    },
+    {
+      "exact_text": "HCMV immediate-early",
+      "start": 1091,
+      "end": 1111,
+      "source_semantic_verdict": "FAIL",
+      "bionlp_cg_exact_projection_verdict": "FAIL",
+      "rationale": "This is a modifier sequence without the entity head proteins. It does not independently denote the protein participant and cannot be repaired merely by calling proteins an adjacent generic type word."
+    }
+  ],
+  "source_general_boundary_rule": {
+    "rule": "Select the smallest exact contiguous nominal span that independently preserves the source-defined entity identity and scope. The span must contain either an independently referential lexical identifier or a semantic noun head, and it must retain every restrictive modifier needed to avoid broadening the referent. A generic type noun may be omitted only when the remaining text independently names the same entity.",
+    "head_retention_alone_is_sufficient": false,
+    "equivalent_distributed_representation_allowed": "Only when every omitted scientifically restrictive qualifier is separately represented and explicitly linked so that the complete source meaning is preserved.",
+    "fail_closed_condition": "If removing a head or restrictive modifier can change or broaden the participant identity and no equivalent linked representation exists, reject the span."
+  },
+  "slc12a3_preservation": {
+    "expected_span": "SLC12A3",
+    "adjacent_source_text": "SLC12A3 gene",
+    "preserved": true,
+    "rationale": "SLC12A3 is an independently referential lexical gene identifier. Omitting the adjacent generic noun gene neither removes the entity head needed for a descriptive mention nor broadens the gene identity."
+  },
+  "bionlp_cg_separation": {
+    "qualification_blocking": false,
+    "source_semantic_truth_changed_by_projection": false,
+    "conclusion": "BioNLP-CG separates HCMV as Organism T33 from immediate-early proteins as Gene_or_gene_product T34 and uses T34 as the E25 Cause. Therefore immediate-early proteins is exact-projection-valid but is not, by that fact alone, a complete universal source-semantic participant."
+  },
+  "material_uncertainty": {
+    "present": true,
+    "description": "The shorter phrase immediate-early proteins is linguistically well formed and locally disambiguated by the surrounding sentence. It could preserve source semantics in a representation that separately encodes and links the HCMV qualifier. The current standalone Artana participant does not encode that equivalence, so the fail-closed source-semantic verdict remains FAIL."
+  },
+  "final_verdict": "SOURCE_GENERAL_REPAIR_SUPPORTED_ONLY_WITH_ENTITY_HEAD_AND_RESTRICTIVE_MODIFIER_PRESERVATION"
+}

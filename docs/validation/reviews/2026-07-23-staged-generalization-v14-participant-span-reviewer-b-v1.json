@@ -1,0 +1,102 @@
+{
+  "schema_version": "staged-generalization-v14-participant-span-review-v1",
+  "review_id": "2026-07-23-staged-generalization-v14-participant-span-reviewer-b-v1",
+  "reviewer_id": "independent-participant-span-reviewer-b",
+  "review_scope": "Source-semantic participant denotation and occurrence boundary for the sealed V13 PMID-7966592 failure",
+  "independence_assertions": {
+    "independent_of_other_v14_reviewers": true,
+    "other_v14_review_outputs_consulted": false,
+    "v14_prompt_or_desired_provider_output_seen": false,
+    "scientific_verdict_formed_from_source_before_contract_comparison": true,
+    "public_cg_used_as_corroboration_only": true
+  },
+  "execution_assertions": {
+    "provider_calls_made": 0,
+    "fresh_cases_accessed": 0,
+    "graph_writes": 0,
+    "trusted_graph_promotions": 0,
+    "repository_files_written_other_than_this_review": 0
+  },
+  "source_custody": {
+    "source_id": "PMID-7966592",
+    "frozen_source_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-7966592.txt",
+    "frozen_source_sha256": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+    "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/7966592/",
+    "pubmed_record_reproduces_frozen_clause": true,
+    "focus_clause": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts",
+    "offset_convention": "zero-based, end-exclusive character offsets; byte offsets are identical through these ASCII spans",
+    "focus_clause_start": 1091,
+    "focus_clause_end": 1206,
+    "public_cg_corroboration": {
+      "a1_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-7966592.a1",
+      "a1_sha256": "2e47b1725178510245a711cb28749271730df2502e84035d2364e6b663230864",
+      "a2_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-7966592.a2",
+      "a2_sha256": "8921ae260cb96c14867089bd02e12cf614416aacd442d9bed7145db089ec445c",
+      "annotations": [
+        "T33 Organism 1091 1095 HCMV",
+        "T34 Gene_or_gene_product 1096 1120 immediate-early proteins",
+        "E25 Regulation Cause:T34 Theme:E26"
+      ]
+    }
+  },
+  "candidate_span_verdicts": [
+    {
+      "exact_text": "HCMV immediate-early proteins",
+      "start": 1091,
+      "end": 1120,
+      "source_semantic_verdict": "VALID_STRICTLY_LOSSLESS",
+      "current_flat_schema_acceptance": "ACCEPT",
+      "reason": "This is the complete source noun phrase denoting the HCMV-restricted immediate-early protein participant and preserves both the nominal head and organism restriction."
+    },
+    {
+      "exact_text": "immediate-early proteins",
+      "start": 1096,
+      "end": 1120,
+      "source_semantic_verdict": "CONDITIONALLY_VALID_HEAD_COMPLETE",
+      "current_flat_schema_acceptance": "REJECT_UNLESS_HCMV_RESTRICTION_IS_EXPLICITLY_PRESERVED",
+      "reason": "The span retains the entity-denoting nominal head and denotes an immediate-early protein class, but omits the HCMV restriction. It is acceptable in the separate CG projection or in a richer representation with an explicit organism-of-origin relation, not as a lossless replacement in the current flat source-semantic participant schema."
+    },
+    {
+      "exact_text": "HCMV immediate-early",
+      "start": 1091,
+      "end": 1111,
+      "source_semantic_verdict": "INVALID_HEADLESS_MODIFIER_SEQUENCE",
+      "current_flat_schema_acceptance": "REJECT",
+      "reason": "In this source occurrence, HCMV and immediate-early modify proteins. Removing proteins removes the entity-denoting nominal head; the output entity type or surrounding evidence cannot reconstruct the omitted source text."
+    }
+  ],
+  "source_general_boundary_rule": {
+    "rule": "An adjacent generic entity-type word may be omitted only when the retained exact contiguous text is an independently lexicalized biomedical name that denotes the same referent in that source occurrence. Retain the nominal head when the remainder is only a modifier, classifier, stage, taxonomic restriction, or other attributive material. Also retain nonredundant restrictive modifiers unless their semantic relation is explicitly represented elsewhere.",
+    "decision_test": "After removing the candidate type word, determine whether the retained source text itself, without using the output entity type, explanation, or neighboring evidence to fill missing words, independently denotes the same participant. If it does not, the removed word is required.",
+    "source_general": true,
+    "pmid_specific": false,
+    "benchmark_projection_specific": false,
+    "changes_event_inventory_or_links": false
+  },
+  "slc12a3_preservation": {
+    "source_form": "SLC12A3 gene",
+    "accepted_occurrence": "SLC12A3",
+    "generic_suffix": "gene",
+    "preserved": true,
+    "reason": "SLC12A3 is an independently lexicalized gene symbol that denotes the same named entity without the adjacent type label. The rule therefore preserves the prior SLC12A3 correction while still requiring proteins after the attributive phrase immediate-early."
+  },
+  "cg_lane_conclusion": {
+    "source_semantic_and_cg_lanes_remain_separate": true,
+    "conclusion": "The public CG split of HCMV as Organism and immediate-early proteins as Gene_or_gene_product corroborates that proteins is required. Its omission of HCMV from T34 is a benchmark representation convention and must not redefine the lossless source-semantic participant boundary.",
+    "exact_cg_projection_may_accept": "immediate-early proteins",
+    "source_semantic_flat_schema_prefers": "HCMV immediate-early proteins"
+  },
+  "residual_disagreement": {
+    "material_to_v13_failure": false,
+    "issue": "A richer representation could validly split the HCMV organism restriction from the head-complete immediate-early proteins span.",
+    "resolution_for_current_contract": "Use the full HCMV immediate-early proteins span because the current participant schema has no explicit organism-of-origin relation.",
+    "undisputed_point": "HCMV immediate-early is incomplete and invalid because it omits the nominal head proteins."
+  },
+  "final_verdict": {
+    "verdict": "PASS_SOURCE_GENERAL_REPAIR_JUSTIFIED",
+    "v13_failure_classification": "MODEL_OR_PROMPT_PARTICIPANT_BOUNDARY_GAP",
+    "v13_returned_span_is_source_semantically_valid": false,
+    "reference_or_evaluator_defect_supported": false,
+    "smallest_supported_repair_scope": "Clarify independently denoting lexicalized names versus required nominal heads without changing events, participants, roles, links, semantic axes, evidence, root selection, or CG projection policy."
+  }
+}

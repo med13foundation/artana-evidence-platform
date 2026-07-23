@@ -1,0 +1,142 @@
+{
+  "case_id": "generalization-explicit-nested-cause",
+  "cg_separate_conclusion": {
+    "benchmark_projection": {
+      "arguments": [
+        "E25 Regulation/responsible --Cause--> T34 immediate-early proteins",
+        "E25 Regulation/responsible --Theme--> E26 Positive_regulation/elevating",
+        "E26 Positive_regulation/elevating --Theme--> E27 Gene_expression/levels",
+        "E27 Gene_expression/levels --Theme--> T35 p53"
+      ],
+      "direct_inner_causal_agent_present": false,
+      "official_a1_sha256": "2e47b1725178510245a711cb28749271730df2502e84035d2364e6b663230864",
+      "official_a2_sha256": "8921ae260cb96c14867089bd02e12cf614416aacd442d9bed7145db089ec445c"
+    },
+    "conclusion": "BioNLP-CG places the protein Cause only on the outer responsible event and does not propagate it to the inner elevating event. That is an exact benchmark projection convention, not a universal source-semantic rule.",
+    "exact_cg_projection_policy": "UNCHANGED_EXACT_AND_REVIEW_ONLY",
+    "qualification_blocking": false,
+    "qualification_credit": false,
+    "source_pass_cg_fail_can_coexist": true,
+    "universal_scientific_truth": false
+  },
+  "final_classification": {
+    "edge_classification": "PERMISSIBLE_SOURCE_GROUNDED_OPTIONAL_LINK",
+    "owning_boundary": "V14_LOCAL_REFERENCE_AND_EVALUATOR",
+    "reference_classification": "REFERENCE_AMBIGUITY_EXACT_LINK_SET_OVERCONSTRAINT",
+    "role_prompt_change_required": false,
+    "v13_rescoring_allowed": false
+  },
+  "independence_and_safety": {
+    "fresh_cases_accessed": 0,
+    "graph_writes": 0,
+    "independent_of_other_v14_role_reviews": true,
+    "provider_calls": 0,
+    "review_artifact_only_write": true,
+    "sealed_v13_artifacts_modified": false,
+    "shared_grader_modified": false,
+    "trusted_graph_promotion": false
+  },
+  "mandatory_outer_links": [
+    {
+      "event_key": "responsible",
+      "role": "CAUSAL_AGENT",
+      "target_key": "proteins",
+      "target_kind": "PARTICIPANT"
+    },
+    {
+      "event_key": "responsible",
+      "role": "EFFECT_EVENT",
+      "target_key": "elevating",
+      "target_kind": "EVENT"
+    }
+  ],
+  "review_inputs": {
+    "frozen_v13_adjudication_path": "docs/validation/adjudications/2026-07-23-pmid-7966592-nested-two-lane-adjudication-v1.json",
+    "frozen_v13_adjudication_sha256": "da87d13a2b9e31aff511f0e6cf6cef0dbc1279a236f922292057cf75f80c5da4",
+    "sealed_v13_raw_output_path": "docs/validation/results/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-explicit-nested-cause-raw.json",
+    "sealed_v13_raw_output_sha256": "1940d19258691ce6be3035fa5feddbff802858c33239716e30c770721269c8c5"
+  },
+  "reviewer_id": "v14_inner_role_reviewer_b",
+  "schema_version": "artana.staged_generalization.v14_inner_role_review.v1",
+  "source": {
+    "exact_sentence": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.",
+    "exact_sentence_sha256": "aa857c564549ea84a6d61aa515d7389a1ee2094016b906cd32bf46c0c2939eaf",
+    "source_id": "PMID-7966592",
+    "source_sha256": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+    "source_urls": [
+      "https://pubmed.ncbi.nlm.nih.gov/7966592/",
+      "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.txt",
+      "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.a1",
+      "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.a2"
+    ]
+  },
+  "source_general_rationale": {
+    "mandatory_status": "The direct inner link is not mandatory because the outer causal-agent link together with the outer-to-inner EFFECT_EVENT link already preserves the complete causal proposition.",
+    "optional_status": "In the source-general construction 'X is responsible for V-ing Y', X is the understood controller and causal actor of the V-ing event. A direct inner CAUSAL_AGENT link therefore restates source-supported meaning rather than inventing a new participant, event, or causal claim.",
+    "unsupported_status": "The link is not unsupported merely because the public CG graph uses a non-propagating canonical dependency representation.",
+    "validity_condition": "The optional edge is admissible only when its target resolves to the independently frozen, head-complete proteins participant. V13's actual truncated P1 text 'HCMV immediate-early' remains invalid and receives no credit from this role judgment."
+  },
+  "v14_local_evaluator_policy": {
+    "all_other_links": "REJECT",
+    "duplicate_links": "REJECT",
+    "mandatory_links": [
+      {
+        "event_key": "responsible",
+        "required_occurrences": 1,
+        "role": "CAUSAL_AGENT",
+        "target_key": "proteins",
+        "target_kind": "PARTICIPANT"
+      },
+      {
+        "event_key": "responsible",
+        "required_occurrences": 1,
+        "role": "EFFECT_EVENT",
+        "target_key": "elevating",
+        "target_kind": "EVENT"
+      },
+      {
+        "event_key": "elevating",
+        "required_occurrences": 1,
+        "role": "AFFECTED_ENTITY",
+        "target_key": "p53",
+        "target_kind": "PARTICIPANT"
+      },
+      {
+        "event_key": "elevating",
+        "required_occurrences": 1,
+        "role": "CONTEXTUAL_PARTICIPANT",
+        "target_key": "infected_fibroblasts",
+        "target_kind": "PARTICIPANT"
+      }
+    ],
+    "optional_cannot_compensate_for_missing_mandatory": true,
+    "optional_links": [
+      {
+        "event_key": "elevating",
+        "maximum_occurrences": 1,
+        "minimum_occurrences": 0,
+        "role": "CAUSAL_AGENT",
+        "target_key": "proteins",
+        "target_kind": "PARTICIPANT"
+      }
+    ],
+    "participant_occurrence_validation_remains_mandatory": true,
+    "policy_scope": "V14_LOCAL_ONLY",
+    "required_algorithm": "Compare mapped link multiplicities. Require every mandatory tuple exactly once, admit the one frozen optional tuple at most once, and reject every unmapped, differently typed, differently roled, differently targeted, or duplicate tuple.",
+    "sealed_v13_behavior_unchanged": true,
+    "shared_grader_behavior_unchanged": true
+  },
+  "verdict": {
+    "direct_inner_edge": {
+      "event_key": "elevating",
+      "role": "CAUSAL_AGENT",
+      "target_key": "proteins",
+      "target_kind": "PARTICIPANT"
+    },
+    "decision": "PERMISSIBLE_SOURCE_GROUNDED_OPTIONAL_LINK",
+    "mandatory": false,
+    "scientifically_supported": true,
+    "unresolved": false,
+    "unsupported_duplication": false
+  }
+}

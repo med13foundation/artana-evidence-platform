@@ -1,0 +1,165 @@
+{
+  "schema_version": "artana.staged_generalization.v14_complete_package_review.v1",
+  "reviewer_id": "v14_complete_package_reviewer_independent",
+  "reviewed_complete_package": true,
+  "preregistration_sha256": "65ed1cf34f956aceabd4d558fcc9bbca7eb4ab9fad133762c1beffb384a8afb7",
+  "runtime_dependency_manifest_sha256": "e777ab9e7b9890d8a688a2e8aa31c94cb2b69337372b7f2f4e14fdaa407cc8a5",
+  "reviewed_file_count": 25,
+  "reviewed_files_sha256": {
+    "docs/validation/adjudications/2026-07-23-staged-generalization-v14-participant-and-role-consensus-v1.json": "8ea1f52d30de85c5b0e94ce03fdcc013b7e8f4c52a48c14115f331fe99aec740",
+    "docs/validation/adjudications/2026-07-23-staged-generalization-v14-participant-rule-offline-audit-v1.json": "28977c2686746d1b730de3ec119858578be585f82e03408d3c5eaa2281ecd24a",
+    "docs/validation/manifests/2026-07-23-staged-generalization-v14-sealed-v13-manifest-v1.json": "ea03a3460ebd3d0e98c10ffa3a7bef1b1b07fe2bedbac1e2702910c909809f36",
+    "docs/validation/preregistrations/2026-07-23-staged-generalization-v14-exposed-run-v1.json": "65ed1cf34f956aceabd4d558fcc9bbca7eb4ab9fad133762c1beffb384a8afb7",
+    "docs/validation/prompts/2026-07-23-staged-generalization-v14-complete-participant-denotation.md": "854c3b6e08441e6d667ecd48c6f0b86ff26942b9fb2db760a822727634cdf6ad",
+    "docs/validation/reviews/2026-07-23-staged-generalization-v14-inner-role-reviewer-a-v1.json": "5879f69c71cc3ba10d06436e1075a3a4a96198f7bd099baf67af3fa247aa7050",
+    "docs/validation/reviews/2026-07-23-staged-generalization-v14-inner-role-reviewer-b-v1.json": "fa0de1ef6e1b2376a1b73d17e9fd545a4f89d9e08bd45242755d07cb804f9d15",
+    "docs/validation/reviews/2026-07-23-staged-generalization-v14-participant-span-reviewer-a-v1.json": "57811286cc3a9beb6e80668c99deb8d4bd39d79dadf050c301c2b1034015f865",
+    "docs/validation/reviews/2026-07-23-staged-generalization-v14-participant-span-reviewer-b-v1.json": "d7efbc5df6d673ee1be5a377b3de0c94de98e9f7f630a4858dbd92f140702b2d",
+    "docs/validation/reviews/2026-07-23-staged-generalization-v14-rule-wording-reviewer-a-v1.json": "eb62bea67ab7d9a2375e92984ca4550ccb991338ff1ae4af567848ec8dca4054",
+    "docs/validation/reviews/2026-07-23-staged-generalization-v14-rule-wording-reviewer-b-v1.json": "05d3b686af9904e7df8185e7403122ea06b793cc6b8a6d9dd72820b233f222cd",
+    "scripts/run_staged_generalization_v14_exposed.py": "06f12223e0007f7aea77b39b5222952e673f77b7628a16b2a7aa9327365ff1ad",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v14/__init__.py": "1b6ad3649d76dfad354f18dbd88f5070f5975d27e3c2490a1cd62b99c73d22f6",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v14/config.py": "495cb65c7adf6138d183783e4ec722c2d0ffae621236a4c2d82c61b13854ab31",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v14/evaluation.py": "28a6e6f7140bb5d240b34516afe52153d76753b5d6fc30d02ab44d59092811df",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v14/preflight.py": "c95cb95396e9e6584f5a2c812e181c8867b5ed9350156b36e689fdda812637d9",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v14/prompt.py": "5a2d1ebcd8939479f2f77795e1d82e80ff396fa8691fffcc3462f4a58b5e40a8",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v14/provider.py": "87b0a58e9fe0652fa4217387e7c97863ba9c2dd69e8aae8c8dea4eb97c177a04",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v14/reporting.py": "d06e12e7ec9518304345d587d6e6726484795c8b7a004c5cf4d8fbf5502ce307",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v14/runner.py": "89c050d8ef0b760677e084daffe019475c38ab98103b7eee0b86be53dc8296cd",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v14/terminal.py": "f0db834cf6c15c03a19f4c905a7ffd7650ed9fcf2afeff7e5aa34668f71ece69",
+    "tests/unit/test_staged_generalization_v14_evaluation.py": "2af2332aeef54cd052f3c71c9c9c1063e5b1baf7163e60ed807a396d26cba8e2",
+    "tests/unit/test_staged_generalization_v14_preflight.py": "fd20e53e4320c16550f10ca725b3510227c338cf582a1d1871e4d1568050be5b",
+    "tests/unit/test_staged_generalization_v14_prompt.py": "03ddbd383d848001cec06251e5eb691ff8e98f0def870e5019c6dcdf35273b78",
+    "tests/unit/test_staged_generalization_v14_runtime.py": "fd70a4a193d3bb1b66ba3e7cc9cd456f62ea53e6d2a5356ee1dcf1bc9ed86b3a"
+  },
+  "package_metrics": {
+    "v14_runtime_and_test_file_count": 14,
+    "v14_runtime_and_test_line_count": 4264,
+    "v14_complete_reviewed_file_count": 25,
+    "runtime_dependency_count": 124,
+    "frozen_input_count": 30,
+    "sealed_historical_file_count": 110
+  },
+  "tests": {
+    "v14_focused": {
+      "collected": 49,
+      "passed": 49,
+      "failed": 0,
+      "deselected": 0
+    },
+    "complete_staged_generalization": {
+      "collected": 237,
+      "passed": 236,
+      "failed": 0,
+      "deselected": 1,
+      "deselected_test": "tests/unit/test_staged_generalization_v13_preflight.py::test_remote_gate_requires_exact_branch_and_reports_untracked",
+      "deselection_reason": "This immutable V13 pre-execution test requires V13 output paths to be absent. V13 is now sealed and those output paths must exist. The V13 file and behavior remain byte-frozen, while V14 tests independently cover unused-path and exact remote-head gating."
+    },
+    "artifact_integrity": {
+      "collected": 54,
+      "passed": 54,
+      "failed": 0
+    }
+  },
+  "formatting_verdict": "PASS",
+  "lint_verdict": "PASS",
+  "mypy_strict_verdict": "PASS",
+  "static_validation": {
+    "ruff_format_checked_file_count": 14,
+    "ruff_lint_checked_file_count": 14,
+    "mypy_checked_file_count": 14
+  },
+  "scientific_scope_verdict": {
+    "verdict": "HARD_PASS",
+    "single_prompt_change": "COMPLETE_PARTICIPANT_DENOTATION_V1",
+    "rule": "Require the smallest complete participant span that independently denotes the biomedical entity while preserving its noun head and restrictive identity.",
+    "source_general": true,
+    "case_specific_provider_examples": false,
+    "event_inventory_changed": false,
+    "entity_types_changed": false,
+    "mandatory_participants_or_links_changed": false,
+    "root_selection_changed": false,
+    "semantic_axes_changed": false,
+    "evidence_grounding_changed": false,
+    "completeness_changed": false,
+    "bionlp_cg_projection_policy_changed": false
+  },
+  "evaluator_scope_verdict": {
+    "verdict": "HARD_PASS",
+    "implementation_scope": "V14_LOCAL_ONLY",
+    "permitted_optional_edge_count": [
+      0,
+      1
+    ],
+    "permitted_optional_edge": {
+      "event_key": "elevating",
+      "role": "CAUSAL_AGENT",
+      "target_kind": "PARTICIPANT",
+      "target_key": "proteins"
+    },
+    "complete_participant_binding_required": true,
+    "duplicates_rejected": true,
+    "all_other_unexpected_edges_rejected": true,
+    "optional_edge_can_replace_mandatory_link": false,
+    "raw_bionlp_cg_projection_preserved": true,
+    "non_nested_behavior_equals_v13": true
+  },
+  "custody_verdict": {
+    "verdict": "HARD_PASS",
+    "exactly_one_creation_per_case": true,
+    "provider_retries": 0,
+    "confirmation_retrieval_required": true,
+    "input_item_retrieval_required": true,
+    "stable_response_id_custody": true,
+    "rejected_attempt_custody": true,
+    "local_custody_failure_sealed": true,
+    "usage_latency_and_cost_recorded": true,
+    "cumulative_budget_stop_before_next_call": true,
+    "scientific_fail_fast_after_persistence": true
+  },
+  "historical_integrity_verdict": {
+    "verdict": "HARD_PASS",
+    "sealed_head": "cb9b912c83c773032e3b14971a9a7a8103900f0f",
+    "sealed_manifest_sha256": "ea03a3460ebd3d0e98c10ffa3a7bef1b1b07fe2bedbac1e2702910c909809f36",
+    "sealed_file_count": 110,
+    "v12_files_byte_unchanged": true,
+    "v13_files_byte_unchanged": true,
+    "shared_grader_files_byte_unchanged": true,
+    "raw_cg_policy_unchanged": true,
+    "historical_experiments_rescored": false
+  },
+  "execution_scope": {
+    "case_order": [
+      "generalization-comparison-canary",
+      "generalization-drug-sensitivity",
+      "generalization-uncertainty",
+      "generalization-explicit-nested-cause",
+      "generalization-negated-association",
+      "generalization-null-statistics"
+    ],
+    "exposed_cases_only": true,
+    "stop_conditions": [
+      "FIRST_REAL_SOURCE_SCIENTIFIC_FAILURE",
+      "INVALID_SCHEMA_CUSTODY_OR_EXACTLY_ONCE",
+      "CUMULATIVE_OPERATIONAL_BUDGET_EXHAUSTION",
+      "PROVIDER_OUTAGE_OR_MISSING_SECRET"
+    ],
+    "automatic_v15_allowed": false
+  },
+  "provider_calls": 0,
+  "fresh_cases_accessed": 0,
+  "graph_writes": 0,
+  "trusted_promotion": false,
+  "findings": [
+    {
+      "classification": "FUTURE_WORK_NONBLOCKING",
+      "finding": "The immutable V13 remote-gate test is state-dependent and assumes pre-execution output absence.",
+      "disposition": "Keep V13 byte-frozen. V14 has its own unused-output and exact-remote-head tests; document the single deselection rather than modifying sealed V13.",
+      "affects_scientific_validity": false,
+      "affects_reproducibility": false,
+      "affects_provider_custody": false,
+      "affects_fail_closed_execution": false
+    }
+  ],
+  "verdict": "HARD_PASS"
+}

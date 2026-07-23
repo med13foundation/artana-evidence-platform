@@ -1,0 +1,123 @@
+{
+  "schema_version": "artana.staged_generalization.v14_rule_wording_review.v1",
+  "reviewer_id": "v14_rule_wording_reviewer_b",
+  "review_scope": "INDEPENDENT_COMPLETE_PARTICIPANT_DENOTATION_RULE",
+  "rule_path": "docs/validation/prompts/2026-07-23-staged-generalization-v14-complete-participant-denotation.md",
+  "rule_sha256": "854c3b6e08441e6d667ecd48c6f0b86ff26942b9fb2db760a822727634cdf6ad",
+  "review_basis": {
+    "four_reviewer_consensus_path": "docs/validation/adjudications/2026-07-23-staged-generalization-v14-participant-and-role-consensus-v1.json",
+    "four_reviewer_consensus_sha256": "8ea1f52d30de85c5b0e94ce03fdcc013b7e8f4c52a48c14115f331fe99aec740",
+    "frozen_panel_path": "docs/validation/fixtures/2026-07-22-staged-generalization-panel-v9.json",
+    "frozen_panel_sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+    "v11_prompt_sha256": "5a91a17b28730067ed15ecaab6f26a276d4fd1dfc439856817168674296fa87a",
+    "v12_prompt_sha256": "a9ea1d2acd867809b2769ce9f52d94b0bfa69a69ba7f2cfb593ad7bb8b31fc78",
+    "v13_prompt_sha256": "0ab67bfea1ed75028a4771bc9a1b2f8d00f56bcc228d305a3650e3ae2d0e86f7"
+  },
+  "independence_assertions": {
+    "other_v14_wording_review_consulted": false,
+    "scientific_consensus_consulted": true,
+    "all_six_exposed_cases_reviewed": true,
+    "desired_provider_output_not_used_as_prompt_content": true,
+    "sealed_v13_artifacts_modified": false,
+    "shared_or_historical_graders_modified": false
+  },
+  "source_general": true,
+  "scope_limited_to_participant_text": true,
+  "wording_assessment": {
+    "smallest_complete_denotation": "PASS",
+    "noun_head_retention": "PASS",
+    "restrictive_identity_retention": "PASS",
+    "head_cannot_be_reconstructed_from_output_metadata": "PASS",
+    "fail_closed_when_denotation_or_scope_is_lost": "PASS",
+    "slc12a3_standalone_identifier_preserved": "PASS",
+    "case_or_source_specific_leakage": "PASS",
+    "benchmark_projection_leakage": "PASS",
+    "rationale": "The rule distinguishes independently referential lexicalized identifiers from headless modifier sequences, requires nonredundant restrictive identity to remain represented, and explicitly limits the change to exact participant occurrence text."
+  },
+  "target_boundary_checks": {
+    "HCMV immediate-early": {
+      "expected": "FAIL",
+      "assessment": "PASS",
+      "reason": "The retained text is only an attributive modifier sequence and lacks the entity-denoting noun head proteins."
+    },
+    "HCMV immediate-early proteins": {
+      "expected": "PASS",
+      "assessment": "PASS",
+      "reason": "The span retains the noun head proteins and the scientifically restrictive HCMV identity."
+    },
+    "immediate-early proteins": {
+      "expected": "FAIL_IN_CURRENT_FLAT_SOURCE_SEMANTIC_REPRESENTATION",
+      "assessment": "PASS",
+      "reason": "Although head-complete, it omits the nonredundant HCMV restriction; the current output has no explicitly linked equivalent organism-of-origin representation."
+    },
+    "SLC12A3": {
+      "expected": "PASS",
+      "assessment": "PASS",
+      "reason": "SLC12A3 is an independently referential lexicalized gene identifier, so omitting the adjacent generic noun gene preserves the same entity occurrence."
+    }
+  },
+  "case_order_covered": [
+    "generalization-comparison-canary",
+    "generalization-drug-sensitivity",
+    "generalization-uncertainty",
+    "generalization-explicit-nested-cause",
+    "generalization-negated-association",
+    "generalization-null-statistics"
+  ],
+  "case_assessments": {
+    "generalization-comparison-canary": {
+      "verdict": "PASS",
+      "reason": "The population mentions retain their patient noun heads and RA restrictions; the rule supplies no event, comparison, role, or root instruction."
+    },
+    "generalization-drug-sensitivity": {
+      "verdict": "PASS",
+      "reason": "The carcinoma-patient population remains head-complete and 5-FU remains an independently referential chemical identifier; the V12 focus-event behavior is untouched."
+    },
+    "generalization-uncertainty": {
+      "verdict": "PASS",
+      "reason": "The variant mention retains its noun head while SLC12A3 remains valid without the generic noun gene; antecedent grounding, classification, and uncertainty are unchanged."
+    },
+    "generalization-explicit-nested-cause": {
+      "verdict": "PASS",
+      "reason": "The rule rejects the headless HCMV immediate-early span and retains both proteins and the HCMV restriction, without changing the nested inventory, links, or V13 root rule."
+    },
+    "generalization-negated-association": {
+      "verdict": "PASS",
+      "reason": "The exposure retains dose plus its restrictive timing and treatment context, and worse OS retains its restrictive outcome wording; association polarity is outside this rule."
+    },
+    "generalization-null-statistics": {
+      "verdict": "PASS",
+      "reason": "RA and NSCLC shorthand remain independently referential under the frozen participant contract; the rule cannot add analytic curves as participants or change null-result statistics and polarity."
+    }
+  },
+  "forbidden_change_checks": {
+    "event_inventory_unchanged": true,
+    "entity_types_unchanged": true,
+    "mandatory_participants_unchanged": true,
+    "mandatory_links_unchanged": true,
+    "participant_roles_unchanged": true,
+    "root_selection_rules_unchanged": true,
+    "semantic_axes_unchanged": true,
+    "evidence_grounding_unchanged": true,
+    "completeness_rules_unchanged": true,
+    "shared_and_historical_graders_unchanged": true,
+    "v13_artifacts_unchanged": true,
+    "bionlp_cg_projection_policy_unchanged": true,
+    "new_events_or_participants_cannot_be_forced": true,
+    "new_links_cannot_be_forced": true,
+    "case_specific_terms_absent": true,
+    "public_gold_answer_not_exposed": true
+  },
+  "residual_scope_note": "The permission for an explicitly represented equivalent restriction is loss-preserving only; the rule itself cannot create a participant or link, and otherwise requires the restrictive modifier to remain in the contiguous participant span.",
+  "consensus_correction_reaffirmation": {
+    "change_scope": "The corrected consensus only relabels an invalid historical provider output as non-creditable diagnostic-only evidence.",
+    "scientific_conclusions_changed": false,
+    "wording_verdict_changed": false,
+    "verdict_reaffirmed": "PASS"
+  },
+  "provider_calls": 0,
+  "fresh_cases_accessed": 0,
+  "graph_writes": 0,
+  "trusted_promotion": false,
+  "verdict": "PASS"
+}

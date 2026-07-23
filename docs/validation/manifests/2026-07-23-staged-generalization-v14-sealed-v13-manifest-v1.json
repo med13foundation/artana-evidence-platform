@@ -1,0 +1,457 @@
+{
+  "all_current_bytes_equal_sealed_head": true,
+  "file_count": 110,
+  "files": [
+    {
+      "path": "docs/validation/adjudications/2026-07-23-pmid-7966592-nested-two-lane-adjudication-v1.json",
+      "sha256": "da87d13a2b9e31aff511f0e6cf6cef0dbc1279a236f922292057cf75f80c5da4"
+    },
+    {
+      "path": "docs/validation/adjudications/2026-07-23-pmid-7966592-nested-two-lane-adjudication-v1.md",
+      "sha256": "0ac5e83e45d8b995468edab6d3d872002a4324a98c6cf09b203bba43b0dfa53a"
+    },
+    {
+      "path": "docs/validation/adjudications/2026-07-23-staged-generalization-v12-focus-rule-offline-audit-v1.json",
+      "sha256": "d0b89e268c8c2e893cb865d2343ffcf3ae5c9e92175206cf445f3c5c5fd324ec"
+    },
+    {
+      "path": "docs/validation/adjudications/2026-07-23-staged-generalization-v12-two-lane-contract-v1.json",
+      "sha256": "432dcec45d8ac920182a22028c99532494acb74443ff8a13e003440d1a88f146"
+    },
+    {
+      "path": "docs/validation/adjudications/2026-07-23-staged-generalization-v13-nested-two-lane-contract-v1.json",
+      "sha256": "c792b8230c295b1c0e294a0c888254e5e62becf5fd20072389abbfa886192ff9"
+    },
+    {
+      "path": "docs/validation/adjudications/2026-07-23-staged-generalization-v13-root-rule-offline-audit-v1.json",
+      "sha256": "f1fa98abc59900cfa1a8495106b19d3f7ad6d60148e58cb994260cf1778ee718"
+    },
+    {
+      "path": "docs/validation/evaluations/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-comparison-canary-evaluation.json",
+      "sha256": "57a3ca3341d44b3d83767252d06a61261754739539f0013c7a98d5ac49b2edf7"
+    },
+    {
+      "path": "docs/validation/evaluations/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-drug-sensitivity-evaluation.json",
+      "sha256": "45fc2d35e81101979d09b98523b0a5f71e0649e9afa32465dc89cc00aa6ce719"
+    },
+    {
+      "path": "docs/validation/evaluations/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-explicit-nested-cause-evaluation.json",
+      "sha256": "151dfdb785476d0c9a67293744e859e1bb6b20d3e98f1fbd37c3f69a3507e095"
+    },
+    {
+      "path": "docs/validation/evaluations/2026-07-23-staged-generalization-v12-v9-v11-offline-replay.json",
+      "sha256": "26446fea5dc732756c44b84b314ad4486b43935319c10d140f6829b8711644ba"
+    },
+    {
+      "path": "docs/validation/evaluations/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-comparison-canary-evaluation.json",
+      "sha256": "75d906af40de103ceab3f71d8746e83f1b6e88c44caf4e2c41f787e22348a5f1"
+    },
+    {
+      "path": "docs/validation/evaluations/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-drug-sensitivity-evaluation.json",
+      "sha256": "1d6df9ca77f8d87d95108946010be50d15d6a32f66122b8c4f407825824e47f6"
+    },
+    {
+      "path": "docs/validation/evaluations/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-explicit-nested-cause-evaluation.json",
+      "sha256": "18da0ab2e69db34b9871b31e1244bf72afae3ee337130143546b2c585c7bef7c"
+    },
+    {
+      "path": "docs/validation/evaluations/2026-07-23-staged-generalization-v13-v12-offline-replay.json",
+      "sha256": "8162fb2a4dc4cc7f2664532994922f8abdcb208e61cdf0882d809fd0cee3116a"
+    },
+    {
+      "path": "docs/validation/fixtures/2026-07-23-staged-generalization-v13-panel-source-custody-v1.json",
+      "sha256": "04e41f5caec8f43885cd6a8cd02ef273d47d44f60be8d072b3946411eb982bb0"
+    },
+    {
+      "path": "docs/validation/preregistrations/2026-07-23-staged-generalization-v12-exposed-run-v1.json",
+      "sha256": "12a0b0baf6e3a7134ef340091012805e343f799f148a8f3c104cc75da17831c4"
+    },
+    {
+      "path": "docs/validation/preregistrations/2026-07-23-staged-generalization-v13-exposed-run-v1.json",
+      "sha256": "56ce61fff54a5fbaef2b44d0cb54b349b877a28808f2142fe4364b78e1f60914"
+    },
+    {
+      "path": "docs/validation/prompts/2026-07-23-staged-generalization-v12-focus-event-anchoring.md",
+      "sha256": "a9ea1d2acd867809b2769ce9f52d94b0bfa69a69ba7f2cfb593ad7bb8b31fc78"
+    },
+    {
+      "path": "docs/validation/prompts/2026-07-23-staged-generalization-v13-compositional-focus-root.md",
+      "sha256": "0ab67bfea1ed75028a4771bc9a1b2f8d00f56bcc228d305a3650e3ae2d0e86f7"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-comparison-canary-attempt.json",
+      "sha256": "bd97296cf1358c6cb9a5a86e9ddb99567f51fd83ca1be3c99a1b055a0e6eb015"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-comparison-canary-custody.json",
+      "sha256": "6042dd1e553e081d053461dc56f8bbc3fced6f7de90408db157304296ddb32d1"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-comparison-canary.json",
+      "sha256": "8497b3cbc9985bc37511ad80df9a77e0c6e6d019b929afe285b1f3a1d855f26c"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-drug-sensitivity-attempt.json",
+      "sha256": "3b16888042d9229de8f7129a2f494726d6bf999e5a46cf85537e4a4d99605ac7"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-drug-sensitivity-custody.json",
+      "sha256": "1c97f6e302cd1bd204614f9af27cc2b2de23c7ebf8c54a279767e40471fc225f"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-drug-sensitivity.json",
+      "sha256": "515a9f9fdbf8efa9fa05c7e66612284195c5aa5ca8cf7ab47b67c4e23e721980"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-explicit-nested-cause-attempt.json",
+      "sha256": "db69fe6dce35a505c65ee9740a0b267f0a38470ae81f264813385fbecbb5eaa9"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-explicit-nested-cause-custody.json",
+      "sha256": "1319f8291362e63dfff30358c425edffdbf9efd4ef07b72b3058bfd7cea840d3"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-explicit-nested-cause.json",
+      "sha256": "31de6402d4a9ba7e2b1158f4a7fc80f64645089061b0e052cd7e5a424554b54c"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-comparison-canary-attempt.json",
+      "sha256": "4774e8b2df15962eb37a9e686bfd58f672804a3669f61a99456a25acd538ebc1"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-comparison-canary-custody.json",
+      "sha256": "c4ab48eb95a0d2cc7b4d7d2e13056c6bfbb5c7ff6088470af4a907e33e6729b6"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-comparison-canary.json",
+      "sha256": "3fec39f7a8de85615739afd87d8d126be9a52f4aca7150d4da397e8aac052cd6"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-drug-sensitivity-attempt.json",
+      "sha256": "aadc1be20c4744f1b98838a9e9a4932a35863878b9b264b66d2cb99074ba94d8"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-drug-sensitivity-custody.json",
+      "sha256": "2231ac5281d86ac2df9b3e4f6b0bde2b9759d2a50b051bc7fc7063eb6abb61d8"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-drug-sensitivity.json",
+      "sha256": "ea52a2deb526f69f4600b194068fb887042abfec236a1a6fd7b8ed70248ae0d6"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-explicit-nested-cause-attempt.json",
+      "sha256": "6c0bd4d8dd2ca02da0b48adb3ae94b5057cd93c165c69de6aba82f4b5b3a6476"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-explicit-nested-cause-custody.json",
+      "sha256": "cc305b40e58ffdb7688cfa45bd6956a697bc49b703f10cc2b2d83ce8ec815efa"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-explicit-nested-cause.json",
+      "sha256": "a388b240cc4f3f17100a78cd159674987f04280cb2efb210c1d458e9394fcdc6"
+    },
+    {
+      "path": "docs/validation/reports/2026-07-23-staged-generalization-v12-exposed-run-v1-final.md",
+      "sha256": "0aa03822d0d0211eeae793d10897d30375027781477476642e3b195961abbe55"
+    },
+    {
+      "path": "docs/validation/reports/2026-07-23-staged-generalization-v13-exposed-run-v1-final.md",
+      "sha256": "29d1ca235d949957414bb8467dfd557eb11c456fec19b41da1b89eb13a3ce0a3"
+    },
+    {
+      "path": "docs/validation/results/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-comparison-canary-raw.json",
+      "sha256": "6432940b47153b473f0ba268014b9f362746d70768107473e10cd668e908db9c"
+    },
+    {
+      "path": "docs/validation/results/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-drug-sensitivity-raw.json",
+      "sha256": "a2787a3eb453f7637d412dccec2781b1d196dbf30c0b4a2f0eda94fbdc18ba54"
+    },
+    {
+      "path": "docs/validation/results/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-explicit-nested-cause-raw.json",
+      "sha256": "c982fdc5282cef320cf2436f3ab70b380547553b6efb091f26fe5c4e6624304d"
+    },
+    {
+      "path": "docs/validation/results/2026-07-23-staged-generalization-v12-exposed-run-v1.json",
+      "sha256": "c110ff6eadfa41c90c19b1ff039b007b20926b2efa7ccf53ae596cc351895561"
+    },
+    {
+      "path": "docs/validation/results/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-comparison-canary-raw.json",
+      "sha256": "1d74be1f44dce7b4a7456ed6707229696fb7096b15536fb9a260b7c65bc2eafd"
+    },
+    {
+      "path": "docs/validation/results/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-drug-sensitivity-raw.json",
+      "sha256": "37c0fe3f82767ac7c2fb2310b52a987beb68e22e9729d20de25fa73939dcc238"
+    },
+    {
+      "path": "docs/validation/results/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-explicit-nested-cause-raw.json",
+      "sha256": "1940d19258691ce6be3035fa5feddbff802858c33239716e30c770721269c8c5"
+    },
+    {
+      "path": "docs/validation/results/2026-07-23-staged-generalization-v13-exposed-run-v1.json",
+      "sha256": "254ae46ec9e74dbc4a3a0e9c3c52b84d30d6af39ce2db016aa01f2823dd8e01c"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-23-staged-generalization-v12-focus-wording-reviewer-a-v1.json",
+      "sha256": "b4030643fb581150d0037ae978340f86d5cdbbf55464f2e630c2f33f99352b3f"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-23-staged-generalization-v12-focus-wording-reviewer-b-v1.json",
+      "sha256": "4cf29f33eae27b3e3591f82982160edaf9f6005f938484e358c15a305af215bc"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-23-staged-generalization-v13-frozen-package-review-v1.json",
+      "sha256": "c1030584eefb342ef21d1b6ce0b3514402331de09ce61cacdf6a3f28e1eb221d"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-23-staged-generalization-v13-nested-source-reviewer-a-v1.json",
+      "sha256": "1508448888ec798a787abf0a700d033c4c6334d2a82972fcbc80e26811c3bd3f"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-23-staged-generalization-v13-nested-source-reviewer-b-v1.json",
+      "sha256": "4babadf7e5067c964933b41985276346a16bd3be9030bbb034eb87b55126cf6a"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-23-staged-generalization-v13-root-wording-reviewer-a-v1.json",
+      "sha256": "23e1a31cd204bb640bd885f857a53ddd8c5b1b19a972aafd6622fa189fb2d90c"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-23-staged-generalization-v13-root-wording-reviewer-b-v1.json",
+      "sha256": "de9081c511c00957b73659c2a07993ecc86ee55ef369dfc47ba6f438c0526fb9"
+    },
+    {
+      "path": "scripts/run_staged_generalization_v12_exposed.py",
+      "sha256": "df5becca9cdb4ee8d9dde792e9da16c48ccef46000bd43e4d25f62f51d07362a"
+    },
+    {
+      "path": "scripts/run_staged_generalization_v13_exposed.py",
+      "sha256": "869e4ce3be8ba95623ea2d815e21a9dddcd1828bce0c9e3be7a2628a27711e25"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/grading/__init__.py",
+      "sha256": "6d3bd50e806e5546fdfe2ae34f88ad12c7da3f8df719bf9cbb98ad486fe6ce05"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/grading/agreement.py",
+      "sha256": "b0358f0d6b7a328cb17b6dc7d0482044b77650243136a9c01064f29494d76dda"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/grading/artifacts.py",
+      "sha256": "4bbd831cae66dafac9f0be32693edd393de76cefb72b487cd3b4ef6542240759"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/grading/config.py",
+      "sha256": "046176a558e96471bd2dc24bd4ddd151c16f0d38930ef40554a0dc4816d74e6c"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/grading/contracts.py",
+      "sha256": "24428bd5bf901712600912bcfc287edbc61ecff5c4d36aa8c3ba26ccfaff2faa"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/grading/evaluation.py",
+      "sha256": "6dc6186cb262d3494e3decc8143790bcbb1132ad62173b807155c5eb905dc1e9"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/grading/offline_replay.py",
+      "sha256": "12b3035923cdcec46c564ef6d606a76ea385b36846b063408283b925706b2729"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/grading/packets.py",
+      "sha256": "c215cb1d258fd0867e04e608aa5d734ab59f18aa5564bc895b53459a764d4d19"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/grading/policy.py",
+      "sha256": "cd630f3c4dc8a7725a53ab0fec063413ec932fc39b4cc3dccf279a53da795e4b"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/grading/preflight.py",
+      "sha256": "74e5ec452b872d48d67ee41ed697ac3459c3018eba8b79812b313f899ad9781b"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/grading/provider.py",
+      "sha256": "3a500281bc8f81573e36acc65c3283631c2ebf213471a12a51935512a227aae1"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/grading/runner.py",
+      "sha256": "df762612af316dd2db5f1592ae5c5385506e819e8c876c42d8ae516399080f1d"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/__init__.py",
+      "sha256": "26f17c72472a8468a9c86aa2de96e616a66530aa3b9773368a2ec6cd032543ce"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/acceptance.py",
+      "sha256": "15be38266800dbc29b160c1a866b162b29e195ee2bb688121c545e7878552012"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/accounting.py",
+      "sha256": "60e8d6e7df163a12f30d1628e94c40698c4f5f1e9cf68031a2b531f0c872a9c0"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/config.py",
+      "sha256": "55fc71cbde1a9fe3ab30e9fb7a87a26a1c3e8db2d14a891acf4da86589b58ef6"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/contracts.py",
+      "sha256": "321e32c0a74cc889e08bf06f5320e0c8f7f560db1592b818e55317e9ddddda05"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/evaluation.py",
+      "sha256": "0dc2d8a0c20f681d868598822a090a42c5e96c4ccb3c44affa0cd244cecf8993"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/fresh_preregistration.py",
+      "sha256": "7d2e3ec2ee60b5019b8e40a59fa205fc2b6523d85f011539f8eae46dd7d69e88"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/offline_replay.py",
+      "sha256": "e396464e06c8ec3ff9e484c3ede74917f5a5d5c5844324525421c41896c386a4"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/preflight.py",
+      "sha256": "81e1f4432919d2ab08ee75117ed6ccf531762cdfaa8d88c743c6949a0890ff29"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/prompt_audit.py",
+      "sha256": "1f95903bccc0ca61f154e5644e50c4bb857bf0f6e7c1de2274f5c7b982f9d122"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/provider.py",
+      "sha256": "1e55ae150b648454fc890615d136a84145b2fae52c78213c477c952fa0da1dd9"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/reporting.py",
+      "sha256": "f1e1dd1d1f09413c39f869699f10e47d38e122d6fa722807390a59d670ad4c5f"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/runner.py",
+      "sha256": "b1f0871fa8841ffc495ec046d4f71757054c135954d67a31626d82fd95a823da"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/terminal.py",
+      "sha256": "901852baef9590e8120ed1b76ffd0faeda8034c53abef09e2386e8dfc926da02"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/__init__.py",
+      "sha256": "d3300354857d1269d8879cc719f5e69979abe0987b9b79f22c284286c4531221"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/acceptance.py",
+      "sha256": "89c62c96fb5c2df02463aceeda0a4f871aa2c98fbf378ccf0a90b487c72cad98"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/accounting.py",
+      "sha256": "88567d6c4947014a65ce48daf2f3515fd4b706a8fd78f54fb9fb65ceb3ad71df"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/cg_projection.py",
+      "sha256": "65e341df8d5e66ccc6a6ddc2d6dab732686ccdea10e694c4efcd0b0bc2879f8e"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/config.py",
+      "sha256": "7290fcf7f4d5f81f00371ea54c83ebb9c4b256947ca575f71f282c29b5630d6d"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/contracts.py",
+      "sha256": "ae7488aebdb421c519d468a11794400560e85ddd4b7dd8baad6235ddb42bb7dd"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/dependency_manifest.py",
+      "sha256": "d70bc2875d5ed4a74f7683cff782bafbf2c14446e59d4ad4e246a2374d9b5307"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/evaluation.py",
+      "sha256": "11295ced343abc7eb6c92ed147dbb809e790eb33a314ff17c9c07cc19026afba"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/frozen_panel.py",
+      "sha256": "de50585ad9af73dbdfc04f09b586779f65c43795970dccb1d54be72776a8730f"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/frozen_policy.py",
+      "sha256": "325b53019282599436d2a91bfcd96ded093e4ca49cd56a04366dc19d0aa56fc4"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/offline_replay.py",
+      "sha256": "1fefa2b00ed541d8c7f52e47fd876fcc2bfd674aa8ca158e7d977409fd62250b"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/preflight.py",
+      "sha256": "3bd16411026f16a6a88856704027c4c29e314d5b714db95c8c81f031098a0e6e"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/prompt_audit.py",
+      "sha256": "ec2c5fb7d5c3978fa6fddbe38649aaab6794881f911eba3acda032bd7aba284e"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/provider.py",
+      "sha256": "0fbd11754b5c0e9127d5dfcdc5ff7617b25d57d79fc9dc020a839e1be1e24e9f"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/provider_execution.py",
+      "sha256": "10a77d437710ef680017632df72c44d1be6554b9be71e90f7f9a0283189d985c"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/rejected_custody.py",
+      "sha256": "cc9c860bb27c0dc1bd1d795dc390f1bcbe4da1b103ec473d2abd3991060e32eb"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/reporting.py",
+      "sha256": "db2f596c637bbe3a966e84eb2eafe25cbcdd7c9b8a32347bd3e1924f371b4247"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/request_contract.py",
+      "sha256": "138e00b77248bcf42981c93869c9a307109a2c09d262c33f3fe1908a48e72f8e"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/runner.py",
+      "sha256": "a59e9c4b0d5e4a342e4a01265b87018a34984d990c781d1e6bd0665d4cae16dc"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/terminal.py",
+      "sha256": "b0e5429da4cc9ab72905edcde0b57322ef85c9becb57c3f4289d66b998d901eb"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_grading.py",
+      "sha256": "f31a1bd0ba5751664826dc6113513744716051fc1dc0f09bb5cc62692a468862"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v12.py",
+      "sha256": "9c6e3c5f11c6d3bcac30ca991839e00ba7ca1f7e73f86c3c21fc96b2af5af12b"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v13_dependency_manifest.py",
+      "sha256": "2a9cbc974f97d5429d89bf34da64049434f3c056007a1eae8be9b5b00dd2dca7"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v13_evaluation.py",
+      "sha256": "e4e043164cfd7956b54196988502ac3bd599e1af1531c170db161cf55e347717"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v13_frozen_panel.py",
+      "sha256": "7598fa8133d9c811dc63aec4c6a463a93f4d19970a92118a34a6e3a3f4fb241e"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v13_preflight.py",
+      "sha256": "2abccd9b35b7455c62fa3fa5132fec88b05a6497a58b6971d588d93e62f40c2b"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v13_provider_custody.py",
+      "sha256": "cda80c57b34864107f40e4e7c7c1502600494c1c3ecb03b6a6c559277c6c942d"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v13_runtime.py",
+      "sha256": "2040a87555b6164dcf33b1f89e4f489b1909116b38709c94f2a408b918b0d9ed"
+    }
+  ],
+  "schema_version": "artana.staged_generalization.v14_sealed_v13_manifest.v1",
+  "sealed_head": "cb9b912c83c773032e3b14971a9a7a8103900f0f",
+  "selection": {
+    "shared_grader": true,
+    "v12_implementation_and_artifacts": true,
+    "v13_freeze_commits": [
+      "25d68f00ddbd1112b930574b1b9a0e32555c2100",
+      "cb9b912c83c773032e3b14971a9a7a8103900f0f"
+    ],
+    "v13_implementation_and_artifacts": true
+  }
+}

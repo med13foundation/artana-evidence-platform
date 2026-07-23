@@ -1,0 +1,272 @@
+{
+  "schema_version": "artana.staged_generalization.v14_participant_and_role_consensus.v1",
+  "adjudication_id": "staged-generalization-v14-participant-and-role-consensus-v1",
+  "case_id": "generalization-explicit-nested-cause",
+  "review_scope": "SOURCE_SEMANTIC_PARTICIPANT_BOUNDARY_AND_NESTED_ROLE_MULTIPLICITY",
+  "frozen_inputs": {
+    "independent_reviews": {
+      "participant_span_reviewer_a": {
+        "path": "docs/validation/reviews/2026-07-23-staged-generalization-v14-participant-span-reviewer-a-v1.json",
+        "sha256": "57811286cc3a9beb6e80668c99deb8d4bd39d79dadf050c301c2b1034015f865"
+      },
+      "participant_span_reviewer_b": {
+        "path": "docs/validation/reviews/2026-07-23-staged-generalization-v14-participant-span-reviewer-b-v1.json",
+        "sha256": "d7efbc5df6d673ee1be5a377b3de0c94de98e9f7f630a4858dbd92f140702b2d"
+      },
+      "inner_role_reviewer_a": {
+        "path": "docs/validation/reviews/2026-07-23-staged-generalization-v14-inner-role-reviewer-a-v1.json",
+        "sha256": "5879f69c71cc3ba10d06436e1075a3a4a96198f7bd099baf67af3fa247aa7050"
+      },
+      "inner_role_reviewer_b": {
+        "path": "docs/validation/reviews/2026-07-23-staged-generalization-v14-inner-role-reviewer-b-v1.json",
+        "sha256": "fa0de1ef6e1b2376a1b73d17e9fd545a4f89d9e08bd45242755d07cb804f9d15"
+      }
+    },
+    "sealed_v13": {
+      "nested_adjudication": {
+        "path": "docs/validation/adjudications/2026-07-23-pmid-7966592-nested-two-lane-adjudication-v1.json",
+        "sha256": "da87d13a2b9e31aff511f0e6cf6cef0dbc1279a236f922292057cf75f80c5da4"
+      },
+      "nested_contract": {
+        "path": "docs/validation/adjudications/2026-07-23-staged-generalization-v13-nested-two-lane-contract-v1.json",
+        "sha256": "c792b8230c295b1c0e294a0c888254e5e62becf5fd20072389abbfa886192ff9"
+      },
+      "raw_output": {
+        "path": "docs/validation/results/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-explicit-nested-cause-raw.json",
+        "sha256": "1940d19258691ce6be3035fa5feddbff802858c33239716e30c770721269c8c5"
+      },
+      "run_result": {
+        "path": "docs/validation/results/2026-07-23-staged-generalization-v13-exposed-run-v1.json",
+        "sha256": "254ae46ec9e74dbc4a3a0e9c3c52b84d30d6af39ce2db016aa01f2823dd8e01c"
+      },
+      "preregistration": {
+        "path": "docs/validation/preregistrations/2026-07-23-staged-generalization-v13-exposed-run-v1.json",
+        "sha256": "56ce61fff54a5fbaef2b44d0cb54b349b877a28808f2142fe4364b78e1f60914"
+      },
+      "v11_prompt": {
+        "path": "docs/validation/prompts/2026-07-22-staged-generalization-v11.md",
+        "sha256": "5a91a17b28730067ed15ecaab6f26a276d4fd1dfc439856817168674296fa87a"
+      }
+    },
+    "frozen_panel": {
+      "panel_sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+      "panel_canonical_sha256": "c5f8848c99620e72cc7c3ef67ad8f2fd40c6c1f7525ff401140f207e976e7093",
+      "frozen_panel_implementation": {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/frozen_panel.py",
+        "sha256": "de50585ad9af73dbdfc04f09b586779f65c43795970dccb1d54be72776a8730f"
+      },
+      "source_custody": {
+        "path": "docs/validation/fixtures/2026-07-23-staged-generalization-v13-panel-source-custody-v1.json",
+        "sha256": "04e41f5caec8f43885cd6a8cd02ef273d47d44f60be8d072b3946411eb982bb0"
+      }
+    },
+    "source": {
+      "source_id": "PMID-7966592",
+      "text_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-7966592.txt",
+      "text_sha256": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+      "a1_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-7966592.a1",
+      "a1_sha256": "2e47b1725178510245a711cb28749271730df2502e84035d2364e6b663230864",
+      "a2_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-7966592.a2",
+      "a2_sha256": "8921ae260cb96c14867089bd02e12cf614416aacd442d9bed7145db089ec445c",
+      "offset_convention": "ZERO_BASED_END_EXCLUSIVE",
+      "focus_start": 1091,
+      "focus_end": 1206,
+      "focus_text": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts",
+      "focus_text_sha256": "47a54d3f2b1ea9c130917bf6878c71f39a0ed57a91b3f239de3efe0f89e14817",
+      "source_sentence": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.",
+      "source_sentence_sha256": "aa857c564549ea84a6d61aa515d7389a1ee2094016b906cd32bf46c0c2939eaf"
+    }
+  },
+  "verification": {
+    "all_bound_file_hashes_verified": true,
+    "source_offsets_verified_against_frozen_text": true,
+    "focus_text_matches_source_slice": true,
+    "participant_candidate_offsets_match_source_slices": true,
+    "public_cg_annotations_match_bound_a1_and_a2": true,
+    "sealed_v13_primary_failure": {
+      "source_semantic_status": "FAIL",
+      "root_selection_status": "PASS",
+      "mandatory_participants_passed": false,
+      "participant_roles_passed": false,
+      "exact_evidence_grounding": true,
+      "returned_participant_text": "HCMV immediate-early",
+      "returned_participant_start": 1091,
+      "returned_participant_end": 1111
+    }
+  },
+  "participant_consensus": {
+    "current_source_semantic_representation": "FLAT_PARTICIPANT_WITHOUT_ORGANISM_OF_ORIGIN_RELATION",
+    "candidate_verdicts": [
+      {
+        "exact_text": "HCMV immediate-early proteins",
+        "start": 1091,
+        "end": 1120,
+        "source_semantic_verdict": "PASS",
+        "current_contract_acceptance": "REQUIRED_COMPLETE_OCCURRENCE",
+        "bionlp_cg_exact_projection_verdict": "FAIL",
+        "reason": "The full nominal phrase retains the required protein head and the restrictive HCMV qualifier, so the current flat participant representation is lossless."
+      },
+      {
+        "exact_text": "immediate-early proteins",
+        "start": 1096,
+        "end": 1120,
+        "source_semantic_verdict": "CONDITIONALLY_VALID_IN_RICHER_REPRESENTATION",
+        "current_contract_acceptance": "FAIL_WITHOUT_EXPLICITLY_LINKED_HCMV_RESTRICTION",
+        "bionlp_cg_exact_projection_verdict": "PASS",
+        "reason": "The span is head-complete but omits the restrictive HCMV qualifier. It is not a lossless standalone replacement in the current flat source-semantic participant schema."
+      },
+      {
+        "exact_text": "HCMV immediate-early",
+        "start": 1091,
+        "end": 1111,
+        "source_semantic_verdict": "FAIL_HEADLESS_MODIFIER_SEQUENCE",
+        "current_contract_acceptance": "REJECT",
+        "bionlp_cg_exact_projection_verdict": "FAIL",
+        "reason": "Removing proteins removes the entity-denoting nominal head; the output entity type, explanation, and surrounding evidence cannot reconstruct the missing source occurrence."
+      }
+    ],
+    "source_general_boundary_rule": "An adjacent generic entity-type word may be omitted only when the retained exact contiguous source text independently denotes the same participant occurrence. Retain a nominal head when the remainder is only attributive material, and retain nonredundant restrictive modifiers unless an equivalent semantic relation is explicitly represented and linked.",
+    "slc12a3_regression_preserved": {
+      "accepted_span": "SLC12A3",
+      "adjacent_source_form": "SLC12A3 gene",
+      "reason": "SLC12A3 is an independently referential lexical gene identifier, so omitting the generic type noun gene does not remove its denotation or broaden its identity."
+    }
+  },
+  "single_scientific_prompt_hypothesis": {
+    "hypothesis_id": "COMPLETE_PARTICIPANT_DENOTATION_V1",
+    "text": "Adding the source-general independent-denotation test to the V11 named biomedical occurrence boundary will prevent headless modifier spans while preserving independently referential lexical names such as SLC12A3, without changing event inventory, participant inventory, roles, links, semantic axes, exact evidence, completeness, root selection, or BioNLP-CG projection policy.",
+    "scientific_prompt_change_count": 1,
+    "event_or_role_prompt_change": false,
+    "pmid_specific_rule": false,
+    "benchmark_projection_specific_rule": false,
+    "output_specific_example_required": false
+  },
+  "source_semantic_role_consensus": {
+    "policy_scope": "V14_LOCAL_SOURCE_SEMANTIC_LANE_ONLY",
+    "mandatory_links": [
+      {
+        "event_key": "responsible",
+        "role": "CAUSAL_AGENT",
+        "target_key": "proteins",
+        "target_kind": "PARTICIPANT",
+        "minimum_occurrences": 1,
+        "maximum_occurrences": 1
+      },
+      {
+        "event_key": "responsible",
+        "role": "EFFECT_EVENT",
+        "target_key": "elevating",
+        "target_kind": "EVENT",
+        "minimum_occurrences": 1,
+        "maximum_occurrences": 1
+      },
+      {
+        "event_key": "elevating",
+        "role": "AFFECTED_ENTITY",
+        "target_key": "p53",
+        "target_kind": "PARTICIPANT",
+        "minimum_occurrences": 1,
+        "maximum_occurrences": 1
+      },
+      {
+        "event_key": "elevating",
+        "role": "CONTEXTUAL_PARTICIPANT",
+        "target_key": "infected_fibroblasts",
+        "target_kind": "PARTICIPANT",
+        "minimum_occurrences": 1,
+        "maximum_occurrences": 1
+      }
+    ],
+    "optional_links": [
+      {
+        "event_key": "elevating",
+        "role": "CAUSAL_AGENT",
+        "target_key": "proteins",
+        "target_kind": "PARTICIPANT",
+        "minimum_occurrences": 0,
+        "maximum_occurrences": 1,
+        "classification": "SOURCE_ENTAILED_REDUNDANT_BUT_TRUE",
+        "binding_condition": "The target must resolve to the accepted complete proteins participant occurrence."
+      }
+    ],
+    "all_other_links": "REJECT",
+    "duplicate_links": "REJECT",
+    "optional_link_cannot_compensate_for_missing_mandatory_link": true,
+    "optional_link_adds_qualification_credit": false,
+    "general_role_propagation_allowed": false,
+    "role_prompt_change_required": false,
+    "reference_evaluator_correction_is_separate_from_prompt_hypothesis": true
+  },
+  "bionlp_cg_separation": {
+    "source_semantic_lane_is_authoritative_for_scientific_qualification": true,
+    "exact_projection_lane": "REVIEW_ONLY_NONBLOCKING",
+    "qualification_credit": false,
+    "graph_promotion_allowed": false,
+    "official_projection_has_direct_inner_causal_agent": false,
+    "source_optional_inner_edge_counts_as_exact_projection_match": false,
+    "source_pass_and_exact_projection_fail_may_coexist": true,
+    "conclusion": "BioNLP-CG places immediate-early proteins as Cause only on the outer responsible event. Its non-propagating dependency graph and split HCMV organism annotation remain a separate benchmark convention and do not redefine source-semantic truth."
+  },
+  "failure_ownership": {
+    "sealed_v13_primary_failure": {
+      "classification": "MODEL_PROMPT_PARTICIPANT_BOUNDARY_GAP",
+      "owning_boundary": "V14_SINGLE_SOURCE_GENERAL_PROMPT_CLARIFICATION",
+      "retroactive_v13_credit": false
+    },
+    "direct_inner_causal_agent_exact_set_rejection": {
+      "classification": "REFERENCE_AMBIGUITY_EXACT_LINK_SET_OVERCONSTRAINT",
+      "owning_boundary": "V14_LOCAL_REFERENCE_AND_EVALUATOR",
+      "status": "LATENT_COUNTERFACTUAL_FRONTIER_NOT_V13_PRIMARY_FAILURE",
+      "retroactive_v13_credit": false
+    },
+    "direct_inner_edge_cg_mismatch": {
+      "classification": "BENCHMARK_ONLY_PROJECTION_MISMATCH",
+      "owning_boundary": "SEPARATE_REVIEW_ONLY_BIONLP_CG_LANE",
+      "qualification_blocking": false
+    },
+    "v13_root_selection": {
+      "classification": "REPAIRED_IN_V13",
+      "status": "PASS",
+      "v14_change_allowed": false
+    }
+  },
+  "consensus": {
+    "reviewer_count": 4,
+    "participant_review_count": 2,
+    "role_review_count": 2,
+    "material_disagreements": [],
+    "nonmaterial_representation_nuances": [
+      "The head-complete immediate-early proteins span could be source-semantically valid only in a richer representation that separately preserves and links the HCMV restriction; both participant reviewers reject it as a standalone replacement under the current flat contract.",
+      "The direct inner CAUSAL_AGENT edge may be described as redundant-but-true or source-grounded optional; both role reviewers require the same zero-or-one V14-local multiplicity and reject general role propagation."
+    ],
+    "non_creditable_diagnostic_exclusion": {
+      "raw_path": "docs/validation/results/2026-07-22-role-alignment-v2-source-invalid-raw.json",
+      "raw_sha256": "6b55ed9df716a294de7703ba76faf827afb0ac2a2209b40da4a3040183f2aa6a",
+      "addendum_path": "docs/validation/results/2026-07-22-role-alignment-invalid-diagnostic-addendum.json",
+      "addendum_sha256": "e11dd30cf6aa7ac55702519b3126d7a0d6c8401e3bfd1b741037f1f1ebfb9a55",
+      "status": "NON_CREDITABLE_DIAGNOSTIC_ONLY",
+      "scientific_gate_credit": false,
+      "benchmark_projection_credit": false,
+      "used_for_v14_consensus_verdict": false,
+      "assertion": "The role-alignment V2 raw artifact came from an invalid provider execution and was neither evidence for nor a contributor to the V14 scientific verdict."
+    },
+    "tiebreak_required": false,
+    "participant_boundary_verdict": "PASS",
+    "role_multiplicity_verdict": "PASS",
+    "single_prompt_hypothesis_verdict": "PASS",
+    "lane_separation_verdict": "PASS",
+    "overall_verdict": "PASS",
+    "pass_meaning": "The smallest source-general V14 prompt clarification and the separately owned V14-local optional-role evaluator correction are scientifically justified. This verdict does not rescore V13 and does not constitute exposed-panel or fresh-case qualification."
+  },
+  "safety_and_historical_disposition": {
+    "sealed_v13_modified": false,
+    "sealed_v13_rescored": false,
+    "shared_grader_change_authorized": false,
+    "fresh_cases_accessed": 0,
+    "fresh_cases_consumed": 0,
+    "provider_calls": 0,
+    "graph_writes": 0,
+    "trusted_graph_promotion": false,
+    "v14_provider_execution_authorized_by_this_artifact": false
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "schema_version": "artana.staged_generalization.v14_rule_wording_review.v1",
+  "reviewer_id": "v14_rule_wording_reviewer_a",
+  "review_scope": "INDEPENDENT_COMPLETE_PARTICIPANT_DENOTATION_RULE_REVIEW",
+  "rule_path": "docs/validation/prompts/2026-07-23-staged-generalization-v14-complete-participant-denotation.md",
+  "rule_sha256": "854c3b6e08441e6d667ecd48c6f0b86ff26942b9fb2db760a822727634cdf6ad",
+  "review_inputs": {
+    "four_reviewer_consensus": {
+      "path": "docs/validation/adjudications/2026-07-23-staged-generalization-v14-participant-and-role-consensus-v1.json",
+      "sha256": "8ea1f52d30de85c5b0e94ce03fdcc013b7e8f4c52a48c14115f331fe99aec740"
+    },
+    "frozen_v11_prompt": {
+      "path": "docs/validation/prompts/2026-07-22-staged-generalization-v11.md",
+      "sha256": "5a91a17b28730067ed15ecaab6f26a276d4fd1dfc439856817168674296fa87a"
+    },
+    "frozen_v12_prompt_delta": {
+      "path": "docs/validation/prompts/2026-07-23-staged-generalization-v12-focus-event-anchoring.md",
+      "sha256": "a9ea1d2acd867809b2769ce9f52d94b0bfa69a69ba7f2cfb593ad7bb8b31fc78"
+    },
+    "frozen_v13_prompt_delta": {
+      "path": "docs/validation/prompts/2026-07-23-staged-generalization-v13-compositional-focus-root.md",
+      "sha256": "0ab67bfea1ed75028a4771bc9a1b2f8d00f56bcc228d305a3650e3ae2d0e86f7"
+    },
+    "frozen_exposed_panel": {
+      "path": "docs/validation/fixtures/2026-07-22-staged-generalization-panel-v9.json",
+      "sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e"
+    }
+  },
+  "consensus_provenance_reaffirmation": {
+    "correction_scope": "The corrected consensus only relabels invalid historical provider output as non-creditable diagnostic material.",
+    "scientific_conclusions_changed": false,
+    "wording_assessment_changed": false,
+    "verdict_reaffirmed": "PASS"
+  },
+  "source_general": true,
+  "scope_limited_to_participant_text": true,
+  "noun_head_and_restrictive_identity_assessment": {
+    "independent_denotation_required": true,
+    "headless_modifier_sequence_rejected": true,
+    "semantic_noun_head_preserved_when_required_for_denotation": true,
+    "nonredundant_restrictive_identity_preserved": true,
+    "equivalent_distributed_restriction_requires_explicit_representation_and_linkage": true,
+    "new_participant_or_link_creation_authorized": false,
+    "fail_closed_when_denotation_or_scope_is_lost": true,
+    "assessment": "PASS"
+  },
+  "slc12a3_preservation": {
+    "preserved": true,
+    "accepted_identifier": "SLC12A3",
+    "omittable_adjacent_type_noun": "gene",
+    "reason": "SLC12A3 is an independently referential lexicalized biomedical identifier, so removing the adjacent generic type noun does not remove its denotation or restrictive identity. The V14 rule contains no case-specific SLC12A3 example."
+  },
+  "leakage_checks": {
+    "case_ids_or_source_ids_present": false,
+    "case_specific_terms_present": [],
+    "expected_answer_or_reference_terms_present": [],
+    "bionlp_cg_terms_present": [],
+    "participant_examples_present": [],
+    "provider_output_tailoring_detected": false,
+    "verdict": "PASS"
+  },
+  "case_order_covered": [
+    "generalization-comparison-canary",
+    "generalization-drug-sensitivity",
+    "generalization-uncertainty",
+    "generalization-explicit-nested-cause",
+    "generalization-negated-association",
+    "generalization-null-statistics"
+  ],
+  "case_assessments": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "assessment": "PASS",
+      "participant_boundary_effect": "Population heads and the with-RA and without-RA restrictions remain necessary to denote the compared cohorts; the rule does not alter comparison direction, roles, or outcome."
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "assessment": "PASS",
+      "participant_boundary_effect": "The independently referential carcinoma and 5-FU occurrences remain available without converting the patient noun into a new population participant; event focus, roles, and projection policy are unchanged."
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "assessment": "PASS",
+      "participant_boundary_effect": "The variants noun head and scientifically relevant detected-set scope remain preservable, while SLC12A3 remains independently denoting without the adjacent generic noun gene; uncertainty and classification rules are untouched."
+    },
+    {
+      "case_id": "generalization-explicit-nested-cause",
+      "assessment": "PASS",
+      "participant_boundary_effect": "The complete HCMV immediate-early proteins occurrence retains both the proteins noun head and the HCMV restriction. HCMV immediate-early is rejected as headless, and the HCMV restriction cannot be dropped in the current flat representation because the rule cannot create a compensating participant or link."
+    },
+    {
+      "case_id": "generalization-negated-association",
+      "assessment": "PASS",
+      "participant_boundary_effect": "The before-ICI-initiation exposure restriction and the worse-OS outcome scope remain protected; the rule does not alter association polarity, direction, statistics, or event roles."
+    },
+    {
+      "case_id": "generalization-null-statistics",
+      "assessment": "PASS",
+      "participant_boundary_effect": "The lexicalized RA label and the non-RA NSCLC restriction remain source-grounded participant text; null-result polarity, comparison, P-value handling, and author interpretation are unchanged."
+    }
+  ],
+  "forbidden_change_checks": {
+    "event_inventory_change_authorized": false,
+    "entity_type_change_authorized": false,
+    "mandatory_participant_change_authorized": false,
+    "participant_inventory_change_authorized": false,
+    "participant_role_change_authorized": false,
+    "mandatory_link_change_authorized": false,
+    "optional_link_change_authorized": false,
+    "root_selection_change_authorized": false,
+    "semantic_axis_change_authorized": false,
+    "statistics_change_authorized": false,
+    "evidence_grounding_change_authorized": false,
+    "completeness_rule_change_authorized": false,
+    "schema_change_authorized": false,
+    "shared_or_historical_grader_change_authorized": false,
+    "bionlp_cg_projection_change_authorized": false,
+    "fail_closed_instruction_reuses_existing_v11_behavior": true,
+    "verdict": "PASS"
+  },
+  "boundedness_assessment": {
+    "single_prompt_hypothesis": true,
+    "additive_to_frozen_v11_v12_v13": true,
+    "only_clarifies_complete_participant_occurrence_text": true,
+    "does_not_encode_the_separate_optional_inner_edge_policy": true,
+    "does_not_authorize_new_scientific_content": true,
+    "verdict": "PASS"
+  },
+  "provider_calls": 0,
+  "fresh_cases_accessed": 0,
+  "graph_writes": 0,
+  "trusted_promotion": false,
+  "verdict": "PASS",
+  "verdict_meaning": "The exact V14 rule is source-general, case-leakage-free, and bounded to complete participant denotation. It preserves the noun head and restrictive identity required by the four-review consensus while leaving all event, role, link, root, semantic, evidence, completeness, grader, and BioNLP-CG policies unchanged. This review does not authorize provider execution or claim exposed-panel qualification."
+}

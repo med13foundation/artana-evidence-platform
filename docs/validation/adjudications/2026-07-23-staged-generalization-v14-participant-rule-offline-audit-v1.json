@@ -1,0 +1,71 @@
+{
+  "case_assessments": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "expected_effect": "NONE",
+      "previous_behavior_must_remain_stable": true
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "expected_effect": "NONE",
+      "previous_behavior_must_remain_stable": true
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "expected_effect": "INDEPENDENT_LEXICAL_IDENTIFIER_REMAINS_UNEXPANDED",
+      "participant_boundary_canary_runs_before_target": true,
+      "previous_behavior_must_remain_stable": true
+    },
+    {
+      "case_id": "generalization-explicit-nested-cause",
+      "expected_effect": "RETAIN_REQUIRED_HEAD_AND_RESTRICTIVE_SCOPE",
+      "optional_role_policy": "ZERO_OR_ONE_SOURCE_ENTAILED_REDUNDANT_EDGE"
+    },
+    {
+      "case_id": "generalization-negated-association",
+      "expected_effect": "NONE",
+      "previous_behavior_must_remain_stable": true
+    },
+    {
+      "case_id": "generalization-null-statistics",
+      "expected_effect": "NONE",
+      "previous_behavior_must_remain_stable": true
+    }
+  ],
+  "case_order": [
+    "generalization-comparison-canary",
+    "generalization-drug-sensitivity",
+    "generalization-uncertainty",
+    "generalization-explicit-nested-cause",
+    "generalization-negated-association",
+    "generalization-null-statistics"
+  ],
+  "case_specific_provider_examples": false,
+  "change_scope": {
+    "bionlp_cg_projection": "UNCHANGED_RAW_REVIEW_ONLY",
+    "completeness": "UNCHANGED",
+    "entity_types": "UNCHANGED",
+    "event_inventory": "UNCHANGED",
+    "evidence_grounding": "UNCHANGED",
+    "mandatory_links": "UNCHANGED",
+    "mandatory_participants": "UNCHANGED",
+    "prompt_changes": [
+      "PARTICIPANT_OCCURRENCE_TEXT"
+    ],
+    "root_selection": "UNCHANGED",
+    "semantic_axes": "UNCHANGED",
+    "shared_grader": "UNCHANGED",
+    "v14_local_evaluator_changes": [
+      "OPTIONAL_INNER_CAUSAL_AGENT_MULTIPLICITY"
+    ]
+  },
+  "consensus_sha256": "8ea1f52d30de85c5b0e94ce03fdcc013b7e8f4c52a48c14115f331fe99aec740",
+  "fresh_cases_accessed": 0,
+  "graph_writes": 0,
+  "provider_calls": 0,
+  "rule_sha256": "854c3b6e08441e6d667ecd48c6f0b86ff26942b9fb2db760a822727634cdf6ad",
+  "schema_version": "artana.staged_generalization.v14_rule_audit.v1",
+  "source_general": true,
+  "trusted_promotion": false,
+  "verdict": "PASS"
+}

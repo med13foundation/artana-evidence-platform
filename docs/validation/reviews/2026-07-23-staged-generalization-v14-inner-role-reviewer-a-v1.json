@@ -1,0 +1,122 @@
+{
+  "schema_version": "artana.staged_generalization.v14_inner_role_review.v1",
+  "review_id": "staged-generalization-v14-inner-role-reviewer-a-v1",
+  "reviewer_id": "v14_inner_role_reviewer_a",
+  "independence": {
+    "independent_source_semantic_review": true,
+    "other_v14_inner_role_reviews_consulted": false,
+    "provider_calls": 0,
+    "fresh_cases_accessed": 0,
+    "graph_writes": 0,
+    "trusted_graph_promotions": 0,
+    "sealed_v13_artifacts_modified": false,
+    "repository_edits_other_than_this_review": 0
+  },
+  "source_custody": {
+    "case_id": "generalization-explicit-nested-cause",
+    "source_id": "PMID-7966592",
+    "source_document_sha256": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+    "focus_passage": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts",
+    "focus_passage_sha256": "47a54d3f2b1ea9c130917bf6878c71f39a0ed57a91b3f239de3efe0f89e14817",
+    "source_sentence": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.",
+    "source_sentence_sha256": "aa857c564549ea84a6d61aa515d7389a1ee2094016b906cd32bf46c0c2939eaf",
+    "string_hash_policy": "SHA256_OF_EXACT_UTF8_STRING_WITHOUT_TRAILING_NEWLINE",
+    "v13_nested_adjudication_sha256": "da87d13a2b9e31aff511f0e6cf6cef0dbc1279a236f922292057cf75f80c5da4",
+    "sealed_v13_raw_output_sha256": "1940d19258691ce6be3035fa5feddbff802858c33239716e30c770721269c8c5",
+    "non_creditable_diagnostic_context": {
+      "raw_path": "docs/validation/results/2026-07-22-role-alignment-v2-source-invalid-raw.json",
+      "raw_sha256": "6b55ed9df716a294de7703ba76faf827afb0ac2a2209b40da4a3040183f2aa6a",
+      "addendum_path": "docs/validation/results/2026-07-22-role-alignment-invalid-diagnostic-addendum.json",
+      "addendum_sha256": "e11dd30cf6aa7ac55702519b3126d7a0d6c8401e3bfd1b741037f1f1ebfb9a55",
+      "status": "NON_CREDITABLE_DIAGNOSTIC_ONLY",
+      "scientific_gate_credit": false,
+      "used_for_this_review_verdict": false
+    }
+  },
+  "mandatory_outer_links": [
+    {
+      "event_key": "responsible",
+      "role": "CAUSAL_AGENT",
+      "target_key": "proteins",
+      "target_kind": "PARTICIPANT",
+      "status": "MANDATORY"
+    },
+    {
+      "event_key": "responsible",
+      "role": "EFFECT_EVENT",
+      "target_key": "elevating",
+      "target_kind": "EVENT",
+      "status": "MANDATORY"
+    }
+  ],
+  "direct_inner_causal_agent_edge": {
+    "event_key": "elevating",
+    "role": "CAUSAL_AGENT",
+    "target_key": "proteins",
+    "target_kind": "PARTICIPANT",
+    "verdict": "REDUNDANT_BUT_TRUE_SOURCE_SUPPORTED",
+    "scientifically_supported": true,
+    "scientifically_incorrect": false,
+    "mandatory": false,
+    "permissible": true,
+    "optional_context": false,
+    "independent_scientific_content": false,
+    "canonical_minimal_graph_member": false
+  },
+  "source_general_rationale": {
+    "compositional_semantics": "In the construction X was responsible for elevating Y, X controls the understood subject of the non-finite elevating event. The source therefore entails that X causally participates in that inner event.",
+    "minimal_graph_semantics": "The mandatory outer links already encode X as the causal agent of an outer responsibility relation whose effect is the inner elevation event. A direct X-to-inner-event CAUSAL_AGENT edge repeats that entailed relation without adding independent scientific content.",
+    "generalization_boundary": "The verdict applies to a source-supported controlled non-finite complement whose controller is already the causal agent of an explicit outer event linked to that complement. It does not authorize propagating outer participants into arbitrary nested events.",
+    "scientific_conclusion": "The direct edge is an entailed redundant closure edge. It is neither required for a lossless minimal graph nor a scientific overclaim."
+  },
+  "v14_local_evaluator_policy": {
+    "policy_id": "V14_SOURCE_ENTAILED_REDUNDANT_INNER_CAUSAL_EDGE_V1",
+    "scope": "SOURCE_SEMANTIC_LANE_ONLY",
+    "mandatory_links_unchanged": true,
+    "optional_edge": {
+      "event_key": "elevating",
+      "role": "CAUSAL_AGENT",
+      "target_key": "proteins",
+      "target_kind": "PARTICIPANT",
+      "minimum_count": 0,
+      "maximum_count": 1
+    },
+    "acceptance_rule": "Compare all mandatory source-semantic links exactly after removing at most one mapped optional edge matching the frozen tuple above. Record the removed edge as ACCEPTED_SOURCE_ENTAILED_REDUNDANCY.",
+    "target_binding_rule": "The optional edge is admissible only when proteins resolves to the independently accepted complete participant occurrence and elevating resolves to the independently accepted inner event occurrence.",
+    "fail_closed_conditions": [
+      "The mandatory outer CAUSAL_AGENT or EFFECT_EVENT link is absent.",
+      "The optional tuple occurs more than once.",
+      "The optional edge target cannot be mapped to the accepted participant occurrence.",
+      "Any other unexpected event link or participant role is present.",
+      "Removing the optional edge would be necessary to hide an event, participant, role, span, or target-binding failure."
+    ],
+    "non_relaxation_assertions": [
+      "The policy does not add qualification credit.",
+      "The policy does not change event inventory, root selection, participant inventory, participant boundaries, mandatory links, semantic axes, evidence grounding, completeness, or custody.",
+      "The policy does not permit general transitive role propagation.",
+      "The policy does not rescore or modify sealed V13.",
+      "The malformed sealed V13 participant span remains a model/prompt failure."
+    ]
+  },
+  "bionlp_cg_separation": {
+    "official_projection": [
+      "E25 Regulation/responsible Cause:T34 Theme:E26",
+      "E26 Positive_regulation/elevating Theme:E27"
+    ],
+    "official_inner_cause_present": false,
+    "conclusion": "The direct inner CAUSAL_AGENT edge is an exact BioNLP-CG projection mismatch, but that benchmark-only result remains review-only, nonblocking, and separate from source-semantic truth."
+  },
+  "ownership": {
+    "direct_inner_edge_rejection": "REFERENCE_EVALUATOR_BOUNDARY",
+    "sealed_v13_incomplete_protein_span": "MODEL_PROMPT_PARTICIPANT_BOUNDARY",
+    "prompt_suppression_rule_supported": false,
+    "pmid_specific_prompt_rule_supported": false
+  },
+  "historical_disposition": {
+    "v13_remains_sealed": true,
+    "v13_retroactive_credit": false,
+    "v13_result_changed": false
+  },
+  "final_classification": "REFERENCE_EVALUATOR_FALSE_REJECTION_OF_SOURCE_ENTAILED_REDUNDANT_EDGE",
+  "final_verdict": "ACCEPT_AS_OPTIONAL_SOURCE_SEMANTIC_REDUNDANCY_IN_V14_LOCAL_EVALUATION"
+}
