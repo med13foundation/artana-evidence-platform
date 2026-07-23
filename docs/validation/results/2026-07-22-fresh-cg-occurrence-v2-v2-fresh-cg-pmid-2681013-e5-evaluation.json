@@ -1,0 +1,87 @@
+{
+  "case_id": "fresh-cg-pmid-2681013-e5",
+  "experiment_id": "fresh-cg-occurrence-v2-v2",
+  "graph_writes": 0,
+  "metrics": {
+    "artana_failed_field_count": 4,
+    "artana_fields": [
+      {
+        "field_id": "role:T9",
+        "passed": false,
+        "reference_status": "RESOLVED"
+      },
+      {
+        "field_id": "direction",
+        "passed": false,
+        "reference_status": "RESOLVED"
+      },
+      {
+        "field_id": "comparison",
+        "passed": true,
+        "reference_status": "RESOLVED"
+      },
+      {
+        "field_id": "polarity",
+        "passed": true,
+        "reference_status": "RESOLVED"
+      },
+      {
+        "field_id": "uncertainty",
+        "passed": false,
+        "reference_status": "RESOLVED"
+      },
+      {
+        "field_id": "statistics",
+        "passed": true,
+        "reference_status": "RESOLVED"
+      },
+      {
+        "field_id": "contextual_participants",
+        "passed": false,
+        "reference_status": "RESOLVED"
+      }
+    ],
+    "artana_passed_field_count": 3,
+    "artana_review_only_field_count": 0,
+    "artana_scored_field_count": 7,
+    "case_id": "fresh-cg-pmid-2681013-e5",
+    "contradiction_count": 0,
+    "direct_cg": {
+      "passed": false,
+      "required_argument_target_attachments": "0/1",
+      "required_event_type_and_occurrence": true,
+      "required_participant_type_and_occurrence": "0/1",
+      "source_role_fidelity": "NOT_EXPRESSED_BY_V9_ARTANA_SCHEMA",
+      "source_roles_preserved_in_reference": [
+        "Theme"
+      ],
+      "unprojected_addition_count": 2
+    },
+    "exact_nested_event_structure": true,
+    "failure_reasons": [
+      "direct CG participant type or occurrence differs",
+      "direct CG argument target attachment differs",
+      "resolved contextual participant differs",
+      "one or more resolved Artana semantic fields differ",
+      "output contains unsupported events, participants, or links"
+    ],
+    "occurrence_binding_valid": true,
+    "passed": false,
+    "reference_complete": true,
+    "required_core_complete": false,
+    "unsupported_claim_count": 4
+  },
+  "promotion": false,
+  "response_id": "resp_0b6e6e550db6b9e5006a6189ca0ba8819a936453ee1cc4bb15",
+  "schema_version": "artana.staged_generalization.fresh_cg_case_evaluation.v2",
+  "token_and_cost_affect_scientific_scoring": false,
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.113144,
+    "input_tokens": 3476,
+    "latency_seconds": 33.8877211250001,
+    "output_tokens": 18278,
+    "reasoning_tokens": 3342,
+    "total_tokens": 21754
+  }
+}

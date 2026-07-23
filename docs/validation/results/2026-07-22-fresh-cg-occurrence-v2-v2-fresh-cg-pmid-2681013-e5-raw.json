@@ -1,0 +1,134 @@
+{
+  "occurrence_bindings": {
+    "case_id": "fresh-cg-pmid-2681013-e5",
+    "event_mentions": [
+      {
+        "identity": {
+          "evidence_span": {
+            "end": 424,
+            "start": 316
+          },
+          "mention_span": {
+            "end": 351,
+            "start": 341
+          }
+        },
+        "node_id": "e1"
+      }
+    ],
+    "participant_mentions": [
+      {
+        "identity": {
+          "evidence_span": {
+            "end": 424,
+            "start": 316
+          },
+          "mention_span": {
+            "end": 371,
+            "start": 355
+          }
+        },
+        "node_id": "p1"
+      },
+      {
+        "identity": {
+          "evidence_span": {
+            "end": 424,
+            "start": 316
+          },
+          "mention_span": {
+            "end": 423,
+            "start": 375
+          }
+        },
+        "node_id": "p2"
+      }
+    ],
+    "schema_version": "artana.staged_generalization.occurrence_bindings.v2",
+    "semantic_evidence": [
+      {
+        "event_id": "e1",
+        "evidence_item_spans": [
+          {
+            "end": 424,
+            "start": 316
+          }
+        ],
+        "statistical_observation_spans": [
+          null
+        ]
+      }
+    ]
+  },
+  "schema_version": "artana.staged_generalization.fresh_cg_provider.v1",
+  "scientific_output": {
+    "case_id": "fresh-cg-pmid-2681013-e5",
+    "completeness": "COMPLETE",
+    "inventory": [
+      {
+        "event_id": "e1",
+        "event_type": "GENE_EXPRESSION",
+        "exact_evidence": "We have investigated the expression of osteonectin gene in fresh BALB/c fibroblasts transformed by v-Ki-ras.",
+        "explanation": "The highlighted finding concerns expression of the osteonectin gene in a specified fibroblast population.",
+        "trigger_text": "expression"
+      }
+    ],
+    "links": [
+      {
+        "arguments": [
+          {
+            "explanation": "The osteonectin gene is the entity undergoing the expression event.",
+            "role": "AFFECTED_ENTITY",
+            "target_id": "p1",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "The transformed fibroblast population provides the cellular context for the expression event.",
+            "role": "CONTEXTUAL_PARTICIPANT",
+            "target_id": "p2",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "e1"
+      }
+    ],
+    "participants": [
+      {
+        "entity_type": "GENE_OR_PROTEIN",
+        "exact_evidence": "We have investigated the expression of osteonectin gene in fresh BALB/c fibroblasts transformed by v-Ki-ras.",
+        "exact_text": "osteonectin gene",
+        "explanation": "This is the gene whose expression is the focus of the event.",
+        "participant_id": "p1"
+      },
+      {
+        "entity_type": "POPULATION",
+        "exact_evidence": "We have investigated the expression of osteonectin gene in fresh BALB/c fibroblasts transformed by v-Ki-ras.",
+        "exact_text": "fresh BALB/c fibroblasts transformed by v-Ki-ras",
+        "explanation": "This is the cellular population in which the gene expression is investigated.",
+        "participant_id": "p2"
+      }
+    ],
+    "root_event_id": "e1",
+    "semantic_axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "NOT_APPLICABLE",
+        "event_id": "e1",
+        "evidence_items": [
+          "We have investigated the expression of osteonectin gene in fresh BALB/c fibroblasts transformed by v-Ki-ras."
+        ],
+        "explanation": "The source asserts an investigation of gene expression but gives no increase, decrease, comparison, uncertainty, or statistical significance claim.",
+        "polarity": "AFFIRMED",
+        "statistical_observations": [
+          {
+            "exact_text": null,
+            "observation_type": "NONE"
+          }
+        ],
+        "uncertainty": "ASSERTED"
+      }
+    ],
+    "structure_explanation": "The focused expression event is fully represented by the osteonectin gene and the explicitly specified transformed fibroblast population; no result direction or comparison is stated."
+  }
+}

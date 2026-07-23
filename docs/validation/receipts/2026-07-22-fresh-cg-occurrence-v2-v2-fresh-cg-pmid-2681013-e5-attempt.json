@@ -1,0 +1,9 @@
+{
+  "preregistration_sha256": "144d54d3acbee866401499758603ace87a3e4c74deb0c970695234f8c7e52577",
+  "provider_creation_limit": 1,
+  "provider_input_sha256": "a1c24ba2bfa10f21b78673a499c5bcd2801a7bd328acec284ee7c8033791c9cd",
+  "provider_retries": 0,
+  "response_id": "resp_0b6e6e550db6b9e5006a6189ca0ba8819a936453ee1cc4bb15",
+  "stage": "FRESH_CG_V2:fresh-cg-pmid-2681013-e5",
+  "state": "ACKNOWLEDGED"
+}
