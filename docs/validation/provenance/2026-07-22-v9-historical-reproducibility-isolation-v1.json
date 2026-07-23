@@ -1,0 +1,58 @@
+{
+  "current_checkout_code_manifest_match": false,
+  "current_checkout_code_manifest_mismatches": [
+    {
+      "expected_sha256": "f5352623348b5b3a2d30a217c535a9c4a19bd50eadeec2d583218337bff7260a",
+      "file": "scripts/validation/provider_receipt_boundary/__init__.py",
+      "observed_sha256": "8291018b46a4db88ac589a730f4dc247c2aeb7ede6d01f3aeca41f0c47668510"
+    },
+    {
+      "expected_sha256": "6d9be1be575586dd43cad0a7703f9a14cb72d67fe38d8e33b9c67931c3e411f7",
+      "file": "scripts/validation/provider_receipt_boundary/background/__init__.py",
+      "observed_sha256": "a470723c7b480c591aa3fdcf3ca146fe308ea5ac55b0ec46c34632d75cc65338"
+    },
+    {
+      "expected_sha256": "51a79ab28fa381bb6e6692040e0781ab68a6e029c8facc72bf2266e9f82460d8",
+      "file": "scripts/validation/provider_receipt_boundary/background/contracts.py",
+      "observed_sha256": "c2e48f3e77518f19b8c9e2c105b29e0fa98e0fda668228d460eb3452fa538d41"
+    },
+    {
+      "expected_sha256": "c84f2c67cce1a1bed25190592e8b2cd1716dec73142283e97a152af90d79783d",
+      "file": "scripts/validation/provider_receipt_boundary/background/execution.py",
+      "observed_sha256": "0b368364e20efa7ef675f310d030ad2ba01b81d624213a26829363955ca36693"
+    },
+    {
+      "expected_sha256": "1d3b4fe0612923e26af166a790ef30217788a363b17e5bc0264ba4f167befed5",
+      "file": "scripts/validation/provider_receipt_boundary/contracts.py",
+      "observed_sha256": "c3cb084c50d2faa654b0f37208786ae33d895fee2b74ef4c117c38e691f25087"
+    },
+    {
+      "expected_sha256": "a0f21c6a6a882a2647763cd13f23ef4eb19518ac03ef409d23caf17b5b2b708a",
+      "file": "scripts/validation/provider_receipt_boundary/validation.py",
+      "observed_sha256": "a4dfda3dbabb0383ef6087221f56cb9cc1ba547e876e5134e1099f6e4a3c5500"
+    }
+  ],
+  "current_v10_base_commit": "05bdfa44067d2eda5fcd3788069868fdda87de63",
+  "disposition": {
+    "current_receipt_code_authorized_for_v9": false,
+    "current_receipt_code_requires_separate_v10_execution_pin": true,
+    "historical_v9_reproducibility_scope": "13106a214afc0882e7382032f167e4b909e2d065",
+    "sealed_v9_rescore_authorized": false,
+    "sealed_v9_rewrite_authorized": false
+  },
+  "historical_code_manifest_match": true,
+  "historical_code_manifest_mismatches": [],
+  "historical_experiment_id": "staged-generalization-v9",
+  "historical_pinned_commit": "13106a214afc0882e7382032f167e4b909e2d065",
+  "historical_preregistration_sha256": "7a170db78370571f986208530547c5ee4ec85a148634002f87a18dcc486e85b9",
+  "historical_seal_commit": "2a8ca565",
+  "reported_failure": {
+    "change_commit": "8778bf427006d9e01daa76c56e56119457adc0e6",
+    "change_postdates_v9_seal": true,
+    "change_predates_v10_base": true,
+    "expected_sha256": "f5352623348b5b3a2d30a217c535a9c4a19bd50eadeec2d583218337bff7260a",
+    "file": "scripts/validation/provider_receipt_boundary/__init__.py",
+    "observed_sha256": "8291018b46a4db88ac589a730f4dc247c2aeb7ede6d01f3aeca41f0c47668510"
+  },
+  "schema_version": "artana.staged_generalization.v9_historical_isolation.v1"
+}

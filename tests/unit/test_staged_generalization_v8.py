@@ -50,6 +50,9 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v8.prefli
     verify,
     write_candidate,
 )
+from scripts.validation.public_gold.staged_event.generalization.repair_v10.historical_v9 import (
+    verify_historical_code_manifest,
+)
 
 REPO = Path(__file__).resolve().parents[2]
 V7_CANARY_RAW = REPO / (
@@ -191,10 +194,27 @@ def test_v8_reuses_panel_model_and_frozen_v5_grader() -> None:
     )
 
 
-def test_v8_preregistration_is_reproducible_and_provider_input_remains_blind() -> (
+def test_v8_preregistration_reproduces_at_pin_and_provider_input_remains_blind() -> (
     None
 ):
-    preregistration = verify(DEFAULT_PATHS)
+    with pytest.raises(
+        V8PreflightError,
+        match="independently recomputed frozen state",
+    ):
+        verify(DEFAULT_PATHS)
+    historical = verify_historical_code_manifest(
+        DEFAULT_PATHS.preregistration,
+        expected_preregistration_sha256=(
+            "73d48a30f131ea5daaacc2a85cfdc95c192e7880aae37dfb114e7819a6675eec"
+        ),
+        pinned_commit="577b9c3e8e5e9bea7358c6c1754af0a9f009e427",
+    )
+    assert historical["historical_code_manifest_match"] is True
+
+    preregistration = cast(
+        "dict[str, object]",
+        json.loads(DEFAULT_PATHS.preregistration.read_text(encoding="utf-8")),
+    )
     frozen = cast("dict[str, object]", preregistration["frozen_state"])
     change = cast("dict[str, object]", preregistration["change_control"])
     rules = cast("dict[str, object]", preregistration["rules"])

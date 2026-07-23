@@ -59,6 +59,9 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v9.prefli
     verify,
     write_candidate,
 )
+from scripts.validation.public_gold.staged_event.generalization.repair_v10.historical_v9 import (
+    verify_provenance,
+)
 
 REPO = Path(__file__).resolve().parents[2]
 V8_CANARY_RAW = REPO / (
@@ -201,10 +204,22 @@ def test_v9_reuses_panel_model_and_frozen_v5_grader() -> None:
     )
 
 
-def test_v9_preregistration_is_reproducible_and_provider_input_remains_blind() -> (
+def test_v9_preregistration_reproduces_at_pin_and_provider_input_remains_blind() -> (
     None
 ):
-    preregistration = verify(DEFAULT_PATHS)
+    with pytest.raises(
+        V9PreflightError,
+        match="independently recomputed frozen state",
+    ):
+        verify(DEFAULT_PATHS)
+    provenance = verify_provenance()
+    assert provenance["historical_code_manifest_match"] is True
+    assert provenance["current_checkout_code_manifest_match"] is False
+
+    preregistration = cast(
+        "dict[str, object]",
+        json.loads(DEFAULT_PATHS.preregistration.read_text(encoding="utf-8")),
+    )
     frozen = cast("dict[str, object]", preregistration["frozen_state"])
     change = cast("dict[str, object]", preregistration["change_control"])
     rules = cast("dict[str, object]", preregistration["rules"])
