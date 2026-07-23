@@ -1,0 +1,109 @@
+{
+  "adjudicator_sha256_by_id": {
+    "fresh-cg-v2-occurrence-adjudicator-v1": "48cf32d087364de06ac411e520e92b5019465531b279683456a0f7e6f82401b5",
+    "fresh-cg-v2-semantics-adjudicator": "0beb713cd416bc3d9c261c6c32dfee8c60fa38ded3f54cf34e1402922934f95e"
+  },
+  "case_id": "fresh-cg-pmid-2681013-e5",
+  "classifications": [
+    {
+      "classification": "MODEL_ERROR",
+      "depends_on": [],
+      "independent_error": true,
+      "issue_id": "A_DIRECT_PARTICIPANT_OCCURRENCE"
+    },
+    {
+      "classification": "MODEL_ERROR",
+      "depends_on": [
+        "A_DIRECT_PARTICIPANT_OCCURRENCE"
+      ],
+      "independent_error": false,
+      "issue_id": "A_ROLE_T9"
+    },
+    {
+      "classification": "EVALUATOR_MAPPING_ERROR",
+      "depends_on": [
+        "A_DIRECT_PARTICIPANT_OCCURRENCE"
+      ],
+      "independent_error": true,
+      "issue_id": "A_DIRECT_ATTACHMENT"
+    },
+    {
+      "classification": "REFERENCE_ERROR",
+      "depends_on": [],
+      "independent_error": true,
+      "issue_id": "B_CONTEXTUAL_PARTICIPANTS"
+    },
+    {
+      "classification": "REFERENCE_ERROR",
+      "depends_on": [],
+      "independent_error": true,
+      "issue_id": "C_DIRECTION"
+    },
+    {
+      "classification": "REFERENCE_ERROR",
+      "depends_on": [],
+      "independent_error": true,
+      "issue_id": "D_UNCERTAINTY"
+    },
+    {
+      "classification": "EVALUATOR_MAPPING_ERROR",
+      "depends_on": [
+        "A_DIRECT_PARTICIPANT_OCCURRENCE",
+        "B_CONTEXTUAL_PARTICIPANTS"
+      ],
+      "independent_error": true,
+      "issue_id": "E_UNSUPPORTED_COUNT"
+    },
+    {
+      "classification": "TAXONOMY_AMBIGUITY",
+      "depends_on": [
+        "E_UNSUPPORTED_COUNT"
+      ],
+      "independent_error": false,
+      "issue_id": "F_TERMINAL_LABEL"
+    }
+  ],
+  "corrections": {
+    "contextual_participants": {
+      "classification": "REFERENCE_ERROR",
+      "selected_candidate_id": "candidate_context_2",
+      "source_general_rule": "A complete participant mention supersedes its contained subspans unless a contained span has an independent role in the focused event. POPULATION is reserved for a focal group in a population comparison."
+    },
+    "direction": {
+      "classification": "REFERENCE_ERROR",
+      "selected_candidate_id": "candidate_direction_2",
+      "source_general_rule": "A study-activity statement that only names the subject investigated has direction NOT_APPLICABLE. OBSERVED requires an explicit non-directional biological finding."
+    },
+    "direct_attachment": {
+      "classification": "EVALUATOR_MAPPING_ERROR",
+      "source_general_rule": "Enumerate each event argument exactly once. If a required occurrence did not map, report attachment as blocked by occurrence instead of an independent attachment failure."
+    },
+    "direct_participant_occurrence": {
+      "classification": "MODEL_ERROR",
+      "selected_candidate_id": "candidate_occurrence_1",
+      "source_general_rule": "For a named gene or protein occurrence, do not expand the lexicalized name with an adjacent generic entity-type word unless that word is part of the name or is required to distinguish the source occurrence."
+    },
+    "terminal": {
+      "classification": "TAXONOMY_AMBIGUITY",
+      "source_general_rule": "Expose the active atomic terminal reason. A nonzero unsupported count with contradiction_count zero must not imply that a contradiction occurred."
+    },
+    "uncertainty": {
+      "classification": "REFERENCE_ERROR",
+      "selected_candidate_id": "candidate_uncertainty_2",
+      "source_general_rule": "PROVISIONAL requires explicit provisional status. An unhedged study-activity statement is ASSERTED even when it reports no biological result."
+    },
+    "unsupported_count": {
+      "classification": "EVALUATOR_MAPPING_ERROR",
+      "source_general_rule": "Keep raw structural misses separate from independent unsupported scientific roots. A link that fails only because its target did not map is a cascade, not a second unsupported root."
+    }
+  },
+  "dispute_packet_sha256": "dd2063a1c415f79a22df930144d9eb52ca2253d8c0e655d40b6779708c071de6",
+  "graph_writes": 0,
+  "human_expert_qualification_credit": false,
+  "model_output_used_to_choose_reference_values": false,
+  "no_tiebreak_reason": "Both adjudicators reported no unresolved assigned issue and agreed exactly on shared classifications E_UNSUPPORTED_COUNT and F_TERMINAL_LABEL.",
+  "qualification_credit": false,
+  "remaining_fresh_cases_consumed": 0,
+  "schema_version": "artana.staged_generalization.fresh_cg_v2_root_cause_consensus.v1",
+  "tiebreaker_run": false
+}

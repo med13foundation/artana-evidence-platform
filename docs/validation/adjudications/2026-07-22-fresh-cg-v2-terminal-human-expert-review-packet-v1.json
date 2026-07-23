@@ -1,0 +1,34 @@
+{
+  "case_id": "fresh-cg-pmid-2681013-e5",
+  "decision_required": "Choose the source-general terminal taxonomy for a case with contradiction_count zero and a nonzero unsupported root count.",
+  "evidence": {
+    "active_frozen_or_branch": "unsupported_claim_count",
+    "adjudicator_agreement": "Both independent technical adjudicators classified the composite terminal label as TAXONOMY_AMBIGUITY.",
+    "contradiction_count": 0,
+    "frozen_terminal_label": "CONTRADICTION_OR_UNSUPPORTED",
+    "independent_unsupported_root_count_after_cascade_attribution": 1,
+    "raw_v2_unsupported_count": 4,
+    "root_cause_consensus_sha256": "a50cf03c3fb6b11446574d1874347752c29ec454e2e4fd8f4135b94f1177d639"
+  },
+  "governance": {
+    "changes_v2_result": false,
+    "graph_writes": 0,
+    "qualification_credit": false,
+    "remaining_fresh_cases_consumed": 0,
+    "scientific_provider_calls": 0
+  },
+  "options": [
+    {
+      "option_id": "ACTIVE_REASON_LABEL",
+      "text": "Use a cause-specific label such as UNSUPPORTED_ONLY when contradiction_count is zero."
+    },
+    {
+      "option_id": "COMPOSITE_WITH_ACTIVE_REASONS",
+      "text": "Retain CONTRADICTION_OR_UNSUPPORTED but require machine-readable active_reason values and root-versus-cascade counts."
+    }
+  ],
+  "question_for_human_expert": "Must terminal labels name only causes observed in the case, or is a union label acceptable when its active branch is always explicit?",
+  "recommended_option": "ACTIVE_REASON_LABEL",
+  "recommendation_basis": "It prevents a zero-contradiction case from being read as evidence of contradiction and keeps terminal reporting aligned with the atomic root cause.",
+  "schema_version": "artana.staged_generalization.fresh_cg_terminal_expert_review.v1"
+}

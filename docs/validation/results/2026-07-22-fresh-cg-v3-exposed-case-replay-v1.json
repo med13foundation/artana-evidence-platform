@@ -1,0 +1,71 @@
+{
+  "active_terminal_reason": "DIRECT_CG_PARTICIPANT_OCCURRENCE_MISMATCH",
+  "cascaded_structural_miss_count": 3,
+  "case_id": "fresh-cg-pmid-2681013-e5",
+  "contradiction_count": 0,
+  "diagnostic_decision": "MODEL_CORRECTION_REQUIRED",
+  "direct_cg_event_exact": true,
+  "direct_cg_participant_exact": false,
+  "evaluator_mapping_error_issue_ids": [
+    "A_DIRECT_ATTACHMENT",
+    "E_UNSUPPORTED_COUNT"
+  ],
+  "fields": [
+    {
+      "depends_on": [
+        "A_DIRECT_PARTICIPANT_OCCURRENCE"
+      ],
+      "field_id": "role:T9",
+      "independent_error": false,
+      "status": "BLOCKED_BY_OCCURRENCE"
+    },
+    {
+      "depends_on": [
+        "A_DIRECT_PARTICIPANT_OCCURRENCE"
+      ],
+      "field_id": "direct_attachment",
+      "independent_error": false,
+      "status": "BLOCKED_BY_OCCURRENCE"
+    },
+    {
+      "depends_on": [],
+      "field_id": "contextual_participants",
+      "independent_error": false,
+      "status": "MATCH"
+    },
+    {
+      "depends_on": [],
+      "field_id": "direction",
+      "independent_error": false,
+      "status": "MATCH"
+    },
+    {
+      "depends_on": [],
+      "field_id": "uncertainty",
+      "independent_error": false,
+      "status": "MATCH"
+    }
+  ],
+  "frozen_v2_grader_invoked": false,
+  "genuine_model_error_issue_ids": [
+    "A_DIRECT_PARTICIPANT_OCCURRENCE"
+  ],
+  "graph_writes": 0,
+  "independent_unsupported_root_count": 1,
+  "participant_identity_recognized_diagnostic_only": true,
+  "qualification_credit": false,
+  "raw_v2_unsupported_count": 4,
+  "reference_error_issue_ids": [
+    "B_CONTEXTUAL_PARTICIPANTS",
+    "C_DIRECTION",
+    "D_UNCERTAINTY"
+  ],
+  "remaining_fresh_cases_consumed": 0,
+  "schema_version": "artana.staged_generalization.fresh_cg_exposed_replay.v3",
+  "scientific_pass_fail_recalculated": false,
+  "taxonomy_ambiguity_issue_ids": [
+    "F_TERMINAL_LABEL"
+  ],
+  "v2_raw_output_sha256": "423c63ee2115c1ca8950bc8c6150b48fec2ec545a55d623d95450b64ceba4262",
+  "v3_reference_sha256": "58ba26cf9c3e0e3c8451cd8e28c53f594c9c36433b65fa8cb56e699a6c4e19f6"
+}

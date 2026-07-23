@@ -1,0 +1,23 @@
+{
+  "all_existing_evaluator_matches_preserved": true,
+  "changed_participant_count": 1,
+  "exposed_case_count": 5,
+  "exposed_participant_count": 12,
+  "findings": [
+    {
+      "case_id": "generalization-uncertainty",
+      "corrected_text": "SLC12A3",
+      "exact_source_compatibility": true,
+      "existing_evaluator_containment_compatibility": true,
+      "original_text": "SLC12A3 gene",
+      "participant_id": "P2",
+      "suffix": " gene"
+    }
+  ],
+  "fresh_cases_consumed": 0,
+  "graph_writes": 0,
+  "provider_calls": 0,
+  "qualification_credit": false,
+  "schema_version": "artana.staged_generalization.v10_exposed_boundary_audit.v1",
+  "unchanged_participant_count": 11
+}

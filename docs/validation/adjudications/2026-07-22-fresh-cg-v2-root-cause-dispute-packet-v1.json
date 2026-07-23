@@ -1,0 +1,310 @@
+{
+  "artifact_pins": {
+    "docs/validation/fixtures/2026-07-22-fresh-cg-selection-v2.json": "bd91c3472ccfb8b30bc0ae451a1c33c081b9336e2d4bd11762bae89559919b0d",
+    "docs/validation/fixtures/2026-07-22-fresh-cg-source-semantic-review-packet-v2.json": "505ef1141d19d940a5395ea7b4e09b8db45e39ff2cd63b4267cf4272d54dd14d",
+    "docs/validation/prompts/2026-07-22-fresh-cg-source-semantic-review-v1.md": "9d3a2e6f598764d81116bd02c38680940f867ea09cdbc269ac8a42cc31806aac",
+    "docs/validation/prompts/2026-07-22-staged-generalization-v9.md": "4ce450b6a79fdb0cb99c48a69eae1390beef21dcf0094099503c03bdb4dd9234",
+    "docs/validation/references/2026-07-22-fresh-cg-two-lane-reference-v2.json": "e2f4ca70daa76501c6ca6038ac7c62655647b91425966ba84c8e733f02e04f0b",
+    "docs/validation/results/2026-07-22-fresh-cg-occurrence-v2-v2-fresh-cg-pmid-2681013-e5-evaluation.json": "52e1769f0f94b8afe7f435230da90b8dffa23a6ccb5f88683be89dc1def4f5e6",
+    "docs/validation/results/2026-07-22-fresh-cg-occurrence-v2-v2-fresh-cg-pmid-2681013-e5-raw.json": "423c63ee2115c1ca8950bc8c6150b48fec2ec545a55d623d95450b64ceba4262",
+    "docs/validation/reviews/2026-07-22-fresh-cg-source-semantic-reviewer-a-v2.json": "8db2194db5d2399c162983703416fc513f535ceca9244ae54d83a06b117da184",
+    "docs/validation/reviews/2026-07-22-fresh-cg-source-semantic-reviewer-b-v2.json": "262b195580b2ba05ad6c33aaecd33c9f203e4bebfcd077c73268c126056d3799",
+    "docs/validation/reviews/2026-07-22-fresh-cg-source-semantic-tiebreaker-v2.json": "14706dbf81b9d8a34d12b063d3d6d454fc11d03c19ced592b2518ad02f516406",
+    "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v1/agreement.py": "d91e3262cf153127d21a046b59c833b8e294190dbaafcceff6845840b0d67b9c",
+    "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v1/evaluation.py": "cc19fb6667cb7af9794bc91ecac332f4714e55dfd45d9896f99259e54c7a5284",
+    "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v2/terminal.py": "3a303daec1708e116910e2e88549eeba1679ce059290281ebfb5f0114b085076"
+  },
+  "candidate_interpretations": {
+    "contextual_participants": {
+      "candidate_context_1": [
+        {
+          "entity_type": "POPULATION",
+          "mention": {
+            "end": 399,
+            "start": 375,
+            "text": "fresh BALB/c fibroblasts"
+          },
+          "role": "POPULATION"
+        },
+        {
+          "entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 423,
+            "start": 415,
+            "text": "v-Ki-ras"
+          },
+          "role": "CONTEXTUAL_PARTICIPANT"
+        }
+      ],
+      "candidate_context_2": [
+        {
+          "entity_type": "POPULATION",
+          "mention": {
+            "end": 423,
+            "start": 375,
+            "text": "fresh BALB/c fibroblasts transformed by v-Ki-ras"
+          },
+          "role": "CONTEXTUAL_PARTICIPANT"
+        }
+      ]
+    },
+    "direction": {
+      "candidate_direction_1": "OBSERVED",
+      "candidate_direction_2": "NOT_APPLICABLE"
+    },
+    "direct_participant_occurrence": {
+      "candidate_occurrence_1": {
+        "end": 366,
+        "start": 355,
+        "text": "osteonectin"
+      },
+      "candidate_occurrence_2": {
+        "end": 371,
+        "start": 355,
+        "text": "osteonectin gene"
+      }
+    },
+    "uncertainty": {
+      "candidate_uncertainty_1": "PROVISIONAL",
+      "candidate_uncertainty_2": "ASSERTED"
+    }
+  },
+  "case_id": "fresh-cg-pmid-2681013-e5",
+  "classification_labels": [
+    "MODEL_ERROR",
+    "REFERENCE_ERROR",
+    "EVALUATOR_MAPPING_ERROR",
+    "TAXONOMY_AMBIGUITY",
+    "UNRESOLVED_EXPERT_REVIEW_REQUIRED"
+  ],
+  "direct_cg_annotation": {
+    "event": {
+      "arguments": [
+        {
+          "source_role": "Theme",
+          "target_annotation_id": "T9"
+        }
+      ],
+      "event_id": "E5",
+      "source_event_type": "Gene_expression",
+      "trigger": {
+        "annotation_id": "T30",
+        "end": 351,
+        "start": 341,
+        "text": "expression"
+      }
+    },
+    "participant": {
+      "annotation_id": "T9",
+      "end": 366,
+      "source_entity_type": "Gene_or_gene_product",
+      "start": 355,
+      "text": "osteonectin"
+    },
+    "reference_sha256": "155a5a27ab3af0d13e46baa26b9efb78d59b86cd50a2b413c19a0499097e876c"
+  },
+  "evaluator_mappings": {
+    "attachment": {
+      "actual_algorithm": "The evaluator first maps a direct participant only by exact start, end, and text equality. It then looks up the mapped participant ID as the target of the direct event argument.",
+      "implementation_observation": "The target-list comprehension iterates over link.arguments twice with the same loop variable. With N link arguments, each participant target is repeated N times before a candidate is required to occur exactly once.",
+      "reported_metric": "0/1",
+      "trace_question": "Determine which part is downstream of participant occurrence mapping and which part is an independent evaluator defect."
+    },
+    "context": {
+      "actual_algorithm": "Every resolved contextual participant is matched by exact start, end, text, entity type, and role; the field passes only when every reference participant has exactly one matching output link.",
+      "reported_field_passed": false
+    },
+    "direct_participant": {
+      "actual_algorithm": "A direct participant maps only when entity type and exact start, end, and text all equal the direct CG participant.",
+      "reported_metric": "0/1"
+    },
+    "role": {
+      "actual_algorithm": "The resolved Artana role is checked only against the output participant ID produced by direct occurrence mapping. An unmapped direct occurrence supplies no target ID and therefore fails the role field before the output role can be compared semantically.",
+      "reported_field_passed": false
+    },
+    "terminal": {
+      "contradiction_count": 0,
+      "selection_rule": "CONTRADICTION_OR_UNSUPPORTED is selected when contradiction_count is nonzero OR unsupported_claim_count is nonzero.",
+      "terminal_stage": "CONTRADICTION_OR_UNSUPPORTED",
+      "unsupported_claim_count": 4
+    },
+    "unsupported_count": {
+      "actual_algorithm": "An unmatched output participant is counted once as an unknown participant. Its link is counted again when the target is absent from the mapped expected-target set.",
+      "case_trace": [
+        "unmapped direct participant node",
+        "unmapped contextual participant node",
+        "link to unmapped direct participant",
+        "link to unmapped contextual participant"
+      ],
+      "reported_count": 4,
+      "trace_question": "Determine which counts are independent unsupported claims and which are consequences of upstream mapping/reference disagreement."
+    }
+  },
+  "existing_review_history": {
+    "contextual_participants": [
+      {
+        "judgment": "candidate_context_1",
+        "rationale": "The cells are the population in which expression was investigated; v-Ki-ras defines their transformed state without establishing a causal regulation of expression.",
+        "reviewer_alias": "historical_primary_1"
+      },
+      {
+        "judgment": "candidate_context_1",
+        "rationale": "The cells are the explicit population and v-Ki-ras defines the transformed state without stating its effect on expression.",
+        "reviewer_alias": "historical_primary_2"
+      },
+      {
+        "judgment": "candidate_context_2",
+        "rationale": "The full explicit cell-population mention scopes the expression under investigation without assigning v-Ki-ras an unexpressed causal role.",
+        "reviewer_alias": "historical_tiebreaker"
+      }
+    ],
+    "direction": [
+      {
+        "judgment": "candidate_direction_1",
+        "rationale": "Expression is assessed non-directionally; no increase or decrease is stated.",
+        "reviewer_alias": "historical_primary_1"
+      },
+      {
+        "judgment": "candidate_direction_1",
+        "rationale": "The sentence identifies expression as the investigated phenomenon but gives no increase or decrease.",
+        "reviewer_alias": "historical_primary_2"
+      },
+      {
+        "judgment": "candidate_direction_1",
+        "rationale": "Expression is explicitly examined, but no increase or decrease is stated.",
+        "reviewer_alias": "historical_tiebreaker"
+      }
+    ],
+    "reference_construction": {
+      "context_candidate_domain": "Only the union of contextual candidates proposed by the two primary reviewers was considered.",
+      "context_resolution": "Because both primary reviewers selected candidate_context_1, its two components were frozen without using the tiebreaker's different complete-population candidate.",
+      "direction_resolution": "The two primary reviewers agreed on candidate_direction_1; the tiebreaker was not used.",
+      "uncertainty_resolution": "The primary reviewers disagreed. The tiebreaker agreed with historical_primary_2, resolving candidate_uncertainty_1."
+    },
+    "uncertainty": [
+      {
+        "judgment": "candidate_uncertainty_2",
+        "rationale": "The completed investigation is asserted without hedging.",
+        "reviewer_alias": "historical_primary_1"
+      },
+      {
+        "judgment": "candidate_uncertainty_1",
+        "rationale": "The context frames expression as the subject of investigation rather than reporting a directional biological result.",
+        "reviewer_alias": "historical_primary_2"
+      },
+      {
+        "judgment": "candidate_uncertainty_1",
+        "rationale": "The expression event is the object of investigation rather than a stated biological result.",
+        "reviewer_alias": "historical_tiebreaker"
+      }
+    ]
+  },
+  "external_source_policy": {
+    "allowed": [
+      "the NCBI PubMed record named below",
+      "official BioNLP Shared Task materials",
+      "official NCBI materials"
+    ],
+    "external_material_is_optional": true,
+    "primary_sources_only": true
+  },
+  "failed_fields_to_classify": [
+    {
+      "issue_id": "A_DIRECT_PARTICIPANT_OCCURRENCE",
+      "reported_failure": "direct participant occurrence 0/1",
+      "required_output": "Classify the boundary disagreement and state whether it independently caused role or attachment failure."
+    },
+    {
+      "issue_id": "A_ROLE_T9",
+      "reported_failure": "role:T9 false",
+      "required_output": "Classify the field itself after tracing the direct-participant mapping dependency."
+    },
+    {
+      "issue_id": "A_DIRECT_ATTACHMENT",
+      "reported_failure": "direct attachment 0/1",
+      "required_output": "Separate occurrence-map cascade from the evaluator target-enumeration behavior."
+    },
+    {
+      "issue_id": "B_CONTEXTUAL_PARTICIPANTS",
+      "reported_failure": "contextual_participants false",
+      "required_output": "Classify segmentation and role using the source-general contained-subspan rule."
+    },
+    {
+      "issue_id": "C_DIRECTION",
+      "reported_failure": "direction false",
+      "required_output": "Decide whether the sentence reports a biological result or only the subject of investigation."
+    },
+    {
+      "issue_id": "D_UNCERTAINTY",
+      "reported_failure": "uncertainty false",
+      "required_output": "Apply the explicit-status rule and distinguish absence of a result from proposition uncertainty."
+    },
+    {
+      "issue_id": "E_UNSUPPORTED_COUNT",
+      "reported_failure": "unsupported_claim_count 4",
+      "required_output": "Classify the node/link counting cascade without erasing genuinely unsupported output."
+    },
+    {
+      "issue_id": "F_TERMINAL_LABEL",
+      "reported_failure": "CONTRADICTION_OR_UNSUPPORTED with contradiction_count 0",
+      "required_output": "Reconcile the composite label with its deterministic OR condition and decide whether the label is misleading."
+    }
+  ],
+  "frozen_source": {
+    "context": {
+      "end": 424,
+      "start": 316,
+      "text": "We have investigated the expression of osteonectin gene in fresh BALB/c fibroblasts transformed by v-Ki-ras."
+    },
+    "document_id": "PMID-2681013",
+    "primary_retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=2681013&retmode=xml",
+    "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/2681013/",
+    "source_sha256": "ee9a981ca7ceda2f4dfcf320d27f7338fb7f86774833c0b4ce63cd75532adbe8"
+  },
+  "governance": {
+    "fresh_cases_remaining_and_uncalled": 7,
+    "graph_writes_allowed": false,
+    "qualification_credit": false,
+    "scientific_provider_calls_allowed": false,
+    "sealed_v1_v2_mutation_allowed": false
+  },
+  "offset_convention": "UTF-8 decoded Python string, zero-based half-open absolute offsets",
+  "reviewer_instructions": {
+    "independence": "Do not inspect another adjudicator's output before submitting.",
+    "neutrality": "Candidate IDs do not reveal which interpretation came from Artana. Do not infer provenance.",
+    "occurrence_specialist_scope": [
+      "A_DIRECT_PARTICIPANT_OCCURRENCE",
+      "A_ROLE_T9",
+      "A_DIRECT_ATTACHMENT",
+      "E_UNSUPPORTED_COUNT",
+      "F_TERMINAL_LABEL"
+    ],
+    "semantics_specialist_scope": [
+      "B_CONTEXTUAL_PARTICIPANTS",
+      "C_DIRECTION",
+      "D_UNCERTAINTY",
+      "E_UNSUPPORTED_COUNT",
+      "F_TERMINAL_LABEL"
+    ],
+    "tiebreak_policy": "A third independent adjudicator is used only for issue IDs left unresolved or assigned conflicting classifications."
+  },
+  "schema_version": "artana.staged_generalization.fresh_cg_v2_root_cause_dispute_packet.v1",
+  "v9_rules": {
+    "contained_subspan": "A source subspan already contained in a complete participant mention is not a separate contextual participant unless it has an independent role in the focused event.",
+    "context_boundary": "Preserve an explicitly named entity that restricts an antecedent only when necessary to identify or interpret the focused event. Do not add general paragraph context or participants from neighboring findings.",
+    "direction_values": [
+      "INCREASED",
+      "DECREASED",
+      "NO_DIFFERENCE",
+      "NO_ASSOCIATION",
+      "ENABLES",
+      "OBSERVED",
+      "NOT_APPLICABLE"
+    ],
+    "exact_text": "Trigger and participant text must be exact contiguous source text.",
+    "population_role": "POPULATION is the focal cohort or group in a population comparison.",
+    "contextual_role": "CONTEXTUAL_PARTICIPANT is an explicit participant whose narrower role is not stated.",
+    "uncertainty": "The uncertainty axis describes uncertainty conveyed by the scientific proposition, status, or classification value. Use PROVISIONAL or HYPOTHESIS only when that corresponding status is explicit. Use ASSERTED for an unqualified event."
+  },
+  "v2_observed_output_candidates_are_anonymized": true
+}

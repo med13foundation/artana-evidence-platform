@@ -1,0 +1,61 @@
+{
+  "acceptance": {
+    "existing_v9_rules_preserved": true,
+    "exposed_public_cases_only": true,
+    "generic_suffix_excluded_when_not_lexicalized": true,
+    "meaning_and_role_unchanged": true,
+    "no_new_participant_omissions": true,
+    "no_output_tailored_reference_changes": true
+  },
+  "authorization": "PREREGISTERED_EXPOSED_DEVELOPMENT_ONLY_NOT_EXECUTED",
+  "change_control": {
+    "grader_changed": false,
+    "historical_v1_v2_rescored": false,
+    "model_changed": false,
+    "occurrence_boundary_rule": "For a named gene or protein participant, do not expand the lexicalized name with an adjacent generic entity-type word unless that word is part of the name or is required to distinguish the source occurrence.",
+    "panel_changed": false,
+    "prompt_changed": true,
+    "reference_changed": false,
+    "schema_changed": false,
+    "single_scientific_change": "NAMED_BIOMEDICAL_OCCURRENCE_BOUNDARY"
+  },
+  "evidence": {
+    "dispute_packet_sha256": "dd2063a1c415f79a22df930144d9eb52ca2253d8c0e655d40b6779708c071de6",
+    "occurrence_adjudication_sha256": "48cf32d087364de06ac411e520e92b5019465531b279683456a0f7e6f82401b5",
+    "root_cause_consensus_sha256": "a50cf03c3fb6b11446574d1874347752c29ec454e2e4fd8f4135b94f1177d639",
+    "semantics_adjudication_sha256": "0beb713cd416bc3d9c261c6c32dfee8c60fa38ded3f54cf34e1402922934f95e"
+  },
+  "execution": {
+    "fresh_case_calls_allowed": false,
+    "graph_writes": false,
+    "provider_calls_during_this_task": 0,
+    "remaining_fresh_cases_preserved": 7,
+    "status": "NOT_EXECUTED",
+    "trusted_graph_promotion": false
+  },
+  "experiment_id": "staged-generalization-v10",
+  "frozen_state": {
+    "prompt_sha256": "9e154dd779c937226bbc59adbf36b69194a2f145f34eaebcf954416290b3e203",
+    "schema_basis": "UNCHANGED_V9",
+    "v3_exposed_reference_sha256": "58ba26cf9c3e0e3c8451cd8e28c53f594c9c36433b65fa8cb56e699a6c4e19f6",
+    "v3_exposed_replay_sha256": "9b36da7d111fb0cdd062b1e80a49337f426295e5c5a82f7fbae3b081526739b8",
+    "v9_prompt_sha256": "4ce450b6a79fdb0cb99c48a69eae1390beef21dcf0094099503c03bdb4dd9234"
+  },
+  "qualification_credit": false,
+  "rules": {
+    "candidate_input_excludes": [
+      "fresh-case expected answers",
+      "direct CG participant spans",
+      "V2 model output",
+      "V3 corrected reference",
+      "grader internals"
+    ],
+    "first_validation_gate": "EXISTING_EXPOSED_PUBLIC_CASES_ONLY",
+    "fresh_case_consumption_before_exposed_gate": false,
+    "no_grader_relaxation": true,
+    "output_tailored_examples_forbidden": true,
+    "preserve_all_v9_semantic_and_structural_rules": true
+  },
+  "schema_version": "artana.staged_generalization.v10",
+  "supersedes_terminal": "MODEL_CORRECTION_REQUIRED"
+}

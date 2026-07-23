@@ -1,0 +1,104 @@
+{
+  "schema_version": "artana.staged_generalization.fresh_cg_v2_root_cause_adjudication.v1",
+  "adjudicator_id": "fresh-cg-v2-occurrence-adjudicator-v1",
+  "specialty": "BioNLP exact occurrence identity, direct argument attachment, and evaluator-cascade analysis",
+  "independence_declaration": "I adjudicated only the five occurrence-specialist issue scopes from the frozen dispute packet and its adjudication prompt. I did not inspect any other adjudicator output, direct repository annotation file, V1 or V2 artifact, model output beyond the packet, selection implementation, grader output, or provider response. The sealed evidence was treated as evidence rather than presumed truth, and no agent judgment was treated as human-expert qualification credit.",
+  "packet_sha256": "dd2063a1c415f79a22df930144d9eb52ca2253d8c0e655d40b6779708c071de6",
+  "external_sources": [
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=2681013&retmode=xml",
+      "title": "NCBI PubMed EFetch record for PMID 2681013",
+      "retrieved_at_utc": "2026-07-23T03:53:35Z",
+      "relevance": "The official NCBI response contains the frozen sentence exactly and confirms the source wording surrounding the annotated osteonectin occurrence. Response-byte SHA-256 at retrieval was 885d5c5f5a047d13a76c0b505c84c5a16e186affa68d76f455862506d67c48e2."
+    }
+  ],
+  "issues": [
+    {
+      "issue_id": "A_DIRECT_PARTICIPANT_OCCURRENCE",
+      "classification": "MODEL_ERROR",
+      "independent_error": true,
+      "depends_on": [],
+      "source_bound_conclusion": "The direct BioNLP participant occurrence is exactly T9 at the half-open span [355,366) with text osteonectin. Candidate occurrence 1 preserves that occurrence. Candidate occurrence 2 expands the boundary to [355,371) osteonectin gene and is therefore a different occurrence, regardless of whether the expanded phrase is biologically reasonable. The boundary expansion independently causes the direct-participant mapping failure and is the upstream cause of the role and direct-attachment cascades.",
+      "evidence": [
+        "direct_cg_annotation.participant records annotation_id T9, start 355, end 366, text osteonectin, source_entity_type Gene_or_gene_product.",
+        "candidate_interpretations.direct_participant_occurrence contrasts candidate_occurrence_1 [355,366) osteonectin with candidate_occurrence_2 [355,371) osteonectin gene.",
+        "evaluator_mappings.direct_participant requires exact entity type, start, end, and text equality and reports 0/1.",
+        "v9_rules.exact_text requires exact contiguous source text for participant text.",
+        "The official NCBI EFetch record contains the frozen sentence exactly: We have investigated the expression of osteonectin gene in fresh BALB/c fibroblasts transformed by v-Ki-ras."
+      ],
+      "source_general_correction": "When a participant comes from direct CG, emit and map the exact annotated occurrence identity, including its original half-open span and text. Do not expand a direct occurrence to an adjacent lexical head or descriptor; any broader biological phrase must remain separate from the direct occurrence contract.",
+      "falsification_condition": "This conclusion would be falsified by authoritative direct CG source material showing that T9 itself is [355,371) osteonectin gene, or by proof that the frozen offset convention transforms the sealed [355,366) occurrence into that expanded span."
+    },
+    {
+      "issue_id": "A_ROLE_T9",
+      "classification": "MODEL_ERROR",
+      "independent_error": false,
+      "depends_on": [
+        "A_DIRECT_PARTICIPANT_OCCURRENCE"
+      ],
+      "source_bound_conclusion": "The reported role:T9 failure is not evidence of an independent semantic role error. Exact occurrence mapping produced no output participant ID for T9, so the evaluator failed the role field before comparing the output role. The field failure is a downstream cascade of the model's incorrect participant boundary; the role assigned to the expanded occurrence cannot substitute for a role attached to exact T9.",
+      "evidence": [
+        "evaluator_mappings.role states that the resolved Artana role is checked only against the output participant ID produced by direct occurrence mapping.",
+        "evaluator_mappings.role states that an unmapped direct occurrence supplies no target ID and fails the role field before semantic role comparison.",
+        "direct_cg_annotation.event.arguments contains Theme targeting T9.",
+        "A_DIRECT_PARTICIPANT_OCCURRENCE establishes that the output occurrence does not map to exact T9."
+      ],
+      "source_general_correction": "No role-taxonomy correction is justified from this trace. First restore the exact T9 occurrence, then evaluate the Artana role on the mapped T9 ID. Root-cause reporting should mark the present role miss as blocked by occurrence mapping rather than count it as a second independent role mistake.",
+      "falsification_condition": "This conclusion would be falsified by a trace showing that exact T9 was successfully mapped and that the evaluator then compared a concrete output role against the resolved T9 role and found a semantic mismatch."
+    },
+    {
+      "issue_id": "A_DIRECT_ATTACHMENT",
+      "classification": "EVALUATOR_MAPPING_ERROR",
+      "independent_error": true,
+      "depends_on": [
+        "A_DIRECT_PARTICIPANT_OCCURRENCE"
+      ],
+      "source_bound_conclusion": "For this case, absence of a mapped T9 target already makes the reported 0/1 attachment result a downstream occurrence-map cascade. Separately, the frozen evaluator trace identifies an independent attachment-evaluator defect: the target-list comprehension iterates over link.arguments twice with the same loop variable, repeating each target N times for an N-argument link before requiring exactly one occurrence. That behavior can reject a valid attachment whenever a link has more than one argument and is not justified by BioNLP occurrence identity.",
+      "evidence": [
+        "evaluator_mappings.attachment.actual_algorithm first maps direct participants by exact occurrence and then looks up the mapped ID as the direct event-argument target.",
+        "evaluator_mappings.attachment.implementation_observation states that link.arguments is iterated twice with the same loop variable and each target is repeated N times.",
+        "evaluator_mappings.attachment reports 0/1 while A_DIRECT_PARTICIPANT_OCCURRENCE supplies no mapped T9 ID.",
+        "direct_cg_annotation.event has one source Theme argument targeting T9; its attachment identity is event E5 to occurrence T9."
+      ],
+      "source_general_correction": "Enumerate link.arguments exactly once when collecting candidate targets, compare the resulting target IDs to the mapped direct occurrence, and report an attachment as blocked when its required occurrence did not map. Do not use nested duplicate enumeration or treat the resulting cascade as a second independent model defect.",
+      "falsification_condition": "The evaluator-error portion would be falsified by the actual pinned evaluator showing a single argument iteration or an explicit deduplication before the exactly-once check, together with a multi-argument regression demonstrating that every valid target is accepted exactly once."
+    },
+    {
+      "issue_id": "E_UNSUPPORTED_COUNT",
+      "classification": "EVALUATOR_MAPPING_ERROR",
+      "independent_error": true,
+      "depends_on": [
+        "A_DIRECT_PARTICIPANT_OCCURRENCE",
+        "B_CONTEXTUAL_PARTICIPANTS"
+      ],
+      "source_bound_conclusion": "The reported count of four is not four independent unsupported root causes. The expanded osteonectin gene node is genuinely unsupported as a substitute for exact T9 and should remain visible as one model error. Its link miss is downstream of that same occurrence mismatch, not independent evidence that the event was attached to a biologically different source participant. The contextual node and its link likewise form a node/link pair whose status depends on resolution of B_CONTEXTUAL_PARTICIPANTS. Counting each unmatched node once and then counting its link again solely because the node was absent from the mapped expected-target set inflates a root-cause-facing unsupported count.",
+      "evidence": [
+        "evaluator_mappings.unsupported_count.actual_algorithm counts an unmatched output participant as an unknown participant and counts its link again when the target is absent from the mapped expected-target set.",
+        "evaluator_mappings.unsupported_count.case_trace lists two unmapped nodes and two links to those nodes, producing reported_count 4.",
+        "A_DIRECT_PARTICIPANT_OCCURRENCE establishes one genuine unsupported direct-occurrence boundary expansion.",
+        "The contextual node and link arise from the unresolved candidate_context_1 versus candidate_context_2 segmentation question assigned to B_CONTEXTUAL_PARTICIPANTS."
+      ],
+      "source_general_correction": "Report raw structural misses separately from independent unsupported root causes. Retain the unmatched direct participant as unsupported, but mark a link whose only failure is that same target-mapping miss as cascaded rather than incrementing the independent unsupported count. Apply the same rule to contextual nodes after their reference segmentation is adjudicated.",
+      "falsification_condition": "This conclusion would be falsified by a frozen metric contract explicitly defining every participant node and every relation edge as separately terminal-gating scientific claims, even when the edge is uncheckable only because its target occurrence failed to map, together with evidence that consumers never interpret the count as independent unsupported claims."
+    },
+    {
+      "issue_id": "F_TERMINAL_LABEL",
+      "classification": "TAXONOMY_AMBIGUITY",
+      "independent_error": false,
+      "depends_on": [
+        "E_UNSUPPORTED_COUNT"
+      ],
+      "source_bound_conclusion": "The terminal-stage selection is mechanically consistent with its frozen OR rule: contradiction_count is 0, unsupported_claim_count is 4, and a nonzero unsupported count selects CONTRADICTION_OR_UNSUPPORTED. It does not establish any contradiction. The composite label is taxonomically ambiguous because it can be read as alleging contradiction when this case reached the stage only through the unsupported branch, whose count is itself affected by mapping cascades.",
+      "evidence": [
+        "evaluator_mappings.terminal records contradiction_count 0 and unsupported_claim_count 4.",
+        "evaluator_mappings.terminal.selection_rule selects CONTRADICTION_OR_UNSUPPORTED when either count is nonzero.",
+        "evaluator_mappings.terminal.terminal_stage is CONTRADICTION_OR_UNSUPPORTED.",
+        "E_UNSUPPORTED_COUNT identifies upstream count inflation and distinguishes genuine unsupported output from cascaded link misses."
+      ],
+      "source_general_correction": "Preserve the deterministic OR behavior but expose the active atomic reason, for example UNSUPPORTED_ONLY when contradiction_count is zero, or always pair the composite stage with machine-readable active_reason values and root-cause versus cascaded counts.",
+      "falsification_condition": "The ambiguity conclusion would be falsified by an authoritative terminal taxonomy that unambiguously defines the label as a union in every user-facing and machine-facing representation, always exposes the two component counts and active branch, and prevents consumers from inferring a contradiction when contradiction_count is zero."
+    }
+  ],
+  "unresolved_issue_ids": [],
+  "qualification_credit": false
+}

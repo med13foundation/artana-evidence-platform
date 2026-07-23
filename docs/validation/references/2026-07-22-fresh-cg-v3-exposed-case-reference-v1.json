@@ -1,0 +1,134 @@
+{
+  "adjudicator_sha256_by_id": {
+    "fresh-cg-v2-occurrence-adjudicator-v1": "48cf32d087364de06ac411e520e92b5019465531b279683456a0f7e6f82401b5",
+    "fresh-cg-v2-semantics-adjudicator": "0beb713cd416bc3d9c261c6c32dfee8c60fa38ded3f54cf34e1402922934f95e"
+  },
+  "case_id": "fresh-cg-pmid-2681013-e5",
+  "comparison": {
+    "accepted_evidence": [
+      {
+        "end": 351,
+        "start": 324,
+        "text": "investigated the expression"
+      },
+      {
+        "end": 371,
+        "start": 341,
+        "text": "expression of osteonectin gene"
+      }
+    ],
+    "field_id": "comparison",
+    "source_general_rule": "No explicit comparison is present.",
+    "value": "NOT_APPLICABLE"
+  },
+  "consensus_sha256": "a50cf03c3fb6b11446574d1874347752c29ec454e2e4fd8f4135b94f1177d639",
+  "contextual_participants": [
+    {
+      "entity_type": "POPULATION",
+      "mention": {
+        "end": 423,
+        "start": 375,
+        "text": "fresh BALB/c fibroblasts transformed by v-Ki-ras"
+      },
+      "role": "CONTEXTUAL_PARTICIPANT"
+    }
+  ],
+  "direct_cg_event": {
+    "arguments": [
+      {
+        "source_role": "Theme",
+        "target_annotation_id": "T9"
+      }
+    ],
+    "artana_event_type": "GENE_EXPRESSION",
+    "event_id": "E5",
+    "source_event_type": "Gene_expression",
+    "trigger": {
+      "end": 351,
+      "start": 341,
+      "text": "expression"
+    },
+    "trigger_annotation_id": "T30"
+  },
+  "direct_cg_participants": [
+    {
+      "annotation_id": "T9",
+      "artana_entity_type": "GENE_OR_PROTEIN",
+      "mention": {
+        "end": 366,
+        "start": 355,
+        "text": "osteonectin"
+      },
+      "source_entity_type": "Gene_or_gene_product"
+    }
+  ],
+  "direct_cg_reference_sha256": "155a5a27ab3af0d13e46baa26b9efb78d59b86cd50a2b413c19a0499097e876c",
+  "direction": {
+    "accepted_evidence": [
+      {
+        "end": 336,
+        "start": 316,
+        "text": "We have investigated"
+      }
+    ],
+    "field_id": "direction",
+    "source_general_rule": "A study-activity statement that only names the subject investigated has direction NOT_APPLICABLE. OBSERVED requires an explicit non-directional biological finding.",
+    "value": "NOT_APPLICABLE"
+  },
+  "dispute_packet_sha256": "dd2063a1c415f79a22df930144d9eb52ca2253d8c0e655d40b6779708c071de6",
+  "document_id": "PMID-2681013",
+  "exposed_case_only": true,
+  "graph_promotion_allowed": false,
+  "model_output_used_to_choose_reference_values": false,
+  "polarity": {
+    "accepted_evidence": [
+      {
+        "end": 336,
+        "start": 316,
+        "text": "We have investigated"
+      }
+    ],
+    "field_id": "polarity",
+    "source_general_rule": "The study activity is affirmatively stated.",
+    "value": "AFFIRMED"
+  },
+  "qualification_credit": false,
+  "role": {
+    "accepted_evidence": [
+      {
+        "end": 366,
+        "start": 355,
+        "text": "osteonectin"
+      }
+    ],
+    "field_id": "role:T9",
+    "source_general_rule": "Evaluate role only after the direct occurrence maps exactly.",
+    "value": "AFFECTED_ENTITY"
+  },
+  "schema_version": "artana.staged_generalization.fresh_cg_exposed_reference.v3",
+  "source_general_corrections": [
+    "A complete participant mention supersedes its contained subspans unless a contained span has an independent role in the focused event. POPULATION is reserved for a focal group in a population comparison.",
+    "A study-activity statement that only names the subject investigated has direction NOT_APPLICABLE. OBSERVED requires an explicit non-directional biological finding.",
+    "PROVISIONAL requires explicit provisional status. An unhedged study-activity statement is ASSERTED even when it reports no biological result."
+  ],
+  "source_sha256": "ee9a981ca7ceda2f4dfcf320d27f7338fb7f86774833c0b4ce63cd75532adbe8",
+  "statistics": {
+    "author_interpretation": "NOT_CLAIMED",
+    "interpretation_evidence": [],
+    "observations": []
+  },
+  "uncertainty": {
+    "accepted_evidence": [
+      {
+        "end": 336,
+        "start": 316,
+        "text": "We have investigated"
+      }
+    ],
+    "field_id": "uncertainty",
+    "source_general_rule": "PROVISIONAL requires explicit provisional status. An unhedged study-activity statement is ASSERTED even when it reports no biological result.",
+    "value": "ASSERTED"
+  },
+  "v2_artifacts_modified": false,
+  "v2_rescored": false
+}

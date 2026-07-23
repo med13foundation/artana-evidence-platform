@@ -1,0 +1,161 @@
+{
+  "schema_version": "artana.staged_generalization.fresh_cg_v2_root_cause_adjudication.v1",
+  "adjudicator_id": "fresh-cg-v2-semantics-adjudicator",
+  "specialty": "biomedical proposition semantics and Artana taxonomy",
+  "independence_declaration": "I adjudicated only scopes B_CONTEXTUAL_PARTICIPANTS, C_DIRECTION, D_UNCERTAINTY, E_UNSUPPORTED_COUNT, and F_TERMINAL_LABEL from the frozen dispute packet and prompt, plus the named NCBI PubMed record. I did not inspect another adjudicator's output, make provider calls, modify V1 or V2 artifacts, or write to the graph.",
+  "packet_sha256": "dd2063a1c415f79a22df930144d9eb52ca2253d8c0e655d40b6779708c071de6",
+  "external_sources": [
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=2681013&retmode=xml",
+      "title": "Osteonectin transcript and metastatic behavior in v-Ki-ras transformed fibroblasts.",
+      "retrieved_at_utc": "2026-07-23T03:52:42Z",
+      "relevance": "The official NCBI PubMed XML contains the frozen sentence verbatim and confirms that it is an investigation-framing statement in the primary abstract."
+    }
+  ],
+  "issues": [
+    {
+      "issue_id": "B_CONTEXTUAL_PARTICIPANTS",
+      "classification": "REFERENCE_ERROR",
+      "independent_error": true,
+      "depends_on": [],
+      "source_bound_conclusion": "candidate_context_2 is source-general under the frozen V9 rules: the complete explicit participant is 'fresh BALB/c fibroblasts transformed by v-Ki-ras' at [375,423), with role CONTEXTUAL_PARTICIPANT. The contained cell subspan is not a POPULATION because there is no population comparison, and v-Ki-ras has no independent role in the focused expression event.",
+      "evidence": [
+        {
+          "packet_path": "frozen_source.context",
+          "start": 316,
+          "end": 424,
+          "text": "We have investigated the expression of osteonectin gene in fresh BALB/c fibroblasts transformed by v-Ki-ras."
+        },
+        {
+          "packet_path": "candidate_interpretations.contextual_participants.candidate_context_2[0].mention",
+          "start": 375,
+          "end": 423,
+          "text": "fresh BALB/c fibroblasts transformed by v-Ki-ras"
+        },
+        {
+          "packet_path": "v9_rules.contained_subspan",
+          "text": "A source subspan already contained in a complete participant mention is not a separate contextual participant unless it has an independent role in the focused event."
+        },
+        {
+          "packet_path": "v9_rules.population_role",
+          "text": "POPULATION is the focal cohort or group in a population comparison."
+        }
+      ],
+      "source_general_correction": "Replace the split reference entries with one exact contextual participant spanning [375,423), entity type POPULATION and role CONTEXTUAL_PARTICIPANT. Do not separately score the contained fibroblast subspan or v-Ki-ras for this expression event.",
+      "falsification_condition": "This conclusion would be falsified by a source-general rule that either assigns POPULATION to any expression locus without a population comparison, or gives the 'transformed by v-Ki-ras' modifier an independent participant role in the focused Gene_expression event."
+    },
+    {
+      "issue_id": "C_DIRECTION",
+      "classification": "REFERENCE_ERROR",
+      "independent_error": true,
+      "depends_on": [],
+      "source_bound_conclusion": "candidate_direction_2, NOT_APPLICABLE, is correct. The sentence asserts that expression was investigated but reports no biological expression occurrence, level, association, or directional result. OBSERVED would incorrectly promote study activity into a biological result.",
+      "evidence": [
+        {
+          "packet_path": "frozen_source.context",
+          "start": 316,
+          "end": 336,
+          "text": "We have investigated"
+        },
+        {
+          "packet_path": "direct_cg_annotation.event.trigger",
+          "start": 341,
+          "end": 351,
+          "text": "expression"
+        },
+        {
+          "packet_path": "failed_fields_to_classify[C_DIRECTION].required_output",
+          "text": "Decide whether the sentence reports a biological result or only the subject of investigation."
+        }
+      ],
+      "source_general_correction": "Map an event mentioned only as the object of investigation to direction NOT_APPLICABLE unless the permitted sentence itself reports the event as a biological observation or result. Reserve OBSERVED for an explicit non-directional biological finding.",
+      "falsification_condition": "This conclusion would be falsified if the frozen taxonomy explicitly defined a nominal event under 'investigated' as OBSERVED even when the sentence reports no biological result."
+    },
+    {
+      "issue_id": "D_UNCERTAINTY",
+      "classification": "REFERENCE_ERROR",
+      "independent_error": true,
+      "depends_on": [],
+      "source_bound_conclusion": "candidate_uncertainty_2, ASSERTED, is correct. 'We have investigated' is an unqualified assertion that the investigation occurred. The absence of a biological result affects direction and result status; it does not make the proposition explicitly PROVISIONAL.",
+      "evidence": [
+        {
+          "packet_path": "frozen_source.context",
+          "start": 316,
+          "end": 336,
+          "text": "We have investigated"
+        },
+        {
+          "packet_path": "v9_rules.uncertainty",
+          "text": "Use PROVISIONAL or HYPOTHESIS only when that corresponding status is explicit. Use ASSERTED for an unqualified event."
+        },
+        {
+          "packet_path": "existing_review_history.uncertainty[0].rationale",
+          "text": "The completed investigation is asserted without hedging."
+        }
+      ],
+      "source_general_correction": "Apply the explicit-status rule literally: use ASSERTED for an unhedged investigation statement, while representing the lack of a reported biological result on the direction or result axis rather than converting it to PROVISIONAL.",
+      "falsification_condition": "This conclusion would be falsified by an explicit frozen rule that treats investigation framing itself as an explicit provisional scientific status."
+    },
+    {
+      "issue_id": "E_UNSUPPORTED_COUNT",
+      "classification": "EVALUATOR_MAPPING_ERROR",
+      "independent_error": true,
+      "depends_on": [
+        "A_DIRECT_PARTICIPANT_OCCURRENCE",
+        "B_CONTEXTUAL_PARTICIPANTS"
+      ],
+      "source_bound_conclusion": "The reported unsupported_claim_count of 4 is not four independent unsupported propositions. The two unmatched node counts arise from upstream occurrence/reference disagreements; the contextual node becomes supported after the B correction. The two link counts are mapping cascades because each link is counted unsupported solely after its target failed to enter the expected-target map. The remaining independent unsupported count cannot be finalized in this semantic scope until A_DIRECT_PARTICIPANT_OCCURRENCE is adjudicated, but it is at most one node-level proposition on the supplied trace unless a link is independently semantically wrong.",
+      "evidence": [
+        {
+          "packet_path": "evaluator_mappings.unsupported_count.actual_algorithm",
+          "text": "An unmatched output participant is counted once as an unknown participant. Its link is counted again when the target is absent from the mapped expected-target set."
+        },
+        {
+          "packet_path": "evaluator_mappings.unsupported_count.case_trace",
+          "text": "unmapped direct participant node; unmapped contextual participant node; link to unmapped direct participant; link to unmapped contextual participant"
+        },
+        {
+          "packet_path": "evaluator_mappings.unsupported_count.reported_count",
+          "value": 4
+        },
+        {
+          "packet_path": "evaluator_mappings.context.actual_algorithm",
+          "text": "Every resolved contextual participant is matched by exact start, end, text, entity type, and role."
+        }
+      ],
+      "source_general_correction": "Count each unique unsupported output proposition once. Recompute node support after corrected occurrence and reference mapping, and do not count a link as a second unsupported claim merely because its target was unmapped upstream. Count a link separately only when its attachment, role, or relation semantics are independently unsupported.",
+      "falsification_condition": "This conclusion would be falsified if the evaluator contract explicitly defined a participant assertion and every link to that participant as separate unsupported scientific claims even when the link fails only because the participant mapping failed, and that behavior were the intended reported metric."
+    },
+    {
+      "issue_id": "F_TERMINAL_LABEL",
+      "classification": "TAXONOMY_AMBIGUITY",
+      "independent_error": false,
+      "depends_on": [
+        "E_UNSUPPORTED_COUNT"
+      ],
+      "source_bound_conclusion": "Given the frozen inputs, CONTRADICTION_OR_UNSUPPORTED is selected correctly by the stated OR rule: contradiction_count is 0 and the reported unsupported_claim_count is nonzero. The label does not logically assert that a contradiction exists, but it is operationally ambiguous because it collapses two distinct terminal causes. Whether this terminal stage survives depends on the corrected unsupported count; the selection logic itself is not an additional independent evaluator error.",
+      "evidence": [
+        {
+          "packet_path": "evaluator_mappings.terminal.selection_rule",
+          "text": "CONTRADICTION_OR_UNSUPPORTED is selected when contradiction_count is nonzero OR unsupported_claim_count is nonzero."
+        },
+        {
+          "packet_path": "evaluator_mappings.terminal.contradiction_count",
+          "value": 0
+        },
+        {
+          "packet_path": "evaluator_mappings.terminal.unsupported_claim_count",
+          "value": 4
+        },
+        {
+          "packet_path": "evaluator_mappings.terminal.terminal_stage",
+          "text": "CONTRADICTION_OR_UNSUPPORTED"
+        }
+      ],
+      "source_general_correction": "Preserve the deterministic OR behavior but expose the triggering components with the terminal stage, or use cause-specific terminal labels. Recompute the terminal stage after correcting unsupported-claim mapping; clear it only if both contradiction_count and corrected unsupported_claim_count are zero.",
+      "falsification_condition": "This conclusion would be falsified if the terminal contract defined CONTRADICTION_OR_UNSUPPORTED as asserting that both conditions occurred, or if the corrected unsupported count were proven nonzero and a more specific required terminal label already existed."
+    }
+  ],
+  "unresolved_issue_ids": [],
+  "qualification_credit": false
+}
