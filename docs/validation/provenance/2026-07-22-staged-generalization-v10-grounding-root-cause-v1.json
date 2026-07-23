@@ -1,0 +1,70 @@
+{
+  "affected_case_id": "generalization-negated-association",
+  "classification": "SEMANTIC_EVIDENCE_PROMPT_CONTRACT_GAP",
+  "evaluator_finding": {
+    "event_and_participant_grounding": "PASS",
+    "exact_evidence_grounding": false,
+    "failure_reason": "evidence grounding failed: evidence item is absent or ambiguous in context",
+    "semantic_evidence_resolver_requires_unique_exact_span_in_local_context": true,
+    "semantic_evidence_resolver_status": "CORRECT_FAIL_CLOSED_BEHAVIOR"
+  },
+  "experiment_id": "staged-generalization-v10-exposed-run-v1",
+  "frozen_artifact_sha256": {
+    "evaluator": "a8d33dd3a220879e804c4e4b5084d1c1ee27dfc4ee9c6e1089305665848a52ef",
+    "resolver": "abecbd8b816e0e927d0ce490a54066e42adff42666810294babf6d1adbd76ab6",
+    "schema": "94127ba08dbc8d4efbb1d57ebfb90ba0e4f36c5a22369031ec903fa149431bac",
+    "v10_evaluation": "9ec3d2cd5cc0157a5647c0a7ab16a692f3a83f42fef5c6d505716dd72aac4cb6",
+    "v10_prompt": "9e154dd779c937226bbc59adbf36b69194a2f145f34eaebcf954416290b3e203",
+    "v10_raw_output": "4dac9de1f37e578eeca8171ebf3050e97c5495aa24a3bf35c027348a09fb4126",
+    "v9_prompt": "4ce450b6a79fdb0cb99c48a69eae1390beef21dcf0094099503c03bdb4dd9234",
+    "v9_raw_output": "e67a910a3ad353f4e69e1a14b6d479941a1dc4ee9d84f7ce2d60f8a704da948e"
+  },
+  "occurrence_boundary_involved": false,
+  "prompt_and_schema_finding": {
+    "event_and_participant_exact_evidence_contract_present": true,
+    "semantic_axis_evidence_items_complete_sentence_contract_present": false,
+    "semantic_axis_evidence_items_unique_span_contract_present": false,
+    "v10_prompt_change_from_v9": "NAMED_BIOMEDICAL_OCCURRENCE_BOUNDARY_ONLY"
+  },
+  "schema_version": "artana.staged_generalization.v10_grounding_root_cause.v1",
+  "science_preservation": {
+    "comparison_fidelity": true,
+    "complete_event_recovery": true,
+    "contradiction_count": 0,
+    "direction_fidelity": true,
+    "nested_event_structure": true,
+    "participant_role_fidelity": true,
+    "polarity_fidelity": true,
+    "required_core_complete": true,
+    "statistical_fidelity": true,
+    "uncertainty_fidelity": true,
+    "unsupported_claim_count": 0
+  },
+  "source_occurrence_counts": {
+    "local_context": {
+      "OS": 2,
+      "steroid dose before ICI initiation": 1,
+      "was no longer associated with": 1
+    },
+    "source": {
+      "OS": 6,
+      "steroid dose before ICI initiation": 2,
+      "was no longer associated with": 1
+    }
+  },
+  "v10_evidence": {
+    "event_exact_evidence": "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS.",
+    "participant_exact_evidence_all_match_event_sentence": true,
+    "semantic_axes_evidence_items": [
+      "steroid dose before ICI initiation",
+      "was no longer associated with",
+      "OS"
+    ]
+  },
+  "v9_evidence": {
+    "semantic_axes_evidence_items": [
+      "In a sensitivity analysis omitting patients receiving baseline dexamethasone, steroid dose before ICI initiation was no longer associated with worse OS."
+    ]
+  },
+  "v11_authorized_change": "UNIQUE_COMPLETE_SEMANTIC_EVIDENCE_GROUNDING"
+}

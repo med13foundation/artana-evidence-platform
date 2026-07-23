@@ -1,0 +1,229 @@
+{
+  "acceptance": {
+    "all_cases_scientific_grader_pass": true,
+    "all_receipts_valid": true,
+    "all_semantic_evidence_items_resolve_uniquely": true,
+    "duplicate_creation_calls": 0,
+    "forbidden_target_suffix_expansion": "SLC12A3 gene",
+    "graph_writes": 0,
+    "negated_grounding_case_id": "generalization-negated-association",
+    "negated_semantic_evidence_is_complete_event_sentence": true,
+    "no_v10_boolean_field_regression": true,
+    "no_v10_error_count_regression": true,
+    "no_v9_boolean_field_regression": true,
+    "no_v9_error_count_regression": true,
+    "protected_case_id": "generalization-explicit-nested-cause",
+    "protected_lexicalized_names": [
+      "HCMV immediate-early proteins",
+      "immediate-early proteins"
+    ],
+    "provider_retries": 0,
+    "required_target_occurrence": "SLC12A3",
+    "target_case_id": "generalization-uncertainty"
+  },
+  "authorization": "PREREGISTERED_EXPOSED_DEVELOPMENT_MODEL_EXECUTION",
+  "experiment_id": "staged-generalization-v11-exposed-run-v1",
+  "frozen_state": {
+    "authoritative_references": {
+      "embedded_panel_reference_sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+      "grading_artifact_sha256": {
+        "evidence": "fa80d7d5158bc51b5feb9939e6f2dd18701ada66a55f89412a96b462b9f50e8f",
+        "first_review": "02b4710a8d738856cba268018e9dbd958690f27e111ecc3787a33259483a6081",
+        "packet": "d106c2be359243b455ba45ebef0a89cf50b8f6dc7308219e0f0ae772bc571a7d",
+        "policy": "7d045ccca6398ca10d3dfc3b8136fa871c9b118bfc05ed19d43daa905e518649",
+        "schema": "7ce70832da6edb9944ac08921d42127e9cf81f940d34550f9eefb5f853d630b3",
+        "second_review": "4e09a2c1faa6ba367240ce1d372994ac61c17bb0d5f77f70073044710bde0600",
+        "tiebreaker_review": "a8b298b60b5c55c398f0bb7d7a5d452e18a01148311d53b1cce3baa56c5909e5"
+      },
+      "grading_policy_sha256": "da315ef20300e669fbbfb2565f26faad7ba2ba1336de5d7939a7b22b34a2420c",
+      "review_artifact_sha256": {
+        "v5-internet-grader-a": "e49307a293e3cfa8f93cfb75ec6473e422f1d5dce8fa51331a53831ff6da764d",
+        "v5-internet-grader-b": "41f21ea0f50f941fc886dea3f772220580e29b2eba0b8fed221ac6db8cf30b45",
+        "v5-internet-grader-c": "388002786417b626fb21f77481e1d2b3b7526eaa7d8fe644b018a2e22bf11f5b"
+      }
+    },
+    "case_order": [
+      "generalization-comparison-canary",
+      "generalization-uncertainty",
+      "generalization-negated-association",
+      "generalization-null-statistics",
+      "generalization-drug-sensitivity",
+      "generalization-explicit-nested-cause"
+    ],
+    "current_receipt_code_sha256": {
+      "scripts/validation/provider_receipt_boundary/__init__.py": "8291018b46a4db88ac589a730f4dc247c2aeb7ede6d01f3aeca41f0c47668510",
+      "scripts/validation/provider_receipt_boundary/background/__init__.py": "a470723c7b480c591aa3fdcf3ca146fe308ea5ac55b0ec46c34632d75cc65338",
+      "scripts/validation/provider_receipt_boundary/background/contracts.py": "c2e48f3e77518f19b8c9e2c105b29e0fa98e0fda668228d460eb3452fa538d41",
+      "scripts/validation/provider_receipt_boundary/background/execution.py": "0b368364e20efa7ef675f310d030ad2ba01b81d624213a26829363955ca36693",
+      "scripts/validation/provider_receipt_boundary/background/polling.py": "3bd5f043c3e2f1be764b6d9e92dfff649e5ad8089aa8b2d1047c273e3cd06b90",
+      "scripts/validation/provider_receipt_boundary/background/states.py": "958a34fa0ab25fd7fb9f877c23bedbd83a1b00e59836b8799f3659b5fc60f2ba",
+      "scripts/validation/provider_receipt_boundary/canonical_payload.py": "61294b3278b3d7bb6c8ba9127404658ca4c24fe30234e46a989931206f50f908",
+      "scripts/validation/provider_receipt_boundary/contracts.py": "c3cb084c50d2faa654b0f37208786ae33d895fee2b74ef4c117c38e691f25087",
+      "scripts/validation/provider_receipt_boundary/identity.py": "a07f468ae572ab07ef4b70e7661dcdb416860a71fc1be1b509518aeda1ad8d30",
+      "scripts/validation/provider_receipt_boundary/operational_accounting_v2.py": "83105757297d4797435b0f075287979caeba9458220c0079526c657133b0bfc7",
+      "scripts/validation/provider_receipt_boundary/structural_diff.py": "46e778decc1d15172cfaaa898ae53f693846b779bc9cf84a0ed2415cd2da2e55",
+      "scripts/validation/provider_receipt_boundary/validation.py": "a4dfda3dbabb0383ef6087221f56cb9cc1ba547e876e5134e1099f6e4a3c5500"
+    },
+    "evaluator": {
+      "changed": false,
+      "implementation_sha256": {
+        "scripts/validation/public_gold/staged_event/generalization/anchors.py": "abecbd8b816e0e927d0ce490a54066e42adff42666810294babf6d1adbd76ab6",
+        "scripts/validation/public_gold/staged_event/generalization/evaluation.py": "a8d33dd3a220879e804c4e4b5084d1c1ee27dfc4ee9c6e1089305665848a52ef",
+        "scripts/validation/public_gold/staged_event/generalization/grading/artifacts.py": "4bbd831cae66dafac9f0be32693edd393de76cefb72b487cd3b4ef6542240759",
+        "scripts/validation/public_gold/staged_event/generalization/grading/evaluation.py": "6dc6186cb262d3494e3decc8143790bcbb1132ad62173b807155c5eb905dc1e9",
+        "scripts/validation/public_gold/staged_event/generalization/grading/policy.py": "cd630f3c4dc8a7725a53ab0fec063413ec932fc39b4cc3dccf279a53da795e4b",
+        "scripts/validation/public_gold/staged_event/generalization/span_identity.py": "b9d21433557c763e8f905827e31f450e1141677d827384b532bd9b49940e541e"
+      },
+      "kind": "FROZEN_V9_EXACT_OCCURRENCE_AND_DUAL_LANE_GRADER"
+    },
+    "execution_implementation_sha256": {
+      "scripts/run_staged_generalization_v11_exposed.py": "131614a5364e386cb65df85c53be9180260c933b16748c142f9ce340b597b788",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v11/acceptance.py": "93205431870f804f4532e8b5780d3877e05da6f68301d5cd17d583bc4af69db4",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v11/accounting.py": "3d75bcf78e605e192db3e5b91cd04d6d3f5e2d309e12e8ba0b57987351c91b08",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v11/config.py": "912d5c5e61f47f6dbb98b69c78d2028670299a646613805d1a48ecac97b38eec",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v11/preflight.py": "31c527505e01b37c89a0d1ba1a3111438f4efdc218458343f7e1dc2edb103314",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v11/provider.py": "654e76d13a0b3e3d3dbb99fe89e33e518c9c75deb17a09fc3af82e2ede3197eb",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v11/runner.py": "df72f84585258cbba48d429bf895ecd618cc399a96011fc1fa799ec159b47a35",
+      "scripts/validation/public_gold/staged_event/generalization/repair_v11/terminal.py": "d3030de16f92554b364aa7a61ef391a426c2335f56edfd1774580e9d4828786e"
+    },
+    "expected_maximum_provider_calls": 6,
+    "historical_v9_disposition": {
+      "current_receipt_code_authorized_for_v9": false,
+      "current_receipt_code_requires_separate_v10_execution_pin": true,
+      "historical_v9_reproducibility_scope": "13106a214afc0882e7382032f167e4b909e2d065",
+      "sealed_v9_rescore_authorized": false,
+      "sealed_v9_rewrite_authorized": false
+    },
+    "historical_v9_provenance_sha256": "fa3a35928a97272de25aceed64cbbeac179cbd924573ed82f4ee530e25379eb5",
+    "operational_budget": {
+      "check_before_each_creation": true,
+      "cumulative_max_cost_usd": 5.0,
+      "record_actual_spend_after_each_call": true,
+      "scientific_results_are_not_retroactively_erased": true,
+      "stop_before_next_call_when_exhausted": true,
+      "token_latency_and_cost_are_record_only": true
+    },
+    "panel_sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+    "prompt_basis": "V10_PLUS_ONE_SEMANTIC_EVIDENCE_SECTION",
+    "prompt_sha256": "5a91a17b28730067ed15ecaab6f26a276d4fd1dfc439856817168674296fa87a",
+    "provider": {
+      "application_max_output_tokens": null,
+      "application_max_total_tokens": null,
+      "background": true,
+      "confirmation_retrieval_required": true,
+      "fallback": false,
+      "input_item_retrieval_required": true,
+      "model": "openai:gpt-5.6-luna",
+      "provider_retries": 0,
+      "reasoning_effort": "high",
+      "store": true,
+      "transport": "DIRECT_OPENAI_BACKGROUND_RESPONSES"
+    },
+    "provider_format_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+    "provider_input_sha256_by_case": {
+      "generalization-comparison-canary": "6d4691ee52b6e83f2099a7ede63a8d6a8bfe27324e3f582357edeae761b4ae30",
+      "generalization-drug-sensitivity": "3516049df131f1a8d92c344dc98820319e89913e61c067ec23f2a1f6488499de",
+      "generalization-explicit-nested-cause": "99613fa830d944d719c63ec0ff22ccdede74de7b18239e046efbf458004fa163",
+      "generalization-negated-association": "fd410fdfe6a92dd618acf67b33d66720e640e32511698591a6ba22f1414019e0",
+      "generalization-null-statistics": "843ab1781d39ccbc71441728edda93299fda1dce491883fc649f256a7bd5f7b0",
+      "generalization-uncertainty": "527baa5997ad3e3ff4c01e7e3238d32dac97087899dd9f74a47e0b4192c4bae9"
+    },
+    "root_cause_artifact_sha256": "73b4f2f3a70392ab7efd2ffcdcc7bee393bf5e24274ef5f662de76be344ce237",
+    "schema_basis": "UNCHANGED_V9_V10",
+    "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+    "source_sha256_by_case": {
+      "generalization-comparison-canary": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-drug-sensitivity": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880",
+      "generalization-explicit-nested-cause": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+      "generalization-negated-association": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-null-statistics": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-uncertainty": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b"
+    },
+    "v10_baseline": {
+      "called_case_ids": [
+        "generalization-comparison-canary",
+        "generalization-null-statistics",
+        "generalization-negated-association"
+      ],
+      "historical_result_immutable": true,
+      "historical_result_rescored": false,
+      "metrics_sha256_by_case": {
+        "generalization-comparison-canary": "6a48d9fc235fbbd2cb9855049255dd6a1fc649be5a6a437931efa68ced873625",
+        "generalization-negated-association": "606c5a1e82c7f1af0c1268a788ea9f5c48d3f5ad128001ce4f8c689d5ee3ad38",
+        "generalization-null-statistics": "d351ee8ff7e6693dc775a80fc4fec49a9772390847b695aa883966c81e1520c6"
+      },
+      "preregistration_sha256": "bdcb5127609c2f2c491e0cae2089e1bae593ee85ab86c4fb03ca8ba04142a18a",
+      "raw_output_sha256_by_case": {
+        "generalization-comparison-canary": "8e78aeb3ce80d1eda61ad066b86f88b93a0d35fec85c2714b582417110b6cf28",
+        "generalization-negated-association": "4dac9de1f37e578eeca8171ebf3050e97c5495aa24a3bf35c027348a09fb4126",
+        "generalization-null-statistics": "16fe23d58b2e32b20e6eb69c5ff6a8048d71f0e33c0d8478a4db35cfd417959a"
+      },
+      "report_sha256": "e59f6a41d37b19d4052d39da3233600cb949b9ce8fcceba2c82e10910ceaf3d3",
+      "result_sha256": "afeca31c8d15ce40c7c8cd75750d210353e807c55d121fec65b49b347bce4bb9",
+      "terminal": "V10_EXPOSED_GATE_FAIL_MODEL_CORRECTION_REQUIRED"
+    },
+    "v9_baseline": {
+      "called_case_ids": [
+        "generalization-comparison-canary",
+        "generalization-null-statistics",
+        "generalization-negated-association",
+        "generalization-uncertainty",
+        "generalization-drug-sensitivity"
+      ],
+      "metrics_sha256_by_case": {
+        "generalization-comparison-canary": "6a48d9fc235fbbd2cb9855049255dd6a1fc649be5a6a437931efa68ced873625",
+        "generalization-drug-sensitivity": "6b6a7d70ab46f56de63351ad03cd6ca6ea6686ff2387c861b7eed582915a2548",
+        "generalization-negated-association": "fb097eda0a83fac7f0030663f681e2776ee2bb1cc98ccab8785bcacdfcea9ff1",
+        "generalization-null-statistics": "d351ee8ff7e6693dc775a80fc4fec49a9772390847b695aa883966c81e1520c6",
+        "generalization-uncertainty": "ed5a738068425007286b01f29ff10f0a6e3e072ddf5d6d3b29ecd8b76c8bbb44"
+      },
+      "preregistration_sha256": "7a170db78370571f986208530547c5ee4ec85a148634002f87a18dcc486e85b9",
+      "raw_output_sha256_by_case": {
+        "generalization-comparison-canary": "056d67d5fb2eaafc79945ec3a08458243f788aa836586d256de601ed0c043048",
+        "generalization-drug-sensitivity": "d7e5bc210089326092d823ab1262af4cfb1bd50f7ec36231fbbc5997963394f2",
+        "generalization-negated-association": "e67a910a3ad353f4e69e1a14b6d479941a1dc4ee9d84f7ce2d60f8a704da948e",
+        "generalization-null-statistics": "225d7c6fb29e039924cc0501abe5dc00cd3e4b5b0dfbf9d080a3be2a5597d994",
+        "generalization-uncertainty": "87f0397d6a1a2155426cb6fb426bae4550b57ff7318c6e653bcec33011ae8a73"
+      },
+      "result_sha256": "034cc3f9265a514851dfc5fd39ac3aae81c154a071ed92bf95ed7e175494e399"
+    }
+  },
+  "qualification_credit": false,
+  "root_cause_classification": "SEMANTIC_EVIDENCE_PROMPT_CONTRACT_GAP",
+  "rules": {
+    "agent_inputs_exclude": [
+      "expected participant spans",
+      "direct CG answers",
+      "grader internals",
+      "Fresh-CG V2 output",
+      "V3 corrected reference",
+      "SLC12A3 expected answer",
+      "osteonectin expected answer",
+      "output-tailored examples"
+    ],
+    "exposed_public_cases_only": true,
+    "fresh_case_calls_allowed": false,
+    "fresh_cases_consumed": 0,
+    "graph_writes": false,
+    "one_creation_call_per_case": true,
+    "provider_retries": 0,
+    "trusted_graph_promotion": false
+  },
+  "schema_version": "artana.staged_generalization.v11_exposed_run.v1",
+  "single_scientific_change": "UNIQUE_COMPLETE_SEMANTIC_EVIDENCE_GROUNDING",
+  "stopping_rules": {
+    "first_scientific_failure": true,
+    "invalid_schema_custody_or_exactly_once": true,
+    "no_prompt_patch_or_v12_after_failure": true,
+    "operational_budget_exhaustion": true,
+    "provider_outage_or_missing_secret": true,
+    "sequential_fail_fast": true
+  },
+  "terminal_decisions": [
+    "V11_EXPOSED_GATE_PASS_READY_FOR_NEW_FRESH_PREREGISTRATION",
+    "V11_EXPOSED_GATE_FAIL_BOUNDARY",
+    "V11_EXPOSED_GATE_FAIL_GROUNDING",
+    "V11_EXPOSED_GATE_FAIL_UNRELATED_REGRESSION",
+    "INVALID_V11_EXECUTION"
+  ]
+}
