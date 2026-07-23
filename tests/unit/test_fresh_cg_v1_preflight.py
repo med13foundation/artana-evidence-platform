@@ -92,3 +92,9 @@ def test_remote_gate_rejects_local_remote_head_mismatch(
 
     with pytest.raises(preflight.FreshCGPreflightError, match="live remote"):
         preflight._verify_remote_gate(DEFAULT_PATHS)
+
+
+def test_dirty_path_parser_preserves_porcelain_leading_status_columns() -> None:
+    assert preflight._parse_dirty_paths(
+        " M coverage.xml\n?? validation/\nR  old.txt -> new.txt\n"
+    ) == ("coverage.xml", "validation/", "new.txt")

@@ -451,7 +451,22 @@ def _verify_remote_gate(paths: ExperimentPaths) -> None:
 
 
 def _dirty_paths() -> tuple[str, ...]:
-    output = _git("status", "--porcelain=v1", "--untracked-files=normal")
+    completed = subprocess.run(  # noqa: S603 - fixed git status command.
+        [GIT, "status", "--porcelain=v1", "--untracked-files=normal"],
+        cwd=REPO,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    if completed.returncode != 0:
+        raise FreshCGPreflightError(
+            f"git status failed: {completed.stderr.strip()}"
+        )
+    return _parse_dirty_paths(completed.stdout)
+
+
+def _parse_dirty_paths(output: str) -> tuple[str, ...]:
     paths: list[str] = []
     for line in output.splitlines():
         raw = line[3:]
