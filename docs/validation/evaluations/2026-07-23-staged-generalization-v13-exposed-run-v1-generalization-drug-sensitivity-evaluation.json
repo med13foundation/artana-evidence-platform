@@ -1,0 +1,84 @@
+{
+  "benchmark_projection_is_review_only": true,
+  "case_id": "generalization-drug-sensitivity",
+  "custody": {
+    "bundle_sha256": "2231ac5281d86ac2df9b3e4f6b0bde2b9759d2a50b051bc7fc7063eb6abb61d8",
+    "output_sha256": "815566f9b31f038b5fa0024e4513dc822a0e3437cfe99458095ecf2728843dab",
+    "provider_input_sha256": "7e734bae993188dfe58420b902b8489b67b74862eca6abad05dda4d99cb72771",
+    "raw_output_sha256": "37c0fe3f82767ac7c2fb2310b52a987beb68e22e9729d20de25fa73939dcc238",
+    "receipt_sha256": "ea52a2deb526f69f4600b194068fb887042abfec236a1a6fd7b8ed70248ae0d6",
+    "response_id": "resp_0b27f927fe225e28006a6273265f24819a8011b8e9b705f323",
+    "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+    "stage": "GENERALIZATION_V13_EXPOSED:generalization-drug-sensitivity"
+  },
+  "experiment_id": "staged-generalization-v13-exposed-run-v1",
+  "failure_classification": null,
+  "graph_writes": 0,
+  "qualification_credit": false,
+  "response_id": "resp_0b27f927fe225e28006a6273265f24819a8011b8e9b705f323",
+  "schema_version": "artana.staged_generalization.v13_case_evaluation.v1",
+  "trusted_promotion": false,
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.019585,
+    "input_tokens": 3379,
+    "latency_seconds": 22.110360542006674,
+    "output_tokens": 2701,
+    "reasoning_tokens": 2070,
+    "total_tokens": 6080
+  },
+  "v13_metrics": {
+    "benchmark_projection": {
+      "arguments": [
+        {
+          "cg_role": "Theme",
+          "end": 378,
+          "entity_type": "CANCER",
+          "exact_text": "carcinoma",
+          "start": 369
+        },
+        {
+          "cg_role": "Cause",
+          "end": 395,
+          "entity_type": "SIMPLE_CHEMICAL",
+          "exact_text": "5-FU",
+          "start": 391
+        }
+      ],
+      "event": {
+        "trigger": {
+          "end": 365,
+          "exact_text": "sensitivity",
+          "start": 354
+        },
+        "type": "REGULATION"
+      },
+      "graph_promotion_allowed": false,
+      "qualification_credit": false,
+      "review_only": true,
+      "scope": "BIONLP_CG_EVALUATION_ONLY"
+    },
+    "benchmark_projection_scope": "DRUG_FOCUS_EVENT",
+    "benchmark_projection_status": "PASS",
+    "case_id": "generalization-drug-sensitivity",
+    "completeness": "COMPLETE",
+    "exact_evidence_grounding": true,
+    "failure_reasons": [],
+    "focus_event_passed": true,
+    "full_focus_cg_status": "NOT_APPLICABLE",
+    "graph_writes": 0,
+    "historical_grader_passed": null,
+    "mandatory_participants_passed": true,
+    "participant_roles_passed": true,
+    "passed": true,
+    "permitted_context_count": 0,
+    "qualification_credit": false,
+    "root_only_failure": false,
+    "root_selection_status": "PASS",
+    "semantic_axes_passed": true,
+    "source_dimensions_except_root_passed": true,
+    "source_semantic_status": "PASS",
+    "trusted_promotion": false,
+    "unsupported_extraction_count": 0
+  }
+}

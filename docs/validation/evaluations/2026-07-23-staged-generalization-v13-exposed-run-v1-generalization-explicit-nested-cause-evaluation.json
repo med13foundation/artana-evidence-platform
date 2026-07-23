@@ -1,0 +1,59 @@
+{
+  "benchmark_projection_is_review_only": true,
+  "case_id": "generalization-explicit-nested-cause",
+  "custody": {
+    "bundle_sha256": "cc305b40e58ffdb7688cfa45bd6956a697bc49b703f10cc2b2d83ce8ec815efa",
+    "output_sha256": "0c2f045d4d6145468562c48a31f2352aef654c2318306e08aa66355b91ab6862",
+    "provider_input_sha256": "9784c362070de58191140b0313af58f095454b79d15e303f743f26733162c772",
+    "raw_output_sha256": "1940d19258691ce6be3035fa5feddbff802858c33239716e30c770721269c8c5",
+    "receipt_sha256": "a388b240cc4f3f17100a78cd159674987f04280cb2efb210c1d458e9394fcdc6",
+    "response_id": "resp_081e85d75ba8b839006a62733c673c8199a0ed8c3d2b485af7",
+    "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+    "stage": "GENERALIZATION_V13_EXPOSED:generalization-explicit-nested-cause"
+  },
+  "experiment_id": "staged-generalization-v13-exposed-run-v1",
+  "failure_classification": "SOURCE_SEMANTICS",
+  "graph_writes": 0,
+  "qualification_credit": false,
+  "response_id": "resp_081e85d75ba8b839006a62733c673c8199a0ed8c3d2b485af7",
+  "schema_version": "artana.staged_generalization.v13_case_evaluation.v1",
+  "trusted_promotion": false,
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.044399999999999995,
+    "input_tokens": 3390,
+    "latency_seconds": 49.92022587500105,
+    "output_tokens": 6835,
+    "reasoning_tokens": 5696,
+    "total_tokens": 10225
+  },
+  "v13_metrics": {
+    "benchmark_projection": null,
+    "benchmark_projection_scope": "EXACT_CG_ROOT_DEPENDENCY_CHAIN",
+    "benchmark_projection_status": "FAIL",
+    "case_id": "generalization-explicit-nested-cause",
+    "completeness": "COMPLETE",
+    "exact_evidence_grounding": true,
+    "failure_reasons": [
+      "source participants are incomplete: ['proteins']",
+      "unsupported or duplicate participants: ['GENE_OR_PROTEIN/HCMV immediate-early']",
+      "event argument target cannot be mapped to a source key"
+    ],
+    "focus_event_passed": true,
+    "full_focus_cg_status": "NOT_MEASURED_UNREPRESENTABLE",
+    "graph_writes": 0,
+    "historical_grader_passed": null,
+    "mandatory_participants_passed": false,
+    "participant_roles_passed": false,
+    "passed": false,
+    "permitted_context_count": 1,
+    "qualification_credit": false,
+    "root_only_failure": false,
+    "root_selection_status": "PASS",
+    "semantic_axes_passed": true,
+    "source_dimensions_except_root_passed": false,
+    "source_semantic_status": "FAIL",
+    "trusted_promotion": false,
+    "unsupported_extraction_count": 1
+  }
+}

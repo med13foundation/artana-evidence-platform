@@ -1,0 +1,1369 @@
+{
+  "budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.044399999999999995,
+    "observed_latency_seconds": 49.92022587500105,
+    "observed_output_tokens": 6835,
+    "observed_total_tokens": 10225,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "completed_provider_calls": 1,
+  "confirmation_retrieval_requests": 1,
+  "creation_envelope_sha256": "1fdc2ea2585df1664f66a22815f408201eac533e744e4a25fb2f3a0ce7e0d9c8",
+  "differences": [
+    {
+      "allowlisted": true,
+      "creation_sha256": "40693d9d47f51662e3122a8089c1c14107cceda5b6931a5be24f82b85a4846fa",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[0].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "7b29ac3133707b4dee1f451cdf08261a41939f6f4501a0c9f7c22af02c92aeca",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[1].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "e85aa0638ab8b78543afaa700d3c7db33e74a0b687add8ce803b50deade04a82",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[2].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "fe8790c76de739d4fae2e973f33e7e35867eb45c566839913f93ac3a30b5ad26",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[3].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "dde3b84403496f457c925a56ec04541257e4701fb2f372fcc3cf70b4d03d5098",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[4].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "886160cc32ac499360ad30d82ac3ffb910b4de7850b41d0b1215b8c46c32b190",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[5].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "a82c2f8012420d988f53dd4041200c6fa2a90316f99f5bc9693d0c5684b134df",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[6].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "f306f4b768e78532d6f5cef399874175b5162e4a8f555bd18cefb20c82ffa05d",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[7].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "f93561081b2b5bf2d26e7ea4368574d028a741b1c8cf98df55ebc272eb3a1afb",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[8].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "5f376a695f64881024a368ec1b9d6f84c950fcd3cd437ad3b4c88a6c7e25b6ec",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[9].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "696c2b7088ee18594c4fd6c45151b7378e7802587e8108154d81954f78220007",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[10].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "62c324223fb5bff074b596769232b2fe45d0219b7362d9d5b769654bfbb7ffd6",
+      "difference": "FOREGROUND_USAGE_SNAPSHOT_CHANGED",
+      "path": "$.usage",
+      "rationale": "usage is record-only telemetry and confirmation is the authoritative completed snapshot",
+      "retrieval_sha256": "d9a4934b77822cc439094ca9865014bf3e2cd99d9116f05c7f6b01f808b3c0aa"
+    }
+  ],
+  "duplicate_creation_calls": 0,
+  "foreground_request_timeout_seconds": 1800.0,
+  "foreground_usage_policy": {
+    "authoritative_snapshot": "CONFIRMATION_RETRIEVAL",
+    "confirmation_usage_sha256": "d9a4934b77822cc439094ca9865014bf3e2cd99d9116f05c7f6b01f808b3c0aa",
+    "creation_usage_sha256": "62c324223fb5bff074b596769232b2fe45d0219b7362d9d5b769654bfbb7ffd6",
+    "scientific_validity_dependency": false,
+    "snapshots_differ": true
+  },
+  "identity": {
+    "created_at": 1784836924.0,
+    "model": "gpt-5.6-luna",
+    "object_type": "response",
+    "output_items": [
+      [
+        "reasoning",
+        "rs_081e85d75ba8b839006a62733d234c8199bee702a51876f613"
+      ],
+      [
+        "reasoning",
+        "rs_081e85d75ba8b839006a627340d5088199b086d9e4b1074ef6"
+      ],
+      [
+        "reasoning",
+        "rs_081e85d75ba8b839006a627344cad08199b085305fe49d181d"
+      ],
+      [
+        "reasoning",
+        "rs_081e85d75ba8b839006a6273486984819995a2606b24182221"
+      ],
+      [
+        "reasoning",
+        "rs_081e85d75ba8b839006a62734c4170819983261d70071cbbbb"
+      ],
+      [
+        "reasoning",
+        "rs_081e85d75ba8b839006a62735075808199b0ca89ef891443c4"
+      ],
+      [
+        "reasoning",
+        "rs_081e85d75ba8b839006a6273542fe8819998e2b8a6b2042e48"
+      ],
+      [
+        "reasoning",
+        "rs_081e85d75ba8b839006a627358605481999795633686c0fdf7"
+      ],
+      [
+        "reasoning",
+        "rs_081e85d75ba8b839006a62735c68b881998c9dfcc80bf62c75"
+      ],
+      [
+        "reasoning",
+        "rs_081e85d75ba8b839006a6273604df08199b68ed3638a33bc66"
+      ],
+      [
+        "reasoning",
+        "rs_081e85d75ba8b839006a627363e4bc819987843e5c0d6b229a"
+      ],
+      [
+        "message",
+        "msg_081e85d75ba8b839006a627368302c81998c13bcaac4fea078"
+      ]
+    ],
+    "response_id": "resp_081e85d75ba8b839006a62733c673c8199a0ed8c3d2b485af7",
+    "status": "completed"
+  },
+  "input_item_retrieval_requests": 1,
+  "provider_creation_calls": 1,
+  "provider_input_sha256": "9784c362070de58191140b0313af58f095454b79d15e303f743f26733162c772",
+  "provider_retries": 0,
+  "provider_schema_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+  "retrieval_envelope_sha256": "ac6d78dab98c975f388ff4adbb66fe4428702719c31187ece27ac5b92d63ef3e",
+  "schema_version": "artana.provider_receipt_boundary.foreground_telemetry.v3",
+  "scientific_payload_sha256": "0c2f045d4d6145468562c48a31f2352aef654c2318306e08aa66355b91ab6862",
+  "status": "VERIFIED_LIVE",
+  "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+  "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.044399999999999995,
+    "input_tokens": 3390,
+    "latency_seconds": 49.92022587500105,
+    "output_tokens": 6835,
+    "reasoning_tokens": 5696,
+    "total_tokens": 10225
+  },
+  "v13_transport_custody": {
+    "confirmation_response": {
+      "background": false,
+      "billing": {
+        "payer": "openai"
+      },
+      "completed_at": 1784836973.0,
+      "created_at": 1784836924.0,
+      "error": null,
+      "frequency_penalty": 0.0,
+      "id": "resp_081e85d75ba8b839006a62733c673c8199a0ed8c3d2b485af7",
+      "incomplete_details": null,
+      "instructions": null,
+      "max_output_tokens": null,
+      "max_tool_calls": null,
+      "metadata": {
+        "artana_case_id": "generalization-explicit-nested-cause",
+        "artana_evaluation_contract": "SOURCE_SEMANTICS_WITH_REVIEW_ONLY_CG_PROJECTION",
+        "artana_experiment": "staged-generalization-v13-exposed-run-v1",
+        "artana_operational_policy": "RECORD_ONLY_USAGE_CUMULATIVE_5_USD",
+        "artana_preregistration_sha256": "56ce61fff54a5fbaef2b44d0cb54b349b877a28808f2142fe4364b78e1f60914",
+        "artana_scientific_change": "COMPOSITIONAL_FOCUS_ROOT_SELECTION"
+      },
+      "model": "gpt-5.6-luna",
+      "moderation": null,
+      "object": "response",
+      "output": [
+        {
+          "content": [],
+          "id": "rs_081e85d75ba8b839006a62733d234c8199bee702a51876f613",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_081e85d75ba8b839006a627340d5088199b086d9e4b1074ef6",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_081e85d75ba8b839006a627344cad08199b085305fe49d181d",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_081e85d75ba8b839006a6273486984819995a2606b24182221",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_081e85d75ba8b839006a62734c4170819983261d70071cbbbb",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_081e85d75ba8b839006a62735075808199b0ca89ef891443c4",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_081e85d75ba8b839006a6273542fe8819998e2b8a6b2042e48",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_081e85d75ba8b839006a627358605481999795633686c0fdf7",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_081e85d75ba8b839006a62735c68b881998c9dfcc80bf62c75",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_081e85d75ba8b839006a6273604df08199b68ed3638a33bc66",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_081e85d75ba8b839006a627363e4bc819987843e5c0d6b229a",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [
+            {
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"case_id\":\"generalization-explicit-nested-cause\",\"inventory\":[{\"event_id\":\"E1\",\"event_type\":\"REGULATION\",\"trigger_text\":\"responsible for\",\"exact_evidence\":\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\",\"explanation\":\"This event represents the explicit causal responsibility of the HCMV immediate-early proteins for the nested elevation event.\"},{\"event_id\":\"E2\",\"event_type\":\"POSITIVE_REGULATION\",\"trigger_text\":\"elevating\",\"exact_evidence\":\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\",\"explanation\":\"This event represents the increase in p53 levels in infected fibroblasts.\"}],\"participants\":[{\"participant_id\":\"P1\",\"entity_type\":\"GENE_OR_PROTEIN\",\"exact_text\":\"HCMV immediate-early\",\"exact_evidence\":\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\",\"explanation\":\"This is the lexicalized name identifying the HCMV immediate-early protein entity; the adjacent generic word \u201cproteins\u201d is not included in the occurrence span.\"},{\"participant_id\":\"P2\",\"entity_type\":\"GENE_OR_PROTEIN\",\"exact_text\":\"p53\",\"exact_evidence\":\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\",\"explanation\":\"p53 is the molecular entity whose levels are elevated.\"},{\"participant_id\":\"P3\",\"entity_type\":\"POPULATION\",\"exact_text\":\"infected fibroblasts\",\"exact_evidence\":\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\",\"explanation\":\"This is the explicitly stated cellular population in which the elevation occurs.\"}],\"links\":[{\"event_id\":\"E1\",\"arguments\":[{\"role\":\"CAUSAL_AGENT\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P1\",\"explanation\":\"The HCMV immediate-early proteins are explicitly described as responsible for the effect.\"},{\"role\":\"EFFECT_EVENT\",\"target_kind\":\"EVENT\",\"target_id\":\"E2\",\"explanation\":\"The causal responsibility is directed toward the nested p53-elevation event.\"}]},{\"event_id\":\"E2\",\"arguments\":[{\"role\":\"CAUSAL_AGENT\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P1\",\"explanation\":\"The HCMV immediate-early proteins are the agent associated with elevating p53 levels.\"},{\"role\":\"AFFECTED_ENTITY\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P2\",\"explanation\":\"p53 is the entity whose level is increased.\"},{\"role\":\"CONTEXTUAL_PARTICIPANT\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P3\",\"explanation\":\"The elevation is specified to occur in infected fibroblasts.\"}]}],\"semantic_axes\":[{\"event_id\":\"E1\",\"direction\":\"ENABLES\",\"comparison\":\"NOT_APPLICABLE\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"ASSERTED\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\"],\"explanation\":\"The source affirms a causal enabling relation, but provides no statistical observation or explicit significance interpretation.\"},{\"event_id\":\"E2\",\"direction\":\"INCREASED\",\"comparison\":\"NOT_APPLICABLE\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"ASSERTED\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\"],\"explanation\":\"The event explicitly describes increased p53 levels. \u201cClearly shown\u201d strengthens the assertion but does not state statistical significance.\"}],\"root_event_id\":\"E1\",\"completeness\":\"COMPLETE\",\"structure_explanation\":\"The causal responsibility event E1 contains the positive-regulation event E2 as its effect. After linking the events, E1 is the unique focus-internal event not targeted by another focus-internal event and is therefore the root.\"}",
+              "type": "output_text"
+            }
+          ],
+          "id": "msg_081e85d75ba8b839006a627368302c81998c13bcaac4fea078",
+          "phase": "final_answer",
+          "role": "assistant",
+          "status": "completed",
+          "type": "message"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0.0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "high",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "status": "completed",
+      "store": true,
+      "temperature": 1.0,
+      "text": {
+        "format": {
+          "description": "Source-grounded staged scientific event inventory, referential grounding, linking, and versioned classification-argument semantics.",
+          "name": "V9StagedGeneralizationOutput",
+          "schema": {
+            "$defs": {
+              "InventoryEvent": {
+                "additionalProperties": false,
+                "properties": {
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  },
+                  "event_type": {
+                    "enum": [
+                      "REGULATION",
+                      "POSITIVE_REGULATION",
+                      "NEGATIVE_REGULATION",
+                      "GENE_EXPRESSION",
+                      "COMPARISON",
+                      "ASSOCIATION",
+                      "CLASSIFICATION",
+                      "OBSERVATION"
+                    ],
+                    "title": "Event Type",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "description": "Complete exact source sentence containing trigger_text.",
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "trigger_text": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "title": "Trigger Text",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "event_type",
+                  "trigger_text",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "InventoryEvent",
+                "type": "object"
+              },
+              "ParticipantNode": {
+                "additionalProperties": false,
+                "properties": {
+                  "entity_type": {
+                    "enum": [
+                      "POPULATION",
+                      "OUTCOME",
+                      "EXPOSURE",
+                      "VARIANT",
+                      "GENE_OR_PROTEIN",
+                      "CANCER",
+                      "SIMPLE_CHEMICAL",
+                      "MEASUREMENT"
+                    ],
+                    "title": "Entity Type",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "description": "Complete exact source sentence containing exact_text.",
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "exact_text": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Exact Text",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Participant Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "participant_id",
+                  "entity_type",
+                  "exact_text",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "ParticipantNode",
+                "type": "object"
+              },
+              "StatisticalObservation": {
+                "additionalProperties": false,
+                "properties": {
+                  "exact_text": {
+                    "anyOf": [
+                      {
+                        "maxLength": 1000,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Exact Text"
+                  },
+                  "observation_type": {
+                    "enum": [
+                      "P_VALUE",
+                      "CONFIDENCE_INTERVAL",
+                      "EFFECT_ESTIMATE",
+                      "NONE"
+                    ],
+                    "title": "Observation Type",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "observation_type",
+                  "exact_text"
+                ],
+                "title": "StatisticalObservation",
+                "type": "object"
+              },
+              "V8SemanticAxes": {
+                "additionalProperties": false,
+                "description": "Semantic axes with the preregistered polarity boundary in the schema.",
+                "properties": {
+                  "author_interpretation": {
+                    "enum": [
+                      "SIGNIFICANT",
+                      "NOT_SIGNIFICANT",
+                      "NOT_CLAIMED"
+                    ],
+                    "title": "Author Interpretation",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "enum": [
+                      "GREATER",
+                      "LESS",
+                      "NO_DIFFERENCE",
+                      "NOT_APPLICABLE"
+                    ],
+                    "title": "Comparison",
+                    "type": "string"
+                  },
+                  "direction": {
+                    "enum": [
+                      "INCREASED",
+                      "DECREASED",
+                      "NO_DIFFERENCE",
+                      "NO_ASSOCIATION",
+                      "ENABLES",
+                      "OBSERVED",
+                      "NOT_APPLICABLE"
+                    ],
+                    "title": "Direction",
+                    "type": "string"
+                  },
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  },
+                  "evidence_items": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 8,
+                    "minItems": 1,
+                    "title": "Evidence Items",
+                    "type": "array"
+                  },
+                  "explanation": {
+                    "maxLength": 1500,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "polarity": {
+                    "description": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+                    "enum": [
+                      "AFFIRMED",
+                      "NEGATED",
+                      "NULL_RESULT"
+                    ],
+                    "title": "Polarity",
+                    "type": "string"
+                  },
+                  "statistical_observations": {
+                    "items": {
+                      "$ref": "#/$defs/StatisticalObservation"
+                    },
+                    "maxItems": 8,
+                    "title": "Statistical Observations",
+                    "type": "array"
+                  },
+                  "uncertainty": {
+                    "enum": [
+                      "ASSERTED",
+                      "PROVISIONAL",
+                      "UNCERTAIN",
+                      "HYPOTHESIS"
+                    ],
+                    "title": "Uncertainty",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "direction",
+                  "comparison",
+                  "polarity",
+                  "uncertainty",
+                  "statistical_observations",
+                  "author_interpretation",
+                  "evidence_items",
+                  "explanation"
+                ],
+                "title": "V8SemanticAxes",
+                "type": "object"
+              },
+              "V9EventArgument": {
+                "additionalProperties": false,
+                "description": "Event argument with the classification boundary in the role schema.",
+                "properties": {
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "role": {
+                    "description": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+                    "enum": [
+                      "AFFECTED_ENTITY",
+                      "CAUSAL_AGENT",
+                      "STIMULUS_OR_OBJECT",
+                      "POPULATION",
+                      "COMPARATOR",
+                      "OUTCOME",
+                      "EXPOSURE",
+                      "MEASUREMENT",
+                      "CONTEXTUAL_PARTICIPANT",
+                      "EFFECT_EVENT"
+                    ],
+                    "title": "Role",
+                    "type": "string"
+                  },
+                  "target_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Target Id",
+                    "type": "string"
+                  },
+                  "target_kind": {
+                    "enum": [
+                      "PARTICIPANT",
+                      "EVENT"
+                    ],
+                    "title": "Target Kind",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "role",
+                  "target_kind",
+                  "target_id",
+                  "explanation"
+                ],
+                "title": "V9EventArgument",
+                "type": "object"
+              },
+              "V9EventLinks": {
+                "additionalProperties": false,
+                "description": "V9 links using the versioned event-argument role description.",
+                "properties": {
+                  "arguments": {
+                    "items": {
+                      "$ref": "#/$defs/V9EventArgument"
+                    },
+                    "maxItems": 16,
+                    "title": "Arguments",
+                    "type": "array"
+                  },
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "arguments"
+                ],
+                "title": "V9EventLinks",
+                "type": "object"
+              }
+            },
+            "additionalProperties": false,
+            "description": "V9 output retaining V8 polarity semantics and the same JSON shape.",
+            "properties": {
+              "case_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "title": "Case Id",
+                "type": "string"
+              },
+              "completeness": {
+                "enum": [
+                  "COMPLETE",
+                  "INCOMPLETE",
+                  "CONTRADICTED",
+                  "ABSTAIN"
+                ],
+                "title": "Completeness",
+                "type": "string"
+              },
+              "inventory": {
+                "items": {
+                  "$ref": "#/$defs/InventoryEvent"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Inventory",
+                "type": "array"
+              },
+              "links": {
+                "items": {
+                  "$ref": "#/$defs/V9EventLinks"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Links",
+                "type": "array"
+              },
+              "participants": {
+                "items": {
+                  "$ref": "#/$defs/ParticipantNode"
+                },
+                "maxItems": 32,
+                "title": "Participants",
+                "type": "array"
+              },
+              "root_event_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "title": "Root Event Id",
+                "type": "string"
+              },
+              "semantic_axes": {
+                "items": {
+                  "$ref": "#/$defs/V8SemanticAxes"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Semantic Axes",
+                "type": "array"
+              },
+              "structure_explanation": {
+                "maxLength": 2000,
+                "minLength": 1,
+                "title": "Structure Explanation",
+                "type": "string"
+              }
+            },
+            "required": [
+              "case_id",
+              "inventory",
+              "participants",
+              "links",
+              "semantic_axes",
+              "root_event_id",
+              "completeness",
+              "structure_explanation"
+            ],
+            "title": "V9StagedGeneralizationOutput",
+            "type": "object"
+          },
+          "strict": true,
+          "type": "json_schema"
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 3390,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 6835,
+        "output_tokens_details": {
+          "reasoning_tokens": 5696
+        },
+        "total_tokens": 10225
+      },
+      "user": null
+    },
+    "creation_response": {
+      "background": false,
+      "billing": {
+        "payer": "openai"
+      },
+      "completed_at": 1784836973.0,
+      "created_at": 1784836924.0,
+      "error": null,
+      "frequency_penalty": 0.0,
+      "id": "resp_081e85d75ba8b839006a62733c673c8199a0ed8c3d2b485af7",
+      "incomplete_details": null,
+      "instructions": null,
+      "max_output_tokens": null,
+      "max_tool_calls": null,
+      "metadata": {
+        "artana_case_id": "generalization-explicit-nested-cause",
+        "artana_evaluation_contract": "SOURCE_SEMANTICS_WITH_REVIEW_ONLY_CG_PROJECTION",
+        "artana_experiment": "staged-generalization-v13-exposed-run-v1",
+        "artana_operational_policy": "RECORD_ONLY_USAGE_CUMULATIVE_5_USD",
+        "artana_preregistration_sha256": "56ce61fff54a5fbaef2b44d0cb54b349b877a28808f2142fe4364b78e1f60914",
+        "artana_scientific_change": "COMPOSITIONAL_FOCUS_ROOT_SELECTION"
+      },
+      "model": "gpt-5.6-luna",
+      "moderation": null,
+      "object": "response",
+      "output": [
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYnNt1puwmE6OMy7VlIly3mcg5R7xvcpXnvfIcNxaumKRxZrF381H2GYFsc4oLQk79S-ukrTKAkyBGDhL_y14tE1XEGcJQMjOQrHumKQP4NOTl0vFQRY5baWLJrlbuxlvUMRjf61874uXc7En0sIO3fDBQ3s4tYULW6yyHoTPVzQmabLkZv_fR7UnrQldM4DIy0RFYBxPMwN0dR8ZapbFmpkCEXDpC9LBM4h7syuqKdROCY8z6WySybiSYlaQfTCUI9nZtShI1NJrmP9357oAOPA8iGCi1083qcoI-1dzfOqbur2UujIgA78qy_Uk3TlbUc7WqQkJOAjU1COUZZNrW32STFoXtvczSnHk6DtE9t2OJ71WzYPyrOcmkmp82xA_2G7vkgDKab4rUY604skbLDoUHwizehCb3RiktHLcnxU8unLj1ViNRZZFgRDqG1FSMG6zjqprbPJrBcSXLhi5BQWIgWzUqwqox0m4v4CrU83x3Q-WPBKA_EHUvrUjXpIhY0vT4DzVAzklayAWbDekM-PAdAtplrQ45nvFKrSvpailFNzQtvQoviKW7gn2HvbHhRb2LMTXl9BxAClYg9IefuevuMibaRY2dE3nmW7phnkSGeVDea5k5hDYJs0zHORycYXofzqHMwu1Ouv65mIV9MPW4SxirUu7i8x6X8eVGUVU0vq1WMMjfSWHMyyamDpdR86YTvlEF-orr--6WiO92G2t7jakicMdiHZaMP7_Ld3XUoIivpP-X7pqbq19kJ1J_YdvTNXPitKcyF6KTNWZ1QUTgMlwRKdsBzf04Omeu3_W8__w5W3gANLKU513kj6TyEA4d9Wb7zeYH0EJ_sizzAWLOvdsTke1F7-3u9ndO4fUyOmkCV1Uy1agXGnuuqumODGbQ4iIHGPUA3KICul11-Q4YzfcmiSJ4el47IZDeRS9G_tpRg02gAj4A6bDzu_7aTb89z05Zi6V_ffLbe3Z-VK1mZAYLaD0pBlkVUWnWSHDFn_6QWDn7mU7iLR1V3UWUTWJSLsCeFUlMq_lXiA0iufhgK-aLx6RQJShAt4eK3h5JyEiUUJKm6mCmkDKCHeXEUQPSzvUsErw0HMV17681FxRL-belx7tNeQd6E02Sxh8IstHeyevGfqV7uwg90tBpukvfRqIrthUgD-qjLwUd2OTT2-Lpw2o8eznnODrLltIowf9l820h7GcKiZWxF4xm9qWrhhcZnWdFTTE3k6DxWhlB6BB8GeZsN16qhzY5IJuZWPQsz3PazImWVNXlN3dlTRz8xyTV9a2ZDV33wFmvMv8unigiUXWxQaUFAjQlZAbtXJQBHGLIB1VzUfGpYOCmiZLCIaebGXfaOAnTcgBE6uMrZ9LcQUVGb15MurbFTn8YL_qxCpEmEn88gAYL9zUGA2gNZI9H6EZB8BBs7hVO80emMUEBJDXG3XagF-uDbK6KzEpRub8OVwhtiVSHZWS45CzSisTHCT6vGVi2yvQwR3m8zOAP_LrqeecJ8KncCSFNoISXRi5K3EOxSJkQ3PCZ_7GZLYvgUKCOO7XcDL3Clir7wC64UYfRQmi1MxgY9rBieEGtTvwtupSPSI6UNvDAXeWWST8F5qK8p4fydd-l-SNhh7uTuUBIjD4ww8ydofnM3Q9GSpaYr-NU0aeh-QQ0rP_EwA3oGb_IqhaGFBVDkpb6Fi_2QJ07wBS8nnBfy15hChJawa9ca6CcumMU0S1H3RWOEzvQ5ypkbK4gcxl6qPI0pZiyqZ10SP9cjpJXiI46dC_J7QLy3U_jFKQ14brwjjp4T--QIUfDqrLa1Mw5BSwZjlJNo8iKb4rkvGu5rilMV5yd-1hSjoxQQpFQK2tbF17qqib3H_o2XLryR0Ehe2qFJp5dz-L3Gfxe1EmDdv-cEEkVFobs6tHHz6TUWda5wEjP_M-GEWnjkMA0lLNL7G4VdVxIe2-u5VrlR-JSiVzZcWFLFGkm-CIsbdpq2575si_8W28Q7yY1ckgi4rJdluIIpILduLj4jpZTsVd1Q1nILZmfXMqBEiwxqTkfsy4Dx7nHmegV-ReStODu7AXSh3Lc6TXvKtyRwGCP1svjw74IfSnmuGaeSO9tLnhBf4dVvMmyHiI1MEPmABlIAxNIC0SLuIOu6MS4OzFJ_qEgD5kK_dklOv8BPO0TI1HNZ7klc3tDiZXAt4sbtNpLX-YUjQp7ICWNOLRZDNQkcy_G6F9yo55NqMlgmUEB2xrr0x6K26sPKAXZobmTe4FTge5e2oCnqAFaVkhP49t0bLeohTdjB6GdLu97XYDXBpsl95xZbfdSwYCy5zz8-3XdS8O4HEBejp-MPbwnqYaiHqTJeJ4i6FHsKuf1M6yR7LyrAwRbHlA9lPdNO_rSUQjpP0kj9BxuP5KAfmZdUvXzoupXoNcB-Ij7DKr0yhnIB9h0f_ZbdiRjsFLvRRVVLwo_GwaPVhus6iN0a12_Q8IKhLWtkvOSE8qteNo5R0a92G7NFKTztxfgSZPGhqFCpr79MNs1n1BUq1sAEvrtMYxBleYNXGbiBZPbA6z1-dMQtyS3Zuztd024_Gb271dZK0hy6hFOVxy7-O9LS9jmO6BRSmW_lj0RwIq8NhbP9OGVTGcSzd-_50d75puW571zVkivc2YTeRolCCqDJvQugFapaGQzn5cvNC71rhlcrWUo6-P4TjhakGR5lZbmjktY-0y8c0rTO5wa-GfAIqVGnON2fbs--V1PP2dnE8jOuyQk5w6h35YRbDzchn0mV1JWPIuykGxW4xgiNgEK89AVuuei2XqtxZgne5CUyDiSAlYbcqbcg-90L4r3dF1SBCppFhEAf9jl5sfc9NDSVhEqkZGTBSF4d0D6C2JM1B6AmUkv0ENOVfzYYEbgENzudJlYeZsvsczy7MmFfqbmfNcFpEiZdC8t2aAK7vew9NdDD0pfRcqkvHw7Kt4PkpfASprkj09kDzVHTCn_IjPVTN_krNMZXWGLydzYGzJGI4b9ZBinqg5PVGnjCYNCg06aJ_LbypbyJKqztGZCQnDFZme1dCFo8CgfsFNLRlnknRm2tluUGBnx3AfRRvMQ7gTSZFUgPwfR843dJ2G22Bf8VGt2k5SPojl8LYF-WFYBQfhkMgVSzzScaZRxfrwMNc5IqaoBGTazoVQAkLkoiPOQ58hoSkNdhtX6YCIIn7OZBr9eY0kcSSIU51aRflnexMatQ3BvyjxxAQaoGHhJeb7BnSDPRX0Ftg6BdiUCx4bl1KGSesAmVAPjgXRH5-oH7x7JeA-uT6T-3crA87i8sz-1Brc6o9Dvx14JqgUYGARnQiwjAnylEpZLwiMkLdkDwRnq4d9XM-8kn9YsJrAJzkNH2aU1KXYM3dLCkQwq0KTKdzaNWB-_uOu5EKqb7kqaI-j_aXM09meIvwNnVqaxLdfklGI512BB6OjwyQh9LTIXQySC2oBlnbtvcSD-KSCjZ10hn1MZaSJgV8iabnr_NZCuzS1IOFarvZHvWgKgOuthfSyyJrsU2hxftyniHuC0M-XLT9DRhEh9f7eVlJAU6rhxKkllaYSGPpQJy0xXh0VgZUXgugWfmBoGsJTwFww3IQMT9TIZw8dmJo9F78EJowiPTDcYTHDWnuJbcOu7h2AW8mjSITOpDWQLXrsvKM3b_NMdafVh8iVVsNkRsOCZ2JohG_oXCJcT-O4RD6Zutye6EVTOMIOzE6TqkIgM3_sn1Z4L9xfPtFBXA-rum7BbxaoiffUcLO3Piaw1LkHJy_P0DvOEPckr7DpBjfiT2p1ckXDi8MexRrxa3AJ6tbEsQJhAovFPj1hsg-hGn-UXzycEPZBErGnQH8cISH8YC0hfeCWJzwCZ7sk_lsWeimLbbmM8sJFBFCJFt3l389yh_sMFyYOYNkd-ylUQBBHHnlApJBK-BgoXMYkFXwyVX2BxteMkI5-mU5Io8qQXcjcUx6CeAqCYK1XFK8KUhju8-Lv59D3Zhp36uDpVbD_FbH9Hbh8SX5yZjHv7BE__XxKimXeT_WWWmFRJQ83vL3l6s3WFGdc10JeGEjLvuaBsZuSn-3XxHeW2YCgaV11f-KkEusu3FtjexTKRR0K2-Qs7NYs7huur_SzMwc-1XjPdsT_ZKQyOWhhG80lewhCubMcwe8WXyg7iClGMqLs_JpiuPV5W3658uB2A0wnW1uAQb2Q2xXYtDVoiESeDNWLXp3NHYmX5Vxt8XKy36vvwszBDqPdUdZAH7DLx32d3ths7R5onI9VsLmknC9zJA3gBCZ1DV_fTd_zmduZEsxTHeckSdhEs-C-ikaUToPDdQ5FMAI7xY1hA8xpbbeYJt_4pe-amh211ZASKgYx7by10HAweneF",
+          "id": "rs_081e85d75ba8b839006a62733d234c8199bee702a51876f613",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYnNtjiYl5kKu-3cj7gA8b3TobTRfFfTybFPrKLdfnX4Ojy7UMDHraR8jmqLqOy38tDO5CGuu82tfDpSHnpxe0f4aKAcIXGyU0WhOSHaHIOOyK2WKooL4PmCtdgEqD7JMXbivNvqNKDwbbbK-kyXMr1itt7PHwhQQWcRJKDXQDzVlf9z7ATxjq9tgYxupEaRFzZR98qY7Pdc8u8Dt5kUPRQKBeDkC4f8Fdi7TR_whyOnwMquNc4nuN4pf6xphntfCj7CTiwceHl-8FOQi0ASj24WbftNk3hwejr_kbKUIkUH7ZgTpAoGdF3HeKz_AF3pyYlFPDa4ZSGTNiMOeZPtDhJEFXzpUtzNIkEzeAM8N0tD9romI1qrsN3tOvWlnb-urG4QTwg3D4VPT-cl9XH0ifqsqjGAZeXxy63uB8KNmeg87mqWhBjVL-XlkFwF9TXlEOG2Z4_BS1mTrwvd6uyoKdleN6w9i3L6vpr5OS-UrzO8xCEH0M-g7N6EpSnq-LTZgJhnQ3_C0dLkqks-Kdnp3Lf2PTQuJFI1jSaaYD57JWl7hp74m9wYXqmLBfh_roQy81SbPP4c2CY2OT6nlurRZcntODhSjcKSvfsfN4kUw-eUWf2uby-yJKYj_PdH-MPjU1YkafU1s5EKEhAkEsqj8p8n8zWs0fNEl7bGNsH1aioIDzd6mgYES14tyhnwJr0eieeXipaweyCLIAQl70K31ChOejPj_kSVQp_AVmvNekOnTZYS3SJP7SuaL8ImoAex5f3ebGu2NijQt_WBHYyW0DXkog3HhUELouyECMwLChBPnG5y-8Wuy1A9wI7iap6dkbvU2EH4jKHLbzzoYgyIqp-gExH9HM_hvIfrfUra8HxNOg6tfPjh4NFpkP0BNcognMoXBQxsDTlftz5zwA-uJBo2Bys-wv_rjDwifn5YJDHBGezaPQKyQGKqS19OYaAPsuaIc74QTUUpzIscWC5R3GwUcH3yPLKfv4A6bARAjECuITNGtLXDyKm7cb3rORoGhVu3zp6yoQPOZxpGq-IPzry91u6OzAlyTzxXjQc_lCeD-lvsc7PuEXfBXgJXWM6wYr2pwu7GUAffgsPScoa-R-MH5nnyAOqfwJ6Ch0OsBu0ocMC2W5e9U23IaioTjzmINL4qCZTaiuB1ATIPB0raF45UWfASHORwwvvdZeuNv8PEVpmduUQDYodY8rEU___ywoh6SGjph0fr1c6SJsKcBVQCzLiCEvP0UzbdF3rdkheM-ycrE-o8CMPcTjb3oaPIP14ad-22MuP3b5IKgrkhWKPdGHa-tDAWqXtjXjGtyrbDf8_zdwpaIxai4mwoclMPw45tEqtwyBRI0qVROv5-g7PDH0eUgxOxxdz-HfBv7xLv64eOgbZRQcyJa_FcO9AoiszHM6R7XfOneOtBQP1tJgZJ0OuJ33SoXxTV0P0DCYBIdUbX4HeQLavguwCetxQbWrx67W3XE78hayCcHDkita2Ej-uqN_87gkhhWTjGp_faaijVDmc5Q7ToNH3TtXQhmurPMYuCNC_zAyOKYA8I0Jue3JjDu6Vyb2qKAPIoRYnmlbDBCMBmFr7yeotULpIts_vNQ5F-R8Ow3Tb46YsLCAwHNTZ6oySdMUHXcKNpN65F366IR1466EzIkJqA9N8cecRSYSuH0MigtQzzs9gFQvnz7sKu8h94BDQVfkKkJxuC0pgCH2Aery4M_dVx5-wWiW5d65W_j-eaOsE2ZTrISh1v7yu3avRi8hrpxa76BCE78selvmRBY_xjAg1kXqXe9ob6IVfeQ03BsciTATVj9LW9-017HbLbi_vcaCEGqJw9I4QU5zgzMZvtyXdBW8RGe29O1ksM7b-3VgsX348_hqPrYPQZS-kFfZ9uXACZo3_50H_fV8PqyEEFcHTIlrC3UiJa819p6budydQBWb4pEqPeK2B3t6q69uf03fOLsRGfOlonX2tOFbyrhzCoXZC0gRAp4mNjszH2obstmtTMfBr8symhfCQeTWDugH0OS_eqsZEN4LDB2xpKexDe9JK7acqMxLCGosl50iNAMGf2lbP3OIFi3hzE3SbVFcaFoStYYvZ_3TsYdacu_DN1CwTMJV8zkFCciYQPwpbGiZ5FhmZw_1yheYVmTcPaU0kQnRdWrAvxOHut4UxfOAyjnMLTBQoCWX_FwJnRoECbMGuOaknDU3KNKArfqcJ5Qw7dwOY411wtmjqLEnpmABYyXbhNL_0xxsizN30uuNMxpwIhVGUi1njSLoyCy8aJpavse3aBcg8yGOxBTbVPRTDf6f8uJGqBXrLS0v2V9-FPN4tV6ChMEoIodPhRSDh6TXrDRC7BbrWlvPwRPL-gtYKRDBOAwUClZgDuxO-wITRW3oUFNjIuai6OuDYH8IUhjGjMSKr8b-t0FW71zjbjRnEIUi0zhiMLy8uAwmh6XuJn09wzc4fGz84AGPkBwi_ccezy0NCIhYzgv2_vjCIKONe1nGqM8KDQBKnyHUFkzqUICL1WXNV89oUu6cMiCz2QtFON6FYkAVzg1sYW5zMphNVc3yighkF7YQme2L_lLgOc8nNxAVcvAl62_E3JhTQbUtBGsAZ0BXlj2c6y4NywgljbCrqBcUG-Wpj24iURNvIqMRDrVwKRfdz5NK_qwfFhFsCu57eQKj3QQ9VoJ50MRQxqG6g3JO4PyuHK4k1uSSLwCBEN7IvpcYB22306Dw4-1tt5Jq4qlp0A799ZX8VNbZ3qt0pvXRjTLyVPVg8P6kt-QH-h9BLLAdycwhYFnvrZ16hEFMSM7YdQybo4w3CmOeaNdHmkR-hUaE_Eq-csdE8dXtDLfADF99aKXE25Gtfy51QmxlwLNT6cqYChtEv5Q7skYawke4zFxVBgAiqwfL_9xICZ9itJaIhG0FLfG9vPHk7YYwdxegEsZvGoWKTzs9vkT9UjtH1672-L54KvBgWgGWMs-UmHZWiYhu6L03IIWoZEYYXMxuiZwoeJbnPSuPymZVr7iV88anXmm-epHRr6e2XpOETW2pOb9htYpLK3mGoo8n_OnUat85gEe6U6mUg_gOAUFe7i1xB2ytpn_3G2xZsVHG1o4nQ2BVkmo9E6DU-ZSHo2Jvjl64EhQtz1a_hW8yqY1OAQqyA-NYxZwZEiABfI5VruyuNIU_BgIKs_UZKZBtc6XHANgO0cTcDKEJ8StxDXYjGwwFz5MGPWY1-pGB8qbdIhrv4p-yMmy_TRvxW6xvERcgmSEMrZZZ2ND9sjrIyTn4aAqHcw1jpTTz5t5G-1u9TQS5AuupuYQfiy7wYDHDsIhNInj5Bl_7F_YaeVN6WhpNuTMHF8GArt108d2gKUlL97JXJZumYErLVUKILlhiJ_0wyx4dAbiv_O--TjbSO2-w0eUkOOdGmSByft3G-9ReGWakA1dW-gPEkOz_E9DDSUBE5kvwoH3ue6tOl5hT4zl6rcSxofL_sKZp1v_YdRluqFBlI2-QoHFQhnH0sxD1d4AI6TWPAHs4k9bWf6IkEDoKiSqRajUaSTxw9XZIsVIvXlLZ1RAWczMJO-oGmmgBhulmk4OXWr9a2AbYqueHUmFI4QfTrnjH8Cn4PhPTIVwbIqBGBYInjLI_DDepWkXQhrpxHJJV5oy-cu6jI8ovkG10djHVLGBNeBFDs4eHM5GVteSx-WUSWKKs4dEMjuxZNj4n9B9bWlIAc7UoZBEcg7JI7kLupCLWCdqOo64y2twrpx1Sx6h16GBj_xOHS5Cd1TH8Gw7vu1ZzZn8A8FMzfW2XLM3OiPv-7iBZ9eH83VNAesXudGnBTJTwnfNy5V-IL4M7t5YTj8zONrO7XODlo4cIePkn5mmzmhSjRyLRdGx9yTAOisa18yiPtwDqONU2OKTcljSvW7I7ouUStnF_cT7XQXII4tHRWUpVdLlRcn5ijE8ai4JQFdD3vo3hr5DvDXVMXgy-XV3cKiVfVcputan3UwbVdu1OHFbhnHqFCiWAMgRaRa8gTZgeFPanLzXqZA--AAL28CwjmRYYMf7OyQnu6WvGXzYDFsq5SXG5eQAu3wBxWtNGbOdShVDflnBftxRftiPdRePJMW-3QQEzcgW0mtUB5uK_1yH65Ma60CR2w6SN5boZpTgpbEjxLQfJGOuE7Ym5cIaxFrTp2021ZEpd7CBn-7Iqs4cDleixwcT4Q1uOKCEVV6JLEi_rpG70spI23dJfWFkWd_0N1pMRCfe3NjyT7KV1m6Vj19M0Bz03ED8ehH9KWtDjbhh24OghGCSqJ3b-7itHAmZDCvUnT-HDk9vNjIPYTcVDZLgtGMylhvUMsRXbR09_NfsT1_Sv72pP6OX1pI0dNmKV8M0FjCt_8gv",
+          "id": "rs_081e85d75ba8b839006a627340d5088199b086d9e4b1074ef6",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYnNtwI1LW7kuV-Onu6LyxK_G02XSPZW7iJ8pvHRFCZOg1o5Z-WoMlttkeHmC46w3r6HN9sk_f0J70d-k9rDCzADjplAdQNivFs1iDLNEQIjlnmLjfoNfG83Ldco1fzdFjO1m266PkFSNUZW6FABFQN8VyNKswwriBGqK_Q1TadmV9p8NKRjnaYQzCK4_KC2uhcGPkP3DrbOk9QV92UeGuHSK0dcdH6SC3soQHbbnrwic7oCPqEtOftVv6UpqHRgJIg0fZ5K1bUPYzmeZCiyk8YYor6_t25W3MM85M-mJE-xj9gvJnLrQlcxyP43OWDmCFHDLDLm0GKVl_2wdhLi3x2VKYkrGlx4DbuZIntQdPfO5i00g4I5ihmMRnJqi8qmvtyseylf6QRo7tp-aaOPrM3aw3-0c-d6lsfU9RQ6ZzzgisSHpQAaviKpf8_T4W-jMA6IwQfo2K-e7tbhwHzWbky72k2jvahCTfjgU_LtLI-quY8UqZnbS_9jK2oQjTyNudwTLMq_0veb5iVCqrNLAka19tKCns1rQka0_C_w3FF4nwkC6comFhku3ijyjNpnNeP57jXpJGiEKH3JXlaH44n9yPfPjp4KPX7FDGKHSo7IM7Cahdz3sreYBbL7Bje4yloBTMIr8VtjJ1R-dj_4Vr38wkI3AjP6564052OAAR5ChT8eVSpSsHVeOyaQXpX9e_kEbPvXBkrhig7hPBdE1b3_hKoX0NubT3NGCujHWKHQpsN5bBcnHxx83uSk7_rIpzVXlDmhzSZHgb0kijGR8G0RHoCBIPfJYKgCabZ5KB1VmFXiwBjZpbVmv6Yv046SlBOFi7DBUHlsOhO0d9w1vBDIE8XGnFMbYjR2Y5cwUtRwvXrRZfUTDfmdN0HfnNem49tm7nDTG80qiqLY3FABe94jt_1R_OuSXL4bY-A5uaRfFPYZPpaw74bTfPRuT4uD0Umak1aTrHHrNw9qpBZIYiZiJl0_uxDvJ41M8u_wDn3wkq67E7ps9U5IfbASOzQPyhOCrimPpswCnnlWKAct8rdOnmc1eb2F5Dp2MgzSTekAt7RtnddLy6M8QHlOewXPl_W8qIzGHql0TrYIRSG2mehAO-b8-4adjEpUnhMoKK4n0aqVwsAX9nx28tH_q1xSUIZ2MSy_EpGS_578nr_JTZqnKte7u16Tq72DPEUvA8N7gHhOLIwS8ginGDNw3kFxy3JY5LLH0V_jlQCIeMc2PFI52zM7CsyZ9lztCOxtUy9bZoN9WCkATU9r0hJgLYVNzgwMBNRbJ-Bb0nQ5QuAVmL0AxlItJvDhLhfv9dhjj6z88R8UNZEMXPpSYDi7l50NW_-0H-e8FeJmnjB-Q_Skr6m2arWR2bq4G7Tja-ufaY3bXCETAmuX7poI9dYELDnz4HRIRickO5ZTBWXONF7Rx2ZSHtvgXJflTq8qfdM8pfNV1J9xr7mQlf_irwveLWGmeAPBFq1Dy5WYs58AriZUTbZth83mb0daWz8Ddo4grN0hzBzst5h3fl3Fw5b5WPPmwaGfuIyS2NjMFynRb4uP4Z3a5BGNXKRfQHm4YRLQuGXOEIAlmQa-7jIDTfBLKXEPmzpZhTarinazst4phqvvttAV7buaDDzV5E0i9eFrWWLzMvcgtvjwvgLD9hDM1LnvqlN15Ul2SZZ7U0yjqR4t7DEBVABguejZWhVXlSbLEpYZvyFTrQOfpUh1woDz-Ic3fQ2BMFAWwuaPxYTElr5DpEjAMIZrJBXkPqQgE6V1m-piwdYwS1jXmHuNcOs-p84A8-CEmuizd9Dpf5wWkxWOjbvD4caiOua9nbRETci-Ai5impugUapT_ftgjsfyTr09qvH6QtEJunwI7aaoCKwpPoEH8pIdj_1rFgdCyYNoCXPevfhlbl_INPcgNpXEni2AL-46TNls3d_gHAUlT8BNhOYxTyBA7jmw4qAl35LYI9F6PutS5heJtwiFC15ZI3z4LQrIKP07flarZ2MwitJjqg0vG6vanjQvAMMPCzIy2T1Dy2BnCeYFn5qMBT2PrhCsLEAkTAiJod4-3M_uVlUHwy_04eK6FQCEhBTV6sqT5TW3rDkvNxKxhs8Hv2DCPRQwhfoA0frZSEnKkWhtqHfqAWlRyzHQ_at7iVw51jEzGKzGZ7Izk89NfTjHO_JlKkx3G-28EjUiq-voGxSsNOcJk1519nQgGLkTZbdYFV2DVcCQXTIQdhWIlw58seEAzs415schSJoO-_9mEhg9vwf4kuERqexF3UTkj5cZnxSPA4lEwrfZzWEm-pvW-urh-xvlFfLWyKAQabAFwsVKrEitt_M6rqwCUSh0ND7frH5G219f2omr4kkaDVs-h5QX3-oX4pMr2m0hFRdvtc0R9QglvU2TaB7BS6O59w8M0z-8Gmw59vU42MIQWCWKqQnNPUpwfADKTGwva_TxALwzLa-YNHaiwTn1jq6tAUYOpZZgcYINSRuHZ2T5M_bnmdaEox16JzPkyBs7kj7_yiJnU1Rt5q1q3QbQ2l7SFKQ4CcjPPETJ11DFPrNlxhdXRMI11yFGrugGTyaafHepg6tRIkSXxysuM2BdtNFrRTqWe8v4imx5Klm95yODcdH9sTj7_IKR2w_8Ar8QQTieYNPU-XOB5StRSJAD31_0ovxlPWGc6WPhlj3Zzrzn3O-gEhSWc3IDmYAgMcgo93JX5HCRM0N4LImlKCtMGDoFMIWpigzBBMfJMpIbBPlKgHxNRiIWRmzFM_N1jCpSNx-n1mSvKZnb3pq46mIEL77ojnq48Z17wEOQJhcogwdbRypr1p-K6jJt7vGHiV47piUBPKdVY1eEkM6cJYHQAWSjQwCbfsuDCHORgHtuzBuuh2wneL_mWdTbLCfymcP6bmbQZapGCG7o9UtDIT9Y089CPCrzo2mIqPxc3VoQlKYLYWxXC4woSHLMY0NoeJxSN_f-Dh-NTAqIIhEBX1R7DUgHNf7m_3oDUr3akNOminiyLi-QYGig8VSgUlr_omWAtmTfWLu5IxC5a4I7IqdtHciIC8BWQE7Ir0PbYxQuSn5cKQU5Tevai1H2qQBLU6Cj0uBv7-D7YlYTD3nwvaQ_gGOcwsTtdPopQqcdzKtHcOXtSs1L7V5n_Y4jzivFtfGaRbqLTstY-iNplO1WKMYO9mqhcvAEECWOkELnN3gm7ZqXTI4-vCbPIwgxa1MAwow8FQ6vms-EFTKzdDXM1rgiUe5INfSfHoxJPVsak8fLZgI5eC1SeXFU2QtVJI93xdc6HeHBPJ31Xxk6PqcgC9r1G6fyQgopVOYhNZSqq2-iWpRjYbsDW_WVEu8xSYhxhsMc5tWkAImnschtrNiJMxAA0H4mm10qvYD2lmFTY4BJIk6tPp6rlNrP8eVak-9p46dAmQrdqtaEfB50JDgProNLHjEaMa4qHycdnP_oY3xsPa1k_Y35cquodLi2iaYJE_Nu31sOKK6XD-UuEAodCYY29DDV1THIfNukk4Z1lRA98yzKMrMnZD3c4tQzc0jUgnDbhKTz8wdGtty3ymmZvq3Sf_5M7R5C9j_Go8tDHYYKr2NIMGYS4LqHWnOtgauwy9HG4cvwWPw47rebTDqQgFy7FcWAs0F9L_Xqd9c6od9F4dFXccgnWC1C5GPVxB_YdW7DUipM3bqVFjYsby66Uo2zfP5_xiLyzdGJLFtG6hfQV6yUT8ejXjTUujvO9tw15nZ4ttFO1DZWr8vRrAUSMdxJGqL-TBG2xzfEkWgCarbpfOhiOzUPy9o4i-nk-fV_aSxI0BtPnDjGWyhvtVv-NEexWkdqV7BANRP8LeHU4CUES38mVdA5Nmc1QkM9TM-Urs0qZ-H8XlbEd_q4AKGMc8HM8qBkzWAjO_2i4AnNYtwWgM08CputCOngoxRcVpiis1xngtt82hLb9LIWmbPpTQ2BPDAFfYFNJKRixghxU2xtKwbLZ4KFGyi_5wuT3zPnvXWA9y1m7EYOjCrzLlxcEOUwjqmCwILWePdJYniy7Dx-5ZM6OHdkaYh-3Q2tKNmdNZSMSvkRO56Qq743GchDGVgZHK5R5LHE71pisA3zJ3EgNW7r-QLqOc1wW_DEqStxo6Jv6s0ben15CCsw7Q693xEI2eyN4jjO1OG5UeAjelmesSr3EfqzUNQYZlbS2Qi9XJZIRqlqmjyMDfwebJcwIBTwpy87YsYa9y0_2SMarr3M=",
+          "id": "rs_081e85d75ba8b839006a627344cad08199b085305fe49d181d",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYnNtlorCHU_5kzurSMuMLWab0ajOexTEwTF0pYcwiXwVsC5xxF_TAYg0NFHztGvGtxZhncorKx4Q2joD23R3cYq9J2FfMqxo3CTfjLNzay8cxOGl_TkqwxD3oMBQxe1t1U8_lKpGQ0f7CR-RI0qFdsp_aJPuDNmlENO138mb8ZRncL4H4XRzW8Lt6A4-NrDcRJ2fbhNW4MJoE35-mgc_P50CxvbvNPtx2VmKuyXdv51sX_Hwlq3DDrHZ7CfjLpGaNAGYEqDaBwnX5DKyDx8MI8Z3fz6zS-KY7r_p7NDD7PEDhynA0StQioSUVK0auJAZVxrEQE1BuFO_SXP68bxbTSrbZqY3UfUtU2Yu_h2Pyoq2sdzSlLwmyP4cSCvZj5usucTn1Xhud8kivxi9vXZtWROzuwI2AbSYXpdaYTbqpDBMPwYEWtwg_xrji7ZPlr5F14S1QzfHRHE3fAwdasz3RxuPjv8wt-Ap5zlpUPbQGD1MvGu5x2MS6n6pUjMmWoZ0HrZ3-v2dXYjPCCdxXRU9RthO2XIlQM3wTq5lMRnKDqM25yL0CNs9VITugsIAcVe0L60f8Se5zNz4C4J85HPkQ6PlV_h-ej7rZ-YgbZOZAZwJDaICwXT4D4Qm74Qp-ms28O1Ig6IZv9H5SelUlW82aKNieSASbfUx2lYCc7ZvVBGSGHkyYQeCyhxhnsUvdq1sRgpnm59PmBz8Ywax9eI3beUaF20OR597YBzBc1MBBfbbuW9WC4yBMDHGPpk0VM4551NvJKh6Dt31LpnOlWz7Hb4YYLZzLPfxkN4_o7AA6doGf0gHNGzIoUj0klDBcFsHbm6CfKX1D4Sy9oNe95yvnln2U7dRBU9XhgxsZX6k6kQSNb92CoCxrIm2hnpSnXzmauSa0IvH9vt-aSwIfz5HXsWT20CeclMwOxhK5AySH3_A9mORjOr-8-8aKZYEzkR8h-qqeKiH7kjVZMveLgB6AD_NUAMT35QuxqSEUufYqQxkrPO2MZ3rU_AZYTD3ZbIOH7q9ytFmv7vU-cAvaXPNGpuxFrjZymPa9mXal9JEGmMHOycPfbGMJAEy1XSW2-ywiNw43cO_mmi1sqW7K7jdcYgq-Fni8Zm3QANzKAaUTlIsTVa0ssxtPqSluXAVBgZiSWGoAFYo5xm3e86RpZK3dotyu2BIeISPhYmZmPbkftXvMvzJ4PxqInKHWqzY-ZbT5gjhUWcT6GI3ry4FHud7TV4wZsrj3L5zNWf6q6NKnjbAmmC8QZTQC3PNw2bU6u1a2tGunAuSeLH_9TujI7T6x7C4MORN1kH9uIqQ5wjMYHsW6MpcWKmD7-Y0CCg6Z7GWILh2DthMoO4B5nzSGawXDtNDFsOofYUPAX-hpzB-A6-Ppj9rXR0i-zvt7qK7XKucq51dCeaP74pSxkIec92yoTmp1XM4dYHrA2caXoGmaLGE4x1rTkqkUmb1BB4pSzGNLO9i8i0iVC6KOtbrBn-ofDk9rz-PUIfrJNcKtt2HX14acEJR6W5BtVdV4JpxIrlvQjC-I7CG2rceHFpZpe9LfMg-MsSYMuvCYRvjop--tzuylEUJ57pcguHPfjc8tl7IeiLMCIqLU1QLLfTgbgOmA6bHaWPEJFtv7iqpkjKmHVlJwp61EplRBF5-7S1a6E-UEHBYl33gGgBEHTuXjl-ERi6pM6HAY3282yLZwGzivlls1otQC0olthUf_ybiwcdo82j1Ik3fOUcxuZ6zoO6CwUXWRNCdCuAwrqNKb0Mc7iKfmALGS-KZbaHk9F4gHjWEM2UMC9_rysWsVeuw6UQcp0m7CQS4CkcZO4oYY1cGczbbyKOUYfmdbC5kFQikqTZIZoXQhRA4FnABH4pDb0WxtwMtuGLDWr0QWos3SVa65V9RN-zHVEN_QFGQ6H4s9oN0h4IuZ8_YZkaYAYiWBJXZTDlk-CiglVZIuKcY-y3DIzlB9HitjCNAOJrDTMn8aiwGO-MXE65Te6avH7YfLVqLCUFe1GhbooGC2cO1Kbr6ShBGNEcnlZ3QyiEjuCkGpGQE81NIwuGExc1ppVIqzZQrlye6bl-cRL2l_NF0-mNTyQSlxSWcCwRJwWt0Nlt4esbNhIC-_uqJdLhkSds95IUEVSAuVYjkTPvQgIW1_igPLsSJvaCdz3VIBv7raPPlAZf2nRncVI99I0VMIcyN8Qod3o7KTBr_8I90n-zWFypXBf98jyNw3BPMYjg255tMo5GczETwKz_XVSl-4W47Nb7cHIUHeUN1dqdc56H64hm22gUN57VDX9Vo5V0_nxxM6knOJYvj5dDjcR7s6DAUanGcrFLKxZpJNh_hMP2h6yO46elyNkQKN0gErkuonevec39Jwy3lq_grJ3RUTzEX1SZ7PzjzhPP8cx81XC3KgFaVDvh22xCzB3B_TPHCEcnnS-x7iFurhZKwIQHMB4NoowNywybkQqtmc2ZkBzFSxZ-j-Q9V4A7fksqNW8aqKDkKqer4m2AV5bYwIBeREXOOXVOb1Kttblhv5RwdYXu3KyDF-amOIW9KovdaLreRWSzpMHEJlp1y680Rw7j93PEdPXxf3btEpTtesiU9TDry3bunNXI3Qrx9sJvj3oU848oz_D7b0ALEfNNrDqkUDSiiv_DHlc-0snP7f9Wh8eyWiqkbHDo3cXYiSaOlifiRXisIZ3uOT6aYLrvR0-e6KepcJEsIIeb8m2xqStQU-HTSfWZ272rzBUmUq93v5Wa2_Ec9_-aRvPVwj_X_YEBMkwnIxTnNpmE43QxJhvm6fAiyX5binDfOigesUhhKFR-xSzQRbK-MfbT9qOG2dhB3DiosXFXYtNXAFVAhGeuhdEDkYXSpPKABnvAhPqVRx1aFt4Ds4aJ02P8PBECbQyY3r3lux2R5-qwOAkKQYWR-jS7PLR0YC_T5mKhEfCEA6s5RW5atOpC16Hf2CFZhVUvCj9NEVi-Gcb4I0DohsTL2fmdn-w1WmMUeAdnaw4uudfcQddnN8udbaOX3H3XlO_iiXD0Q-k52RLTOK9YkKJI38VSWpK4PDHojaYcHRLBSfJT0gpfcxFQe31IYAstfeGLRJykoZwlOd3xVA510GmCTrLewM_xU9aNso5rBbUezXJ7dX14A7o2VJ2Yx1WeONy2zMYDZ9vU3kvXzupIvrR7va6zJ6pBOu-P7g1PqXflf3dgQaoGSnTVtsu2YP-SoSjZxH7YsIV4c04QuYy7eND2HeWZfeX8CEXVIBWVplgvkPpvyj0mh0n19YQxiE1thoBtBUaw3tUQ2812cMdoMEgLyYlmhbkHwLw6U1BdSYskg0ZomEuCWe3WCztrM0ijp-Z4-wEwSeig6WHzILtveVBIIyFMVF5hJgivQBniCVazscEq5vpxzmGOTla0LKdCcUFRCea8Kfge0Dq5SIvrms_7PWQymJsRQ_k1IbfD-_HCkg5G72NgbUMp6DOb72zKcpO4vdek2t1mCmlnevPRWChcNr1Lk_-fP_LC1Zk1kBc6dVm2RiZzym0o_vNN5CrpcNSXzqRkHa_MfNBWG2XGgbzCp2n5ZgAU0G3Z0x4G2s-5hUrKhmRQgXHWINXMkkxTLTdXVWXoFlPzUCts7710pvnCqccrTPDUhShIYXH_0ohuvkDRVeSqUcpWWAKHqdQWDKQPpj79p7jYcxG0cfNltzEmftchxymD3DPZKYYwFw4vIASRZ3-jexYAMvyHtkD97K6TVNHtkkNmwlf-nMZDvP8oRIGeB2vt1urn0XNJ5flRA2d4g2qpzoJSdwjWtDnfV8_N-lqLGKoi5VSaCT4Pp4PsLghqPh1cW-29FPjjBgxnunnYfRRR2hEE-qiuFB6N1GdfFc4yfbTpLKXWl0zYnmHR6qTmMjeBjSkXaDw7TaRjtZn34y4yLvPCcCUR4T60ehb96ZMjlaW0iufmdaTQM0CFXqME2qmLQkWz473j9Its99ukpG7T4rHaPEwGwTe23Q-RGn6_yd27DaP_Ixuagvf8ZbK_EVWUZeCwYv0DYrAhaqe75BK4TWy94vvtoDrSixyiqSoWzEUpiOQPJfnluIwTlyR1cJ-XSFxvF4be9LZrH48maO1OfiEbtoGDPb6h9iVL_SeTpLA9Kyh11cxqQqZLHAgteJJbCya1ijfFy3ifEOEHChN1795dhOrvJ",
+          "id": "rs_081e85d75ba8b839006a6273486984819995a2606b24182221",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYnNtGT6fPv-HXyNZccPCpbdQVmNDT5L_g8PcWi9rP6UTpSVA2WB_uDvTGkY45wgc0yO9mMnjkhfZ0Gz-zEHq3ptXoLrZc9M4RzAcDqP-2W9GxstXbYgoskoeUsIel0HBULNQFxtSTZs8qfdblrFk8ZLWW8K1s34ohvuyamACtAu_QQCLoE0dmGNX9rHctpkYqowIFtrS7OSUQGkr3D_s5o6ZQ1iMg0HUxlHlEh9a2Ku_awljeW3D_7y-rbUlwLNbUTz8fvk-0f2GXFAYwQedbyCiG_wiAZY0H8rbCzAwR6lnoa2vXdUtcBD6Dc1dntbcQ-MInv9XuCV9jcOxRPggz_RyJywcrdS_rqDC_YlefCqY3e8enJn70GtHUGquYuWG9m4GK6bvHOHq9gz5LAxaNlUruqu-lHQtT7Vgij0KfGIHoKOE-zAAhVWQk4JG8R2wzt8GOAL1qXL7ymHys1R7XSOxo2056ZW0eGpSuhmbgHyjn5DWXlA92xOPIzUVKVdxhVixLYSQ7Fz_0IcOiwqE5cWejDDSKLUKqKY-gTGDAlGHnqgquuJOUWNSSGHmQCLmFvDhz2M3BLvElL_pAwd_U_t4ajUAAiIirMuPCH2rC0whb2wpN8s21qZ8Hbicz-wLWqt3N9xuuOUTSfXWpqvmbpsDvzPSw5eJRAF70jOlQy2v_YaB_MuvMENe3AwPdXRbvoK86HUTN_Cf_05ZWEBIv4uVnrb0xdF5b7RlHcnhEj1lD12G8nxseFe596yjNyAyg6mPgOCghpJdo-n22hydHKxqR9j8Oh3goh_xUaRt-tqoaDJr7GH_K-vVhLiHoQ7i7l_r4JkqkqjgEHec8cf1YbEWyIWHEUG0PfoC4VoZLl6ezo1rkmxsfRB43fSv6Bej5qv217PKHWOO6Oqx7tKD69lHrqNbe4LBKkCp2-Xw8mZ5yAKPgER5COQbzOe_JmSncFkPhkacOp8r9OodSqo0g47ovhQ_GYhSbUZq8KKEDgRrg49-Sbh4x4oB1Wc_OFnDQtJ1lspRjlAcQBnQOxTKGyXCZTK0LZUX6dAB8ook5YD9rwXF-CS1Ejtjfbn9BqTDaFxzGRA0-RSfR9l1z-O3dQH-bJLQLkb7sbjYbxlQW8djjIgtCUdFEwNvmHJ0lCt4HD7F5vvAORcJSuo1zhphSxsPxTaT_2uf6vzwSmGMVR_FvdClG1KgC7Kp_1ZvXEFTlMe5rtYcvJEfCbVPwIWsLAk47WpPfc_zfO-2Zb7kQgEzfzW1ozalyjRFS-yVcNxwYHSUvfyQzeBFfdLU1HE0xh4GiAK3pMpGxAws9e-IFEOUum2UBEwMEw040L6uGvHEntnbkenMjTHXTY8rTJY5vTtCCx48wVxBXWq1VyUvYU9JhLBnSHAj4teJdD_FhiLVpfsJ4dihANkDWViqRR7jxrJIBaJXzNzZBggTzDgCsG0bPMUY-I7YIRhNjoA5yzWnJm0V90P7HvZFvZRwj3_LhCYUzTn5SqYfMjIPxY4vmsJ-xcKKH51USnUCKQKqWW0cHdR60efDL2olAXsww9Wm7E0QOdfsX7ZpmIQ9TbRRU_lk_bPwvxIHnZr2Fyj2vmTmyI_Q94Uq9bvPOaDsMPgBa26CeN9XjOLYi090Pjteiek_lXB5yeOdNz1vphtq5hro1YJ9FwXm6lYMPLtHGLcKDBOUWeS5q6ZKwUyPgi89xMw9kalcJcWzMFyNPcuxjfeQImXBXGf6lD1czblhFNTHT3-EATHbPH7dPEph-ND17PzCRopcfPX90JykHAfdj9wRPHOt5outss0NGYMC7K3PfMir_7qKnhpU0S06zWaM6ktWPF-_cE85wOH38ePCDpb3_hGwGA49woCSW2L_wKaCyBtOq--_w2P9kHZIp6M_ENkkVyfQXCtXRLu83hWnlbsaKIrJxeAsw3Ub1DzPAgXUrE6JbIajHVwSsYY14tek-aF96klADZJ5qNPQRS4MlVcOJWKmwCsaZdbYtxqanxA7Xaet4ybNY4q8qOE5oOBSD-4O-mVtkMFYBuSdguaNgjnD8ndrry2-B-nirzZg4Y9NVJi1inmyzt6qRJiG_uhe7L_vn59-lXpxF3XO4YgsNNDtC-c1KFX4fFO9YxdB9qpyKO2sd9N9tJoI0h1iKXYzW6Nfpu4BDMUQ-D0tnEsiWdAEWuQc0NxKqgjfbEpBdyZGaKQrrl86VVlr3SMdihXtplg87_SzB5dI-3zuieaeZ_vVKqV3K4DgUfT3xIwSlJZiTWtVgwLiiDVF8D64t59tmS1yPM-TSQ1vQI7zo3yoqOomdGIcO_UMA5MVoV0JKM72LCe0J-iVQqk8dK2gmvbyTtnUXePkL0XrYfgmBV5rEdBP-9QsJrujibjazwv0t0sCuvmH9aMLg6GpmBzOAi0nRciIOWO4qWm-8-JQUub1zsCC3Zl87_idp5G4fJuFk6i0iM5P1xTMRuQJxjgUJIO62PuXGpqWeKmGYKb41b0WPQ_bnrEQdtq_-cNSnv6AruRGl_phu0R7XIYQ703W08qA7mMidTEn0zZ1DjfXREyhoLW2eauAy5kz9I6yi96fJjdBfNyBsLUVwxK12RDfAF0mU9zqnIni0rDIuDPYV2r-7PXzKyMlSiP2BVT9xfvK7QWSdQ8flhN5P-_n2FQpDzIEr1ns-fgLH3nOOElOvDRAQYo_nos6Xc7v26mWIcL3yiFawgH6JpxasKqI3EKxnrg4cUjH2DGa_RVMnw46hjF-Dv-YsNutss9SelAMl_X9ELf50q6INgKZzAM1KbClGh9nYOHTZipd6FW0BSyeXEcIJ-CWyZkyAV7vHcBmC0tvjq0Jy3sA7oIloSzcrcvtkmtinrfoOBMJrG8cYydv754ABUAmW3lRcWjc9qwnuzgJtXrQGisN7D9FbSeJvznfWKJpH6pyGWTDNRws77lKU3nBhCmn_8H9B0xAeikjJhOAjkTALnYr6S7VckynCGWkghG3x1ri-faYmO5j_vvkMtfcGDtJb-fi_b9vVxbetc8-R17rcK01VmgBV-7B3PHfVbNPd9pl-v-kHM-bTD_oxFr6L1fk4qI8JeoeLQKeXCeCfxCGrVRbBMMurWHAVMil2M43NfCZu1Xe9zt88JeSQCtk36SHCSJcUX1PnM8E6zU7rWj05pwKQRDnWYorxuh1ntCAffQDzPJUCYjVa3reE4KMBfD2An7qx39JhM4D7DbPZlUw0vNBsWQVaJvHxjUWTMRwP9_2NnwdEu1tkPSmwMHUZhrs381rQ8zrb3ghD0OGJbnGsZuNA0CPGyvKlnYNp-zTAlaL-VwRvPL3e04uvLWCsQCLh_BQdOKmC-sHI-Og4yXwxmvJ8DQeUuQqIeO37UJCNDDfQQ5H0tuANKoo7Op6Pqje3p5Z9ZFeRICRn1aAaioeRykbaZ6d9_sQyUgY4RJbCsGns_qFHe71oqvjaMNkvepHUBJ34Z5CZdfxyAFf-F4mVRXs3mCJ28TS0y-BUS3uUwd7HK1GdZ0a_AnU6AxjjuJIGHoziWo3LfehQm0oJtpzc7dpsuCB6u33FNOTvpg_NgM97eiWBB-nRABlgNgbSZeo4bVTaCc3FkfqimYhvAIvIOZvAJs9TxPq55DmwvLakcLqm6lPoYeXaUYAFdaMWBtnETUzuav-BL2AtLwmXRpe7hPZ7G-uFoveFW7nk_ajZMND3wUShnqn_NIaD0UmUNRLyM7OlD8FHWFiySk3RZC2WDPhWaFkbd4P0YviVNgIQ_0qpN7fzifaQD4Gtan8PR07LPoDg9uFyyS03cJOW882iB8Ip6dLGvxBEcBFxwqblk5CfvVWesS0aYryplylTL3wXdLMoVOvz8R_6Hd-yKba2x9p8P18KZmkdWfeJREEzYEbAXkbU3fBZsNVjNGkRyXvmYCh3R5p5A9v2uHQ5nDSrgPLx_g2KqOa00X_qOxeVkpjI4DIwgmyf0eywzSadvRm4LaApAv1VOLv97s5UbpOH64vYUd5neXmAPWizeoi3zLePRyfvhDOoqf7sc7v_IkxC4ZRd70PKPql8pQy25McAUMM71PU61Agr6JFpRgbRbUQFDMUCSpxPSokL7JdP_xp3mV1eNENAEyGlIOPt_Rwoi22fexSB4oKAlbLdb3QLFnMveWGukOOGZQRSM7qawVqWvR5ugPgBKndqJncWX9KCtLF1cL3nmH8q4a4GU22gV4iLVHnDHyWtpbAr4joBcI-dKx48RYe0sLW0UyLEg5nMsTu7DFjwgE_f1zxR9Hfq3ICWaHSbyhZazgSnrRUh2v1bdDC2QTIZsmLsMSiAkLjzmqclbxYLpCaGR6HzXaX75jHjD0FjqLYWoAUtY9I371WMHtyh384IYiPOIDCqV7XV78dKSsqV4c5oQWw96qPWJKOaHBtrUnqPRlo2gjkQxjgiuv3r6KbPVJQsj40bCQFs0XlZQ==",
+          "id": "rs_081e85d75ba8b839006a62734c4170819983261d70071cbbbb",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYnNtAMfrschP5UqgjjtbCwgA8BR2QA9OX-HgZcnw2SZaRNvapyB3yIs1XbfCqbazlhL9CTIcxmLvmwZXoI3P_pFRh_DCgGK41Y4TLsbrBBFw-8RFKxVIP_Dr8oXpVeoa1MTm_C_RA5xHiuFPNqd6R4NxRWV3W1YJEAiVYu6NMk44_l2RKDzXIlTw7jvfvGjk8Cm3Ik-8fkQlpekQeFp8yz5ds_q0WrixsrmXKIHuGa9LnsWQZlxPoqb3Wm4lXTR-zPKl-C4WEcUI5zpG5CWIAXjKDZgBwMv3SuAVZ_qWrM85e2TxrHGlqOUXMkLXfz1HrJUDrghh0176KHFtCq-nf6NN3jk1Afk2T4iOUAQrQmkLZwVHbP2lr6UVEOmwWH1_sE-4yANHvqUjVUNna6Ok5H-vYdDJtYdoaBrWtvjqXuVfzIQolMztw1wkPQdbj9lIZtaZOr81n-cB8g6Vbqq306qnmYvNsBJB2a7x7ZZvWWt_RaRRtk7y1F1Y1Kh4ydqnt1ft2UFWHo7wkPkP5k-yK4cQwbrSVLAg781aw-VYzMcJqD0-zcecnCihGzE4mnlvzYdCTrfQq1F2EKBZQUtYfao_urvgh3V_uk4k7vgVqbYRredJv2ErpMcZeeRTxPE9Tq7hzxeyPMp9pO191DhOFiQTePKctyve9xMYtGq1HR3UNmGfNrg-rIdHCvmKzQUgR0e9aw3FUsL5FheMLhvm0hNyDQ_CNefuzh8GjhQXN5vxToOV-rZ_YfAwS4EqpoamM9NQi-o0ZiOASips17rJYH4nxfDsxJb08FTV-uzGCJ4WOrZX8zPg6sBf0_hvZ1KOHTooMNMI5ObaArz8x-He9I0fjkiG2-TMOsjAttvbDlIXUHnFEoZH7PnVshjWM1isI6_vpgNDF3QdRdI3AuBqCLkoL-9PvVhkIBiohOfIAK8XLoGP3sMIdJeDIJwz0_ng1BgF0dEThwALrU9_Sws3QknFP5H4wGgtyhzhBzzR6i_fqbGuSqnGTxgdVNf61NI4VxKTxqdZWzDA6Sj8X_CyWLK6X1EhcD_qPDlsiK_y3aXrK_34niqetyuI4p3rhE68DePaPin2KMwoV8oMJlcvh-pIFD55DGEMxBJRUFLJSkfRIJBVk17k3Qoa7oxSua4BjFAc0UNaydN0vUac5tmvYGNiS9hsh9yFZTzOqM_c377YlVEKvgOgsG3wDvgAFqRkZR8Uw0w4m2jHx68crp67X-NrZzkfDuKasjlE8B87V9MXxofXM0I67xPKU5bqD4o19088gXVUXTGowfk2K58aAtsO9sNU44Z3QbTOcjJflV11zP38Xfd9SjBO5gDrENCtGWAYq3lS54eTitLcmHB4rE05ealOyz3a8-D6_kvCQbRK-aJtLT2_nsBlO0oRs0apLgt1G4W77el1fQ6hCmKVfcL1kU0HtSc6K_UNwp_5sQlKjZ59-JxjxOCjVRQiNIcVl1Rra6t_9ioCpHpWG5FwN7r_Gb2pOpOrLU5pQIj-TQPUkhVmvYCpK6rnQIAoRm-w9AwjZhViDxBKhVzs1VZ70YmY7ta58U2PNBaS_fo9uKwxOz2kv-tAdbq1ypU8yLG7n3smsxx53di9mhKnlvBH_LDQyeAct1zQnfHLvsyNrSTpP2RzXSubrcO5KAdkkHF3ZSFh4sWPJnEOX9wZhuAAW9VZGZIZqghUE6iBo586SbqTSuZPzGFs3hBH-EDWWKeBaiBDtYTBn154XdRzPq8B9NHU7gJxN7UUXKSBkN6Rc3V-N8yHWzXGHjxIwXRzWk18AnB-XB9GQlUlQY5f5q9xO9b37baGr4rDE8kc-KG8Vy5jlsOKtRn46JynC4SXvidOAMNpBkj5W34FuOapxTLEhKtpQo8OxoPVHCXqrRz-7oGb-YzRhoNd079yVE2gsbxKvdwMqZqeDOwI_KIWknDLTpPMPC99zX9wY06tEoPGmoZikdc_iCzIGTqIuZGsTarpX3HJ7P5UKKBjv6JPTmduj1tM6SPQ2b8SkO_oM9zM6H2ONiz7-kt33b-KHnSkaBRhohWZJIeneLfupgJIsLW6QIwh9hmNfTKJrAv8ZNFeEm4IoEVGnIrIM6XNj6zot8v2k94g611LmS5Bank7wKhzObbWHQsPR7ZSL7aVSG4M8Qaj4tmgs0h-RL9IT_5MxmGMweDOkNaRqlgzER4prXRx5Xz_6eZWRDFxlZkuzq97Gro4BVJQD3AzkTFIwlJeVPXbHc0AL2W0HGkqQ_5bSDLCsFJEAApxzRG1SJ4_F1w1-FGPxv6Gd3T1D1iQjEuE3ScoI6AALL-PAQN4VMi5tmA77_zdydscMS52UBhOXTnpcYxQwiT4gUwUXjLnMsE7V2xCK8eTKzyqAeBzbZd3ssDH53FbemcZMtk7wA_DKYAB7Ggp77PhTpyTmzuODEUE-N1kozaB2IT7QkRznlQI3TOSSgo6IzPfciXWi1qIsj9SySWciur3vxHaBFXN2IPlDRlsKSGbXQBKUXRxWkPnHXy8T_YvRqGgd7qlKEATPy_BCtvAnoNw9unaBmyKpIyjdfE5ihLiRhrYF0e69k5RRpd79kgmy9f1yN25VriB8VxGp1Z9fkIIOPEdvinQ1EmuE7wPVpy2BXiT24RZ0tvDAam94_HKmKA-QuZNmeSkxLY78sETeHz9NmljBFeZ8vZJL2d6-WBGVH3t7GYXXaKPGnQVbstBf28WqF_4Fa-bIoclL4e8fEiqTJpKzvBOmB2QqyiHvogA0c9dQcoNP09v_TRb-VgP7U2yoJ6pavhfsN0CS_38XO0rZ7SHtNGnQjk-_PWF6C0znQmdwElTAK4w2JTUiP-4ThqFMTEJ0XjGaQQFy2oWpldMSmurYs58oA-pQfIZTBATsy-wHsY35q8b1ABZPNVjbXi7p30OmcQGRlqNCelzeFCaVNvneTkARfD6NH8q6gdXC5BojVehhKfQAP_wArDPuqGZtiRGmGsRouZlHMgKAtZ8VQ2V0iAQMlyAX_uwmUAht6GF1vMYdu2hwEboeCnQfl5rrli--03mpQnIKRPMOJQ5NkaMaZLscbqq9AICzzajbbdaQIRE9GE3ILXej9Jn_XKawclLhTUJcq_XM6Ycynptdi_Efi7zCCAMnKkl7T2EvfegwmcVzqZDJmu_CJmDwDyNQIwgYKs0gZNpDIT_uofG8Y1A6t0wRqLQ8bYmzhSqWmTGsRwbXT2oDf18LYvWVDMCAANbbA_iBtcQG1ZAbxYiQkvXuMJCJ3sYZ2iQ6YHncfB752_Jv6PM0e-om-CJoKQULlMO8nROHj0SuGm5LpON7szi_MqQr7oo6eG9RKixjDBE2f4sR0IGUlBDaIfmep5_8MQRIXdp_rq11pl4bm45Sj7xpjAVoKjsWe2qeDYetKaG-WefXMEy9joYf4xULGZlbqW4TULSk128kUg_ANUA4UV3xXaIr-bcOeps1yPwfX8sEYr57LYtEFUZMge0yEj9z-bVYX8RiOWX6qcwORwPAmLmCtV49asdH2BhqabF6lSol1maJJvlGZvSYHVYF7a35qln0pN1NmOlvwSpHFRWun2Jg6bscLNlx87oj4tzZv9iJw8yRmyK9M38evezMBk7TW1zBRKM0Kmtd39SSRqVfbu6Oihw1iu22B23fQfnkhHZNOHRSTzVKo2yltR6PP03vPJNd9S5ba39LYAQA-m-liQg6vWCTwNxZMa4A0B4RXmtq4GVPLgl9Csj9R-iidNNCqHE-T0G7mdn2GaO1Vcl81L_oYDHTRZo_ytYLf5HjDzYIuj5WmutxR-YmT0ViVmO3AW4A0Wg0uCrJG0vk54fvj7UTFGWV4qAgOj6kq1A6UV8_4mXK5gQiCLKM5qHvUga1KY64jEZJN4DptGSMNguPCDdbGv660Z0SJjj-yAATe1md8E9Z16rXZ0Bfxe8i5FG4BtpHhrwozYXx4eZfvcMWnwOhLD8N6K3M2hi7ljEKYd2cy7MN2rIlo4JcgEKEkEXAffXznrzkOIaY-8qiDvw8_j1P_78XvRW24KosQUe_882D2A8v9Tgt-JXNJ98ttGdlV2YpVZ0PUdl3-aLecUMMgTWJRqxZcQPKle1kpKEs3se0rzUEYCsApgi910LGtzcZBRGJz_-l7_YBePyRou-FuW2AzNO7e2xtDOXUYULbLUC3cOiV0pfoO0xt9AKCQ==",
+          "id": "rs_081e85d75ba8b839006a62735075808199b0ca89ef891443c4",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYnNtl1GPlI49O4w2XFqIi9LI7rpGKcjP59rK4ELghuj4pfe1lbh1sDvkMYOcs8niB7pk4OjvwKRs21fVVS8SNi5e3EtZwJ2TeVeuU20tthWXJ6OD6POTW5YMwzRne7WKO7wQ0ONWGLa-RrhW9KwqtQBe5_Tv5sfYM5FGPSkLZWVzNsodyI8-B-YFblt4aMxQFG6JIL1-iRb5F6ZycUOkqCydOB58CtMho3C9UCKVhvatUO5wMQXFxXn00rX8gC-B17ASQe5yPDnM3i_Bw_lZzFCAzyx23FiFsudIinSb4gBGLS8FkGUtKGzwEVHGnOp4aJzosHPoPlca_WADNXwYy0BYjA2-uKjVHOFkiMtM7ApeiS6bP2FQ8DWV7_wmeN1vzE23YsbnULXJX1QVvBvgJyB4tok4GIVIBwj8KtkpTlz0FsC4Op0AFS_lsF2z2Bn1Qs917Gyb3xh8tQIDfe1yARV-Lbcvq1YWdKHE8ak4NlMLiLvVUZqhJTzjX4G73JCvkWDor6fCYXXo_C9F_BMXoa22K3_t3FyNAAWsozPW6EIIqqYjPu_pV3xFE0tmxc4OmwAckDm3ypUU2-78tUVlCT2umHRxvVQt0Mm8skWfKIYWuaHocDRNM_7ixYWDNk0fMQ79AL7ARvKeqgBtxryD-UZylmRny3hjWQMVHz5khs9nTalKJSCL30afYd4-rbYwKK2G9seFo0nRT3ppRwgiOze0HQ1BhNGQ86FVbetlHx-5y6BplU1LrkZCRDCU8mH6pHnquDbUG_OcBrAS60Y78htGf85jzlhp1MLpV9WXt83ck7qWEAKQ7ogWtVC6qtlxd4eCN8PxajF_MOQ-6PbEamK6Y99dezYApDoOJu2zhojHWqk9XH05WxSReLFVLkrjnGkuy7FEcHUMjHl56oYaMDBazvrRVZXI5pBL5pK_nib4TQrk7zuuA-d3mSTvyGt2n_J2yub6Ir62Kgm209nAQzDzLWL_A_qZIrf312oTW4FTn6CURHSZeC_KdyjuUUyNbdHJ6qMU80hCGOMWRNhrlHJ5WHoDzZtfkgKnZXuDFk7cv4TX8xtmqCuJU49z3faTig9jujRoBwy-96H33eMNWQYbC6BXxErO9tcAOwOMN8sc0uTiDonz4n-8i0QrfLpK6LD9Z4id8Nt8JTJoz-8wVlHQHtwVV7gWqp6o0N5nJtjpZrIdECHS-sOZ0Q2_lParczMQnLKATCToPOAOPCe8b8eJn02HW8gHNE1mfORrVD__3vS_yaMCpxSI5Ovb2IOr8397Wf5DtZ29ybvfpB1HQvc-1oxJhLXUCZWt_DisVlyb6Dk4-2oE1VLVUq9DNoa8KY8Powjd4tZE3a-ep6_80FpLexy-bT6fj8Xs3i0S5sfYJbrL3tbA7HryRxzU8tdCX3f1h24zV8TzE11fLQxeQ_e4MNy7ExpgzpmPvMcZfRSPIK_Iay1lWt1Jrsax1y9yqyGGu6nUBOq_2xBjq26oRv5v8b4VTneAACSnLCsv3VjGyYvQ-InCfLeiEqwqvcxW74hMDG0hW4SkGG_mgc4AwsbXir7ZzWYsr6FbOnsKEpSMBcSKJ9KHaczw9YYENRw3dIhclACzW_US7nAw6bDzXEpVFFjF09BWipYJ3-rkcXBhVXoy2nd7NwcolqAvRp6tRcrPIQSILRx2jKLuXEQTacb2Mw_3ggnwFaUs-5GbWD_hYGOlFt9hHw-brPriIQ-7rCG4xvnCs3kOKUDJY-46Qm_ORr0zTc2t7ufyXm57OW1uLYiJnake1t0bXu7Pp1zguOifCQ1TotOBVqK6A9UTVGmFatDsFKQbAqE9J-vq75k_nPsUCRzbwNV3TWl6F0CxZITG9m58yO0hrq-SblgyFOMWKvG7Yyw4yNQPApI5OmzFfdB_ugVKO42y2ccNvH5H_YDVe6KX7XdIJfD3a7Gsg_heUY5yazstTBAwfdayY_kPWXEs4FVoPnUJe9FXzNX5yKzxjQChX6yzZ3JA55bXNarIXJQQyApYYN9pvOMUKDQ9k7jY3Jfj9NAqJhBYZPvYJ1qWID12464wSwnC3ZXmivk2RbFlp_BJyFyM4DOkOuavoAOEAPxGeCNB0VKAycWgsEOTtFZ7w2mhAdAlv3YGdNs1-3Mjsz42zxeLdPxYNcX-SPv__YsQa1ciHxLvuOz3moOWeddb0_lOmOkff9iJ0pfE8487nhWSIxWx9NwF_lB5KIhjVoPM03Q2PamM2Cu_OWT9wqMgADULnbQIoXtVN-KsUnDMZ6bCwKB8uIFZLUmR5eRYSDnBjvWtwH3vQsx8VkZwlc9bc6m4sGcvu9fDmM25zFutaQr_Ju8ZRd5XEvdr0EdARmxgFV5tUj2N7yoSFyR3KfYmDG-ZpycSXs66IIsWkZxLxgdSQojRDjBxYbZEhiIAa1lOvVDndsd0aKQpwflxL7ESxXlgQoNTTDuX_fz75uGkZiSzsAwvr1itUOmleIiF11XkFvJKE2SL6kKgWWAQpJMt8UgARv2kr-PBOYeE44NmY0DADUdiMmUdxvV_vgJ31usXWzEBJw2oy_w3eTDFkStf5xaOAcJyxewnZCGb4pszbfj2nYD3pEmLgzb9iM7i2mTyMsD6BOod7txhI5Ax2wY8cHXBb3A3P-gwnbVHmyJCjQGxnLeZHFTwEK7G-mUXsRbMFwxJ0-3EH_3tx9xk4zoIQRO1EESJ0qz1h8raq0HGAALQfRqPstDoxgD6gD8IbjofGIQ8_oqZEQhxWl4UmcjsJJ9d65KjvPkmEqBgL4NWXRKkCona5JAuoVSNbugtQMkFLLFqPNVmhINuNw8QTtAHg5BztTgu_ny-oRxC9Zud5M31_X7iFvsxElYfCi-8IM8m6_kPkr21vsxc3TsIQgEa-trbBCq3KgtKNFugQahcVB5v1jdT8Se5SVxdtYZcwOUv3L1KUI7J4ujonPmhoEFzrN5Evq1byb6Ehlwh0HJe2wdEcB2RB_IHkZ0H4N-xEu-Xjn1DGLuyMoAlX-6C-1RpG7PpumygYX01COvt1w8XVhetAqukIi80R5LSMVm_Czil5zda2dBqyhYD68bqtZDlIIFLvJEf8jgI05ZCcVRtRjcbsk01NvnrxU3elcqSDgvBhITb0zrwRRDMA7GxAspBQKJeDL20iSMuIkCrYQjS45KHMlb5OW6EPim0Q4e0gI3U-FqbWi4zU_B3GKfZFi0YPURcrdQCnKVgm1nia3nKTpJUwVPQHTFaPJ4J_0oZj-icmMSE6kd-YocLemSDZZVkXoC1dC-wyWCyK9PltzAYFit0v4gFaAMwV2xtoZ77Mb2RqICXyUqKxIenM_Ua4r3NoXOzy8I7sZ9eX0iSrnTSnmzfj3ZX5JjiPof3a1F35YLbaTmK0T51SMHyNcKc5rAUwdZKDuojM-9KVZuhzv5p5aS4CjAnk6Ua76eQEAL_7TXCn-ExZwMS2K16R_Tjq1sS-auEsKViGFo7J9vxYzUXDIhXH-lO2a9DCkTjjbJoSKzHDrbnJjevUnm509YH37ttIQOIWdfChNLTMe-ZClXJizZknw7UAx3KxhZBka5Gcg1sc6coe9gQIIQWWcJTWhayGU5lFjb6OCECOMBq30yHiI6iNH8C5EnzpovamuwDx5I1PAVEC7_VlzkTEfleWI2UEk9pk-SHf92BPW85I6XZtxWpbEizILtHOrUkmXAuzTaXfpbH8DrrbfRh6kMP9aIJxfgeiEVZTanxsGQZSARUtjrOyE7An5uxXI4pI_m3dpFWMP5XDw3J_LU2sj3aK57JyFL8N3hx0S6hMO09asAgY0ZAEfdv70tCSfG90fKXf5_HMOFCxoK5gK-Uk2AeTZu9wTlsPdUQWuTO_EG-g4bocoOq4cgA42kmuxLBpPBSq02rfjG1cJpC-x326xi5uT-USKfroPWUg7My85qmZ5SrTEqZHvufeJK9ZSjZu2tBjjmYlOoRs8P59LUf_m8rp0TQKY7GWiijVs-0aEkCiFeiULs512dUHNtECicDtAcVldiqNCUQS7lq6zjxfYEPcto_Cc0gdDVzEP0A0rp6-g1HrQa2526NRzOzh8SkoiI1k2ToTLsqvMiEe1kMogfROYbf9P3E6qYVJ15wwy2DW2c-R7PFx4tIM2wuK8nFpG1rHYjoW6Pc32-LHHHC0Bk0vade2QrI1r1CgoDeiGA9c0q-vk0pgYDaKYQM5Pi8q2Dcm3I1YKmQc6bsohvNa75blSeJi_a26pIAI70X31bpLGQwl7idRFTwHqMaUKi4f39iGrGxcXiCwH5ZxKGbbiQD_b8uidRa2jSRdzyd94amLEHrLmoqb6w9giUDoRlthu-xXO4UMis0YQjirfa0G_IioH63uYVGuFGoR8FtswGZ56IFGn_HTISqZgNXKfKDKvBAEDvZu6dw8YZAZYTQQIxyApSSLiLuySWBX2-tAW7QfS85SGK8YnuVKf4akg5cKLkAwL1K06hOo1JDB_DpX675CN0DYlNPthsd-TBVVFwsknyaA2DVd0kF9HYRH8eAvXSHO7259amEgOlp9XZ8E26HnyWsynufGwk7nq8wI9aS-mMiqyiLRQXs3aamM-WyO5k=",
+          "id": "rs_081e85d75ba8b839006a6273542fe8819998e2b8a6b2042e48",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYnNtrCrGL6XM2r2e4utPc3f_80PiEu4nvFhVExOxiX9iBNtJ8krGO1eXXxBVS7kUuTXy7bJX1egmKf2-XF7sIS1bV5faXVQJ4vpVkw0v35jlSDRbINJnZ0kfY7NrlFHhkGsKoA6MIUI8eZu4CBMwn68e0NdGeCoIeO11WO2ZZQpRRoewZNp6e3S6XErxcSEZwPjPsWbnu7MYIdODanU0je_HA1gn5gC9o_8MRr_Fq_r0-PnH7kfdrtS_0QP9YxYJAV1TWD-gHhFRVnLgrKtHy7hR9tBc1gsSr_MR3ODQs2J_xMOjOafgrdINJ4Yy0q16s1l8aB1M6v3Wzl3VhzExJxDrT_F-GxR3xDUyoOeYdbbJdSq-CjFk2CMoFrejwFvwRgUVQTLtFhZupH0Jnh7S8M2dBBVgzFD7nkenID-SS2xbMafCztFhG4BdKMMD8UGfEyx6Xxm93NmkXwZDgFvulb9mQXFHHUc03TIE5aHQADVUNZKlkwJRSALA4c0GAPQxTNMmlfaL5MbntOH-qALMdStVgbL2G76J9ZoA0b5woPBcZwKQEoFHXRB95aET5_RinPhxS_FFZGuI9gBrs5ISsoLS44Ab_LY6uH4_vEye3N9J2B2EHrAN4HvaavPMiuyyaWhUD54iV-h2e40Y2gF8GEt-s8ctmuknHaPNfhxdUX0pDD_XbuONlY6k-8HRSt9vu1pQxDCgvHQ4PPh8wJ9uDJr29c2Zmes393G8xcfnaw922zH4oaja7mCdMPhlxlUJuD8niDMtAmhRSQvAbXl6Zl3XCmJ13k98WHfMphGAbMRGhG0cpjun0U7jEneBCTbwGtrayCtg4oacyx1fJp8SzB4s6lRBtgZS0WqCBuenohDyDJoN0HJGV2ueu-EaNGQ15c9IP5Go2yHNSCy3XFD77bVH5sqEcJ2tVEEEDlJGX47mEF-Af3_MhmQA3qMXH-xPJSsUb9hZ72Kepowlw-kgk7rFoaPRvL74YP7EtKjsHRTS9hogkX3O2GqzX_aj7MM3s-_QiYPliL_7zUoi_YxHaBsXDRK-jWJwXl3Z83AElisWXXEd7c8YfEokX7ZurZyrmaoTh35qF92zIIiYp0gN_wMYdLC0X5Z0fiu-ifPWzrrhcRRKGv45FWG89_1CkLf-cwUvhozHh1JEiuwl6H-31aEA3c2xTBPIlLZbZD_ApWzcT09BW2o1u-CeyxPz-vCNaOLRtIis4a0tLmoOPsmiSAaL56kSrPYgCappCTIraL1IOeN8N18rFljzokINXoH1SgovqvdaIoNJRUNgfBZVhJmMjq23o5blWKPNdKuJhXEQgAdi5Lnwz9E8eCQ_tcuiTmy0zU77YCMCGzAyvJVoWLPINbNFMO-Waur-qRnQcTB-I5LXtf9_hvlO1Vjpk37jKaFAV6QXQSt5hux_wwEh9usp-RBOlAR3pjbkv2Bljr4pWcuIQTcBXAXILM9tBuwxXmQWnJ9degI16j887jJEKO5gXQGTILptVRekHR2jplF7Tl-ud5XlbAyYW-9a99wQo9PA8XgQ_JAQrM8Y483JP-VnxhwdnmxZjVihxQ0akaVZ1wdrLC0xZXr1C8yOH9ABNlqyzv8aKhsn3HYB1WyABoJ-7jRaj3ifs5PnSIUQQlFo7NYryevXLYt686erB7lSEvYcr47mcmmtAWb8bUAwBCRRbEsL8ijy2Hc0sTZU2SLuEDoOWLXgJce_ZlxAbOuz9VfdUnoEYLZGuI3G5t8_cERlEYSrLcSdVV3mXcKynyUhq3jbsJRvXBSNgS1XLHL3AzVvMxuSoOheg5TwxLcEQmA9z10R9ou9NhNmgbD20sSkc6TipfitJOsfBDKwR3CtD8KdTAvwMtfc4ts1-hfTMR4nbn6qthtym_4w04a0pL6UzXup9s-nAR6A7ZC21mP1q58-wQ1q-TQAf8igK-SA_xYyY-utyDUeciPpKu73yV0OrT2o0bsPKNoXdxtkbLfQsEaVR2GYB1qpi5v38c8TQDWHXFSKlfEVqOANYJXNw8pvWtZ3x85uT6YyJi40KvpuUM-tCUbXovnLs8140wURUPZCLdOauftO5krx-aXWt-Q_qH_vkivmgBUFYNS2FwV6m9CszC64KL0WNw_Ql1I-E71Wi_EI5q5hD3ounWCV4D8PpZKzrpxun1JwFT6BeGEqz4N5sPKcBuxuiYSZgoYi_9gSFHFCITFKWPrV6JXEh9CjFE3D4lkwr7_3-S5OTo2i5FMzYWDnLO3AgZraM-PMSIwh_522CQuCxb2b09sMU4LdEwn5-bsCwQ9oPevKjSSNr1i7ideohbqp1y0LtrcjdcSf1AERwyPEbhVwv52SiEhViN-7lIympU5EdyHgeMHo3vfooFhFZpXk8E2Yi7poJ9UazZCiAfewJMLp18IbPHnWbrTBPlC1wIJV4lx3La8umud9u9682e1aMZlCjc3UkndHyuSBq4j3rAbrvTZ5HPp7OZL8yMmRQRfUQjxJN1LMjDCNe-iKpJ5OL3-hCAkRvcA6IFJyZTrfhETD5D4AVq9dHBJxbLWUNM7Gcyy2K-Iowvh8QhNw7FqkR9Ecp27rSEAdIkVzQfeV-tbWq9XMMsQ0bLvqBLrNqvGhC01MhyRsxoNwE67w2tfITJ_RE23Son3tXmNd92_eXmVuCvk1YG1iQvVLeI3lpsP0AHeYs4QMnw42WPhZ4WWQgMJwxz8-LhkWl5AlKGbaWhOo0c-J2Mn0z5XoRjDlUXoSnPWt0Igm7vrTz5rRZb6RWzCzBIjAWaJsUjmcqbTpgGAtZOKjY-DpwKzIDhm_VyrEiN5Zwy-12gndXX_eijDVLzjKJvBsyDAk0lFx1ErpmuGxFoIzP6-SogdBFuJTEMmxLarFH9AA8b0AuuZsNQcrb3vRE_-cMFHjMWDU2CiLAynok-OdgyCnZjl1_33A5NUzSzFOOwa7pqKS4RG-NDtF7ipCtYfawkO8vJfqeNi9TPKseelTIezvZUkFJ3lNMTuQKYRygV3t4wVBWHPpTnMP9AECAjqvnOxYH2uZKKDiNWi9SglZi5pZjwkNlxFIpo6S6OQxbJE49-WbXbgX6Luico6hw9ACArEIfzEpnlejitlfg3UBq_5ox2Q1gn4QxeAJ7kbYai0bnwql0bZlDEdMFgYT0JlV8KTLUKilGbBvfipBVF-vtcydeR0fviqeoDsyr4QRUIzjSeOHp7K2EVjZ-W8KWvVCO5bx2shbH9xDdJBPRrHsjvX_iuEuoGTC5OCVRErBA89SFOQC9TqxBblpPYsYW1okODpAkz_deheLjwVmes7pxcdcmIo6HnNLdSFBJoXZloLYTBXv3j8bU_M05ioZTH1DkSQ6u9gUnlKi2i46jnf1mRV5Kv6D2SSGgvta5JcCgslsp25SU4FpUaO9MoJxyIF0FYA4EjTzMuiFzqgTNCdaVEbS2wbB2DgjN86nIjALZNvZdCRtS4cvN6OdqkB_5oFesgmS0j-NOM4jTA1QOMUe7LOap-y-FB2dF3-IIfwI0pDlA9bFP0LmnCqGFLZdBMR9J-hvGVmgzx3IwS1BOIg0wnrFNW_yLTMd68qj79u7B7-LGEeFtdOV0pzXihERYubHpl1FzacK9cQkxOrFL7pUraQrKfuwAQu-ZFcQRVapKxDeY3p4t0Dx3wkYxB8sOlWakPOOiYW68wJ1Xegh_OdLz-X1wCyJe4tpxy9ofEQxdpQmGSRClcsMwINEJwFX2k_vTcWDCWFwt63dO2JlXI9XMaW1d5QIi6KrYzo6m8kPk79E14fwqNto4Izr8_5MKC_xqeK0BlADeGlZhc3G4EgxVndeW7vVE0FhmcTodGfZWAJ4VgA7uP46arcM437vMJU-t9hKfH0ZwMiBeRh7BbCt7mzgp9Fy5AfsvADcYHzmygKAjM6pp-g92BdFXVUFU_UBSuiYVk7QtnCI6YNXl-xGcoY_DxNLR9HDt9X6v4uzuE_ztMPu_m9zmjb582pZinscRGBduG4x6qNa0rXvDjJ7Ag_X8BEcaysQKvcXdvDvuxDEGK_uszPwGQKsGHv5T072QPxHnoI8OVcMuvQmYlUr8V1m0_cZVBrz6dZuQu0PZX4XNZcqXPJvcmVKH1Im0eqK-G2hiOz73-_COW-W8dO9vZh6HjqhTmCu0wu93Ingi9UDhQGqxOUBenry4kUZRYRh94UmoSS_WX8izhxbPmSR1CPtFbxxAYqEUxlvimwrBShxvflYaeCrPwWlhKDTgrwCyXi351_RPAj7nLQRiPYvV67xbMtjvMGMXlmbyK65oCBYYU-_FauKljZT41TCBUM3cAAVbcGJpHrBfgSKk0zdyF3FuX8vdNaxQMHdY1Uo_iccuOrSbJ8HX0HObOAr7Elx-N6ko73qN0E_WfTs6OX6j82HY79gR5t0m_uQJyGNBs_A0DMa-llA-XrzmV9NsisoIGkL3Z-_6VzJEKDV1IEnKAiTeAvvUGMerpXH6fkgpnr_Qb3DF1L3I1iEvULkPrDRogX8Cw==",
+          "id": "rs_081e85d75ba8b839006a627358605481999795633686c0fdf7",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYnNt_cM8oiqnXd6AxLEagTgwE88ZVQ7glSUZvI7UbOWEgcdA0O4ys-F5HRWyYtT5jWjvh22nmd8av2NZPKXKvGtTXiG9dtcHJWlcNoHxzb_6jDOEmy8GRUEcXg-V6_ENoRYXVsuE7JIoU-pBEcl-evcuwLF4ldzAiF_cFWiuUH2PrRJe9-sIfOMiZBwMLg17AREazJTliRJSLqkKhSl_Yjng3fG9Ke2n6EOv18N-Hc_IVD9mhlkM3y82eGziuXR-vWF-4NPdewexNaD1-aczsV4M4bcGQTeAIY_C-cjApgjoih7FmMeD38cCMAiwHkyFwpc-6NNidHQDhtl7s7esmA_e61KtWwsfuC-reu1bkHAG0LSPvb99sdgCrSshnKfdqoc_JyIbCWx9VOHHwPedIOHfQemoWMkPsQGrz023HQuI3cQcWtu1yVqjcM5JmKVYKwDWjB5FJVYEaIAlHL8gFzF-W4_PpndwR8DlqSKlJKk0_fxATel_HnpzCMjgRvMERNKb_NsUx809W7ZJrozVNc6QbnPlqguDvUteM_nKhsTJMtaKNbnkMAm8XrYzmE_i9guk6GJchFhp1PcXq87J6rD0m78elvGe19APJn74KExGUeb2Q5WcCwB-3K9Rz09Go7Nfie7PtWaq85eaDGtvC0v-LifLS3AXZYT2MV0UaX7c-NEczDhiK2gixAdF5WaI0cUnL9m9WOJPWbE6KSsQv9W7I1d3z_1tMvxPLPrUEcfSGuJoTCxz_15V-rCMGadp70aZHAFvdvOcGmkWEk157Efjja8F25mw9Hbciz0Kz2Uj2dcoLkDvckk2CGDsRYAS8z2xXuKVX3CdW23Glk9329eYR-eUX_iaFtSc_Icv6GlmVEdDuZZHc1IOFpyEh25Xx0S63I-zcE92x5rLJWSBBmVYj7yQ_FH1QkOElt1EcV7hgQIrylIthe_cmp3v_X7QO9CL50PUb5TDI8Wl1HADF9217kku9S-fdr3sINgr8z6l1eI1XSnQJQ2oJVyV639fLMeXTIqiuwdvYAKk5gCBEZ6UD5bRJccqhU_ZMAywjcZjn2Xav-9vPNHqg5kgtM2_CDjyBZ86xIZ4Lx1EGOyhmu-NdOZ_cSAtkK0yIKJnWb1PFJtUAIVEFqRggMlUm2yC1_8FgSe5mRLqDv9X0GCLvNxI-Afr69oZSlsTyUfVptga4nuZjpm-ZjCzz3Q_VsIc_X0M9NnLqpBkH3SEy1yva-_9UaDXt-nxc7ul225qUHvwHVWQl7EzswhtpSWj6mOWIlHBvI7H1DLPqjxr1BqPdV0tS8Yph4LlESSlOfY3WK8fnGgbO7mamGQCkMyKUWD2T3n4kVbOF6eY4pXnai81M93iyNj2vsbnK84oeIGKp7jKXmWfqxKXLcZW48uiWNk6GJ8cFmM3n5dioRQXEF4yCoT6X1cbavf0mDuyVDqCXVNt30cfwmh2rxtGkpnmLiRWMdD8d8cYGkU_lNjLXdtH_rXcpvOhdZURkx_1lR-_-I8mB1R_v9DNQ3N_Dc6bY5KhgnGR5XEuuK8uJWTsaVkjmS2we-HObpj5BbJdnlv6z22P0FxsWBE7kXJF4K6jMu-f7lsUPigzhWdXAYr_5wB3OqqiLuBUIFpXy0vYXhnjBoOPdAKcJPVwpSdeyef-ckOQozw0tF6JJV2xKA6Ug7tHz0hGUEQQtEHVi0ftTTNp1v9e38U0V20K_-NTKJGm_kCyQ2hZup9RnbYjKgngbbQ4xf9QpKBDO-dukkCcUYohRf4rgg-aav4fPDoRKG7aRhF-WV1S9v-dQaGY1GUAQ0lXLwEQGN2VZo4mOIMVLUJCZuGfIuO5vziAl2IavmgaorI7CS4zwLrQEwe9GCJjcJWxY_vfb7eH7qPC3RVRcl6wcyNaqt-d2tlTAG6GbQgWNiyie2hdtWAn8he2S1OohbNKA0OlL6SdqHrFaE2owyVJUA9LKLS2pzbeby_vmCyQGtvC9FsHd7ncJoRXwnQsDxbOafxjQDIivYqnYrgoE_Wd76_ihTGVK1q1sguE3Ukj5AYXWsYQwvIdLM8gw9p2PM2bGvCCigwmmH915jzM2Fdp0qq7HZGtH6kEYm-_Xr0xzF-ssA6bj3Y6n3zwiH-ACjqN1z-LfAXZ5U6TBIZApEnhGk6iAl3XohBHdvGU17p9sSDNYPb7pHXjEZdjPQc0g0SXoFAScnw268fQxDnCz6gzhly-67g2Huh0znITAiw3zfRnJRWLAGfwUfbB3Bf17vFgl_A-6w6iAsujjPvLO5S8k01bqP59aTihz6wNX-w0IpM7DmkqoNjqrTadXehJbh3E7gFQWmJYjnNrwyEvpoGMmcimqA4kQLo_lCVn0CW8aqBD79LKb8motiK2wdYZJgMayA7AfcQDbACIFfL5T59wOPtIBy1Xufh8_EsRmXbocLSULPGRVpofOdx86Oy69qcFjWbQ3I3c5zg7sFY07NRydgvB2ozVRq7RaUjNhHlBll9YWl3SVva0jUkqV12w2YPKbpfo_4MZWhfK3NshpBuHvCelPfVeRHcjZA131aOjF1YfcuNDUB7ZoGw0hXb2GabMuz15TJ0TSuW7_zrs5gl8ymQqFi_97C-u6K2TG3sRGT4OJEMvWIJRTvRN8D9pghPgUqQxKP1bgNBGY-i4-0VAhlXIF1VQbX7JPecoXL9la3CVGFAa3gBUH_TdqcKHc6H9WCMeb_MZIpdQ1Qe9Rz6TLfgfvJgB1tOcOptxLtipuAs0ltXVECpuo5u4NRJe3HUOl5X7_RdllftsvLM5AzPzNg54SoVdUP1Kd2ujaiqZyYqMvFe8m7U4xKiYbso9oBxOyfQazqe_i6DMsnM_oIz6nDKdYStgI3JEEKa9z5YCDK50XZvxsY937ME4DTw49Qxm2k3ugsYTWBvOjokQw_CM-hdC8k7bIeKKB_M1nJmuyZ4RkMD2RyCOttJuYektpwcAyTpGpVb_Yq_T3KP-Q92roM-kYCqUJV-i3YW0D0_zoJxxciOf-DTR0xS2HT9D5ksY9t18OrglQGr9Q41v8eCVR8BQdC4UZWO8ZEMHYQcIZRgAHxWRS6fdsNyTz0MhyxQUI38seXtix8c5e6_3XOJ9Z7lM-G0wn0lLgACZtF-r5QbUWLkwsiXgEqsmaYqzeGeuHg9nMsmk5AyHtLqu6FFuIxnT7qEIwewzoh1HYGzP1r7LSr43l5rIJsmjzYfPy6VPVwn6QirYtfuUYiRs4B4vaTqkxrWUODBOBDaXpialr34pZMu3M_vX731pBm0g308hEKeFnJYn0J-btOjwCmpmBDFLxQBkI9YYol3FMpPuuF_yaXIN62WflyLAacz0apnYWLuQpMF9rvh-QaKKK-Ek9EE9yYI-ZamhcoiJ5jOM8Qobv_covyOacl0d6yobAPxcnkwWX_OgUPCfysGxS9oXAQH8cKD_PSUdFLWSjjphjKJ7MZcdEhH9F-rvfglJmVNIpdgkmdpqq5EM7rOijQwQeV01pwuTmgGN7GPJEKWngP6fMP2jnAmKSdT8fjDPOh5SelScmpN82Ebg16bMJXJ5sUsln04wKIfloNGaj6dkxSPe2Tb-tWmZD9xaqmSChB0tVMf8V6C7LJ5Py9kt6MJENf98HAV-zRS-STRQCtQWkwne54sXEIi5Awy0il1C-KuJO01nRlhlnOrmRGsLtyMLgiIaw_dKzjb9FTE6dQaSrvkB-hrgmcTN55S2hmyKZfoe-Cdjquhcb1QFNr_oNAAQV78ycHVVIlTIuBPaCPQrlnbEkw8DTkdTnBVY2udHNGpCa2P8jUbGwbEIkCEfYhvl6oUmNtM0Wr0sBiXkD0H3UvVodCOD0D80SJ362x_xeIeG0o-le6po9aL9JQaAOpeRlROHA3Ld-dvhlGiH76QeYMMWSMOXzm35x5YKXahcl-_u8kgDK4oKiE_ypa0j_sIc1zx0_k394dx2LFM1JULu5VED9kzkSAC-ImDCWblWqq6OoeHSNvpMk_ntICEYmZcNlh9okeRN5wicLLyqXYYsglzwvyX-eCBODtHrrY_ypmy6B-MvlPLJkghpxw-3XPVPPH6xk4MwEMKsw4sDrFzxELFC-exPEstK03M7RF7gBQnxM4ma_UcKItANyGpivHctfg-x4UuNHaxyuyoGP2nXLgQZxZIEwstdYTEY4i0JuvYKEYvcBqmsVpIsfKFp9TM9Jf8voAfTx_dByp7Y803y5GMC03s4F6P_4p9TfY4UsNZGbs7cg2XArSpL3idHwOyjJS5R1BnOgDmO0gJGIuv6wsNVZJgXEu3dd5sjh51rXl3alfB0mowVEAWCUQHiDNeiQOO0tAxEpC7JFftnvjOUpHkhTsynaj-Q19Egzt0SInetH_iSWVRbkqPjQFZhgeiKyYHJ3Nroxmlk8s7K9bTxvX6D8aE-",
+          "id": "rs_081e85d75ba8b839006a62735c68b881998c9dfcc80bf62c75",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYnNtsciLgizsZMoThg2JH2Gd87oR1wRXomMCptnnOzHNM1T02wOpMDEURTwoinfR_pZIMECbEmzfgUzfkojXE1fBTWJM8nsVQLpnQn66FhBQcnL7dwiZZJMEyE1N3zaD_hJmYVQ2PiSc_EG57rYl18FZMAxA2hluaCroYDW1t9869YpAoF4u7bMnCTuUrNQrinGMurKzbMd-cwUnpMwhkFrN9XI7GKGqA7vnVc2bpIMsQq60kbMQnmhUwVKC8romJZRlDIPYlkIWzxgx2PMXespQ1T-Mb_Yn6PocR2LNutWrv0wsP5SvtwtDL08AVtzU0Sj2fRed_uzSVDtTuqBPyUQ6XQKPYOqEQ2NmzYG7ObGOfXRzh0H-185NGunWy8pkty-sqymrOHFRF6pSyi_CZ9FDHMHQm3diHu78xdC6Z1PnOQW5Up-0A53DnWGzGmVSz_SVNEbVnrXvEi3YlF7cPzKHSQvRpVzhGnipQWL-5nLwBJ1Bn4M2VSeuiCknloQ0o9plClRkYQB58Bhp4Kbe_bsTjF13cjHEz9PK8fKLZMmNHVaKX5xfHngzAaY5HJXE-a46Wzb_HsGYIHEFFIbzac6YVSKz2v28KYaeTxainKA_XnAAVytjqh1d18qPRWvI_wEjla8G14yG3sxK1Lx4Mq_6EvPGj0hXHYNm0Ri1nnRnB35RybZajnTYAOmrCzzwUWTrju3-NKfSHayMZEjCEjEYnLONxFjgjWbdSl-DiYE6OaBAtCtheaBTs5qPgwRneRAx4ixXBseyUBcQ4kSnc2OfhUg4I5WcdPCy6CBsh0CyKy8cVwVC0kZCgMk4vt5k2gtwLgv-6ld2mXAr8DTx-KfOiZfqzB9CUB8k_wZnovsTdeAy2zoF2Re9r9SuHoYKCD2tt7LNHKOjUFStyKf_lFZEydGDyEEwBQu8xEqdB6z3XfTF12eVTtkQ0V8qIAGwhP0BJEilvR3QSIJVx365M8pF-kQqB46LIx_s1BIboKIshnZD3rkILJFhwrwp61Es5lBJgNDPvrNTr78olspJCUZRVagyRaZz5DPqAKET4AhGDqQoxllGPDR1jnT6PrFZfcx0R-DukP39kAb2Pd0LYCgnB4K16I9MdvQnHg1RiR-ZzxWWcxysmQAF9zOG8baZeoryBvwHLRr8Vx02OCdRwrKuxppdId8uEsdV9WBcIcfVF5W1a_w96jYK78RMZiZsbje262SfjKFzTRsEBTiz1yui64jbUxYC5m7NO0_tbqUOlQIFu-kJS2Q4t4-okEls80hmzbjmggIrFzsmuB56G_0rq2lq9fcDqoGKlsgq6GupZec-2bkrsJ8X3F4mdObfMPkjf6fXaORaBwtrld6QRkkUlPbq5nZuknI_-m2XIlUVQ7lhrQ5ftIQzl6oVMBEylVICA5yfMt8Q18oZ0YWICfaqH5_4hfQE8HW9gbkaoBQe8o0hf4C9GuNcl0vSr2KtlOP3wpRaOpz758xHoTEuDXXjXOTdKv0czSPIGIbUtnXkKErXn5QAaAYbVAerR00-fy8pzhtOy_XDWPNjf0N6pRpt_1Qf897m0ShhJ2l5IDq4XW1Ypf1qGSyIqfkLB5wGhPhQXa_20AKU8aC5_qu7IPhl-SDkjdBgjGyjk-olabyRWfG7p79jaTEaztR9Oy83R-c8oHz1ph5h1mvKFSFnFAT0opQW9UarqWZd1Tc8mcoM0wQlJhlpgZIOnH_2vFkb_0eBUd_BylfAuLKy04EHkcwgx_obxLL7s20sMiGxFUN_sAgbP3mATOK2iSv_T7kp1U5HIEFRziopJOy8gTPptH59BtZcXdnVzzw9A2ZxL2mukZOmLhz465vKee_sZJNotzPbshJNJeO_Rez5M0MF9yGINtomekW1gktGyK1mIuplPftooVc3vZOF6VjGowFbzE822fnDnJSBeNd57ujQPD_JbzBmTy0wDIoLX3yq0LXkGnhoeG5SI2j3WYkoEemd-y2IrSr4Y6EkJH8pH0yjtNIO9J0rypyHZAgnntlAzHUkMhlE2OM5M-FlViZUQaZmJ6SpkGxavHKoPwWsZXW4RNdtB9zPH8GhPua9h0tpU_fTGKRARahtYrxD94C2UlKL-NiwsueEOv81I51K1HQb479VCuqsrKWZ-chCO1RvfsMh4BJHcY-XnYrK7YGZ86PvEJrx_Grh8oLsJeRqVvZEGJQmpbt1DrnR2wJbqsUYNjJxfKdfWqOHQtLGVzAvDNu4sw38trdd28ETxfOPCe2hf0JBwA_Zf5pnebIWn2kT0vOPc2wnnTr59vLbJfDuOvBUF50k_Xi7TPuJILI3JPl55_E9s1VCzCas_M7UD2aU7m76zUhV1NDLR4oDEmBRcYvbZDLDy5oU3oB5t_-j24HfeudSNje5iFsmJv3dTTVAVJLTKsCVXoJhuTRfjSyeTXIqWAwKJmWlTkqL4QGd9Dx8vRe90SjiAiujC2iCZTI0v_3z3Xs9f6ER45kc6mz6LMcsroW1tLph6K7IbBe7ayBXnyj0og5egphI-Az7l2PYd766Ikl4hL2CSTDbQbkocPB4Mma6-weRXEBcHTqs-TbbxEkqRV-Pk8UaXVCAG0QQz-L8NM5Pten2djgEXX5NDMMrl52P5hKGfHZxHvwzERn3FY3Oug1I0dudUd76mZPQyhsiaatBkkZTSVLW_H5Bc24KxvSm7tGFJ4lBjBqCTW8zWlAoMeKgMglpm9_hbGS1T3PAHVTSnyvUngty9ouLB0drrzKIhhbtDpQMXTHnOGIgyZsG60ykboETiEPTas57Nc3t1mtre54QCryxb-CeOiZE5UbsfmgGeYwhJgYy53mpYBdiyAHlkqe3UfPYrq31BfSMtbEloWKkRrS_5aFZ10iW3UBBKGqjfNP4TtdDO1x1Jdqh4CIoAXaz48Xyfp2thMZtinBkSNXsNXuH4lgBPQ9aLc5OpPwH1FjTMMYOq1eDvoew3d-_A3sX3vEnxCxx1pu6Fs86VrYQqRLan1oJycIK_sStlOjV9-85otTTAD7yUoHlgYkWGpgSijtYb3Xf3yhGW8fHEj_ek4F-67394L2V8BwzPw8cFxTncQ73Birb-1Zc_TtuzSC87qNJeK8ggml09ZaBIfK1_1A_kmBR3Pfffkujc3JZX_OEuCRrQlNgS0Lp68n-Bw3Dn_UmHovANoUHL6izGy-KusZbNbtBLI74-z1Sr5nb0SGP13DGtlpRGZMmM1cK3_vza_wg_35gH6U7Q9Fm8HceY9zRy7YjHN7tpbmcrhnRDgZ7u2pEi7B1D3O3ijOEq48znLXl7GmmlSl9ixVAyWPWCjQfkGc_mSXzV8Nbulcw5Q8EG_E2bNfxiKfTiCmscj7V6d0YsEOwTZYWeDAvoeqg7gD4JysGC6ZkwCgNRMN1brzeM1fS1nsVffTdLuV2_OeTimQfeqHWVlFgdZ0EO7hdPzOTrzS3XEK-DKYVq-Cm2t7obSkEJB9VlSF0Ivv57jphTOjPe-GZbyXAKQioSSdmhU-H1uCHK2qXtWS-cvsKIHiQTckhSz7xPFhpvr3lQuAnVXqmMaVPVREZ3qNrFYl2mp1LoS0fhbjwjwDP9XM_Ykef22jiTMBOKxchvewdaaHw-gN_ySYFokVgA245ay2mhkL0jucIIqDrqsa7nOcjVYsZmnfUnzjvIijTxO55GAFUIJZWjcjqczpTwwZYD1uXa-ekAe3H7Br4C_R-Mj7L-EnH-JaY70HZoipV9-D4wemJIC2z8AazBGV0w0EVFnctf0c0POz5RkasVP0M",
+          "id": "rs_081e85d75ba8b839006a6273604df08199b68ed3638a33bc66",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYnNt-akod4V45lA2hJpqzIcJCeUYOr9wxLFBH9q8Rr-djDKo5OlIPVvTFT5EJSgTO7LifJCFgHLCH6sQXHfWBA2KJ1J0p-Pk0CpuvoAXpZ8MH9t5dg8VjMvNEVxIJaZjrqQIiu2nOYn620uxCtfgB407T50KUQBfcC5yWXjUl2Ew9okIrllbmN6ypWg-PM6vAad826MGNCGwq3pLiKk5IPOsJNqpIQy2cj6VJGkGVcCJ3HE-V-PdGMvs-HxfKl8FKt46WNfmbccS0jCb-9UUs3wmCTJ3gjtR5P5Jfy4dj0riM55oOrRjrBXpW2xcPN36s_jsyigIoVvlpQqYijAxkVC9z96NSk9Ona5VsFXLX9B_DBnzZxdWAIhSQ5GrA5BQlF0547iZxcj0BrHD-YYSDrlszvf4VHiYj-HXRiARuDQSH4LPU5PSzNczhBT-HYV2TXvROH7s9ykYi9wON6jfEQ9jPoYlylEZycsRpK5fBH2TLD7x5faN_2llxMkN82zuPOf-MPSBvPotznY3LS_e6GIBiPcQKdosXW9N-SU_EF-Zt7YSZDvv7rFFy_bc34zSbVgV7bwFHl4VFR-KGdLa8kAN8mNPWdxn9JgDCJ0KH9A4ztlYdXBDRgFauchJSJnv7TH0RlYhYXKk5m71UhB4AFKSes2osAevcxgLti6aPbBfRFElPiVxyXYVf4v1u2UHOGm4YqcvsFzj2y5mV1bT9wJobgI_noQNNFsnxoI8AI7owf0M29zYI7WEfkYoUsDzNhzpTsDF4ilgLelczseNXNKiRsB4hLJGp4kB_j03dh400KM6XVJV2d2z-Aa1Dx7KltRC5eYk3QvZOsbs6sEXKOHw74VCz9hpPMMVnAcCoUOPhLlXvZv-c5QtkPaydNgX_H_Yfc-CZIGFDkD3SliE_zVEK-2ubksS4-Ub1e0tm0NYNqGqgkJMbgpHBrvjHFZKExJpwqF2_6e6CJI4W_7pDv_EyD1KAQEPn0cgw6imlV-7WBxE3SUn-PBiTdQLTM--X75BpWoVf8aktug3yoCmIgr3atU8tR1rlfKZB1qjVMt2ji26PDj1fnNGNUrZfcmjs2Ini6HuLOQ5WTT2Y_cOO-wQCQQZxN4e1_H2X3KiPgFI4eK5P-QEN3mRzhsL-n6sB1xZ58ltHeubkrwaTkg8PeMw_UYLfP-tjyrq--b2lz29_gHN-hNVMJtJPbhpmE9B5DYsF8C3mUzoQ3WIpFTxUddZd6OP-eK2V1suWIK4MDXvc57sxK8Pfdk25SFDFhUDvZZW7eHLWhMAyxsi0Kl4kgHE6kxxS6z392c_IDcHTLGjBNbHwrccIy9k7e6Tcmq9mnaczNQnQBXbDvwB34ZWCCgLq2XbGV5RwBGgdGsxJTkJXZXKGF0vl0mBXUmEurUC2uUkZAY5u26B7O-uj-nyj4lPJPRxNnoklNA3BwC08mgtIqUTibhqaQN0V-uSi-74MV-sOhEADQc4oMf36aTH3VpFsPt6CgBnRLm7m2X9U3cTgi4BLY_XRHVCaMO2nuLfxSJ6uhk5CsW67gM6n75YshDCecb2wRclhEIrovVhf4XY-kk-jeEZTE_cq0LYnvfCx7LtI0n8eHFidZ6mLL3iQQgPjrqsc7BKVr1u9S-_NeP2aqGMzuFZVRAPMTCDtNXtsEMdip_cZIXAYDV1FtUiQqGkoAHkyR2P2h-wPhopA3jcl1V09T8KfdgIDMnWY8mf8w9CFjPB53Icj8in3_2ZGToFUfuQaJ7PVMHKtSGiRr9G9-Kad8m7FpC-GbgCd5kqsmXah6fFRQjMUE4ZAXh6CW3HbAQ52KCbsOY-dIJy2pZON3GO-1Oc3TLoYbS8xlh0Ip0OV7K2D7HevIYCgNk0QYHT3TyOFdnAl2ojVIhYL7_fJsz2SRV9rFlD_pcx2r2gutSdDKbHjcD7V4exOQ77p6CMR8JIN94WQa7TTGf3axrnrmzPkOVBOpn6vNxvC4K1kLGFQlqmkUHoWO0YkRBFVtyoyo2SXxGKDFKF9mnWPDNvGthBNz5Lf_qiUyF27pEE45XvBbYXROthV8M4EZa8blZm4TkyUfKKW13NbiqDISKYPgndNYczuMyT9yg6ysSBhI3fzaY5pXxYoWfcNaD8IKPKmsZswCtElB_e8_fQFt_CWxv_9fbV4GP8q4uk4xDd1-YlwyOsHNr6o8NSs9qnIs-shvmVxa3o-yZ8zcA8dctQI5mKeJ8ZHgVuEsAbKT6Fk4SV2i99g2fecpio2GhiSmYivUz5C4-fYEETALXnSuvf8N9N2bqjadxZpeC6yUiGLIm34nngdimeMv6BX6FXewXsm5YQsJyYeHyxAzdzspkrpqRVZ-wB_8NTuekHJyVY6q3lZ3zYwj3IvPTnbYf4B3PG742z5Pp5H3A1NmRcapcg0sZceyEYolEzCoze5IM5scHjN8VoKhJsmMfhVXHYxXPnMOaLkwjXE8BEA_V-hH0Rlpcvvv5gUPGqtsA8Diud8y14vQaeKdhwE3Ra-5Ex58SGr9qObgoGSSbfMg1UmVX_KHF2VrZC2mX59gfhojsq_Q9QwEFB_4_oaGIZDqNhaPOlt_crS6Qj78YJm5Xg3XBfOuiYMawWM5UDR1BcP9ZCvlTbLsNic4JnD_wFSRw2vqDKO2urF9z8ExsMCOXAE9HPzW-pWpix6gZWiQH8XrijOyZYDPxZXIDIRuXvrrrlVRZFnjrRyzJRTRDa7axqDHTXwexdg8E4C5yRV2Xl2Q9DPRaZ7UEnoLtfrMgaGj9B-ulgNq1UihIpqSmOF177u_p0tW5eBLxikWzcw6yrR47hvbsiS9HKKvm16XiW3BIyxGMk2Bnm72DvJY8n83w_K6HpDwtyzn-3IcieDGvqr4yl0_fNAWiWVHEfXU61P03W-WAamjFVS4u3HZrRMepuRzv5iyOKEuYMgfTVaCDMAEW_ZMLPjSpfdpwDknzHkX0-jTKkAcBUPWihoMIbbJHcpqtoYiJRdwnUycP9X8WSdFZWu1XQG5xLRtfjSeLyxaQIiTHposTRY3J3mx09gsPFumIr6TdiM8MIMsnINPsLDCDWW8BnTv_OPJqofhQZS3AuD0BDz1CHKkeHnDhklmt1IW7bfxLNpNiEGkA5LUwDcuE8Ld0_U6HXS2LUEAzyZLM4L1d3aglfykBAhhcPcVUDEJUGL_w8cXfCwc3QlDR3EvLhknep-OaFmHdihc01O1mDFGaE4NpELSPouW3RZlFxTtGMM5jNhoOtGxFNwz1gyDgVvzkew9sEAOvZ_oi4AXd-OqskaLGALH1CibgyjsgUZtDtncXtCZv3ZYR3_tqFn58tyWocpw1_AxjFxkRtC76ER0myAMzQGPLcNZD7Us9QoM77CDM4kVTLReZmnis98MbkfJ6UkS-yohDEuPAdIoR71wKJMUtkieQ7i3b-y92nZYhNxYk9y8iCCrBp9yWqQZqEIyiFX8XKgsL5PVlGH_hqKz5xlbhWEH1_hP1Ubq5-plK1c259N5p3y0mfASmHBzwiuFuZRyJ6rXYy_CxaWmz0qE0-Vl17oxDjpkpAv_FrLZoug_2ARl3uxgxSCiEHy9oJWrF-a1_CB7DjMplUx3yGjrsc8axnXpEdDkdNkWa4V4JxNNWe_JVIDn4COyaoBpsl9S0dTyWGo-AAY2cTBgkD1Q7JesadwO8N1f19nTvEgbZZZ9fMvqJVjyRbKOLXUeSA8W7MYCo2o40Xz-jLB97NtjEca5Bi7StczeeNbPMYfmCnvqBLIy5J9sjPsQc9P6cbD5flEHuAg2l0STMmtVdD8dSp8-qzUkWfMYAXHvoXiXT4CSsPb3RwYdmH55T05WygUZAfnfEAQ2Czu-azN0D5TdTvorVXUcLnt68nf09Dl2ZADaLAseG-4sfG5AVKIqCmZZxyhrki1-YTTnI37vlwwt6veAjT9USgc0lF0ZNExj7L25RCgYUQnYra0MI7V8qUoxuaqjyB24zZ4uQnZ-LlopKt7kg4MfAH6tA7DDbnCRbM9Kdpsh42sQSyA8xjEBsL5l8XRstEvasZHZ2ur2zYIu9gKplHg5b_ICLXqOtYa9jfTcT83fRuaItENi4pQT5aNoykv3f8BVaNCzWWQM8EXhmv8Ne4dX4I-muVGbfhcFFPvfQ8fmiKpJJ3GU5OsKGXsPWc__FKikSuv7qInotdJN9Nkv62887Di1N2v_qKe9-o4VcfdyzQPB3jfGXlfrg6jsXmiTzdoQSwE8fA30oBD82RgWrwjPvhwGwVx1iCEHWcBH7DCpNHQviqjbTuf1blpeFeF0pzZBdEmcdf912qernz6D3J46HLM1P-NWIMIrAcmorYDlauyP8zSiBcH8Vm1tk1-Ehk_z4V-xc8CcAUEgfDd4lNN8eQniko-qeVnCqAatqV9aSNUGymE1L-Fmu6C7oM",
+          "id": "rs_081e85d75ba8b839006a627363e4bc819987843e5c0d6b229a",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [
+            {
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"case_id\":\"generalization-explicit-nested-cause\",\"inventory\":[{\"event_id\":\"E1\",\"event_type\":\"REGULATION\",\"trigger_text\":\"responsible for\",\"exact_evidence\":\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\",\"explanation\":\"This event represents the explicit causal responsibility of the HCMV immediate-early proteins for the nested elevation event.\"},{\"event_id\":\"E2\",\"event_type\":\"POSITIVE_REGULATION\",\"trigger_text\":\"elevating\",\"exact_evidence\":\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\",\"explanation\":\"This event represents the increase in p53 levels in infected fibroblasts.\"}],\"participants\":[{\"participant_id\":\"P1\",\"entity_type\":\"GENE_OR_PROTEIN\",\"exact_text\":\"HCMV immediate-early\",\"exact_evidence\":\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\",\"explanation\":\"This is the lexicalized name identifying the HCMV immediate-early protein entity; the adjacent generic word \u201cproteins\u201d is not included in the occurrence span.\"},{\"participant_id\":\"P2\",\"entity_type\":\"GENE_OR_PROTEIN\",\"exact_text\":\"p53\",\"exact_evidence\":\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\",\"explanation\":\"p53 is the molecular entity whose levels are elevated.\"},{\"participant_id\":\"P3\",\"entity_type\":\"POPULATION\",\"exact_text\":\"infected fibroblasts\",\"exact_evidence\":\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\",\"explanation\":\"This is the explicitly stated cellular population in which the elevation occurs.\"}],\"links\":[{\"event_id\":\"E1\",\"arguments\":[{\"role\":\"CAUSAL_AGENT\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P1\",\"explanation\":\"The HCMV immediate-early proteins are explicitly described as responsible for the effect.\"},{\"role\":\"EFFECT_EVENT\",\"target_kind\":\"EVENT\",\"target_id\":\"E2\",\"explanation\":\"The causal responsibility is directed toward the nested p53-elevation event.\"}]},{\"event_id\":\"E2\",\"arguments\":[{\"role\":\"CAUSAL_AGENT\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P1\",\"explanation\":\"The HCMV immediate-early proteins are the agent associated with elevating p53 levels.\"},{\"role\":\"AFFECTED_ENTITY\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P2\",\"explanation\":\"p53 is the entity whose level is increased.\"},{\"role\":\"CONTEXTUAL_PARTICIPANT\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P3\",\"explanation\":\"The elevation is specified to occur in infected fibroblasts.\"}]}],\"semantic_axes\":[{\"event_id\":\"E1\",\"direction\":\"ENABLES\",\"comparison\":\"NOT_APPLICABLE\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"ASSERTED\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\"],\"explanation\":\"The source affirms a causal enabling relation, but provides no statistical observation or explicit significance interpretation.\"},{\"event_id\":\"E2\",\"direction\":\"INCREASED\",\"comparison\":\"NOT_APPLICABLE\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"ASSERTED\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\"],\"explanation\":\"The event explicitly describes increased p53 levels. \u201cClearly shown\u201d strengthens the assertion but does not state statistical significance.\"}],\"root_event_id\":\"E1\",\"completeness\":\"COMPLETE\",\"structure_explanation\":\"The causal responsibility event E1 contains the positive-regulation event E2 as its effect. After linking the events, E1 is the unique focus-internal event not targeted by another focus-internal event and is therefore the root.\"}",
+              "type": "output_text"
+            }
+          ],
+          "id": "msg_081e85d75ba8b839006a627368302c81998c13bcaac4fea078",
+          "phase": "final_answer",
+          "role": "assistant",
+          "status": "completed",
+          "type": "message"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0.0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "high",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "status": "completed",
+      "store": true,
+      "temperature": 1.0,
+      "text": {
+        "format": {
+          "description": "Source-grounded staged scientific event inventory, referential grounding, linking, and versioned classification-argument semantics.",
+          "name": "V9StagedGeneralizationOutput",
+          "schema": {
+            "$defs": {
+              "InventoryEvent": {
+                "additionalProperties": false,
+                "properties": {
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  },
+                  "event_type": {
+                    "enum": [
+                      "REGULATION",
+                      "POSITIVE_REGULATION",
+                      "NEGATIVE_REGULATION",
+                      "GENE_EXPRESSION",
+                      "COMPARISON",
+                      "ASSOCIATION",
+                      "CLASSIFICATION",
+                      "OBSERVATION"
+                    ],
+                    "title": "Event Type",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "description": "Complete exact source sentence containing trigger_text.",
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "trigger_text": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "title": "Trigger Text",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "event_type",
+                  "trigger_text",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "InventoryEvent",
+                "type": "object"
+              },
+              "ParticipantNode": {
+                "additionalProperties": false,
+                "properties": {
+                  "entity_type": {
+                    "enum": [
+                      "POPULATION",
+                      "OUTCOME",
+                      "EXPOSURE",
+                      "VARIANT",
+                      "GENE_OR_PROTEIN",
+                      "CANCER",
+                      "SIMPLE_CHEMICAL",
+                      "MEASUREMENT"
+                    ],
+                    "title": "Entity Type",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "description": "Complete exact source sentence containing exact_text.",
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "exact_text": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Exact Text",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Participant Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "participant_id",
+                  "entity_type",
+                  "exact_text",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "ParticipantNode",
+                "type": "object"
+              },
+              "StatisticalObservation": {
+                "additionalProperties": false,
+                "properties": {
+                  "exact_text": {
+                    "anyOf": [
+                      {
+                        "maxLength": 1000,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Exact Text"
+                  },
+                  "observation_type": {
+                    "enum": [
+                      "P_VALUE",
+                      "CONFIDENCE_INTERVAL",
+                      "EFFECT_ESTIMATE",
+                      "NONE"
+                    ],
+                    "title": "Observation Type",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "observation_type",
+                  "exact_text"
+                ],
+                "title": "StatisticalObservation",
+                "type": "object"
+              },
+              "V8SemanticAxes": {
+                "additionalProperties": false,
+                "description": "Semantic axes with the preregistered polarity boundary in the schema.",
+                "properties": {
+                  "author_interpretation": {
+                    "enum": [
+                      "SIGNIFICANT",
+                      "NOT_SIGNIFICANT",
+                      "NOT_CLAIMED"
+                    ],
+                    "title": "Author Interpretation",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "enum": [
+                      "GREATER",
+                      "LESS",
+                      "NO_DIFFERENCE",
+                      "NOT_APPLICABLE"
+                    ],
+                    "title": "Comparison",
+                    "type": "string"
+                  },
+                  "direction": {
+                    "enum": [
+                      "INCREASED",
+                      "DECREASED",
+                      "NO_DIFFERENCE",
+                      "NO_ASSOCIATION",
+                      "ENABLES",
+                      "OBSERVED",
+                      "NOT_APPLICABLE"
+                    ],
+                    "title": "Direction",
+                    "type": "string"
+                  },
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  },
+                  "evidence_items": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 8,
+                    "minItems": 1,
+                    "title": "Evidence Items",
+                    "type": "array"
+                  },
+                  "explanation": {
+                    "maxLength": 1500,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "polarity": {
+                    "description": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+                    "enum": [
+                      "AFFIRMED",
+                      "NEGATED",
+                      "NULL_RESULT"
+                    ],
+                    "title": "Polarity",
+                    "type": "string"
+                  },
+                  "statistical_observations": {
+                    "items": {
+                      "$ref": "#/$defs/StatisticalObservation"
+                    },
+                    "maxItems": 8,
+                    "title": "Statistical Observations",
+                    "type": "array"
+                  },
+                  "uncertainty": {
+                    "enum": [
+                      "ASSERTED",
+                      "PROVISIONAL",
+                      "UNCERTAIN",
+                      "HYPOTHESIS"
+                    ],
+                    "title": "Uncertainty",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "direction",
+                  "comparison",
+                  "polarity",
+                  "uncertainty",
+                  "statistical_observations",
+                  "author_interpretation",
+                  "evidence_items",
+                  "explanation"
+                ],
+                "title": "V8SemanticAxes",
+                "type": "object"
+              },
+              "V9EventArgument": {
+                "additionalProperties": false,
+                "description": "Event argument with the classification boundary in the role schema.",
+                "properties": {
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "role": {
+                    "description": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+                    "enum": [
+                      "AFFECTED_ENTITY",
+                      "CAUSAL_AGENT",
+                      "STIMULUS_OR_OBJECT",
+                      "POPULATION",
+                      "COMPARATOR",
+                      "OUTCOME",
+                      "EXPOSURE",
+                      "MEASUREMENT",
+                      "CONTEXTUAL_PARTICIPANT",
+                      "EFFECT_EVENT"
+                    ],
+                    "title": "Role",
+                    "type": "string"
+                  },
+                  "target_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Target Id",
+                    "type": "string"
+                  },
+                  "target_kind": {
+                    "enum": [
+                      "PARTICIPANT",
+                      "EVENT"
+                    ],
+                    "title": "Target Kind",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "role",
+                  "target_kind",
+                  "target_id",
+                  "explanation"
+                ],
+                "title": "V9EventArgument",
+                "type": "object"
+              },
+              "V9EventLinks": {
+                "additionalProperties": false,
+                "description": "V9 links using the versioned event-argument role description.",
+                "properties": {
+                  "arguments": {
+                    "items": {
+                      "$ref": "#/$defs/V9EventArgument"
+                    },
+                    "maxItems": 16,
+                    "title": "Arguments",
+                    "type": "array"
+                  },
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "arguments"
+                ],
+                "title": "V9EventLinks",
+                "type": "object"
+              }
+            },
+            "additionalProperties": false,
+            "description": "V9 output retaining V8 polarity semantics and the same JSON shape.",
+            "properties": {
+              "case_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "title": "Case Id",
+                "type": "string"
+              },
+              "completeness": {
+                "enum": [
+                  "COMPLETE",
+                  "INCOMPLETE",
+                  "CONTRADICTED",
+                  "ABSTAIN"
+                ],
+                "title": "Completeness",
+                "type": "string"
+              },
+              "inventory": {
+                "items": {
+                  "$ref": "#/$defs/InventoryEvent"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Inventory",
+                "type": "array"
+              },
+              "links": {
+                "items": {
+                  "$ref": "#/$defs/V9EventLinks"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Links",
+                "type": "array"
+              },
+              "participants": {
+                "items": {
+                  "$ref": "#/$defs/ParticipantNode"
+                },
+                "maxItems": 32,
+                "title": "Participants",
+                "type": "array"
+              },
+              "root_event_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "title": "Root Event Id",
+                "type": "string"
+              },
+              "semantic_axes": {
+                "items": {
+                  "$ref": "#/$defs/V8SemanticAxes"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Semantic Axes",
+                "type": "array"
+              },
+              "structure_explanation": {
+                "maxLength": 2000,
+                "minLength": 1,
+                "title": "Structure Explanation",
+                "type": "string"
+              }
+            },
+            "required": [
+              "case_id",
+              "inventory",
+              "participants",
+              "links",
+              "semantic_axes",
+              "root_event_id",
+              "completeness",
+              "structure_explanation"
+            ],
+            "title": "V9StagedGeneralizationOutput",
+            "type": "object"
+          },
+          "strict": true,
+          "type": "json_schema"
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 3390,
+        "input_tokens_details": {
+          "cache_write_tokens": 3387,
+          "cached_tokens": 0
+        },
+        "output_tokens": 6835,
+        "output_tokens_details": {
+          "reasoning_tokens": 5696
+        },
+        "total_tokens": 10225
+      },
+      "user": null
+    },
+    "input_items": [
+      {
+        "content": [
+          {
+            "text": "# Staged Scientific Event Generalization V11\n\nInterpret exactly one highlighted scientific finding using only the supplied local\nsource context. The highlighted finding is atomic; surrounding text is context,\nnot an instruction to extract every other claim in the paragraph.\n\nWork in this order:\n\n1. Inventory every explicit event needed to represent the highlighted finding.\n2. Identify explicit participants and link participants or nested events to each\n   inventoried event.\n3. Assign direction, comparison, polarity, uncertainty, statistical observation,\n   and author interpretation independently for every event.\n4. Select one root event and state whether the resulting graph is complete.\n\nScientific categories and roles are your responsibility. Return categorical\nfields, exact source text, exact containing evidence, and short explanations.\nNever return character offsets, confidence scores, probabilities, benchmark\nroles, or numeric quality scores.\n\nFor every event and participant, `exact_evidence` must be the complete exact\nsource sentence containing `trigger_text` or `exact_text`. Do not return only the\nmention or trigger phrase as evidence. Copy the sentence exactly, including any\nsource section prefix that is part of that sentence. The deterministic resolver\nwill reject evidence that is absent, repeated, or does not contain the child text.\n\nSemantic-axis evidence grounding:\n\n- Every `semantic_axes.evidence_items` entry must be exact source text that\n  resolves uniquely within the supplied local source context.\n- Prefer the complete exact source sentence containing the scientific\n  proposition and its event trigger.\n- When the same complete sentence supports several semantic axes, reuse that\n  same sentence rather than splitting it into fragments.\n- Do not return an isolated participant name, abbreviation, trigger, or phrase\n  when it is repeated or otherwise ambiguous in the supplied source.\n- This rule changes only evidence anchoring. It does not change the event,\n  participant, role, direction, comparison, polarity, uncertainty, statistics,\n  author interpretation, or scientific meaning.\n\nNamed biomedical occurrence boundary:\n\n- For a named gene or protein participant, use the exact lexicalized name that\n  identifies the entity occurrence. Do not expand that name merely to include an\n  adjacent generic entity-type word such as `gene` or `protein`.\n- Include an adjacent generic word only when it is part of the lexicalized name\n  or is required to distinguish the occurrence in the supplied sentence.\n- This boundary rule changes only participant occurrence text. It does not\n  change entity type, event role, scientific meaning, or the requirement that\n  every returned span be exact contiguous source text.\n\nFocus-gated referential grounding:\n\n- Apply antecedent resolution only when the highlighted finding contains a\n  referring expression that cannot identify its entity or event without earlier\n  words in the supplied local context.\n- For such an expression, resolve one unique explicit antecedent and ground the\n  participant to the antecedent's exact contiguous source text. Do not use the\n  pronoun, relative phrase, demonstrative, ellipsis, or partitive grammar itself\n  as `exact_text`.\n- Preserve an explicitly named entity that restricts the antecedent only when\n  that relation is necessary to identify or interpret the focused event. Do not\n  add general paragraph context or participants from neighboring findings.\n- A source subspan already contained in a complete participant mention is not a\n  separate contextual participant unless it has an independent role in the\n  focused event.\n- An analytic method, model, curve, assay, or representation is not an event\n  participant merely because the finding was measured or displayed through it.\n  Include it only when the focused event independently predicates a state,\n  relation, or value about that item.\n- If no unique explicit antecedent can be resolved from the supplied context,\n  return `INCOMPLETE` or `ABSTAIN`; do not invent or guess an entity.\n\nRole guidance:\n\n- `POPULATION`: the focal cohort or group in a population comparison.\n- `COMPARATOR`: the cohort or group against which the focal population is compared.\n- In a `COMPARISON` event between cohorts, use `POPULATION` and `COMPARATOR` for\n  those cohorts. Do not use `AFFECTED_ENTITY` merely because one cohort has the\n  compared outcome.\n- `AFFECTED_ENTITY`: the entity whose state or behavior is described in a\n  non-comparative state, classification, or regulation event.\n- `CAUSAL_AGENT`: an explicitly causal actor.\n- `STIMULUS_OR_OBJECT`: the treatment, stimulus, or object to which sensitivity\n  or response is described when the source does not explicitly claim causation.\n- `EFFECT_EVENT`: an event whose occurrence or state is affected by another\n  event. Preserve nested events; do not replace them with their participants.\n- `OUTCOME`, `EXPOSURE`, and `MEASUREMENT`: use only for their literal source roles.\n- `CONTEXTUAL_PARTICIPANT`: an explicit participant whose narrower role is not\n  stated.\n\nClassification argument boundary:\n\n- In a `CLASSIFICATION` event, link the classified entity as `AFFECTED_ENTITY`.\n- If a named entity explicitly restricts the identity or scope of that\n  classified entity set, link the restricting entity as\n  `CONTEXTUAL_PARTICIPANT`.\n- A classification label or value belongs in the classification event trigger\n  and semantic axes. Do not duplicate it as `OUTCOME` unless it independently\n  participates in another event.\n\nSemantic guidance:\n\n- A null result is not an affirmative harmful or beneficial association.\n- A numeric P value is a `P_VALUE` observation. It does not by itself mean that\n  the authors claimed `SIGNIFICANT` or `NOT_SIGNIFICANT`.\n- Use `NOT_CLAIMED` unless the source explicitly interprets significance.\n- The `uncertainty` axis describes uncertainty conveyed by the scientific\n  proposition, status, or classification value. It is independent of whether\n  the sentence grammatically asserts that proposition.\n- Use `UNCERTAIN` when the event explicitly assigns an uncertain, unknown,\n  indeterminate, or unresolved scientific status. Use `PROVISIONAL` or\n  `HYPOTHESIS` only when that corresponding status is explicit. Use `ASSERTED`\n  for an unqualified event, not merely because uncertain content is stated\n  declaratively.\n- Polarity records scientific result status, not surface grammar, and is\n  independent of direction and uncertainty. Use `NULL_RESULT` when a study or\n  analysis reports absence of an association, difference, or effect, regardless\n  of negative grammatical form. Use `NEGATED` only for direct denial or\n  non-occurrence outside an analytic null finding. Use `AFFIRMED` for other\n  non-null findings.\n- Preserve scientific negation and uncertainty exactly.\n- Trigger and participant text must be exact contiguous source text. A trigger\n  may include adjacent grammatical words when needed to preserve source meaning.\n- Return `INCOMPLETE` or `ABSTAIN` when the highlighted finding cannot be\n  represented without guessing.\n\nThe output must conform exactly to the supplied strict schema.\n\n\n--- V12 PRESERVED SCIENTIFIC CHANGE ---\n# V12 Focus Event Anchoring\n\nFocus-event anchoring:\n\n- When the highlighted finding contains an explicit event-denoting noun or\n  phrase, inventory that highlighted event and keep it as the root event.\n- A surrounding predicate such as `associated with`, `involved in`, or\n  `related to` must not replace the highlighted event merely because it connects\n  contextual entities.\n- This rule changes only focus-event inventory and root selection. Preserve\n  every nested event required by the highlighted finding, and apply the existing\n  participant, link, role, and semantic-axis rules unchanged.\n- The rule does not prescribe an event type, participant identity,\n  semantic-axis value, benchmark label, or expected answer.\n--- END V12 PRESERVED SCIENTIFIC CHANGE ---\n\n--- V13 SINGLE SCIENTIFIC CHANGE ---\n# V13 Compositional Focus Root Selection\n\nCompositional focus root selection:\n\n- Select the root only after constructing event links.\n- In the focus-internal event subgraph, when exactly one inventoried event is\n  not the target of another focus-internal inventoried event, choose it as root.\n- Predicates outside the highlighted finding cannot disqualify or replace that\n  root, and a nested effect cannot replace its explicit focus-internal parent.\n- Otherwise apply the existing root and completeness rules unchanged; do not\n  alter inventory or links to force uniqueness.\n- This rule changes root selection only. Preserve inventory, trigger\n  boundaries, participants, links, roles, semantic axes, evidence, and\n  completeness rules unchanged.\n- The rule does not prescribe an event count, event type, participant, role,\n  semantic-axis value, benchmark label, or expected answer.\n\nNon-scientific transport clarification for this exposed V13:\n\n- Every preregistered focus is upstream-eligible because it contains at least\n  one explicit source-supported event. An input with no such event is outside\n  this experiment and must not be sent to the provider.\n- When `completeness` is not `COMPLETE`, `root_event_id` is a required transport\n  anchor, not an asserted scientific root. Set it to the earliest\n  source-supported focus-internal inventoried event in source order.\n- Do not add, delete, relabel, or link events to create that transport anchor.\n  The universal schema still cannot represent a truly eventless abstention;\n  V13 does not claim to solve that residual limitation.\n--- END V13 SINGLE SCIENTIFIC CHANGE ---\n\n--- FROZEN EXPOSED CASE ---\n{\n  \"case_id\": \"generalization-explicit-nested-cause\",\n  \"focus_passage\": \"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts\",\n  \"local_context\": \"HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.\",\n  \"source_id\": \"PMID-7966592\",\n  \"source_sha256\": \"cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02\"\n}\n--- END FROZEN EXPOSED CASE ---\n",
+            "type": "input_text"
+          }
+        ],
+        "id": "msg_081e85d75ba8b839006a62733c6e0c819983fdd1a624227a1f",
+        "role": "user",
+        "status": "completed",
+        "type": "message"
+      }
+    ]
+  }
+}
