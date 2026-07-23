@@ -1,0 +1,211 @@
+{
+  "schema_version": "artana.staged_generalization.v14_to_v15_focus_closure_consensus.v1",
+  "adjudicated_at": "2026-07-23T21:43:29Z",
+  "sealed_v14_head": "f4aea428aaf7105d9bb8a2f90a1dc52accab44ab",
+  "sealed_v14_preserved": true,
+  "purpose": "Establish whether sealed V14 supports a source-general next hypothesis without rescoring V14 or using fresh material.",
+  "review_scope": {
+    "provider_calls": 0,
+    "fresh_case_access": 0,
+    "graph_writes": 0,
+    "trusted_promotion": false,
+    "historical_results_rescored": false,
+    "sealed_artifacts_modified": false,
+    "public_or_exposed_material_only": true
+  },
+  "frozen_evidence_sha256": {
+    "docs/validation/adjudications/2026-07-23-pmid-21965773-drug-sensitivity-two-lane-adjudication-v1.json": "575cd0bfc98ebb7290c4a9be7a2fc9391383f301f59fee0a8bb7401a6bec719c",
+    "docs/validation/adjudications/2026-07-23-staged-generalization-v12-two-lane-contract-v1.json": "432dcec45d8ac920182a22028c99532494acb74443ff8a13e003440d1a88f146",
+    "docs/validation/prompts/2026-07-22-staged-generalization-v11.md": "5a91a17b28730067ed15ecaab6f26a276d4fd1dfc439856817168674296fa87a",
+    "docs/validation/prompts/2026-07-23-staged-generalization-v12-focus-event-anchoring.md": "a9ea1d2acd867809b2769ce9f52d94b0bfa69a69ba7f2cfb593ad7bb8b31fc78",
+    "docs/validation/prompts/2026-07-23-staged-generalization-v13-compositional-focus-root.md": "0ab67bfea1ed75028a4771bc9a1b2f8d00f56bcc228d305a3650e3ae2d0e86f7",
+    "docs/validation/prompts/2026-07-23-staged-generalization-v14-complete-participant-denotation.md": "854c3b6e08441e6d667ecd48c6f0b86ff26942b9fb2db760a822727634cdf6ad",
+    "docs/validation/results/2026-07-22-staged-generalization-v9-generalization-drug-sensitivity-raw.json": "d7e5bc210089326092d823ab1262af4cfb1bd50f7ec36231fbbc5997963394f2",
+    "docs/validation/results/2026-07-23-staged-generalization-v11-exposed-run-v2-generalization-drug-sensitivity-raw.json": "e06e85773c79008c7a76d77cadeb4741423942a5b04cdfea7ca2dd6aa384ee88",
+    "docs/validation/results/2026-07-23-staged-generalization-v12-exposed-run-v1-generalization-drug-sensitivity-raw.json": "a2787a3eb453f7637d412dccec2781b1d196dbf30c0b4a2f0eda94fbdc18ba54",
+    "docs/validation/results/2026-07-23-staged-generalization-v13-exposed-run-v1-generalization-drug-sensitivity-raw.json": "37c0fe3f82767ac7c2fb2310b52a987beb68e22e9729d20de25fa73939dcc238",
+    "docs/validation/results/2026-07-23-staged-generalization-v14-exposed-run-v1-generalization-drug-sensitivity-raw.json": "38547adb15c1adab3529c7e0217778bf33f2c34aacdc7bfab2d2076900e86b2f",
+    "docs/validation/reviews/2026-07-23-staged-generalization-v14-post-run-independent-classification-v1.json": "b7a6c5de43123ae1710ecacd6d7ccc7ac8c634d1860c8899a7948bc690fd69f8"
+  },
+  "archived_exposed_sequence": [
+    {
+      "version": "V9",
+      "focus_event": "sensitivity",
+      "outside_parent_event": "EXCLUDED",
+      "role_bearing_drug_occurrence": "FOCUS_LOCAL_5_FU",
+      "v14_evaluator_replay": "PASS"
+    },
+    {
+      "version": "V11",
+      "focus_event": "REPLACED_BY_OUTSIDE_PARENT",
+      "outside_parent_event": "ARE_INVOLVED_IN_AS_SOLE_EVENT",
+      "role_bearing_drug_occurrence": "EARLIER_FULL_NAME_WITH_ABBREVIATION",
+      "v14_evaluator_replay": "FAIL"
+    },
+    {
+      "version": "V12",
+      "focus_event": "sensitivity",
+      "outside_parent_event": "EXCLUDED",
+      "role_bearing_drug_occurrence": "FOCUS_LOCAL_5_FU",
+      "v14_evaluator_replay": "PASS"
+    },
+    {
+      "version": "V13",
+      "focus_event": "sensitivity",
+      "outside_parent_event": "EXCLUDED",
+      "role_bearing_drug_occurrence": "FOCUS_LOCAL_5_FU",
+      "v14_evaluator_replay": "PASS"
+    },
+    {
+      "version": "V14",
+      "focus_event": "sensitivity",
+      "outside_parent_event": "ARE_INVOLVED_IN_ADDED_AS_SECOND_EVENT",
+      "role_bearing_drug_occurrence": "EARLIER_FULL_NAME",
+      "v14_evaluator_replay": "FAIL"
+    }
+  ],
+  "direct_output_explanations": {
+    "v14_event_scope_reasoning": "This contextual relation is retained without replacing the highlighted event as root.",
+    "v14_occurrence_reasoning": "The unique full chemical name grounds the repeated 5-FU abbreviation used in the focused sensitivity phrase.",
+    "interpretation": "The output followed two literal prompt loopholes: outside context was added while preserving the root, and canonical identity was substituted for the role-bearing occurrence."
+  },
+  "independent_adjudications": {
+    "prompt_conflict_review": {
+      "verdict": "TWO_SOURCE_GENERAL_UNDERSPECIFICATIONS",
+      "v14_delta_causality_proven": false,
+      "latent_contract_ambiguity_proven": true,
+      "pure_stochastic_variance_excluded": false,
+      "evaluator_or_reference_defect": false
+    },
+    "focus_scope_review": {
+      "verdict": "CONTEXT_ONLY_DO_NOT_INVENTORY_AS_EVENT",
+      "reference_and_evaluator_agree": true,
+      "provider_prompt_fully_specifies_boundary": false,
+      "outside_predicate_hallucinated": false,
+      "outside_predicate_source_supported_but_out_of_scope": true
+    },
+    "occurrence_boundary_review": {
+      "verdict": "BIND_ROLE_BEARING_OCCURRENCE_BEFORE_TEXT_MINIMIZATION",
+      "v14_wording_unambiguous": false,
+      "focus_local_named_mention_precedes_alias_resolution": true,
+      "true_anaphora_exception_preserved": true,
+      "alias_identity_can_replace_occurrence": false
+    },
+    "diagnostic_design_review": {
+      "verdict": "MINIMAL_V15_HYPOTHESIS_TEST_AUTHORIZED",
+      "unchanged_prompt_replication_required_before_v15": false,
+      "prompt_effect_size_established": false,
+      "stochastic_variance_estimated": false,
+      "reason": "Replication would estimate variance but would not close the independently demonstrated semantic contract gaps."
+    }
+  },
+  "source_general_event_inventory_contract": {
+    "rule": "Inventory events explicitly denoted by the highlighted finding and preserve the complete dependency closure of focus-internal nested events required to represent that finding.",
+    "outside_parent_boundary": "Do not traverse outward from a focused event to inventory a predicate outside the highlighted finding merely because that predicate governs, embeds, or takes the focused event as an argument.",
+    "context_policy": "An outside predicate may license only independently approved optional contextual participants. It cannot add an event, change the root, replace mandatory links, or change semantic axes or completeness.",
+    "anaphora_exception": "A focus-internal genuinely dependent referring expression may resolve to one unique explicit antecedent outside the span when necessary for event or participant identity. Resolution does not authorize neighboring or governing predicates as events.",
+    "fail_closed": "If outside context controls identity, polarity, uncertainty, or scientific meaning and the focus cannot stand independently, return INCOMPLETE or ABSTAIN rather than expanding the graph without an explicit dependency."
+  },
+  "source_general_occurrence_contract": {
+    "ordering": "Bind the role-bearing mention occurrence before minimizing participant text.",
+    "focus_local_precedence": "When the highlighted finding contains an explicit self-denoting name, symbol, abbreviation, or head-complete nominal for a participant role, bind to that exact focus-local occurrence.",
+    "alias_boundary": "A definition, synonym, long form, abbreviation expansion, or canonical alias elsewhere may help interpret entity identity but may not replace occurrence identity.",
+    "repetition_boundary": "Repetition outside the highlighted finding does not make a participant text ambiguous when it occurs exactly once in the highlighted finding.",
+    "true_anaphora_exception": "Resolve outside the focus only for a genuinely non-self-denoting pronoun, relative phrase, demonstrative, ellipsis, or partitive when no explicit self-denoting role-bearing mention exists in the focus. The antecedent must be unique and explicit.",
+    "minimization_after_binding": "Within the bound occurrence, select the smallest exact contiguous subspan that independently denotes the entity while retaining its noun head and nonredundant restrictive identity.",
+    "evidence_boundary": "The V11 warning about repeated abbreviations applies to evidence strings. It does not authorize relocating participants from their role-bearing occurrences."
+  },
+  "unified_v15_hypothesis": {
+    "name": "FOCUS_CLOSURE_AND_ROLE_BEARING_OCCURRENCE_CUSTODY_V1",
+    "statement": "Construct the mandatory focused event graph only from event and participant occurrences bearing roles in the highlighted finding. Preserve independently approved, source-supported optional contextual participants under the frozen policy. Use other context only to resolve identity or recover a genuinely implicit or elliptical argument when no independently denoting role-bearing focus-local occurrence exists. Context must neither add an outside predicate as an event nor replace a focus-local occurrence with its antecedent, definition, or alias.",
+    "single_owning_boundary": "PROVIDER_FACING_FOCUS_AND_OCCURRENCE_SCOPE_CONTRACT",
+    "why_two_clauses_are_one_hypothesis": "Both failures cross outward from the highlighted finding into context: one at the event-parent boundary and one at the participant-alias boundary.",
+    "scientific_fix_already_proven": false,
+    "hypothesis_test_justified": true
+  },
+  "v15_authorization": {
+    "status": "AUTHORIZED_FOR_MINIMAL_EXPOSED_HYPOTHESIS_TEST_ONLY",
+    "supersedes_v14_classification_authorization_field_only": true,
+    "v14_classification_and_score_unchanged": true,
+    "allowed_changes": [
+      "ONE_PROVIDER_FACING_RULE_WITH_THE_TWO_BOUND_CLAUSES_IN_THE_UNIFIED_HYPOTHESIS",
+      "V15_IDENTITY_PATHS_PREFLIGHT_RUNTIME_AND_REPORTING_NEEDED_FOR_FORWARD_ONLY_REPRODUCIBILITY",
+      "FOCUSED_TESTS_AND_DETERMINISTIC_PREREGISTRATION_ARTIFACTS"
+    ],
+    "forbidden_changes": [
+      "EVALUATOR",
+      "REFERENCE",
+      "GRADER",
+      "SCHEMA",
+      "EVENT_INVENTORY_TAXONOMY",
+      "ENTITY_TYPES",
+      "MANDATORY_PARTICIPANTS_OR_LINKS",
+      "ROOT_SELECTION",
+      "SEMANTIC_AXES",
+      "EVIDENCE_GROUNDING",
+      "COMPLETENESS",
+      "BIONLP_CG_PROJECTION_POLICY",
+      "TRANSPORT",
+      "CUSTODY",
+      "COST_OR_TOKEN_SCIENTIFIC_SCORING",
+      "V14_LOCAL_OPTIONAL_EDGE_POLICY",
+      "V14_OR_HISTORICAL_ARTIFACTS"
+    ],
+    "provider_prompt_case_specific_examples_allowed": false,
+    "exposed_panel_only": true,
+    "fresh_cases_allowed": false,
+    "graph_writes_allowed": false,
+    "trusted_promotion_allowed": false,
+    "reporting_only_v14_defect_in_scope": false
+  },
+  "required_before_v15_provider_call": {
+    "two_independent_exact_wording_reviews": true,
+    "tiebreak_if_wording_reviews_disagree": true,
+    "offline_all_exposed_panel_audit": [
+      "TRUE_ANAPHORA_AND_ELLIPSIS_REMAIN_RESOLVABLE",
+      "FOCUS_LOCAL_NAMED_OCCURRENCES_REMAIN_LOCAL",
+      "FOCUS_INTERNAL_NESTED_EVENT_CLOSURE_REMAINS_COMPLETE",
+      "V14_NOUN_HEAD_AND_RESTRICTIVE_IDENTITY_RULE_REMAINS_UNCHANGED",
+      "V14_OPTIONAL_INNER_EDGE_POLICY_REMAINS_UNCHANGED",
+      "ALL_EARLIER_REPAIRED_BEHAVIORS_REMAIN_STABLE"
+    ],
+    "v14_evaluator_reused_byte_identical": true,
+    "shared_and_historical_files_reused_byte_identical": true,
+    "commit_and_push_before_provider_call": true,
+    "complete_package_independent_review": true
+  },
+  "execution_policy_if_v15_is_frozen": {
+    "case_order": [
+      "generalization-comparison-canary",
+      "generalization-drug-sensitivity",
+      "generalization-uncertainty",
+      "generalization-explicit-nested-cause",
+      "generalization-negated-association",
+      "generalization-null-statistics"
+    ],
+    "fail_fast": true,
+    "stop_conditions": {
+      "first_real_source_scientific_failure": true,
+      "invalid_schema_custody_or_exactly_once_execution": true,
+      "cumulative_budget_exhausted_before_next_creation": true,
+      "cumulative_budget_reached_after_persisted_call": true,
+      "missing_required_secret": true,
+      "provider_outage": true
+    },
+    "exactly_one_creation_per_attempted_case": true,
+    "provider_retries": 0,
+    "cumulative_operational_budget_usd": 5.0,
+    "application_token_ceilings": false,
+    "fresh_case_access": 0,
+    "graph_writes": 0,
+    "trusted_promotion": false
+  },
+  "stop_and_escalation_policy": {
+    "all_exposed_cases_pass": "Seal V15 unchanged and obtain an independent review of the complete evidence package. Only after that review may a separate untouched-fresh validation be preregistered and pushed; never access fresh material automatically.",
+    "same_axis_v15_failure": "Seal and classify as evidence toward an instruction-following or reproducibility limitation unless a new source-general correction is independently supported.",
+    "reviewer_disagreement": "Do not create or execute V15 until resolved by an independent tiebreak.",
+    "new_unrelated_failure": "Seal fail-fast, classify independently, and do not patch V15 or start V16 automatically.",
+    "no_source_general_correction_supported": "Stop under the program's true stop condition rather than relax the contract."
+  },
+  "consensus_verdict": "V15_MINIMAL_EXPOSED_HYPOTHESIS_TEST_AUTHORIZED_NOT_YET_FROZEN"
+}
