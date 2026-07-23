@@ -1,0 +1,281 @@
+{
+  "case_order": [
+    "fresh-cg-pmid-21963494-e3",
+    "fresh-cg-pmid-2681013-e5",
+    "fresh-cg-pmid-16098727-e5",
+    "fresh-cg-pmid-7904970-e11",
+    "fresh-cg-pmid-19648108-e11",
+    "fresh-cg-pmid-11306510-e1",
+    "fresh-cg-pmid-18841154-e12",
+    "fresh-cg-pmid-20448329-e6"
+  ],
+  "cases": [
+    {
+      "case_id": "fresh-cg-pmid-21963494-e3",
+      "document_id": "PMID-21963494",
+      "event_anchor": {
+        "anchor_id": "T44",
+        "mention": {
+          "end": 88,
+          "start": 78,
+          "text": "activation"
+        }
+      },
+      "participant_anchors": [
+        {
+          "anchor_id": "T4",
+          "mention": {
+            "end": 120,
+            "start": 92,
+            "text": "AMP-activated protein kinase"
+          }
+        },
+        {
+          "anchor_id": "T1",
+          "mention": {
+            "end": 7,
+            "start": 0,
+            "text": "Aglycon"
+          }
+        }
+      ],
+      "permitted_context": {
+        "end": 149,
+        "start": 0,
+        "text": "Aglycon of rhizochalin from the Rhizochalina incrustata induces apoptosis via activation of AMP-activated protein kinase in HT-29 colon cancer cells."
+      },
+      "primary_retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=21963494&retmode=xml",
+      "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/21963494/",
+      "source_sha256": "b593bc4ccb233ef97783d6147d2e5e604b3f0f04e462bdf057a1a01b83a8bfc6"
+    },
+    {
+      "case_id": "fresh-cg-pmid-2681013-e5",
+      "document_id": "PMID-2681013",
+      "event_anchor": {
+        "anchor_id": "T30",
+        "mention": {
+          "end": 351,
+          "start": 341,
+          "text": "expression"
+        }
+      },
+      "participant_anchors": [
+        {
+          "anchor_id": "T9",
+          "mention": {
+            "end": 366,
+            "start": 355,
+            "text": "osteonectin"
+          }
+        }
+      ],
+      "permitted_context": {
+        "end": 424,
+        "start": 316,
+        "text": "We have investigated the expression of osteonectin gene in fresh BALB/c fibroblasts transformed by v-Ki-ras."
+      },
+      "primary_retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=2681013&retmode=xml",
+      "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/2681013/",
+      "source_sha256": "ee9a981ca7ceda2f4dfcf320d27f7338fb7f86774833c0b4ce63cd75532adbe8"
+    },
+    {
+      "case_id": "fresh-cg-pmid-16098727-e5",
+      "document_id": "PMID-16098727",
+      "event_anchor": {
+        "anchor_id": "T27",
+        "mention": {
+          "end": 392,
+          "start": 381,
+          "text": "progression"
+        }
+      },
+      "participant_anchors": [
+        {
+          "anchor_id": "T8",
+          "mention": {
+            "end": 380,
+            "start": 375,
+            "text": "tumor"
+          }
+        }
+      ],
+      "permitted_context": {
+        "end": 393,
+        "start": 261,
+        "text": "Recent advances have fostered a more detailed understanding of molecular mechanisms and networks governing EMT in tumor progression."
+      },
+      "primary_retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=16098727&retmode=xml",
+      "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/16098727/",
+      "source_sha256": "84723cbe9cdc8d8449db4361f5aac12fd049020a98050045ade6143f632b2fae"
+    },
+    {
+      "case_id": "fresh-cg-pmid-7904970-e11",
+      "document_id": "PMID-7904970",
+      "event_anchor": {
+        "anchor_id": "T52",
+        "mention": {
+          "end": 1023,
+          "start": 1014,
+          "text": "increased"
+        }
+      },
+      "participant_anchors": [
+        {
+          "anchor_id": "T25",
+          "mention": {
+            "end": 1042,
+            "start": 1037,
+            "text": "EGF-R"
+          }
+        }
+      ],
+      "permitted_context": {
+        "end": 1233,
+        "start": 997,
+        "text": "The detection of increased abundance of EGF-R or Her-2/neu proteins in human tumours can provide additional information on the disease-free survival and overall survival for patients with breast, ovarian, endometrial or cervical cancer."
+      },
+      "primary_retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=7904970&retmode=xml",
+      "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/7904970/",
+      "source_sha256": "e16dd6c95a9c08d89c5ce4c34b27c263b0fc8ad18436ce60005050ff1c0ee653"
+    },
+    {
+      "case_id": "fresh-cg-pmid-19648108-e11",
+      "document_id": "PMID-19648108",
+      "event_anchor": {
+        "anchor_id": "T31",
+        "mention": {
+          "end": 551,
+          "start": 541,
+          "text": "expression"
+        }
+      },
+      "participant_anchors": [
+        {
+          "anchor_id": "T11",
+          "mention": {
+            "end": 579,
+            "start": 559,
+            "text": "glucose transporters"
+          }
+        }
+      ],
+      "permitted_context": {
+        "end": 580,
+        "start": 388,
+        "text": "In this study, we have examined the ability of the purine analogue 8-aminoadenosine to acutely reduce glucose consumption by regulating localization and expression of key glucose transporters."
+      },
+      "primary_retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=19648108&retmode=xml",
+      "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/19648108/",
+      "source_sha256": "3e63601b84dcd1609bc264cee307858e2a01a28e247aeb90b3d0446e18831ce5"
+    },
+    {
+      "case_id": "fresh-cg-pmid-11306510-e1",
+      "document_id": "PMID-11306510",
+      "event_anchor": {
+        "anchor_id": "T80",
+        "mention": {
+          "end": 88,
+          "start": 78,
+          "text": "expression"
+        }
+      },
+      "participant_anchors": [
+        {
+          "anchor_id": "T2",
+          "mention": {
+            "end": 77,
+            "start": 41,
+            "text": "vascular endothelial growth factor-C"
+          }
+        }
+      ],
+      "permitted_context": {
+        "end": 168,
+        "start": 0,
+        "text": "Vascular endothelial growth factor-B and vascular endothelial growth factor-C expression in renal cell carcinomas: regulation by the von Hippel-Lindau gene and hypoxia."
+      },
+      "primary_retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=11306510&retmode=xml",
+      "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/11306510/",
+      "source_sha256": "460403a3f71c5e6450016e5b22fb230256858e819ade5966bd3c2c819200a994"
+    },
+    {
+      "case_id": "fresh-cg-pmid-18841154-e12",
+      "document_id": "PMID-18841154",
+      "event_anchor": {
+        "anchor_id": "T36",
+        "mention": {
+          "end": 808,
+          "start": 798,
+          "text": "inhibition"
+        }
+      },
+      "participant_anchors": [
+        {
+          "anchor_id": "T17",
+          "mention": {
+            "end": 797,
+            "start": 791,
+            "text": "tumour"
+          }
+        }
+      ],
+      "permitted_context": {
+        "end": 895,
+        "start": 783,
+        "text": "Further tumour inhibition studies showed that STX243 was also active against MCF-7 paclitaxel-resistant tumours."
+      },
+      "primary_retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=18841154&retmode=xml",
+      "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/18841154/",
+      "source_sha256": "67f5372287ef70ba59d3c6632aa43ee55256bd04c9e8cf63f56eb280d32d6055"
+    },
+    {
+      "case_id": "fresh-cg-pmid-20448329-e6",
+      "document_id": "PMID-20448329",
+      "event_anchor": {
+        "anchor_id": "T59",
+        "mention": {
+          "end": 396,
+          "start": 392,
+          "text": "role"
+        }
+      },
+      "participant_anchors": [
+        {
+          "anchor_id": "T15",
+          "mention": {
+            "end": 404,
+            "start": 400,
+            "text": "CDC4"
+          }
+        },
+        {
+          "anchor_id": "T17",
+          "mention": {
+            "end": 428,
+            "start": 414,
+            "text": "gastric cancer"
+          }
+        }
+      ],
+      "permitted_context": {
+        "end": 657,
+        "start": 367,
+        "text": "METHODS: We assessed the role of CDC4/FBXW7 in gastric cancer, through loss of heterozygosity (LOH) and multiplex ligation-dependent probe amplification (MLPA) on 47 flow-sorted gastric carcinomas including early-onset gastric cancers (EOGC) and xenografted conventional gastric carcinomas."
+      },
+      "primary_retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=20448329&retmode=xml",
+      "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/20448329/",
+      "source_sha256": "903c41fb858ef5146d0877bb16e5bafa1cef608a6b913914eea2b62c940d1bb0"
+    }
+  ],
+  "omitted_from_packet": [
+    "model outputs",
+    "other reviewer outputs",
+    "direct CG event types",
+    "direct CG entity types",
+    "direct CG Theme and Cause roles",
+    "expected Artana roles and semantic axes",
+    "expected counts and benchmark projections"
+  ],
+  "schema_version": "artana.staged_generalization.fresh_cg_review_packet.v1",
+  "selection_artifact_sha256": "976bd2c40a1a8addabfe1fa3d8d5ff6afb6409b887b5a3dcf8006df009a0ae8c"
+}

@@ -1,0 +1,17 @@
+{
+  "disputed_field_ids": [
+    "fresh-cg-pmid-18165897-e12:direction",
+    "fresh-cg-pmid-18165897-e12:comparison",
+    "fresh-cg-pmid-18165897-e12:statistics",
+    "fresh-cg-pmid-18165897-e12:contextual_participants",
+    "fresh-cg-pmid-21963494-e3:contextual_participants",
+    "fresh-cg-pmid-2681013-e5:uncertainty",
+    "fresh-cg-pmid-7904970-e11:uncertainty",
+    "fresh-cg-pmid-19648108-e11:contextual_participants",
+    "fresh-cg-pmid-11306510-e1:contextual_participants"
+  ],
+  "instruction": "Independently adjudicate these fields. A complete reviewer artifact is required for schema validation, but only listed fields will be used as tiebreak votes.",
+  "primary_reviewer_answers_disclosed": false,
+  "review_packet_sha256": "505288903159f41d18238f7990c8b76a8adea6cefc8f6492fd1623603dde5d45",
+  "schema_version": "artana.staged_generalization.fresh_cg_tiebreak_request.v1"
+}

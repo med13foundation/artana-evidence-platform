@@ -1,0 +1,2326 @@
+{
+  "case_order": [
+    "fresh-cg-pmid-18165897-e12",
+    "fresh-cg-pmid-21963494-e3",
+    "fresh-cg-pmid-2681013-e5",
+    "fresh-cg-pmid-16098727-e5",
+    "fresh-cg-pmid-7904970-e11",
+    "fresh-cg-pmid-19648108-e11",
+    "fresh-cg-pmid-11306510-e1",
+    "fresh-cg-pmid-18841154-e12"
+  ],
+  "cases": [
+    {
+      "argument_roles": [
+        {
+          "accepted_evidence": [
+            {
+              "end": 1637,
+              "start": 1635,
+              "text": "ER"
+            }
+          ],
+          "field_id": "role:T36",
+          "resolution": {
+            "agreeing_reviewer_ids": [
+              "fresh-cg-reviewer-a",
+              "fresh-cg-reviewer-b"
+            ],
+            "reviewer_value_sha256_by_id": {
+              "fresh-cg-reviewer-a": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763",
+              "fresh-cg-reviewer-b": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763"
+            },
+            "status": "RESOLVED",
+            "tiebreaker_used": false
+          },
+          "target_anchor_id": "T36",
+          "value": "AFFECTED_ENTITY"
+        }
+      ],
+      "case_id": "fresh-cg-pmid-18165897-e12",
+      "comparison": {
+        "accepted_evidence": [
+          {
+            "end": 1661,
+            "start": 1635,
+            "text": "ER/PR and HER2neu-negative"
+          },
+          {
+            "end": 1661,
+            "start": 1653,
+            "text": "negative"
+          }
+        ],
+        "field_id": "comparison",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-b",
+            "fresh-cg-reviewer-c"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "cf0702aba4b44e2c1a777d752d8b04c7a54fe146a044a371597a96624e32ca90",
+            "fresh-cg-reviewer-b": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331",
+            "fresh-cg-reviewer-c": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": true
+        },
+        "target_anchor_id": null,
+        "value": "NOT_APPLICABLE"
+      },
+      "contextual_participants": {
+        "candidates": [
+          {
+            "candidate_id": "context:6a2ee638e4edd3d3",
+            "included": true,
+            "participant": {
+              "entity_type": "CANCER",
+              "mention": {
+                "end": 1633,
+                "start": 1627,
+                "text": "tumors"
+              },
+              "role": "POPULATION"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-b"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": false
+            }
+          },
+          {
+            "candidate_id": "context:a1265fda60f859aa",
+            "included": true,
+            "participant": {
+              "entity_type": "GENE_OR_PROTEIN",
+              "mention": {
+                "end": 1652,
+                "start": 1645,
+                "text": "HER2neu"
+              },
+              "role": "AFFECTED_ENTITY"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-c"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+                "fresh-cg-reviewer-c": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": true
+            }
+          },
+          {
+            "candidate_id": "context:b0d147b98c8c0668",
+            "included": true,
+            "participant": {
+              "entity_type": "GENE_OR_PROTEIN",
+              "mention": {
+                "end": 1640,
+                "start": 1638,
+                "text": "PR"
+              },
+              "role": "AFFECTED_ENTITY"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-c"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+                "fresh-cg-reviewer-c": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": true
+            }
+          }
+        ],
+        "field_id": "contextual_participants",
+        "reviewer_set_sha256_by_id": {
+          "fresh-cg-reviewer-a": "788cbf8f4f9e3f5a156d08c8599fe0f94bff2917ee3e7b2f708ad04e69f7e914",
+          "fresh-cg-reviewer-b": "5a3b6a88ed322c303bba06714563d230b7e6da466e8cfb0034a64b4d6975958d",
+          "fresh-cg-reviewer-c": "66cae3fc59632799828c462a31ad527fe0dec19623d3e1fffc63306dc840a71c"
+        },
+        "status": "RESOLVED",
+        "value": {
+          "participants": [
+            {
+              "entity_type": "CANCER",
+              "mention": {
+                "end": 1633,
+                "start": 1627,
+                "text": "tumors"
+              },
+              "role": "POPULATION"
+            },
+            {
+              "entity_type": "GENE_OR_PROTEIN",
+              "mention": {
+                "end": 1652,
+                "start": 1645,
+                "text": "HER2neu"
+              },
+              "role": "AFFECTED_ENTITY"
+            },
+            {
+              "entity_type": "GENE_OR_PROTEIN",
+              "mention": {
+                "end": 1640,
+                "start": 1638,
+                "text": "PR"
+              },
+              "role": "AFFECTED_ENTITY"
+            }
+          ]
+        }
+      },
+      "direct_cg_event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T36"
+          }
+        ],
+        "artana_event_type": "GENE_EXPRESSION",
+        "event_id": "E12",
+        "source_event_type": "Gene_expression",
+        "trigger": {
+          "end": 1661,
+          "start": 1653,
+          "text": "negative"
+        },
+        "trigger_annotation_id": "T57"
+      },
+      "direct_cg_participants": [
+        {
+          "annotation_id": "T36",
+          "artana_entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 1637,
+            "start": 1635,
+            "text": "ER"
+          },
+          "source_entity_type": "Gene_or_gene_product"
+        }
+      ],
+      "direct_cg_reference_sha256": "211239398f5b53bb160cc3b3e7527da9f41c76ab242fac572909c35435b2c7d7",
+      "direction": {
+        "accepted_evidence": [
+          {
+            "end": 1661,
+            "start": 1653,
+            "text": "negative"
+          }
+        ],
+        "field_id": "direction",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-c"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "5e80eaeeb4c6509d2580a0b3e0e738c9088dd78781e789aa7e19a5dc9d97580d",
+            "fresh-cg-reviewer-b": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331",
+            "fresh-cg-reviewer-c": "5e80eaeeb4c6509d2580a0b3e0e738c9088dd78781e789aa7e19a5dc9d97580d"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": true
+        },
+        "target_anchor_id": null,
+        "value": "DECREASED"
+      },
+      "document_id": "PMID-18165897",
+      "polarity": {
+        "accepted_evidence": [
+          {
+            "end": 1662,
+            "start": 1609,
+            "text": "\"triple negative\" tumors (ER/PR and HER2neu-negative)"
+          },
+          {
+            "end": 1661,
+            "start": 1635,
+            "text": "ER/PR and HER2neu-negative"
+          }
+        ],
+        "field_id": "polarity",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61",
+            "fresh-cg-reviewer-b": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "AFFIRMED"
+      },
+      "source_sha256": "adbd6915bd3ce1cf6b5a4754caf635005695b78b34427f5bafbb7bc2a8aebc7c",
+      "statistics": {
+        "field_id": "statistics",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-c"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "2798361d57d5f5a9fe98b93d2fa1831216a2576b3c3b295396866b34fbcdccd7",
+            "fresh-cg-reviewer-b": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744",
+            "fresh-cg-reviewer-c": "2798361d57d5f5a9fe98b93d2fa1831216a2576b3c3b295396866b34fbcdccd7"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": true
+        },
+        "value": {
+          "author_interpretation": "SIGNIFICANT",
+          "interpretation_evidence": [
+            {
+              "end": 1585,
+              "start": 1562,
+              "text": "significant correlation"
+            },
+            {
+              "end": 1633,
+              "start": 1562,
+              "text": "significant correlation of D2-40 and so called \"triple negative\" tumors"
+            }
+          ],
+          "observations": []
+        }
+      },
+      "uncertainty": {
+        "accepted_evidence": [
+          {
+            "end": 1662,
+            "start": 1609,
+            "text": "\"triple negative\" tumors (ER/PR and HER2neu-negative)"
+          },
+          {
+            "end": 1661,
+            "start": 1635,
+            "text": "ER/PR and HER2neu-negative"
+          }
+        ],
+        "field_id": "uncertainty",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069",
+            "fresh-cg-reviewer-b": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "ASSERTED"
+      }
+    },
+    {
+      "argument_roles": [
+        {
+          "accepted_evidence": [
+            {
+              "end": 120,
+              "start": 92,
+              "text": "AMP-activated protein kinase"
+            }
+          ],
+          "field_id": "role:T4",
+          "resolution": {
+            "agreeing_reviewer_ids": [
+              "fresh-cg-reviewer-a",
+              "fresh-cg-reviewer-b"
+            ],
+            "reviewer_value_sha256_by_id": {
+              "fresh-cg-reviewer-a": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763",
+              "fresh-cg-reviewer-b": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763"
+            },
+            "status": "RESOLVED",
+            "tiebreaker_used": false
+          },
+          "target_anchor_id": "T4",
+          "value": "AFFECTED_ENTITY"
+        },
+        {
+          "accepted_evidence": [
+            {
+              "end": 7,
+              "start": 0,
+              "text": "Aglycon"
+            }
+          ],
+          "field_id": "role:T1",
+          "resolution": {
+            "agreeing_reviewer_ids": [
+              "fresh-cg-reviewer-a",
+              "fresh-cg-reviewer-b"
+            ],
+            "reviewer_value_sha256_by_id": {
+              "fresh-cg-reviewer-a": "c7f9ac2f386a02eccb82ea6bb0800d67b90c07124cfc1364ac397fe244c50325",
+              "fresh-cg-reviewer-b": "c7f9ac2f386a02eccb82ea6bb0800d67b90c07124cfc1364ac397fe244c50325"
+            },
+            "status": "RESOLVED",
+            "tiebreaker_used": false
+          },
+          "target_anchor_id": "T1",
+          "value": "CAUSAL_AGENT"
+        }
+      ],
+      "case_id": "fresh-cg-pmid-21963494-e3",
+      "comparison": {
+        "accepted_evidence": [
+          {
+            "end": 88,
+            "start": 78,
+            "text": "activation"
+          }
+        ],
+        "field_id": "comparison",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331",
+            "fresh-cg-reviewer-b": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "NOT_APPLICABLE"
+      },
+      "contextual_participants": {
+        "candidates": [
+          {
+            "candidate_id": "context:122ed6a590ce3059",
+            "included": false,
+            "participant": {
+              "entity_type": "OUTCOME",
+              "mention": {
+                "end": 73,
+                "start": 64,
+                "text": "apoptosis"
+              },
+              "role": "OUTCOME"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-c"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-c": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": true
+            }
+          },
+          {
+            "candidate_id": "context:f90d149e4574fcc8",
+            "included": true,
+            "participant": {
+              "entity_type": "POPULATION",
+              "mention": {
+                "end": 148,
+                "start": 124,
+                "text": "HT-29 colon cancer cells"
+              },
+              "role": "POPULATION"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-b"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": false
+            }
+          }
+        ],
+        "field_id": "contextual_participants",
+        "reviewer_set_sha256_by_id": {
+          "fresh-cg-reviewer-a": "6bc49b2ffe5c98fd1bb5f1464cd67e44be43f47dafdf46022af052b9154fce18",
+          "fresh-cg-reviewer-b": "971724b0b2d0619c687d6e02bf9b06cb53b23b2224a57fc275d1d5c75a5b255f",
+          "fresh-cg-reviewer-c": "6bc49b2ffe5c98fd1bb5f1464cd67e44be43f47dafdf46022af052b9154fce18"
+        },
+        "status": "RESOLVED",
+        "value": {
+          "participants": [
+            {
+              "entity_type": "POPULATION",
+              "mention": {
+                "end": 148,
+                "start": 124,
+                "text": "HT-29 colon cancer cells"
+              },
+              "role": "POPULATION"
+            }
+          ]
+        }
+      },
+      "direct_cg_event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T4"
+          },
+          {
+            "source_role": "Cause",
+            "target_annotation_id": "T1"
+          }
+        ],
+        "artana_event_type": "POSITIVE_REGULATION",
+        "event_id": "E3",
+        "source_event_type": "Positive_regulation",
+        "trigger": {
+          "end": 88,
+          "start": 78,
+          "text": "activation"
+        },
+        "trigger_annotation_id": "T44"
+      },
+      "direct_cg_participants": [
+        {
+          "annotation_id": "T4",
+          "artana_entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 120,
+            "start": 92,
+            "text": "AMP-activated protein kinase"
+          },
+          "source_entity_type": "Gene_or_gene_product"
+        },
+        {
+          "annotation_id": "T1",
+          "artana_entity_type": "SIMPLE_CHEMICAL",
+          "mention": {
+            "end": 7,
+            "start": 0,
+            "text": "Aglycon"
+          },
+          "source_entity_type": "Simple_chemical"
+        }
+      ],
+      "direct_cg_reference_sha256": "20891d0dd905ab31ea6ca07d418c9e108ed49239967f761ee6efd9b963d7bf88",
+      "direction": {
+        "accepted_evidence": [
+          {
+            "end": 88,
+            "start": 78,
+            "text": "activation"
+          }
+        ],
+        "field_id": "direction",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "75f3ec6627287617b9c85f8167795faa52a2796b705af991a36a890c3a643958",
+            "fresh-cg-reviewer-b": "75f3ec6627287617b9c85f8167795faa52a2796b705af991a36a890c3a643958"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "INCREASED"
+      },
+      "document_id": "PMID-21963494",
+      "polarity": {
+        "accepted_evidence": [
+          {
+            "end": 120,
+            "start": 56,
+            "text": "induces apoptosis via activation of AMP-activated protein kinase"
+          }
+        ],
+        "field_id": "polarity",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61",
+            "fresh-cg-reviewer-b": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "AFFIRMED"
+      },
+      "source_sha256": "b593bc4ccb233ef97783d6147d2e5e604b3f0f04e462bdf057a1a01b83a8bfc6",
+      "statistics": {
+        "field_id": "statistics",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744",
+            "fresh-cg-reviewer-b": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "value": {
+          "author_interpretation": "NOT_CLAIMED",
+          "interpretation_evidence": [],
+          "observations": []
+        }
+      },
+      "uncertainty": {
+        "accepted_evidence": [
+          {
+            "end": 120,
+            "start": 56,
+            "text": "induces apoptosis via activation of AMP-activated protein kinase"
+          }
+        ],
+        "field_id": "uncertainty",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069",
+            "fresh-cg-reviewer-b": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "ASSERTED"
+      }
+    },
+    {
+      "argument_roles": [
+        {
+          "accepted_evidence": [
+            {
+              "end": 366,
+              "start": 355,
+              "text": "osteonectin"
+            }
+          ],
+          "field_id": "role:T9",
+          "resolution": {
+            "agreeing_reviewer_ids": [
+              "fresh-cg-reviewer-a",
+              "fresh-cg-reviewer-b"
+            ],
+            "reviewer_value_sha256_by_id": {
+              "fresh-cg-reviewer-a": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763",
+              "fresh-cg-reviewer-b": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763"
+            },
+            "status": "RESOLVED",
+            "tiebreaker_used": false
+          },
+          "target_anchor_id": "T9",
+          "value": "AFFECTED_ENTITY"
+        }
+      ],
+      "case_id": "fresh-cg-pmid-2681013-e5",
+      "comparison": {
+        "accepted_evidence": [
+          {
+            "end": 351,
+            "start": 341,
+            "text": "expression"
+          }
+        ],
+        "field_id": "comparison",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331",
+            "fresh-cg-reviewer-b": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "NOT_APPLICABLE"
+      },
+      "contextual_participants": {
+        "candidates": [
+          {
+            "candidate_id": "context:3aa53f9072d3bca3",
+            "included": true,
+            "participant": {
+              "entity_type": "GENE_OR_PROTEIN",
+              "mention": {
+                "end": 423,
+                "start": 415,
+                "text": "v-Ki-ras"
+              },
+              "role": "CONTEXTUAL_PARTICIPANT"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-b"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": false
+            }
+          },
+          {
+            "candidate_id": "context:4f2c14c84a1e2076",
+            "included": true,
+            "participant": {
+              "entity_type": "POPULATION",
+              "mention": {
+                "end": 399,
+                "start": 375,
+                "text": "fresh BALB/c fibroblasts"
+              },
+              "role": "POPULATION"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-b"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": false
+            }
+          }
+        ],
+        "field_id": "contextual_participants",
+        "reviewer_set_sha256_by_id": {
+          "fresh-cg-reviewer-a": "634da1f4c0493ef06f4390473903f652d331fed9571303e03fabba30fbaa1e4d",
+          "fresh-cg-reviewer-b": "634da1f4c0493ef06f4390473903f652d331fed9571303e03fabba30fbaa1e4d",
+          "fresh-cg-reviewer-c": "634da1f4c0493ef06f4390473903f652d331fed9571303e03fabba30fbaa1e4d"
+        },
+        "status": "RESOLVED",
+        "value": {
+          "participants": [
+            {
+              "entity_type": "GENE_OR_PROTEIN",
+              "mention": {
+                "end": 423,
+                "start": 415,
+                "text": "v-Ki-ras"
+              },
+              "role": "CONTEXTUAL_PARTICIPANT"
+            },
+            {
+              "entity_type": "POPULATION",
+              "mention": {
+                "end": 399,
+                "start": 375,
+                "text": "fresh BALB/c fibroblasts"
+              },
+              "role": "POPULATION"
+            }
+          ]
+        }
+      },
+      "direct_cg_event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T9"
+          }
+        ],
+        "artana_event_type": "GENE_EXPRESSION",
+        "event_id": "E5",
+        "source_event_type": "Gene_expression",
+        "trigger": {
+          "end": 351,
+          "start": 341,
+          "text": "expression"
+        },
+        "trigger_annotation_id": "T30"
+      },
+      "direct_cg_participants": [
+        {
+          "annotation_id": "T9",
+          "artana_entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 366,
+            "start": 355,
+            "text": "osteonectin"
+          },
+          "source_entity_type": "Gene_or_gene_product"
+        }
+      ],
+      "direct_cg_reference_sha256": "155a5a27ab3af0d13e46baa26b9efb78d59b86cd50a2b413c19a0499097e876c",
+      "direction": {
+        "accepted_evidence": [
+          {
+            "end": 351,
+            "start": 324,
+            "text": "investigated the expression"
+          },
+          {
+            "end": 351,
+            "start": 341,
+            "text": "expression"
+          }
+        ],
+        "field_id": "direction",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "827761a810e70fe2741d3562eb2ad45028f503e043d8cda7edf26a06d726b638",
+            "fresh-cg-reviewer-b": "827761a810e70fe2741d3562eb2ad45028f503e043d8cda7edf26a06d726b638"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "OBSERVED"
+      },
+      "document_id": "PMID-2681013",
+      "polarity": {
+        "accepted_evidence": [
+          {
+            "end": 351,
+            "start": 324,
+            "text": "investigated the expression"
+          },
+          {
+            "end": 371,
+            "start": 341,
+            "text": "expression of osteonectin gene"
+          }
+        ],
+        "field_id": "polarity",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61",
+            "fresh-cg-reviewer-b": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "AFFIRMED"
+      },
+      "source_sha256": "ee9a981ca7ceda2f4dfcf320d27f7338fb7f86774833c0b4ce63cd75532adbe8",
+      "statistics": {
+        "field_id": "statistics",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744",
+            "fresh-cg-reviewer-b": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "value": {
+          "author_interpretation": "NOT_CLAIMED",
+          "interpretation_evidence": [],
+          "observations": []
+        }
+      },
+      "uncertainty": {
+        "accepted_evidence": [
+          {
+            "end": 336,
+            "start": 324,
+            "text": "investigated"
+          },
+          {
+            "end": 351,
+            "start": 324,
+            "text": "investigated the expression"
+          }
+        ],
+        "field_id": "uncertainty",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-b",
+            "fresh-cg-reviewer-c"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "b7ae7e2e374de9fc4e4e6754a2e6d6a5b84de79d9f869bb2aa7e008ddfcddaf6",
+            "fresh-cg-reviewer-b": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069",
+            "fresh-cg-reviewer-c": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": true
+        },
+        "target_anchor_id": null,
+        "value": "ASSERTED"
+      }
+    },
+    {
+      "argument_roles": [
+        {
+          "accepted_evidence": [
+            {
+              "end": 380,
+              "start": 375,
+              "text": "tumor"
+            }
+          ],
+          "field_id": "role:T8",
+          "resolution": {
+            "agreeing_reviewer_ids": [
+              "fresh-cg-reviewer-a",
+              "fresh-cg-reviewer-b"
+            ],
+            "reviewer_value_sha256_by_id": {
+              "fresh-cg-reviewer-a": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763",
+              "fresh-cg-reviewer-b": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763"
+            },
+            "status": "RESOLVED",
+            "tiebreaker_used": false
+          },
+          "target_anchor_id": "T8",
+          "value": "AFFECTED_ENTITY"
+        }
+      ],
+      "case_id": "fresh-cg-pmid-16098727-e5",
+      "comparison": {
+        "accepted_evidence": [
+          {
+            "end": 392,
+            "start": 381,
+            "text": "progression"
+          }
+        ],
+        "field_id": "comparison",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331",
+            "fresh-cg-reviewer-b": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "NOT_APPLICABLE"
+      },
+      "contextual_participants": {
+        "candidates": [],
+        "field_id": "contextual_participants",
+        "reviewer_set_sha256_by_id": {
+          "fresh-cg-reviewer-a": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "fresh-cg-reviewer-b": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "fresh-cg-reviewer-c": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "status": "RESOLVED",
+        "value": {
+          "participants": []
+        }
+      },
+      "direct_cg_event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T8"
+          }
+        ],
+        "artana_event_type": "POSITIVE_REGULATION",
+        "event_id": "E5",
+        "source_event_type": "Positive_regulation",
+        "trigger": {
+          "end": 392,
+          "start": 381,
+          "text": "progression"
+        },
+        "trigger_annotation_id": "T27"
+      },
+      "direct_cg_participants": [
+        {
+          "annotation_id": "T8",
+          "artana_entity_type": "CANCER",
+          "mention": {
+            "end": 380,
+            "start": 375,
+            "text": "tumor"
+          },
+          "source_entity_type": "Cancer"
+        }
+      ],
+      "direct_cg_reference_sha256": "563e0eccdcf022738a359ce6b9143b5648d1e8662de43b0aa93cb874f87f33bd",
+      "direction": {
+        "accepted_evidence": [
+          {
+            "end": 392,
+            "start": 375,
+            "text": "tumor progression"
+          },
+          {
+            "end": 392,
+            "start": 381,
+            "text": "progression"
+          }
+        ],
+        "field_id": "direction",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "827761a810e70fe2741d3562eb2ad45028f503e043d8cda7edf26a06d726b638",
+            "fresh-cg-reviewer-b": "827761a810e70fe2741d3562eb2ad45028f503e043d8cda7edf26a06d726b638"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "OBSERVED"
+      },
+      "document_id": "PMID-16098727",
+      "polarity": {
+        "accepted_evidence": [
+          {
+            "end": 392,
+            "start": 358,
+            "text": "governing EMT in tumor progression"
+          },
+          {
+            "end": 392,
+            "start": 375,
+            "text": "tumor progression"
+          }
+        ],
+        "field_id": "polarity",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61",
+            "fresh-cg-reviewer-b": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "AFFIRMED"
+      },
+      "source_sha256": "84723cbe9cdc8d8449db4361f5aac12fd049020a98050045ade6143f632b2fae",
+      "statistics": {
+        "field_id": "statistics",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744",
+            "fresh-cg-reviewer-b": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "value": {
+          "author_interpretation": "NOT_CLAIMED",
+          "interpretation_evidence": [],
+          "observations": []
+        }
+      },
+      "uncertainty": {
+        "accepted_evidence": [
+          {
+            "end": 392,
+            "start": 358,
+            "text": "governing EMT in tumor progression"
+          },
+          {
+            "end": 392,
+            "start": 375,
+            "text": "tumor progression"
+          }
+        ],
+        "field_id": "uncertainty",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069",
+            "fresh-cg-reviewer-b": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "ASSERTED"
+      }
+    },
+    {
+      "argument_roles": [
+        {
+          "accepted_evidence": [
+            {
+              "end": 1042,
+              "start": 1037,
+              "text": "EGF-R"
+            }
+          ],
+          "field_id": "role:T25",
+          "resolution": {
+            "agreeing_reviewer_ids": [
+              "fresh-cg-reviewer-a",
+              "fresh-cg-reviewer-b"
+            ],
+            "reviewer_value_sha256_by_id": {
+              "fresh-cg-reviewer-a": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763",
+              "fresh-cg-reviewer-b": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763"
+            },
+            "status": "RESOLVED",
+            "tiebreaker_used": false
+          },
+          "target_anchor_id": "T25",
+          "value": "AFFECTED_ENTITY"
+        }
+      ],
+      "case_id": "fresh-cg-pmid-7904970-e11",
+      "comparison": {
+        "accepted_evidence": [
+          {
+            "end": 1033,
+            "start": 1014,
+            "text": "increased abundance"
+          }
+        ],
+        "field_id": "comparison",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "0c7e632f4fd66873b8a0777523b77401d3cbd817948489ae5c82c49d65a34f50",
+            "fresh-cg-reviewer-b": "0c7e632f4fd66873b8a0777523b77401d3cbd817948489ae5c82c49d65a34f50"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "GREATER"
+      },
+      "contextual_participants": {
+        "candidates": [
+          {
+            "candidate_id": "context:3aaaf3b2c480201d",
+            "included": true,
+            "participant": {
+              "entity_type": "GENE_OR_PROTEIN",
+              "mention": {
+                "end": 1064,
+                "start": 1046,
+                "text": "Her-2/neu proteins"
+              },
+              "role": "AFFECTED_ENTITY"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-b"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": false
+            }
+          },
+          {
+            "candidate_id": "context:8e60103afd642f8e",
+            "included": true,
+            "participant": {
+              "entity_type": "CANCER",
+              "mention": {
+                "end": 1081,
+                "start": 1068,
+                "text": "human tumours"
+              },
+              "role": "POPULATION"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-b"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": false
+            }
+          }
+        ],
+        "field_id": "contextual_participants",
+        "reviewer_set_sha256_by_id": {
+          "fresh-cg-reviewer-a": "c7e3652a6c184eb69fd3ce70fd2777b11aff6cf00e8c4836f90d7f72701ff871",
+          "fresh-cg-reviewer-b": "c7e3652a6c184eb69fd3ce70fd2777b11aff6cf00e8c4836f90d7f72701ff871",
+          "fresh-cg-reviewer-c": "3ca3f475d6fbfd64b94280ea59fbaf6a25665c08a89aea12718b149305d76cc5"
+        },
+        "status": "RESOLVED",
+        "value": {
+          "participants": [
+            {
+              "entity_type": "GENE_OR_PROTEIN",
+              "mention": {
+                "end": 1064,
+                "start": 1046,
+                "text": "Her-2/neu proteins"
+              },
+              "role": "AFFECTED_ENTITY"
+            },
+            {
+              "entity_type": "CANCER",
+              "mention": {
+                "end": 1081,
+                "start": 1068,
+                "text": "human tumours"
+              },
+              "role": "POPULATION"
+            }
+          ]
+        }
+      },
+      "direct_cg_event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T25"
+          }
+        ],
+        "artana_event_type": "POSITIVE_REGULATION",
+        "event_id": "E11",
+        "source_event_type": "Positive_regulation",
+        "trigger": {
+          "end": 1023,
+          "start": 1014,
+          "text": "increased"
+        },
+        "trigger_annotation_id": "T52"
+      },
+      "direct_cg_participants": [
+        {
+          "annotation_id": "T25",
+          "artana_entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 1042,
+            "start": 1037,
+            "text": "EGF-R"
+          },
+          "source_entity_type": "Gene_or_gene_product"
+        }
+      ],
+      "direct_cg_reference_sha256": "cc9a15c570524a6f03e2344470381bdc9bc31825433557f6fb00aa94c255022a",
+      "direction": {
+        "accepted_evidence": [
+          {
+            "end": 1023,
+            "start": 1014,
+            "text": "increased"
+          }
+        ],
+        "field_id": "direction",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "75f3ec6627287617b9c85f8167795faa52a2796b705af991a36a890c3a643958",
+            "fresh-cg-reviewer-b": "75f3ec6627287617b9c85f8167795faa52a2796b705af991a36a890c3a643958"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "INCREASED"
+      },
+      "document_id": "PMID-7904970",
+      "polarity": {
+        "accepted_evidence": [
+          {
+            "end": 1033,
+            "start": 997,
+            "text": "The detection of increased abundance"
+          },
+          {
+            "end": 1033,
+            "start": 1014,
+            "text": "increased abundance"
+          }
+        ],
+        "field_id": "polarity",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61",
+            "fresh-cg-reviewer-b": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "AFFIRMED"
+      },
+      "source_sha256": "e16dd6c95a9c08d89c5ce4c34b27c263b0fc8ad18436ce60005050ff1c0ee653",
+      "statistics": {
+        "field_id": "statistics",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744",
+            "fresh-cg-reviewer-b": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "value": {
+          "author_interpretation": "NOT_CLAIMED",
+          "interpretation_evidence": [],
+          "observations": []
+        }
+      },
+      "uncertainty": {
+        "accepted_evidence": [
+          {
+            "end": 1033,
+            "start": 997,
+            "text": "The detection of increased abundance"
+          },
+          {
+            "end": 1023,
+            "start": 1001,
+            "text": "detection of increased"
+          }
+        ],
+        "field_id": "uncertainty",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-b",
+            "fresh-cg-reviewer-c"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "b7ae7e2e374de9fc4e4e6754a2e6d6a5b84de79d9f869bb2aa7e008ddfcddaf6",
+            "fresh-cg-reviewer-b": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069",
+            "fresh-cg-reviewer-c": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": true
+        },
+        "target_anchor_id": null,
+        "value": "ASSERTED"
+      }
+    },
+    {
+      "argument_roles": [
+        {
+          "accepted_evidence": [
+            {
+              "end": 579,
+              "start": 559,
+              "text": "glucose transporters"
+            }
+          ],
+          "field_id": "role:T11",
+          "resolution": {
+            "agreeing_reviewer_ids": [
+              "fresh-cg-reviewer-a",
+              "fresh-cg-reviewer-b"
+            ],
+            "reviewer_value_sha256_by_id": {
+              "fresh-cg-reviewer-a": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763",
+              "fresh-cg-reviewer-b": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763"
+            },
+            "status": "RESOLVED",
+            "tiebreaker_used": false
+          },
+          "target_anchor_id": "T11",
+          "value": "AFFECTED_ENTITY"
+        }
+      ],
+      "case_id": "fresh-cg-pmid-19648108-e11",
+      "comparison": {
+        "accepted_evidence": [
+          {
+            "end": 551,
+            "start": 541,
+            "text": "expression"
+          }
+        ],
+        "field_id": "comparison",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331",
+            "fresh-cg-reviewer-b": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "NOT_APPLICABLE"
+      },
+      "contextual_participants": {
+        "candidates": [
+          {
+            "candidate_id": "context:591332330d11f001",
+            "included": false,
+            "participant": {
+              "entity_type": "MEASUREMENT",
+              "mention": {
+                "end": 509,
+                "start": 490,
+                "text": "glucose consumption"
+              },
+              "role": "OUTCOME"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-b",
+                "fresh-cg-reviewer-c"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+                "fresh-cg-reviewer-c": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": true
+            }
+          },
+          {
+            "candidate_id": "context:7d8c2fa7da463989",
+            "included": true,
+            "participant": {
+              "entity_type": "SIMPLE_CHEMICAL",
+              "mention": {
+                "end": 471,
+                "start": 455,
+                "text": "8-aminoadenosine"
+              },
+              "role": "CAUSAL_AGENT"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-b"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": false
+            }
+          },
+          {
+            "candidate_id": "context:c3af817ad23f9e9a",
+            "included": true,
+            "participant": {
+              "entity_type": "OUTCOME",
+              "mention": {
+                "end": 509,
+                "start": 490,
+                "text": "glucose consumption"
+              },
+              "role": "OUTCOME"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-b",
+                "fresh-cg-reviewer-c"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-c": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": true
+            }
+          }
+        ],
+        "field_id": "contextual_participants",
+        "reviewer_set_sha256_by_id": {
+          "fresh-cg-reviewer-a": "02db89cf6f1deb0874e38249b5970fb20db1c6206a6c406e54c2f288d563a9a9",
+          "fresh-cg-reviewer-b": "c0980e10e759969b3fd7bcfa39d65686d33444470615865ea2cfb96330c8f258",
+          "fresh-cg-reviewer-c": "c0980e10e759969b3fd7bcfa39d65686d33444470615865ea2cfb96330c8f258"
+        },
+        "status": "RESOLVED",
+        "value": {
+          "participants": [
+            {
+              "entity_type": "SIMPLE_CHEMICAL",
+              "mention": {
+                "end": 471,
+                "start": 455,
+                "text": "8-aminoadenosine"
+              },
+              "role": "CAUSAL_AGENT"
+            },
+            {
+              "entity_type": "OUTCOME",
+              "mention": {
+                "end": 509,
+                "start": 490,
+                "text": "glucose consumption"
+              },
+              "role": "OUTCOME"
+            }
+          ]
+        }
+      },
+      "direct_cg_event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T11"
+          }
+        ],
+        "artana_event_type": "GENE_EXPRESSION",
+        "event_id": "E11",
+        "source_event_type": "Gene_expression",
+        "trigger": {
+          "end": 551,
+          "start": 541,
+          "text": "expression"
+        },
+        "trigger_annotation_id": "T31"
+      },
+      "direct_cg_participants": [
+        {
+          "annotation_id": "T11",
+          "artana_entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 579,
+            "start": 559,
+            "text": "glucose transporters"
+          },
+          "source_entity_type": "Gene_or_gene_product"
+        }
+      ],
+      "direct_cg_reference_sha256": "6ce482892427ba821223cfcdbf5c86374463dbb4a45d5c426a7965e7f3fcbe71",
+      "direction": {
+        "accepted_evidence": [
+          {
+            "end": 551,
+            "start": 513,
+            "text": "regulating localization and expression"
+          },
+          {
+            "end": 551,
+            "start": 541,
+            "text": "expression"
+          }
+        ],
+        "field_id": "direction",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "827761a810e70fe2741d3562eb2ad45028f503e043d8cda7edf26a06d726b638",
+            "fresh-cg-reviewer-b": "827761a810e70fe2741d3562eb2ad45028f503e043d8cda7edf26a06d726b638"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "OBSERVED"
+      },
+      "document_id": "PMID-19648108",
+      "polarity": {
+        "accepted_evidence": [
+          {
+            "end": 551,
+            "start": 513,
+            "text": "regulating localization and expression"
+          }
+        ],
+        "field_id": "polarity",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61",
+            "fresh-cg-reviewer-b": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "AFFIRMED"
+      },
+      "source_sha256": "3e63601b84dcd1609bc264cee307858e2a01a28e247aeb90b3d0446e18831ce5",
+      "statistics": {
+        "field_id": "statistics",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744",
+            "fresh-cg-reviewer-b": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "value": {
+          "author_interpretation": "NOT_CLAIMED",
+          "interpretation_evidence": [],
+          "observations": []
+        }
+      },
+      "uncertainty": {
+        "accepted_evidence": [
+          {
+            "end": 431,
+            "start": 403,
+            "text": "we have examined the ability"
+          },
+          {
+            "end": 431,
+            "start": 411,
+            "text": "examined the ability"
+          }
+        ],
+        "field_id": "uncertainty",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "b7ae7e2e374de9fc4e4e6754a2e6d6a5b84de79d9f869bb2aa7e008ddfcddaf6",
+            "fresh-cg-reviewer-b": "b7ae7e2e374de9fc4e4e6754a2e6d6a5b84de79d9f869bb2aa7e008ddfcddaf6"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "PROVISIONAL"
+      }
+    },
+    {
+      "argument_roles": [
+        {
+          "accepted_evidence": [
+            {
+              "end": 77,
+              "start": 41,
+              "text": "vascular endothelial growth factor-C"
+            }
+          ],
+          "field_id": "role:T2",
+          "resolution": {
+            "agreeing_reviewer_ids": [
+              "fresh-cg-reviewer-a",
+              "fresh-cg-reviewer-b"
+            ],
+            "reviewer_value_sha256_by_id": {
+              "fresh-cg-reviewer-a": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763",
+              "fresh-cg-reviewer-b": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763"
+            },
+            "status": "RESOLVED",
+            "tiebreaker_used": false
+          },
+          "target_anchor_id": "T2",
+          "value": "AFFECTED_ENTITY"
+        }
+      ],
+      "case_id": "fresh-cg-pmid-11306510-e1",
+      "comparison": {
+        "accepted_evidence": [
+          {
+            "end": 88,
+            "start": 78,
+            "text": "expression"
+          }
+        ],
+        "field_id": "comparison",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331",
+            "fresh-cg-reviewer-b": "60425b9335f16734cd7ca9e65f364e2d70e4dff5c9ada6325e104e0e07874331"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "NOT_APPLICABLE"
+      },
+      "contextual_participants": {
+        "candidates": [
+          {
+            "candidate_id": "context:1cc264e0a0c3591f",
+            "included": true,
+            "participant": {
+              "entity_type": "EXPOSURE",
+              "mention": {
+                "end": 167,
+                "start": 160,
+                "text": "hypoxia"
+              },
+              "role": "CAUSAL_AGENT"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-c"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+                "fresh-cg-reviewer-c": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": true
+            }
+          },
+          {
+            "candidate_id": "context:55a5cf072ce408e3",
+            "included": true,
+            "participant": {
+              "entity_type": "GENE_OR_PROTEIN",
+              "mention": {
+                "end": 155,
+                "start": 133,
+                "text": "von Hippel-Lindau gene"
+              },
+              "role": "CAUSAL_AGENT"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-b"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": false
+            }
+          },
+          {
+            "candidate_id": "context:a8ac3795b597826d",
+            "included": true,
+            "participant": {
+              "entity_type": "CANCER",
+              "mention": {
+                "end": 113,
+                "start": 92,
+                "text": "renal cell carcinomas"
+              },
+              "role": "POPULATION"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-b"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": false
+            }
+          },
+          {
+            "candidate_id": "context:eaf1c05623e5615e",
+            "included": true,
+            "participant": {
+              "entity_type": "GENE_OR_PROTEIN",
+              "mention": {
+                "end": 36,
+                "start": 0,
+                "text": "Vascular endothelial growth factor-B"
+              },
+              "role": "AFFECTED_ENTITY"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-c"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+                "fresh-cg-reviewer-c": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": true
+            }
+          },
+          {
+            "candidate_id": "context:f470ab160e594680",
+            "included": false,
+            "participant": {
+              "entity_type": "EXPOSURE",
+              "mention": {
+                "end": 167,
+                "start": 160,
+                "text": "hypoxia"
+              },
+              "role": "EXPOSURE"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-c"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-c": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": true
+            }
+          }
+        ],
+        "field_id": "contextual_participants",
+        "reviewer_set_sha256_by_id": {
+          "fresh-cg-reviewer-a": "b41a35d6f7b68e83dbbb832ed575834ce024fd783288cc1d7931ff0ab7df3a42",
+          "fresh-cg-reviewer-b": "190a68d141404362de6390c3c8c1b89db08b94c21c8ceca8c6429c789c42fd69",
+          "fresh-cg-reviewer-c": "b41a35d6f7b68e83dbbb832ed575834ce024fd783288cc1d7931ff0ab7df3a42"
+        },
+        "status": "RESOLVED",
+        "value": {
+          "participants": [
+            {
+              "entity_type": "EXPOSURE",
+              "mention": {
+                "end": 167,
+                "start": 160,
+                "text": "hypoxia"
+              },
+              "role": "CAUSAL_AGENT"
+            },
+            {
+              "entity_type": "GENE_OR_PROTEIN",
+              "mention": {
+                "end": 155,
+                "start": 133,
+                "text": "von Hippel-Lindau gene"
+              },
+              "role": "CAUSAL_AGENT"
+            },
+            {
+              "entity_type": "CANCER",
+              "mention": {
+                "end": 113,
+                "start": 92,
+                "text": "renal cell carcinomas"
+              },
+              "role": "POPULATION"
+            },
+            {
+              "entity_type": "GENE_OR_PROTEIN",
+              "mention": {
+                "end": 36,
+                "start": 0,
+                "text": "Vascular endothelial growth factor-B"
+              },
+              "role": "AFFECTED_ENTITY"
+            }
+          ]
+        }
+      },
+      "direct_cg_event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T2"
+          }
+        ],
+        "artana_event_type": "GENE_EXPRESSION",
+        "event_id": "E1",
+        "source_event_type": "Gene_expression",
+        "trigger": {
+          "end": 88,
+          "start": 78,
+          "text": "expression"
+        },
+        "trigger_annotation_id": "T80"
+      },
+      "direct_cg_participants": [
+        {
+          "annotation_id": "T2",
+          "artana_entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 77,
+            "start": 41,
+            "text": "vascular endothelial growth factor-C"
+          },
+          "source_entity_type": "Gene_or_gene_product"
+        }
+      ],
+      "direct_cg_reference_sha256": "048576b3163d138b4cbbb3885370e6615245c124a7c978ef6b7ff0c2ec552abc",
+      "direction": {
+        "accepted_evidence": [
+          {
+            "end": 88,
+            "start": 78,
+            "text": "expression"
+          }
+        ],
+        "field_id": "direction",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "827761a810e70fe2741d3562eb2ad45028f503e043d8cda7edf26a06d726b638",
+            "fresh-cg-reviewer-b": "827761a810e70fe2741d3562eb2ad45028f503e043d8cda7edf26a06d726b638"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "OBSERVED"
+      },
+      "document_id": "PMID-11306510",
+      "polarity": {
+        "accepted_evidence": [
+          {
+            "end": 88,
+            "start": 41,
+            "text": "vascular endothelial growth factor-C expression"
+          }
+        ],
+        "field_id": "polarity",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61",
+            "fresh-cg-reviewer-b": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "AFFIRMED"
+      },
+      "source_sha256": "460403a3f71c5e6450016e5b22fb230256858e819ade5966bd3c2c819200a994",
+      "statistics": {
+        "field_id": "statistics",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744",
+            "fresh-cg-reviewer-b": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "value": {
+          "author_interpretation": "NOT_CLAIMED",
+          "interpretation_evidence": [],
+          "observations": []
+        }
+      },
+      "uncertainty": {
+        "accepted_evidence": [
+          {
+            "end": 167,
+            "start": 115,
+            "text": "regulation by the von Hippel-Lindau gene and hypoxia"
+          }
+        ],
+        "field_id": "uncertainty",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069",
+            "fresh-cg-reviewer-b": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "ASSERTED"
+      }
+    },
+    {
+      "argument_roles": [
+        {
+          "accepted_evidence": [
+            {
+              "end": 797,
+              "start": 791,
+              "text": "tumour"
+            }
+          ],
+          "field_id": "role:T17",
+          "resolution": {
+            "agreeing_reviewer_ids": [
+              "fresh-cg-reviewer-a",
+              "fresh-cg-reviewer-b"
+            ],
+            "reviewer_value_sha256_by_id": {
+              "fresh-cg-reviewer-a": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763",
+              "fresh-cg-reviewer-b": "013602164aded34255b2886501568b927af66112687456f93ac7852398233763"
+            },
+            "status": "RESOLVED",
+            "tiebreaker_used": false
+          },
+          "target_anchor_id": "T17",
+          "value": "AFFECTED_ENTITY"
+        }
+      ],
+      "case_id": "fresh-cg-pmid-18841154-e12",
+      "comparison": {
+        "accepted_evidence": [
+          {
+            "end": 808,
+            "start": 791,
+            "text": "tumour inhibition"
+          },
+          {
+            "end": 808,
+            "start": 798,
+            "text": "inhibition"
+          }
+        ],
+        "field_id": "comparison",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "cf0702aba4b44e2c1a777d752d8b04c7a54fe146a044a371597a96624e32ca90",
+            "fresh-cg-reviewer-b": "cf0702aba4b44e2c1a777d752d8b04c7a54fe146a044a371597a96624e32ca90"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "LESS"
+      },
+      "contextual_participants": {
+        "candidates": [
+          {
+            "candidate_id": "context:b7b1af9d86431da8",
+            "included": true,
+            "participant": {
+              "entity_type": "SIMPLE_CHEMICAL",
+              "mention": {
+                "end": 835,
+                "start": 829,
+                "text": "STX243"
+              },
+              "role": "CAUSAL_AGENT"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-b"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": false
+            }
+          },
+          {
+            "candidate_id": "context:c506ff4d06f9e5dc",
+            "included": true,
+            "participant": {
+              "entity_type": "CANCER",
+              "mention": {
+                "end": 894,
+                "start": 860,
+                "text": "MCF-7 paclitaxel-resistant tumours"
+              },
+              "role": "AFFECTED_ENTITY"
+            },
+            "resolution": {
+              "agreeing_reviewer_ids": [
+                "fresh-cg-reviewer-a",
+                "fresh-cg-reviewer-b"
+              ],
+              "reviewer_value_sha256_by_id": {
+                "fresh-cg-reviewer-a": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+                "fresh-cg-reviewer-b": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+              },
+              "status": "RESOLVED",
+              "tiebreaker_used": false
+            }
+          }
+        ],
+        "field_id": "contextual_participants",
+        "reviewer_set_sha256_by_id": {
+          "fresh-cg-reviewer-a": "7f6fd404d48c05eae0696ed23a8cbc35b0dca84797e86921c35d1c1548c1a4c5",
+          "fresh-cg-reviewer-b": "7f6fd404d48c05eae0696ed23a8cbc35b0dca84797e86921c35d1c1548c1a4c5",
+          "fresh-cg-reviewer-c": "3293cc8cb4171833b150070df39f7192834d147737daf75a41cb7468d4d98c0a"
+        },
+        "status": "RESOLVED",
+        "value": {
+          "participants": [
+            {
+              "entity_type": "SIMPLE_CHEMICAL",
+              "mention": {
+                "end": 835,
+                "start": 829,
+                "text": "STX243"
+              },
+              "role": "CAUSAL_AGENT"
+            },
+            {
+              "entity_type": "CANCER",
+              "mention": {
+                "end": 894,
+                "start": 860,
+                "text": "MCF-7 paclitaxel-resistant tumours"
+              },
+              "role": "AFFECTED_ENTITY"
+            }
+          ]
+        }
+      },
+      "direct_cg_event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T17"
+          }
+        ],
+        "artana_event_type": "NEGATIVE_REGULATION",
+        "event_id": "E12",
+        "source_event_type": "Negative_regulation",
+        "trigger": {
+          "end": 808,
+          "start": 798,
+          "text": "inhibition"
+        },
+        "trigger_annotation_id": "T36"
+      },
+      "direct_cg_participants": [
+        {
+          "annotation_id": "T17",
+          "artana_entity_type": "CANCER",
+          "mention": {
+            "end": 797,
+            "start": 791,
+            "text": "tumour"
+          },
+          "source_entity_type": "Cancer"
+        }
+      ],
+      "direct_cg_reference_sha256": "33ef8b01327c69b671fc10dff2fe4d61bb5aff05bb15669e06ab196b8e66299f",
+      "direction": {
+        "accepted_evidence": [
+          {
+            "end": 808,
+            "start": 798,
+            "text": "inhibition"
+          }
+        ],
+        "field_id": "direction",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "5e80eaeeb4c6509d2580a0b3e0e738c9088dd78781e789aa7e19a5dc9d97580d",
+            "fresh-cg-reviewer-b": "5e80eaeeb4c6509d2580a0b3e0e738c9088dd78781e789aa7e19a5dc9d97580d"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "DECREASED"
+      },
+      "document_id": "PMID-18841154",
+      "polarity": {
+        "accepted_evidence": [
+          {
+            "end": 894,
+            "start": 809,
+            "text": "studies showed that STX243 was also active against MCF-7 paclitaxel-resistant tumours"
+          },
+          {
+            "end": 859,
+            "start": 817,
+            "text": "showed that STX243 was also active against"
+          }
+        ],
+        "field_id": "polarity",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61",
+            "fresh-cg-reviewer-b": "55fff1baeedd2551ffefe628da89e977ee8b3497811e7235650e206c7c35df61"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "AFFIRMED"
+      },
+      "source_sha256": "67f5372287ef70ba59d3c6632aa43ee55256bd04c9e8cf63f56eb280d32d6055",
+      "statistics": {
+        "field_id": "statistics",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744",
+            "fresh-cg-reviewer-b": "117d3412f08b87aebeb3324f1a04863d9bf839eb9e1ebade8222b312cafd4744"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "value": {
+          "author_interpretation": "NOT_CLAIMED",
+          "interpretation_evidence": [],
+          "observations": []
+        }
+      },
+      "uncertainty": {
+        "accepted_evidence": [
+          {
+            "end": 894,
+            "start": 809,
+            "text": "studies showed that STX243 was also active against MCF-7 paclitaxel-resistant tumours"
+          },
+          {
+            "end": 859,
+            "start": 817,
+            "text": "showed that STX243 was also active against"
+          }
+        ],
+        "field_id": "uncertainty",
+        "resolution": {
+          "agreeing_reviewer_ids": [
+            "fresh-cg-reviewer-a",
+            "fresh-cg-reviewer-b"
+          ],
+          "reviewer_value_sha256_by_id": {
+            "fresh-cg-reviewer-a": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069",
+            "fresh-cg-reviewer-b": "e4040ebae1e3d0a94e5757c70abfeebd9f47dfa8151fbd03ad58e53d3ec4e069"
+          },
+          "status": "RESOLVED",
+          "tiebreaker_used": false
+        },
+        "target_anchor_id": null,
+        "value": "ASSERTED"
+      }
+    }
+  ],
+  "graph_promotion_allowed": false,
+  "primary_reviewer_ids": [
+    "fresh-cg-reviewer-a",
+    "fresh-cg-reviewer-b"
+  ],
+  "qualification_credit": false,
+  "review_packet_sha256": "505288903159f41d18238f7990c8b76a8adea6cefc8f6492fd1623603dde5d45",
+  "review_prompt_sha256": "9d3a2e6f598764d81116bd02c38680940f867ea09cdbc269ac8a42cc31806aac",
+  "reviewer_artifact_sha256_by_id": {
+    "fresh-cg-reviewer-a": "67554cd41434a9d364329fa91fc96bda90cb83507fc44036cb33ad99773c0d7a",
+    "fresh-cg-reviewer-b": "e4dc85b87452eb2f6db9825b84e58de53d75b4ee076907f6230021560930085c",
+    "fresh-cg-reviewer-c": "60f73686f2e6c74db4d494f1239fc2e55e70c5c9d25e75c96d19893f18263ef1"
+  },
+  "schema_version": "artana.staged_generalization.fresh_cg_two_lane_reference.v1",
+  "selection_artifact_sha256": "89e98798559ec727514105f2f4afd33aa2b5410b05dad262917716ca3b871ab1",
+  "tiebreaker_reviewer_id": "fresh-cg-reviewer-c",
+  "unresolved_field_ids": []
+}

@@ -1,0 +1,750 @@
+{
+  "schema_version": "artana.staged_generalization.fresh_cg_reviewer.v1",
+  "reviewer_id": "fresh-cg-reviewer-a",
+  "reviewer_task_identity": "/root/fresh_cg_reviewer_a",
+  "reviewer_model_identity": "inherited Codex agent model (platform identity unavailable)",
+  "review_prompt_sha256": "9d3a2e6f598764d81116bd02c38680940f867ea09cdbc269ac8a42cc31806aac",
+  "review_packet_sha256": "505288903159f41d18238f7990c8b76a8adea6cefc8f6492fd1623603dde5d45",
+  "internet_enabled": true,
+  "model_output_blinded": true,
+  "other_reviewer_output_blinded": true,
+  "implementation_reference_blinded": true,
+  "retrieved_sources": [
+    {
+      "document_id": "PMID-18165897",
+      "retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=18165897&retmode=xml",
+      "retrieved_at_utc": "2026-07-23T00:41:04Z",
+      "response_bytes_sha256": "e3dc13d8fffd076040d0c20fd4e8e276176e823aef4081b0e1d46e3f3d9eb422",
+      "context_verified": true
+    },
+    {
+      "document_id": "PMID-21963494",
+      "retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=21963494&retmode=xml",
+      "retrieved_at_utc": "2026-07-23T00:41:05Z",
+      "response_bytes_sha256": "cb4fce5401d5333891e1fe629aee7fa5b2eb802819687a728abea8aa684f83f3",
+      "context_verified": true
+    },
+    {
+      "document_id": "PMID-2681013",
+      "retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=2681013&retmode=xml",
+      "retrieved_at_utc": "2026-07-23T00:41:05Z",
+      "response_bytes_sha256": "885d5c5f5a047d13a76c0b505c84c5a16e186affa68d76f455862506d67c48e2",
+      "context_verified": true
+    },
+    {
+      "document_id": "PMID-16098727",
+      "retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=16098727&retmode=xml",
+      "retrieved_at_utc": "2026-07-23T00:41:05Z",
+      "response_bytes_sha256": "a6d6e4b76572f211fd7ca3b75ad4c76b844bdbd0fb9ed1bc168ca7142645c8ee",
+      "context_verified": true
+    },
+    {
+      "document_id": "PMID-7904970",
+      "retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=7904970&retmode=xml",
+      "retrieved_at_utc": "2026-07-23T00:41:16Z",
+      "response_bytes_sha256": "6e82e705f0de62e31ad34b91ce5d9736ea7d88907211efe1dce966cae56a966e",
+      "context_verified": true
+    },
+    {
+      "document_id": "PMID-19648108",
+      "retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=19648108&retmode=xml",
+      "retrieved_at_utc": "2026-07-23T00:41:06Z",
+      "response_bytes_sha256": "107c57ea01ef6413739dad2574b4736640a2017a52e00a70dcf1838b9f15cd9a",
+      "context_verified": true
+    },
+    {
+      "document_id": "PMID-11306510",
+      "retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=11306510&retmode=xml",
+      "retrieved_at_utc": "2026-07-23T00:41:06Z",
+      "response_bytes_sha256": "b74d4df30603c8d70f69ddf7ded0306f8da3fe1f245c3becfcadcb92668108e1",
+      "context_verified": true
+    },
+    {
+      "document_id": "PMID-18841154",
+      "retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=18841154&retmode=xml",
+      "retrieved_at_utc": "2026-07-23T00:41:07Z",
+      "response_bytes_sha256": "a6115b5649b175ea4a99173a84de04f9b593c4a9cd02783f01ec227191081215",
+      "context_verified": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "fresh-cg-pmid-18165897-e12",
+      "event_anchor_id": "T57",
+      "arguments": [
+        {
+          "target_anchor_id": "T36",
+          "role": "AFFECTED_ENTITY",
+          "evidence": {
+            "start": 1635,
+            "end": 1637,
+            "text": "ER"
+          },
+          "rationale": "ER is one of the receptor markers assigned the negative classification in the coordinated phrase."
+        }
+      ],
+      "direction": {
+        "value": "DECREASED",
+        "evidence": {
+          "start": 1653,
+          "end": 1661,
+          "text": "negative"
+        },
+        "rationale": "The classification denotes absent or reduced marker status rather than an increase."
+      },
+      "comparison": {
+        "value": "LESS",
+        "evidence": {
+          "start": 1653,
+          "end": 1661,
+          "text": "negative"
+        },
+        "rationale": "Negative receptor status places the marker below the positivity criterion, an implicit less-than classification."
+      },
+      "polarity": {
+        "value": "AFFIRMED",
+        "evidence": {
+          "start": 1635,
+          "end": 1661,
+          "text": "ER/PR and HER2neu-negative"
+        },
+        "rationale": "Negative is the affirmed receptor-classification value; it does not negate the proposition and is not an analytic null result."
+      },
+      "uncertainty": {
+        "value": "ASSERTED",
+        "evidence": {
+          "start": 1635,
+          "end": 1661,
+          "text": "ER/PR and HER2neu-negative"
+        },
+        "rationale": "The receptor-negative classification is stated without hedging."
+      },
+      "statistics": {
+        "observations": [],
+        "author_interpretation": "SIGNIFICANT",
+        "interpretation_evidence": {
+          "start": 1562,
+          "end": 1585,
+          "text": "significant correlation"
+        },
+        "rationale": "The author explicitly calls the correlation with triple-negative tumors significant, but the frozen context supplies no p-value, confidence interval, or effect estimate."
+      },
+      "permitted_contextual_participants": [
+        {
+          "context_id": "ctx-pr",
+          "entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "start": 1638,
+            "end": 1640,
+            "text": "PR"
+          },
+          "role": "AFFECTED_ENTITY",
+          "rationale": "PR is explicitly coordinated with ER as another negatively classified receptor marker."
+        },
+        {
+          "context_id": "ctx-her2neu",
+          "entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "start": 1645,
+            "end": 1652,
+            "text": "HER2neu"
+          },
+          "role": "AFFECTED_ENTITY",
+          "rationale": "HER2neu is explicitly the final coordinated receptor marker governed by negative."
+        },
+        {
+          "context_id": "ctx-triple-negative-tumors",
+          "entity_type": "CANCER",
+          "mention": {
+            "start": 1627,
+            "end": 1633,
+            "text": "tumors"
+          },
+          "role": "POPULATION",
+          "rationale": "The receptor-negative classification describes the tumor population."
+        }
+      ],
+      "overall_rationale": "The event is an affirmed triple-negative receptor classification, with ER as an affected marker and an explicit significant-correlation interpretation but no numerical statistic."
+    },
+    {
+      "case_id": "fresh-cg-pmid-21963494-e3",
+      "event_anchor_id": "T44",
+      "arguments": [
+        {
+          "target_anchor_id": "T4",
+          "role": "AFFECTED_ENTITY",
+          "evidence": {
+            "start": 92,
+            "end": 120,
+            "text": "AMP-activated protein kinase"
+          },
+          "rationale": "AMP-activated protein kinase is the molecular entity undergoing activation."
+        },
+        {
+          "target_anchor_id": "T1",
+          "role": "CAUSAL_AGENT",
+          "evidence": {
+            "start": 0,
+            "end": 7,
+            "text": "Aglycon"
+          },
+          "rationale": "The title presents Aglycon as inducing the downstream process via kinase activation."
+        }
+      ],
+      "direction": {
+        "value": "INCREASED",
+        "evidence": {
+          "start": 78,
+          "end": 88,
+          "text": "activation"
+        },
+        "rationale": "Activation denotes an increase from inactive toward active kinase state."
+      },
+      "comparison": {
+        "value": "NOT_APPLICABLE",
+        "evidence": {
+          "start": 78,
+          "end": 88,
+          "text": "activation"
+        },
+        "rationale": "The title gives no explicit comparison group or measured between-group contrast."
+      },
+      "polarity": {
+        "value": "AFFIRMED",
+        "evidence": {
+          "start": 56,
+          "end": 120,
+          "text": "induces apoptosis via activation of AMP-activated protein kinase"
+        },
+        "rationale": "The kinase activation mechanism is stated positively and is neither negated nor a null result."
+      },
+      "uncertainty": {
+        "value": "ASSERTED",
+        "evidence": {
+          "start": 56,
+          "end": 120,
+          "text": "induces apoptosis via activation of AMP-activated protein kinase"
+        },
+        "rationale": "The title asserts the mechanism without modal or speculative language."
+      },
+      "statistics": {
+        "observations": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "interpretation_evidence": null,
+        "rationale": "No explicit statistic or significance interpretation appears in the frozen title context."
+      },
+      "permitted_contextual_participants": [
+        {
+          "context_id": "ctx-ht29-cells",
+          "entity_type": "POPULATION",
+          "mention": {
+            "start": 124,
+            "end": 148,
+            "text": "HT-29 colon cancer cells"
+          },
+          "role": "POPULATION",
+          "rationale": "The title explicitly locates the activation mechanism in this cell population."
+        }
+      ],
+      "overall_rationale": "Aglycon is the explicit causal agent, AMP-activated protein kinase is activated, and the mechanism is asserted in HT-29 colon cancer cells without a statistical claim."
+    },
+    {
+      "case_id": "fresh-cg-pmid-2681013-e5",
+      "event_anchor_id": "T30",
+      "arguments": [
+        {
+          "target_anchor_id": "T9",
+          "role": "AFFECTED_ENTITY",
+          "evidence": {
+            "start": 355,
+            "end": 366,
+            "text": "osteonectin"
+          },
+          "rationale": "Osteonectin is the gene whose expression is being investigated."
+        }
+      ],
+      "direction": {
+        "value": "OBSERVED",
+        "evidence": {
+          "start": 341,
+          "end": 351,
+          "text": "expression"
+        },
+        "rationale": "Expression is the measured phenomenon, while this context states no increase or decrease."
+      },
+      "comparison": {
+        "value": "NOT_APPLICABLE",
+        "evidence": {
+          "start": 341,
+          "end": 351,
+          "text": "expression"
+        },
+        "rationale": "No comparison or relative expression level is supplied in the frozen sentence."
+      },
+      "polarity": {
+        "value": "AFFIRMED",
+        "evidence": {
+          "start": 324,
+          "end": 351,
+          "text": "investigated the expression"
+        },
+        "rationale": "The study explicitly investigated expression; the proposition is not negated and is not a null result."
+      },
+      "uncertainty": {
+        "value": "PROVISIONAL",
+        "evidence": {
+          "start": 324,
+          "end": 351,
+          "text": "investigated the expression"
+        },
+        "rationale": "The sentence frames expression as an object of investigation rather than stating a directional result."
+      },
+      "statistics": {
+        "observations": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "interpretation_evidence": null,
+        "rationale": "The frozen sentence contains no statistic or significance interpretation."
+      },
+      "permitted_contextual_participants": [
+        {
+          "context_id": "ctx-balbc-fibroblasts",
+          "entity_type": "POPULATION",
+          "mention": {
+            "start": 375,
+            "end": 399,
+            "text": "fresh BALB/c fibroblasts"
+          },
+          "role": "POPULATION",
+          "rationale": "This is the explicit cell population in which osteonectin expression was investigated."
+        },
+        {
+          "context_id": "ctx-v-ki-ras",
+          "entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "start": 415,
+            "end": 423,
+            "text": "v-Ki-ras"
+          },
+          "role": "CONTEXTUAL_PARTICIPANT",
+          "rationale": "The mention explicitly defines the transformation context of the fibroblasts, without establishing it as the cause of an expression change."
+        }
+      ],
+      "overall_rationale": "The source states an investigation of osteonectin expression in transformed BALB/c fibroblasts but gives neither a directional expression result nor a comparison in the permitted context."
+    },
+    {
+      "case_id": "fresh-cg-pmid-16098727-e5",
+      "event_anchor_id": "T27",
+      "arguments": [
+        {
+          "target_anchor_id": "T8",
+          "role": "AFFECTED_ENTITY",
+          "evidence": {
+            "start": 375,
+            "end": 380,
+            "text": "tumor"
+          },
+          "rationale": "Tumor is the disease entity undergoing progression."
+        }
+      ],
+      "direction": {
+        "value": "OBSERVED",
+        "evidence": {
+          "start": 381,
+          "end": 392,
+          "text": "progression"
+        },
+        "rationale": "Progression is named as a biological context, but no measured increase or decrease in progression is stated."
+      },
+      "comparison": {
+        "value": "NOT_APPLICABLE",
+        "evidence": {
+          "start": 381,
+          "end": 392,
+          "text": "progression"
+        },
+        "rationale": "The sentence contains no explicit comparator or between-group contrast."
+      },
+      "polarity": {
+        "value": "AFFIRMED",
+        "evidence": {
+          "start": 358,
+          "end": 392,
+          "text": "governing EMT in tumor progression"
+        },
+        "rationale": "Tumor progression is positively invoked as the context for EMT-governing mechanisms."
+      },
+      "uncertainty": {
+        "value": "ASSERTED",
+        "evidence": {
+          "start": 358,
+          "end": 392,
+          "text": "governing EMT in tumor progression"
+        },
+        "rationale": "The relationship is stated without hedging in the permitted sentence."
+      },
+      "statistics": {
+        "observations": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "interpretation_evidence": null,
+        "rationale": "No explicit statistical observation or significance interpretation is present."
+      },
+      "permitted_contextual_participants": [],
+      "overall_rationale": "The source asserts tumor progression as the setting for EMT-governing networks, but supplies no quantified direction, comparator, or statistics."
+    },
+    {
+      "case_id": "fresh-cg-pmid-7904970-e11",
+      "event_anchor_id": "T52",
+      "arguments": [
+        {
+          "target_anchor_id": "T25",
+          "role": "AFFECTED_ENTITY",
+          "evidence": {
+            "start": 1037,
+            "end": 1042,
+            "text": "EGF-R"
+          },
+          "rationale": "EGF-R is one of the proteins whose abundance is characterized as increased."
+        }
+      ],
+      "direction": {
+        "value": "INCREASED",
+        "evidence": {
+          "start": 1014,
+          "end": 1023,
+          "text": "increased"
+        },
+        "rationale": "The source explicitly assigns an upward abundance direction."
+      },
+      "comparison": {
+        "value": "GREATER",
+        "evidence": {
+          "start": 1014,
+          "end": 1033,
+          "text": "increased abundance"
+        },
+        "rationale": "Increased abundance denotes a greater level relative to the implicit non-increased reference state."
+      },
+      "polarity": {
+        "value": "AFFIRMED",
+        "evidence": {
+          "start": 1014,
+          "end": 1033,
+          "text": "increased abundance"
+        },
+        "rationale": "The abundance increase is presented as a positive classification and is not negated or null."
+      },
+      "uncertainty": {
+        "value": "PROVISIONAL",
+        "evidence": {
+          "start": 1082,
+          "end": 1093,
+          "text": "can provide"
+        },
+        "rationale": "The sentence frames the associated prognostic utility modally rather than as an unconditional result."
+      },
+      "statistics": {
+        "observations": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "interpretation_evidence": null,
+        "rationale": "No p-value, confidence interval, effect estimate, or explicit significance interpretation appears in the frozen context."
+      },
+      "permitted_contextual_participants": [
+        {
+          "context_id": "ctx-her2-neu-proteins",
+          "entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "start": 1046,
+            "end": 1064,
+            "text": "Her-2/neu proteins"
+          },
+          "role": "AFFECTED_ENTITY",
+          "rationale": "This is the explicitly coordinated alternative protein whose abundance may also be increased."
+        },
+        {
+          "context_id": "ctx-human-tumours",
+          "entity_type": "CANCER",
+          "mention": {
+            "start": 1068,
+            "end": 1081,
+            "text": "human tumours"
+          },
+          "role": "POPULATION",
+          "rationale": "The increased protein abundance is explicitly situated in human tumours."
+        }
+      ],
+      "overall_rationale": "The context explicitly describes greater EGF-R or Her-2/neu abundance in human tumours, while only provisionally stating that its detection can provide prognostic information."
+    },
+    {
+      "case_id": "fresh-cg-pmid-19648108-e11",
+      "event_anchor_id": "T31",
+      "arguments": [
+        {
+          "target_anchor_id": "T11",
+          "role": "AFFECTED_ENTITY",
+          "evidence": {
+            "start": 559,
+            "end": 579,
+            "text": "glucose transporters"
+          },
+          "rationale": "The glucose transporters are the molecular entities whose expression is regulated."
+        }
+      ],
+      "direction": {
+        "value": "OBSERVED",
+        "evidence": {
+          "start": 541,
+          "end": 551,
+          "text": "expression"
+        },
+        "rationale": "Expression is named as the regulated phenomenon, but the frozen sentence provides no upward or downward expression direction."
+      },
+      "comparison": {
+        "value": "NOT_APPLICABLE",
+        "evidence": {
+          "start": 541,
+          "end": 551,
+          "text": "expression"
+        },
+        "rationale": "No expression comparator or relative transporter-expression result is stated."
+      },
+      "polarity": {
+        "value": "AFFIRMED",
+        "evidence": {
+          "start": 513,
+          "end": 551,
+          "text": "regulating localization and expression"
+        },
+        "rationale": "Regulation of transporter expression is presented positively as the proposed mechanism, not as a negated or null finding."
+      },
+      "uncertainty": {
+        "value": "PROVISIONAL",
+        "evidence": {
+          "start": 411,
+          "end": 431,
+          "text": "examined the ability"
+        },
+        "rationale": "The sentence frames the mechanistic ability as the subject of examination rather than reporting a directional expression result."
+      },
+      "statistics": {
+        "observations": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "interpretation_evidence": null,
+        "rationale": "No explicit statistical observation or significance interpretation appears in the frozen sentence."
+      },
+      "permitted_contextual_participants": [
+        {
+          "context_id": "ctx-8-aminoadenosine",
+          "entity_type": "SIMPLE_CHEMICAL",
+          "mention": {
+            "start": 455,
+            "end": 471,
+            "text": "8-aminoadenosine"
+          },
+          "role": "CAUSAL_AGENT",
+          "rationale": "The sentence explicitly attributes regulation of transporter localization and expression to this compound."
+        },
+        {
+          "context_id": "ctx-glucose-consumption",
+          "entity_type": "MEASUREMENT",
+          "mention": {
+            "start": 490,
+            "end": 509,
+            "text": "glucose consumption"
+          },
+          "role": "OUTCOME",
+          "rationale": "Reduced glucose consumption is the explicit outcome linked to regulation of transporter expression."
+        }
+      ],
+      "overall_rationale": "The compound is explicitly linked to regulation of glucose-transporter expression and reduced glucose consumption, but the permitted aim sentence does not state how transporter expression changes."
+    },
+    {
+      "case_id": "fresh-cg-pmid-11306510-e1",
+      "event_anchor_id": "T80",
+      "arguments": [
+        {
+          "target_anchor_id": "T2",
+          "role": "AFFECTED_ENTITY",
+          "evidence": {
+            "start": 41,
+            "end": 77,
+            "text": "vascular endothelial growth factor-C"
+          },
+          "rationale": "VEGF-C is one of the growth-factor genes whose expression is the subject of the title."
+        }
+      ],
+      "direction": {
+        "value": "OBSERVED",
+        "evidence": {
+          "start": 78,
+          "end": 88,
+          "text": "expression"
+        },
+        "rationale": "Expression is identified without an increase or decrease in the frozen title."
+      },
+      "comparison": {
+        "value": "NOT_APPLICABLE",
+        "evidence": {
+          "start": 78,
+          "end": 88,
+          "text": "expression"
+        },
+        "rationale": "The title contains no explicit comparison of expression levels."
+      },
+      "polarity": {
+        "value": "AFFIRMED",
+        "evidence": {
+          "start": 41,
+          "end": 88,
+          "text": "vascular endothelial growth factor-C expression"
+        },
+        "rationale": "VEGF-C expression is positively stated as the study subject and is not negated or null."
+      },
+      "uncertainty": {
+        "value": "ASSERTED",
+        "evidence": {
+          "start": 115,
+          "end": 167,
+          "text": "regulation by the von Hippel-Lindau gene and hypoxia"
+        },
+        "rationale": "The title states the regulation scope directly, without hedge or hypothesis marker."
+      },
+      "statistics": {
+        "observations": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "interpretation_evidence": null,
+        "rationale": "The frozen title contains no explicit statistical observation or significance interpretation."
+      },
+      "permitted_contextual_participants": [
+        {
+          "context_id": "ctx-vegf-b",
+          "entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "start": 0,
+            "end": 36,
+            "text": "Vascular endothelial growth factor-B"
+          },
+          "role": "AFFECTED_ENTITY",
+          "rationale": "VEGF-B is explicitly coordinated with VEGF-C under the shared expression phrase."
+        },
+        {
+          "context_id": "ctx-renal-cell-carcinomas",
+          "entity_type": "CANCER",
+          "mention": {
+            "start": 92,
+            "end": 113,
+            "text": "renal cell carcinomas"
+          },
+          "role": "POPULATION",
+          "rationale": "The title explicitly situates the expression event in renal cell carcinomas."
+        },
+        {
+          "context_id": "ctx-vhl-gene",
+          "entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "start": 133,
+            "end": 155,
+            "text": "von Hippel-Lindau gene"
+          },
+          "role": "CAUSAL_AGENT",
+          "rationale": "The title explicitly identifies the VHL gene as a regulator of the expression under study."
+        },
+        {
+          "context_id": "ctx-hypoxia",
+          "entity_type": "EXPOSURE",
+          "mention": {
+            "start": 160,
+            "end": 167,
+            "text": "hypoxia"
+          },
+          "role": "CAUSAL_AGENT",
+          "rationale": "Hypoxia is explicitly named as a second regulator of the expression under study."
+        }
+      ],
+      "overall_rationale": "The title asserts VEGF-B and VEGF-C expression in renal cell carcinomas and explicitly names VHL and hypoxia as regulators, but provides no expression direction or statistics."
+    },
+    {
+      "case_id": "fresh-cg-pmid-18841154-e12",
+      "event_anchor_id": "T36",
+      "arguments": [
+        {
+          "target_anchor_id": "T17",
+          "role": "AFFECTED_ENTITY",
+          "evidence": {
+            "start": 791,
+            "end": 797,
+            "text": "tumour"
+          },
+          "rationale": "Tumour is the entity undergoing inhibition."
+        }
+      ],
+      "direction": {
+        "value": "DECREASED",
+        "evidence": {
+          "start": 798,
+          "end": 808,
+          "text": "inhibition"
+        },
+        "rationale": "Inhibition denotes a decrease in tumour activity or growth."
+      },
+      "comparison": {
+        "value": "LESS",
+        "evidence": {
+          "start": 798,
+          "end": 808,
+          "text": "inhibition"
+        },
+        "rationale": "Inhibition entails less tumour activity or growth than the uninhibited reference state."
+      },
+      "polarity": {
+        "value": "AFFIRMED",
+        "evidence": {
+          "start": 817,
+          "end": 859,
+          "text": "showed that STX243 was also active against"
+        },
+        "rationale": "The source positively reports STX243 activity against the tumours; the inhibition is not negated or null."
+      },
+      "uncertainty": {
+        "value": "ASSERTED",
+        "evidence": {
+          "start": 817,
+          "end": 859,
+          "text": "showed that STX243 was also active against"
+        },
+        "rationale": "Showed that presents the finding as an asserted result without hedging."
+      },
+      "statistics": {
+        "observations": [],
+        "author_interpretation": "NOT_CLAIMED",
+        "interpretation_evidence": null,
+        "rationale": "No explicit statistic or significance interpretation is present in the permitted sentence."
+      },
+      "permitted_contextual_participants": [
+        {
+          "context_id": "ctx-stx243",
+          "entity_type": "SIMPLE_CHEMICAL",
+          "mention": {
+            "start": 829,
+            "end": 835,
+            "text": "STX243"
+          },
+          "role": "CAUSAL_AGENT",
+          "rationale": "STX243 is the explicitly active antitumour compound in the reported inhibition study."
+        },
+        {
+          "context_id": "ctx-mcf7-resistant-tumours",
+          "entity_type": "CANCER",
+          "mention": {
+            "start": 860,
+            "end": 894,
+            "text": "MCF-7 paclitaxel-resistant tumours"
+          },
+          "role": "AFFECTED_ENTITY",
+          "rationale": "This exact mention identifies the specific tumours against which STX243 was active."
+        }
+      ],
+      "overall_rationale": "The sentence asserts STX243 activity against MCF-7 paclitaxel-resistant tumours, supporting decreased tumour activity or growth without a numerical statistic in the frozen context."
+    }
+  ],
+  "independence_declaration": "I independently reviewed only the frozen prompt, blinded packet, schema, and the packet-specified public EFetch responses. I did not inspect model outputs, another reviewer output, direct CG annotation, or implementation references; exact current response bytes were hashed and every frozen context was verified against its primary PubMed record."
+}
