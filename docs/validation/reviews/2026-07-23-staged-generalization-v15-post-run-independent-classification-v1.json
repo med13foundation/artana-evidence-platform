@@ -1,0 +1,202 @@
+{
+  "schema_version": "artana.staged_generalization.v15_post_run_independent_classification.v1",
+  "classified_at_utc": "2026-07-23T22:57:28Z",
+  "experiment_id": "staged-generalization-v15-exposed-run-v1",
+  "branch": "alvaro/tg04-source-general-claim-verification-v15",
+  "sealed_result_commit": "e606fcb8f1bbf1dc9480f0feb1d1f2be2520ea28",
+  "sealed_result_preserved": true,
+  "historical_results_rescored": false,
+  "review_scope": {
+    "provider_calls": 0,
+    "fresh_cases_accessed": 0,
+    "graph_writes": 0,
+    "trusted_promotion": false,
+    "sealed_artifacts_modified": false,
+    "diagnostic_only_replay_count": 1
+  },
+  "observed_failure": {
+    "case_id": "generalization-uncertainty",
+    "sealed_decision": "V15_EXPOSED_GATE_FAIL_UNRELATED_REGRESSION",
+    "source_semantic_status": "FAIL",
+    "bionlp_cg_projection_status": "NOT_APPLICABLE",
+    "passed_dimensions": [
+      "event_inventory",
+      "root_selection",
+      "exact_evidence_grounding",
+      "polarity",
+      "uncertainty",
+      "statistics",
+      "author_interpretation",
+      "completeness_schema"
+    ],
+    "failed_dimensions": [
+      "mandatory_participant_completeness",
+      "participant_role_fidelity"
+    ],
+    "frozen_failure_reasons": [
+      "missing required core participants: ['gene']",
+      "required core event arguments are missing"
+    ]
+  },
+  "source_semantic_boundary": {
+    "source_sentence": "A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+    "focused_finding": "the majority of which were classified as of uncertain significance",
+    "affected_entity": "947 variants",
+    "source_supported_context": "SLC12A3",
+    "candidate_structured_representation": {
+      "entity_type": "GENE_OR_PROTEIN",
+      "role": "CONTEXTUAL_PARTICIPANT",
+      "event": "CLASSIFICATION"
+    },
+    "adjudicated_status": "OPTIONAL_PERMITTED_CONTEXT",
+    "rationale": "The focused proposition classifies the majority subset of the 947 variants. SLC12A3 identifies the antecedent set's detection context, but the source does not assert the gene as a direct argument of the classification. With the affected variants resolved and the complete sentence retained as exact evidence, the separate gene node and link are permitted lossless enrichment rather than mandatory core structure."
+  },
+  "independent_reviews": [
+    {
+      "reviewer_id": "v15-uncertainty-semantic-review-a",
+      "review_kind": "POST_RUN_SOURCE_AND_CONTRACT_REVIEW",
+      "initial_primary_category": "MODEL_PROMPT_GAP",
+      "revised_primary_category": "REFERENCE_AMBIGUITY",
+      "material_dissent": "The historical V5 context reviewers and V15 offline audit called SLC12A3 permitted or optional context, so this reviewer did not regard separate-node mandatory status as historically settled."
+    },
+    {
+      "reviewer_id": "v14-minimal-package-design-independent-review",
+      "review_kind": "POST_RUN_SOURCE_AND_CONTRACT_REVIEW",
+      "initial_primary_category": "MODEL_PROMPT_GAP",
+      "revised_primary_category": "REFERENCE_AMBIGUITY",
+      "material_dissent": "The frozen evaluator follows its reference exactly, but the reviewer regarded the old core-versus-context integration as insufficient independent proof of mandatory status."
+    },
+    {
+      "reviewer_id": "v13-package-convergence-independent-review",
+      "review_kind": "POST_RUN_SOURCE_AND_CONTRACT_REVIEW",
+      "primary_category": "MODEL_PROMPT_GAP",
+      "subtype": "MODEL_ADHERENCE_REGRESSION",
+      "source_semantic_boundary": "MANDATORY_SEPARATE_GENE_LINK",
+      "source_general_prompt_correction_supported": false,
+      "rationale": "The preserved V9 rule already requires a named restricting entity, V15 leaves mandatory participants and links unchanged, and prior V9 and V11 outputs prove the model family can represent this structure."
+    },
+    {
+      "reviewer_id": "v13-preflight-source-only-tiebreak",
+      "review_kind": "BLINDED_SOURCE_ONLY_PRIMARY_A",
+      "production_output_seen": false,
+      "frozen_reference_seen": false,
+      "prompt_seen": false,
+      "benchmark_labels_seen": false,
+      "verdict": "MANDATORY_SEPARATE_GENE_LINK",
+      "rationale": "Omitting SLC12A3 loses the explicit locus that defines which 947 variants the classification concerns. Exact evidence provides provenance but does not replace structured semantics."
+    },
+    {
+      "reviewer_id": "v15-preflight-entrypoint-source-only-primary-b",
+      "review_kind": "BLINDED_SOURCE_ONLY_PRIMARY_B",
+      "production_output_seen": false,
+      "frozen_reference_seen": false,
+      "prompt_seen": false,
+      "benchmark_labels_seen": false,
+      "verdict": "OPTIONAL_PERMITTED_CONTEXT",
+      "rationale": "The mandatory participant is the variants resolved by which. SLC12A3 identifies broader detection context and is not a separate semantic argument required by the classification event."
+    },
+    {
+      "reviewer_id": "v15-preflight-fast-source-only-tiebreak",
+      "review_kind": "BLINDED_SOURCE_ONLY_TIEBREAK",
+      "production_output_seen": false,
+      "frozen_reference_seen": false,
+      "prompt_seen": false,
+      "benchmark_labels_seen": false,
+      "verdict": "OPTIONAL_PERMITTED_CONTEXT",
+      "rationale": "Requiring the gene edge would force one representation of context that the source does not assert as a direct classification relation; the complete evidence sentence retains its provenance."
+    }
+  ],
+  "adjudication": {
+    "primary_category": "REFERENCE_AMBIGUITY",
+    "subtype": "CORE_VERSUS_PERMITTED_CONTEXT_REFERENCE_DEFECT",
+    "reference_or_taxonomy_dispute_resolved_for_this_axis": true,
+    "resolution": "Two blinded source-only primary reviews disagreed. The blinded tiebreak classified the gene edge as optional permitted context. The frozen reference therefore overstates SLC12A3 as mandatory core for this focused classification.",
+    "evaluator_defect": false,
+    "evaluator_implementation_matches_frozen_reference": true,
+    "reference_defect": true,
+    "benchmark_only_mismatch": false,
+    "provider_or_transport_failure": false,
+    "irreducible_capability_limitation": false,
+    "source_general_prompt_correction_supported": false,
+    "source_general_reference_correction_supported": true,
+    "reason_no_new_prompt_correction_is_supported": "The V15 output already represents the independently adjudicated mandatory classification structure. The owning defect is the frozen core-versus-context reference, not provider instruction following.",
+    "sealed_v15_scientific_result_changed": false,
+    "prospective_scientific_interpretation": "Under the independently adjudicated optional-context boundary, the raw V15 uncertainty output has no remaining source-semantic failure."
+  },
+  "review_artifact_defect": {
+    "present": true,
+    "classification": "NON_PROVIDER_VISIBLE_REVIEW_REFERENCE_CONTRADICTION",
+    "artifact": "docs/validation/adjudications/2026-07-23-staged-generalization-v15-focus-closure-offline-audit-v1.json",
+    "contradictory_text": "SLC12A3 remains an independently source-supported optional contextual participant under the frozen policy",
+    "why_material": "The statement agrees with the new source-only adjudication but contradicts the machine-enforced frozen reference that made the same gene edge mandatory. The complete-package review did not detect that semantic inconsistency.",
+    "direct_scientific_score_effect": false,
+    "diagnostic_significance": "PROVES_PREREGISTERED_REFERENCE_AND_NARRATIVE_AUDIT_DISAGREED",
+    "provider_input_effect": false,
+    "sealed_artifact_must_remain_unchanged": true,
+    "prospective_action": "Treat the statement as evidence for a separately versioned reference correction and require future complete-package reviews to compare narrative audits against machine-enforced core references."
+  },
+  "review_pipeline_defect": {
+    "present": true,
+    "classification": "IDENTICAL_REPEATED_TEXT_SPLIT_IN_BLINDED_REVIEW_AGREEMENT",
+    "implementation": "scripts/validation/public_gold/staged_event/generalization/grading/agreement.py",
+    "cause": "Identity grouping delegates even identical strings to occurrence-equivalence. `SLC12A3 gene` occurs twice in the local context, so occurrence-equivalence returns false and the two primary reviewers' identical judgments are placed in separate non-majority groups.",
+    "diagnostic_match_count": 2,
+    "diagnostic_same_text_equivalence": false,
+    "resolved_slc12a3_judgment_present": false,
+    "frozen_policy_effect": "The independently agreed PERMITTED_CONTEXT judgment was absent from the frozen contextual policy instead of being represented or explicitly reconciled with core.",
+    "v15_provider_output_effect": false,
+    "sealed_policy_modified": false,
+    "prospective_action": "Repair only in a new review-policy version with exact-string identity tested before occurrence disambiguation; do not modify the sealed V5 policy."
+  },
+  "diagnostic_replay": {
+    "purpose": "Isolate the sole causal evaluation axis without changing or rescoring V15.",
+    "sealed_baseline_passed": false,
+    "diagnostic_reference_change": "Removed only the gene participant and its classification link in memory.",
+    "diagnostic_passed": true,
+    "all_other_failure_reasons": [],
+    "interpretation": "The replay proves that the frozen failure is wholly caused by the gene requirement. Combined with the blinded source-only adjudication, it supports a prospective reference correction without rescoring the sealed run.",
+    "files_written": 0,
+    "provider_calls": 0,
+    "qualification_credit": false
+  },
+  "program_decision": {
+    "local_target_status": "V15_FROZEN_FAIL_REFERENCE_AMBIGUITY_RESOLVED_AS_OPTIONAL_CONTEXT",
+    "source_general_repair_available": true,
+    "owning_repair_boundary": "VERSIONED_REFERENCE_AND_REVIEW_POLICY_NOT_PROVIDER_PROMPT",
+    "current_stop_condition": "EXPLICIT_NO_V16_NO_PROVIDER_SAFE_STOP_BOUNDARY",
+    "next_scientific_action_after_explicit_resumption": "Create a new evidence-preserving reference/review-policy version, validate the optional SLC12A3 context boundary offline, and only then decide whether any exposed provider execution is scientifically necessary.",
+    "v16_authorized": false,
+    "next_provider_call_authorized": false,
+    "fresh_validation_authorized": false,
+    "complete_exposed_panel_passed": false,
+    "scientific_qualification_achieved": false,
+    "remaining_exposed_cases_unexecuted": [
+      "generalization-explicit-nested-cause",
+      "generalization-negated-association",
+      "generalization-null-statistics"
+    ],
+    "fresh_cases_consumed": 0,
+    "remaining_fresh_cases_preserved": 7,
+    "graph_writes": 0,
+    "trusted_promotion": false
+  },
+  "frozen_evidence_sha256": {
+    "docs/validation/results/2026-07-23-staged-generalization-v15-exposed-run-v1.json": "a0f5a674b102521b5237fd37a840e98e601925813188fa0f36378a3dfb39ab7d",
+    "docs/validation/results/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-uncertainty-raw.json": "486fd2394cbff2b04737e487c23a9fa0deea069b8517ab576e73fa5e5fc878ad",
+    "docs/validation/evaluations/2026-07-23-staged-generalization-v15-exposed-run-v1-generalization-uncertainty-evaluation.json": "1be387c60e966aa959a0e30b8bade962ad6c1d13e0198ee912d3985d4ba3385b",
+    "docs/validation/reports/2026-07-23-staged-generalization-v15-quota-safe-stop-v1.json": "8f1fcefb7df2ca4cee860102de0dc6989c2e7c53a66b78c65cad1a6420e0fa9c",
+    "docs/validation/fixtures/2026-07-22-staged-generalization-panel-v9.json": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+    "docs/validation/prompts/2026-07-22-staged-generalization-v9.md": "4ce450b6a79fdb0cb99c48a69eae1390beef21dcf0094099503c03bdb4dd9234",
+    "docs/validation/prompts/2026-07-23-staged-generalization-v14-complete-participant-denotation.md": "854c3b6e08441e6d667ecd48c6f0b86ff26942b9fb2db760a822727634cdf6ad",
+    "docs/validation/prompts/2026-07-23-staged-generalization-v15-focus-closure-and-role-bearing-occurrence-custody.md": "29baddaac719f944b77b04f935de1ee5a02e1b66f39a2df606334bcfcd228588",
+    "docs/validation/adjudications/2026-07-23-staged-generalization-v15-focus-closure-offline-audit-v1.json": "cc9d7381335cb297a34d8d1ba9d54d1eb95fd7c600fe582d70e3d56f78ed22ca",
+    "docs/validation/adjudications/2026-07-22-staged-generalization-v5-grader-a.json": "02b4710a8d738856cba268018e9dbd958690f27e111ecc3787a33259483a6081",
+    "docs/validation/adjudications/2026-07-22-staged-generalization-v5-grader-b.json": "4e09a2c1faa6ba367240ce1d372994ac61c17bb0d5f77f70073044710bde0600",
+    "docs/validation/adjudications/2026-07-22-staged-generalization-v5-blinded-context-packets.json": "d106c2be359243b455ba45ebef0a89cf50b8f6dc7308219e0f0ae772bc571a7d",
+    "docs/validation/adjudications/2026-07-22-staged-generalization-v5-dual-lane-policy.json": "7d045ccca6398ca10d3dfc3b8136fa871c9b118bfc05ed19d43daa905e518649",
+    "docs/validation/prompts/2026-07-22-staged-generalization-v5-internet-grader.md": "cf791c7a5266736736b24135b6857f116687486ede7c4e3fa3362fc809362127",
+    "scripts/validation/public_gold/staged_event/generalization/panel.py": "299ab554981194720e7e86cb8a16688cfd7eaa180682d916a499324ee5f2dde2",
+    "scripts/validation/public_gold/staged_event/generalization/grading/agreement.py": "b0358f0d6b7a328cb17b6dc7d0482044b77650243136a9c01064f29494d76dda",
+    "scripts/validation/public_gold/staged_event/generalization/grading/policy.py": "cd630f3c4dc8a7725a53ab0fec063413ec932fc39b4cc3dccf279a53da795e4b"
+  }
+}
