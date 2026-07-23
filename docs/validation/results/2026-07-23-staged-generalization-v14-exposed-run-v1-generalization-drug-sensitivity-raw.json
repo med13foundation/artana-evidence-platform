@@ -1,0 +1,132 @@
+{
+  "case_id": "generalization-drug-sensitivity",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "E1",
+      "event_type": "ASSOCIATION",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "explanation": "The highlighted event-denoting noun is sensitivity, describing the response relation of carcinoma patients to 5-FU.",
+      "trigger_text": "sensitivity"
+    },
+    {
+      "event_id": "E2",
+      "event_type": "ASSOCIATION",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "explanation": "The sentence explicitly states that the two enzymes are involved in the highlighted sensitivity event. This contextual relation is retained without replacing the highlighted event as root.",
+      "trigger_text": "are involved in"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "The patients are the entities whose sensitivity is described.",
+          "role": "AFFECTED_ENTITY",
+          "target_id": "P1",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "5-fluorouracil is the chemical to which sensitivity is described, without an explicit causal claim in the focused phrase.",
+          "role": "STIMULUS_OR_OBJECT",
+          "target_id": "P2",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "E1"
+    },
+    {
+      "arguments": [
+        {
+          "explanation": "The source states that thymidylate synthase is involved, but does not assign it an explicitly causal role.",
+          "role": "CONTEXTUAL_PARTICIPANT",
+          "target_id": "P3",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "The source states that dihydropyrimidine dehydrogenase is involved, but does not assign it an explicitly causal role.",
+          "role": "CONTEXTUAL_PARTICIPANT",
+          "target_id": "P4",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "The sensitivity event is the event in which the enzymes are stated to be involved.",
+          "role": "EFFECT_EVENT",
+          "target_id": "E1",
+          "target_kind": "EVENT"
+        }
+      ],
+      "event_id": "E2"
+    }
+  ],
+  "participants": [
+    {
+      "entity_type": "POPULATION",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "exact_text": "carcinoma patients",
+      "explanation": "Carcinoma patients are the population whose sensitivity is described.",
+      "participant_id": "P1"
+    },
+    {
+      "entity_type": "SIMPLE_CHEMICAL",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "exact_text": "5-fluorouracil",
+      "explanation": "The unique full chemical name grounds the repeated 5-FU abbreviation used in the focused sensitivity phrase.",
+      "participant_id": "P2"
+    },
+    {
+      "entity_type": "GENE_OR_PROTEIN",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "exact_text": "Thymidylate synthase",
+      "explanation": "Thymidylate synthase is explicitly identified as an enzyme involved in the sensitivity event.",
+      "participant_id": "P3"
+    },
+    {
+      "entity_type": "GENE_OR_PROTEIN",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "exact_text": "dihydropyrimidine dehydrogenase",
+      "explanation": "Dihydropyrimidine dehydrogenase is explicitly identified as an enzyme involved in the sensitivity event.",
+      "participant_id": "P4"
+    }
+  ],
+  "root_event_id": "E1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "OBSERVED",
+      "event_id": "E1",
+      "evidence_items": [
+        "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU."
+      ],
+      "explanation": "The source affirms a sensitivity relation but does not state an increase, decrease, comparison, statistical result, or significance interpretation.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    },
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "OBSERVED",
+      "event_id": "E2",
+      "evidence_items": [
+        "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU."
+      ],
+      "explanation": "The sentence explicitly affirms enzyme involvement in the sensitivity event without specifying direction, comparison, statistics, or authorial significance.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    }
+  ],
+  "structure_explanation": "The highlighted sensitivity noun is retained as the root event. The surrounding involved-in relation is represented as a contextual association linking both enzymes to that event, while the unrelated metabolizing-enzyme claim is not inventoried."
+}

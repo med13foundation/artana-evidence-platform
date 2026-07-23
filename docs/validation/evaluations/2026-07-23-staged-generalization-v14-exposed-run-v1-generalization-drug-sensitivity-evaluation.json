@@ -1,0 +1,102 @@
+{
+  "benchmark_projection_is_raw_review_only": true,
+  "case_id": "generalization-drug-sensitivity",
+  "custody": {
+    "bundle_sha256": "9e440b84de8ab576e2e21d90d9a90e6f5cf48b7b7bb0258db8a322e3fb9fd653",
+    "output_sha256": "87ba9926cf723f59a3a7a81733af0a83f98f55bdab02a7856a35b3353ff149e6",
+    "provider_input_sha256": "42199a9e0595654e83190d0c04a0ad77d03d5122c3c9099d26d8bb7cf2d6df42",
+    "raw_output_sha256": "38547adb15c1adab3529c7e0217778bf33f2c34aacdc7bfab2d2076900e86b2f",
+    "receipt_sha256": "eb0f4587fea0268e3ef6eaebb3ce34448cc5eb58f13806288eb4a4b8fad0486d",
+    "response_id": "resp_0c79751001b34970006a628546fc90819b96edfcb65ddfec6e",
+    "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+    "stage": "GENERALIZATION_V14_EXPOSED:generalization-drug-sensitivity"
+  },
+  "experiment_id": "staged-generalization-v14-exposed-run-v1",
+  "failure_classification": "UNRELATED_REGRESSION",
+  "graph_writes": 0,
+  "qualification_credit": false,
+  "response_id": "resp_0c79751001b34970006a628546fc90819b96edfcb65ddfec6e",
+  "schema_version": "artana.staged_generalization.v14_case_evaluation.v1",
+  "trusted_promotion": false,
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.062854,
+    "input_tokens": 3670,
+    "latency_seconds": 71.88364000000001,
+    "output_tokens": 9864,
+    "reasoning_tokens": 8545,
+    "total_tokens": 13534
+  },
+  "v14_evaluation": {
+    "effective_metrics": {
+      "benchmark_projection": null,
+      "benchmark_projection_scope": "DRUG_FOCUS_EVENT",
+      "benchmark_projection_status": "FAIL",
+      "case_id": "generalization-drug-sensitivity",
+      "completeness": "COMPLETE",
+      "exact_evidence_grounding": true,
+      "failure_reasons": [
+        "non-focus events were inventoried",
+        "unsupported participant extractions: ['SIMPLE_CHEMICAL/5-fluorouracil']",
+        "mandatory source-semantic participants are incomplete",
+        "source-semantic argument roles or attachments differ"
+      ],
+      "focus_event_passed": true,
+      "full_focus_cg_status": "NOT_APPLICABLE",
+      "graph_writes": 0,
+      "historical_grader_passed": null,
+      "mandatory_participants_passed": false,
+      "participant_roles_passed": false,
+      "passed": false,
+      "permitted_context_count": 2,
+      "qualification_credit": false,
+      "root_only_failure": false,
+      "root_selection_status": "PASS",
+      "semantic_axes_passed": true,
+      "source_dimensions_except_root_passed": false,
+      "source_semantic_status": "FAIL",
+      "trusted_promotion": false,
+      "unsupported_extraction_count": 2
+    },
+    "optional_source_entailed_edge": {
+      "accepted_count": 0,
+      "event_key": "elevating",
+      "normalization_status": "NOT_APPLICABLE",
+      "observed_count": 0,
+      "role": "CAUSAL_AGENT",
+      "target_key": "proteins",
+      "target_kind": "PARTICIPANT"
+    },
+    "raw_bionlp_cg_projection_preserved": true,
+    "raw_v13_metrics": {
+      "benchmark_projection": null,
+      "benchmark_projection_scope": "DRUG_FOCUS_EVENT",
+      "benchmark_projection_status": "FAIL",
+      "case_id": "generalization-drug-sensitivity",
+      "completeness": "COMPLETE",
+      "exact_evidence_grounding": true,
+      "failure_reasons": [
+        "non-focus events were inventoried",
+        "unsupported participant extractions: ['SIMPLE_CHEMICAL/5-fluorouracil']",
+        "mandatory source-semantic participants are incomplete",
+        "source-semantic argument roles or attachments differ"
+      ],
+      "focus_event_passed": true,
+      "full_focus_cg_status": "NOT_APPLICABLE",
+      "graph_writes": 0,
+      "historical_grader_passed": null,
+      "mandatory_participants_passed": false,
+      "participant_roles_passed": false,
+      "passed": false,
+      "permitted_context_count": 2,
+      "qualification_credit": false,
+      "root_only_failure": false,
+      "root_selection_status": "PASS",
+      "semantic_axes_passed": true,
+      "source_dimensions_except_root_passed": false,
+      "source_semantic_status": "FAIL",
+      "trusted_promotion": false,
+      "unsupported_extraction_count": 2
+    }
+  }
+}

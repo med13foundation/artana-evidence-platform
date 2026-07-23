@@ -1,0 +1,1228 @@
+{
+  "output_sha256": "840846f7afe399cecbabf7ae3ae014f4715a04b059ade596243d9e9c4265f136",
+  "provider_input_sha256": "bc9bd9a251af13034c9538f57eec17cf73b38a4d887d7d218f9ed8ef0ba00ec3",
+  "raw_output_sha256": "797d2dab5e729da59a9060e00a2583bb496267a16ce652d3d4ebead302e65c71",
+  "receipt": {
+    "budgets": {
+      "cost": "RECORD_ONLY",
+      "latency": "RECORD_ONLY",
+      "observed_cost_usd": 0.010085,
+      "observed_latency_seconds": 8.623367291991599,
+      "observed_output_tokens": 1067,
+      "observed_total_tokens": 4750,
+      "output_tokens": "RECORD_ONLY",
+      "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+      "requested_max_cost_usd": null,
+      "requested_max_latency_seconds": null,
+      "requested_max_output_tokens": null,
+      "requested_max_total_tokens": null,
+      "total_tokens": "RECORD_ONLY"
+    },
+    "completed_provider_calls": 1,
+    "confirmation_retrieval_requests": 1,
+    "creation_envelope_sha256": "29db15d9973ef22a4ca22d3fd8ddc115c26fda7d1e83ae4ad02bfb8f6f117c1f",
+    "differences": [
+      {
+        "allowlisted": true,
+        "creation_sha256": "8babcff18fc88d40814a8f056fe669451ba6f91c6b518db516d9e9ee2aabe654",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[0].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "df53e48c459bf031aa00a97493679ed26b8f45e36162c4d2a837e3bcbca6a361",
+        "difference": "FOREGROUND_USAGE_SNAPSHOT_CHANGED",
+        "path": "$.usage",
+        "rationale": "usage is record-only telemetry and confirmation is the authoritative completed snapshot",
+        "retrieval_sha256": "78e77fdac8afa7718d7947c5665c4b688a78de992091f7fbfbf0a4b2128e45b3"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "foreground_request_timeout_seconds": 1800.0,
+    "foreground_usage_policy": {
+      "authoritative_snapshot": "CONFIRMATION_RETRIEVAL",
+      "confirmation_usage_sha256": "78e77fdac8afa7718d7947c5665c4b688a78de992091f7fbfbf0a4b2128e45b3",
+      "creation_usage_sha256": "df53e48c459bf031aa00a97493679ed26b8f45e36162c4d2a837e3bcbca6a361",
+      "scientific_validity_dependency": false,
+      "snapshots_differ": true
+    },
+    "identity": {
+      "created_at": 1784841535.0,
+      "model": "gpt-5.6-luna",
+      "object_type": "response",
+      "output_items": [
+        [
+          "reasoning",
+          "rs_02eb2181aabaa82d006a62853fbd9481998acab803e3b2c4ab"
+        ],
+        [
+          "message",
+          "msg_02eb2181aabaa82d006a62854374448199a5da2f250bac7aa3"
+        ]
+      ],
+      "response_id": "resp_02eb2181aabaa82d006a62853f217c8199b9cee82a1fadd0f9",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "provider_creation_calls": 1,
+    "provider_input_sha256": "bc9bd9a251af13034c9538f57eec17cf73b38a4d887d7d218f9ed8ef0ba00ec3",
+    "provider_retries": 0,
+    "provider_schema_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+    "retrieval_envelope_sha256": "489bbcd5ee088e455ec20fe121c21e60a62a9e2331adf61eed47a15c2f33fcf4",
+    "schema_version": "artana.provider_receipt_boundary.foreground_telemetry.v3",
+    "scientific_payload_sha256": "840846f7afe399cecbabf7ae3ae014f4715a04b059ade596243d9e9c4265f136",
+    "status": "VERIFIED_LIVE",
+    "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+    "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+    "usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.010085,
+      "input_tokens": 3683,
+      "latency_seconds": 8.623367291991599,
+      "output_tokens": 1067,
+      "reasoning_tokens": 516,
+      "total_tokens": 4750
+    },
+    "v13_transport_custody": {
+      "confirmation_response": {
+        "background": false,
+        "billing": {
+          "payer": "openai"
+        },
+        "completed_at": 1784841541.0,
+        "created_at": 1784841535.0,
+        "error": null,
+        "frequency_penalty": 0.0,
+        "id": "resp_02eb2181aabaa82d006a62853f217c8199b9cee82a1fadd0f9",
+        "incomplete_details": null,
+        "instructions": null,
+        "max_output_tokens": null,
+        "max_tool_calls": null,
+        "metadata": {
+          "artana_case_id": "generalization-comparison-canary",
+          "artana_evaluation_contract": "V14_LOCAL_SOURCE_SEMANTICS_WITH_RAW_REVIEW_ONLY_CG",
+          "artana_experiment": "staged-generalization-v14-exposed-run-v1",
+          "artana_operational_policy": "RECORD_ONLY_USAGE_CUMULATIVE_5_USD",
+          "artana_preregistration_sha256": "65ed1cf34f956aceabd4d558fcc9bbca7eb4ab9fad133762c1beffb384a8afb7",
+          "artana_scientific_change": "COMPLETE_PARTICIPANT_DENOTATION_V1",
+          "artana_transport_implementation": "V13_REUSED_BYTE_IDENTICAL"
+        },
+        "model": "gpt-5.6-luna",
+        "moderation": null,
+        "object": "response",
+        "output": [
+          {
+            "content": [],
+            "id": "rs_02eb2181aabaa82d006a62853fbd9481998acab803e3b2c4ab",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [
+              {
+                "annotations": [],
+                "logprobs": [],
+                "text": "{\"case_id\":\"generalization-comparison-canary\",\"inventory\":[{\"event_id\":\"E1\",\"event_type\":\"COMPARISON\",\"trigger_text\":\"had more comorbidities than\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"The highlighted finding compares the number of comorbidities in patients with RA with that in patients without RA.\"}],\"participants\":[{\"participant_id\":\"P1\",\"entity_type\":\"POPULATION\",\"exact_text\":\"Patients with RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"This is the focal population whose comorbidity burden is compared.\"},{\"participant_id\":\"P2\",\"entity_type\":\"POPULATION\",\"exact_text\":\"patients without RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"This is the comparison population.\"},{\"participant_id\":\"P3\",\"entity_type\":\"OUTCOME\",\"exact_text\":\"comorbidities\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"This is the compared outcome or characteristic.\"}],\"links\":[{\"event_id\":\"E1\",\"arguments\":[{\"role\":\"POPULATION\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P1\",\"explanation\":\"Patients with RA are the focal population.\"},{\"role\":\"COMPARATOR\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P2\",\"explanation\":\"Patients without RA are the comparison population.\"},{\"role\":\"OUTCOME\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P3\",\"explanation\":\"Comorbidities are the characteristic being compared.\"}]}],\"semantic_axes\":[{\"event_id\":\"E1\",\"direction\":\"INCREASED\",\"comparison\":\"GREATER\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"ASSERTED\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\"],\"explanation\":\"The source explicitly states that the focal population had more comorbidities than the comparator; it provides no statistical significance interpretation.\"}],\"root_event_id\":\"E1\",\"completeness\":\"COMPLETE\",\"structure_explanation\":\"The highlighted finding is represented by one complete comparison event with explicit focal population, comparator, and compared outcome.\"}",
+                "type": "output_text"
+              }
+            ],
+            "id": "msg_02eb2181aabaa82d006a62854374448199a5da2f250bac7aa3",
+            "phase": "final_answer",
+            "role": "assistant",
+            "status": "completed",
+            "type": "message"
+          }
+        ],
+        "parallel_tool_calls": true,
+        "presence_penalty": 0.0,
+        "previous_response_id": null,
+        "prompt_cache_key": null,
+        "prompt_cache_retention": "24h",
+        "reasoning": {
+          "context": "all_turns",
+          "effort": "high",
+          "mode": "standard",
+          "summary": null
+        },
+        "safety_identifier": null,
+        "service_tier": "default",
+        "status": "completed",
+        "store": true,
+        "temperature": 1.0,
+        "text": {
+          "format": {
+            "description": "Source-grounded staged scientific event inventory, referential grounding, linking, and versioned classification-argument semantics.",
+            "name": "V9StagedGeneralizationOutput",
+            "schema": {
+              "$defs": {
+                "InventoryEvent": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    },
+                    "event_type": {
+                      "enum": [
+                        "REGULATION",
+                        "POSITIVE_REGULATION",
+                        "NEGATIVE_REGULATION",
+                        "GENE_EXPRESSION",
+                        "COMPARISON",
+                        "ASSOCIATION",
+                        "CLASSIFICATION",
+                        "OBSERVATION"
+                      ],
+                      "title": "Event Type",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "description": "Complete exact source sentence containing trigger_text.",
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "trigger_text": {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "title": "Trigger Text",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "event_type",
+                    "trigger_text",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "InventoryEvent",
+                  "type": "object"
+                },
+                "ParticipantNode": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_type": {
+                      "enum": [
+                        "POPULATION",
+                        "OUTCOME",
+                        "EXPOSURE",
+                        "VARIANT",
+                        "GENE_OR_PROTEIN",
+                        "CANCER",
+                        "SIMPLE_CHEMICAL",
+                        "MEASUREMENT"
+                      ],
+                      "title": "Entity Type",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "description": "Complete exact source sentence containing exact_text.",
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "exact_text": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Exact Text",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "participant_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Participant Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "participant_id",
+                    "entity_type",
+                    "exact_text",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "ParticipantNode",
+                  "type": "object"
+                },
+                "StatisticalObservation": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "exact_text": {
+                      "anyOf": [
+                        {
+                          "maxLength": 1000,
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Exact Text"
+                    },
+                    "observation_type": {
+                      "enum": [
+                        "P_VALUE",
+                        "CONFIDENCE_INTERVAL",
+                        "EFFECT_ESTIMATE",
+                        "NONE"
+                      ],
+                      "title": "Observation Type",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "observation_type",
+                    "exact_text"
+                  ],
+                  "title": "StatisticalObservation",
+                  "type": "object"
+                },
+                "V8SemanticAxes": {
+                  "additionalProperties": false,
+                  "description": "Semantic axes with the preregistered polarity boundary in the schema.",
+                  "properties": {
+                    "author_interpretation": {
+                      "enum": [
+                        "SIGNIFICANT",
+                        "NOT_SIGNIFICANT",
+                        "NOT_CLAIMED"
+                      ],
+                      "title": "Author Interpretation",
+                      "type": "string"
+                    },
+                    "comparison": {
+                      "enum": [
+                        "GREATER",
+                        "LESS",
+                        "NO_DIFFERENCE",
+                        "NOT_APPLICABLE"
+                      ],
+                      "title": "Comparison",
+                      "type": "string"
+                    },
+                    "direction": {
+                      "enum": [
+                        "INCREASED",
+                        "DECREASED",
+                        "NO_DIFFERENCE",
+                        "NO_ASSOCIATION",
+                        "ENABLES",
+                        "OBSERVED",
+                        "NOT_APPLICABLE"
+                      ],
+                      "title": "Direction",
+                      "type": "string"
+                    },
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    },
+                    "evidence_items": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "maxItems": 8,
+                      "minItems": 1,
+                      "title": "Evidence Items",
+                      "type": "array"
+                    },
+                    "explanation": {
+                      "maxLength": 1500,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "polarity": {
+                      "description": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+                      "enum": [
+                        "AFFIRMED",
+                        "NEGATED",
+                        "NULL_RESULT"
+                      ],
+                      "title": "Polarity",
+                      "type": "string"
+                    },
+                    "statistical_observations": {
+                      "items": {
+                        "$ref": "#/$defs/StatisticalObservation"
+                      },
+                      "maxItems": 8,
+                      "title": "Statistical Observations",
+                      "type": "array"
+                    },
+                    "uncertainty": {
+                      "enum": [
+                        "ASSERTED",
+                        "PROVISIONAL",
+                        "UNCERTAIN",
+                        "HYPOTHESIS"
+                      ],
+                      "title": "Uncertainty",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "direction",
+                    "comparison",
+                    "polarity",
+                    "uncertainty",
+                    "statistical_observations",
+                    "author_interpretation",
+                    "evidence_items",
+                    "explanation"
+                  ],
+                  "title": "V8SemanticAxes",
+                  "type": "object"
+                },
+                "V9EventArgument": {
+                  "additionalProperties": false,
+                  "description": "Event argument with the classification boundary in the role schema.",
+                  "properties": {
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "role": {
+                      "description": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+                      "enum": [
+                        "AFFECTED_ENTITY",
+                        "CAUSAL_AGENT",
+                        "STIMULUS_OR_OBJECT",
+                        "POPULATION",
+                        "COMPARATOR",
+                        "OUTCOME",
+                        "EXPOSURE",
+                        "MEASUREMENT",
+                        "CONTEXTUAL_PARTICIPANT",
+                        "EFFECT_EVENT"
+                      ],
+                      "title": "Role",
+                      "type": "string"
+                    },
+                    "target_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Target Id",
+                      "type": "string"
+                    },
+                    "target_kind": {
+                      "enum": [
+                        "PARTICIPANT",
+                        "EVENT"
+                      ],
+                      "title": "Target Kind",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "role",
+                    "target_kind",
+                    "target_id",
+                    "explanation"
+                  ],
+                  "title": "V9EventArgument",
+                  "type": "object"
+                },
+                "V9EventLinks": {
+                  "additionalProperties": false,
+                  "description": "V9 links using the versioned event-argument role description.",
+                  "properties": {
+                    "arguments": {
+                      "items": {
+                        "$ref": "#/$defs/V9EventArgument"
+                      },
+                      "maxItems": 16,
+                      "title": "Arguments",
+                      "type": "array"
+                    },
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "arguments"
+                  ],
+                  "title": "V9EventLinks",
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false,
+              "description": "V9 output retaining V8 polarity semantics and the same JSON shape.",
+              "properties": {
+                "case_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "title": "Case Id",
+                  "type": "string"
+                },
+                "completeness": {
+                  "enum": [
+                    "COMPLETE",
+                    "INCOMPLETE",
+                    "CONTRADICTED",
+                    "ABSTAIN"
+                  ],
+                  "title": "Completeness",
+                  "type": "string"
+                },
+                "inventory": {
+                  "items": {
+                    "$ref": "#/$defs/InventoryEvent"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Inventory",
+                  "type": "array"
+                },
+                "links": {
+                  "items": {
+                    "$ref": "#/$defs/V9EventLinks"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Links",
+                  "type": "array"
+                },
+                "participants": {
+                  "items": {
+                    "$ref": "#/$defs/ParticipantNode"
+                  },
+                  "maxItems": 32,
+                  "title": "Participants",
+                  "type": "array"
+                },
+                "root_event_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "title": "Root Event Id",
+                  "type": "string"
+                },
+                "semantic_axes": {
+                  "items": {
+                    "$ref": "#/$defs/V8SemanticAxes"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Semantic Axes",
+                  "type": "array"
+                },
+                "structure_explanation": {
+                  "maxLength": 2000,
+                  "minLength": 1,
+                  "title": "Structure Explanation",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "case_id",
+                "inventory",
+                "participants",
+                "links",
+                "semantic_axes",
+                "root_event_id",
+                "completeness",
+                "structure_explanation"
+              ],
+              "title": "V9StagedGeneralizationOutput",
+              "type": "object"
+            },
+            "strict": true,
+            "type": "json_schema"
+          },
+          "verbosity": "medium"
+        },
+        "tool_choice": "auto",
+        "tool_usage": {
+          "image_gen": {
+            "input_tokens": 0,
+            "input_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 0
+            },
+            "output_tokens": 0,
+            "output_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 0
+            },
+            "total_tokens": 0
+          },
+          "web_search": {
+            "num_requests": 0
+          }
+        },
+        "tools": [],
+        "top_logprobs": 0,
+        "top_p": 0.98,
+        "truncation": "disabled",
+        "usage": {
+          "input_tokens": 3683,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 1067,
+          "output_tokens_details": {
+            "reasoning_tokens": 516
+          },
+          "total_tokens": 4750
+        },
+        "user": null
+      },
+      "creation_response": {
+        "background": false,
+        "billing": {
+          "payer": "openai"
+        },
+        "completed_at": 1784841541.0,
+        "created_at": 1784841535.0,
+        "error": null,
+        "frequency_penalty": 0.0,
+        "id": "resp_02eb2181aabaa82d006a62853f217c8199b9cee82a1fadd0f9",
+        "incomplete_details": null,
+        "instructions": null,
+        "max_output_tokens": null,
+        "max_tool_calls": null,
+        "metadata": {
+          "artana_case_id": "generalization-comparison-canary",
+          "artana_evaluation_contract": "V14_LOCAL_SOURCE_SEMANTICS_WITH_RAW_REVIEW_ONLY_CG",
+          "artana_experiment": "staged-generalization-v14-exposed-run-v1",
+          "artana_operational_policy": "RECORD_ONLY_USAGE_CUMULATIVE_5_USD",
+          "artana_preregistration_sha256": "65ed1cf34f956aceabd4d558fcc9bbca7eb4ab9fad133762c1beffb384a8afb7",
+          "artana_scientific_change": "COMPLETE_PARTICIPANT_DENOTATION_V1",
+          "artana_transport_implementation": "V13_REUSED_BYTE_IDENTICAL"
+        },
+        "model": "gpt-5.6-luna",
+        "moderation": null,
+        "object": "response",
+        "output": [
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYoVGdQPRWKIJdOyH_zBnFbZ_Ypzs2M39nAAG1PQubfj-A3fnyaTqOpMQQuHU2i6ep7ubPUGkBjORARu8siC8K0MLSt7nSg_CCzVYM4Z3xmElLLsRPMYnsshAmTvlZdllHZGHDBMWmnBV6hLR-FTN82R4U4TcxYxrj9kr0rcio7qpaHy30x4EMdmaTE-6kZiLGhH5Q4DZr_00P7eWU_psxlCctyBaFmK5IKdDJ6qxqdj-Ie6OI3a5eg2s_knKhXLE3r9hOHVpHZ6cQdZ-eL0wTObKiusUXTZNTp4h3hgzkve1-_vbAuL7_qeK6Pme5D5DrbujWw-Z8tnl9PjBHVl3VPTBfXNzGpM9gUykMaPHudBVpg8YTSSTydeZpTmsaIuvqytwa54sBOMR4ZLCfSE3np8FGJ7bRg-rX4KOPj8ZeK6OvXNvXjxxx3zIc4FvYcBZT7IRqpP_s5arL2idDRJzElhLJRV3ZMFbBz1lLwWYeDXJtOTgn1P-HPhkDV4LWRI9pQGVRDzKizcvRQpmBiBVckqzJMC35CwvfA55rJ2qFv40k_6ZWJ3rpTEdb1_Bn06ppnEOEzsC0ZPTBPfAk0nmqnBR-eZ9dFaKl143bTe4DT7juTRYaVLlL3jMHygudIE77xXGgTgiz2ddmcOK43xg3cly6bVmCv7GTcK_ySgfhVrpUtKEypl1tcxuISdlKC5UCsbyJGU1G4y3mBnlM7UwPeE8Rc3CUhWyaxFbirCa9d3J1IXJXPjGVAY_ts3axCB4yPF-bP9wPgoz_JkxcKFMmudWNooIug2VvDIXzT_S_vJfqxs01VTad1yXW4qVzInM5-pK1glHY4fBycsupenFnwZ1YWAeuXro5QnFZlEJYhG2883X44R6x_CNpAMe9LPVWUPJtOaFTqqFNr4LPK8oq33qq3phCnMyDggf_yJupiA9oTpmzfdFwkBOFlhL52tnlEXoYGT6ihBl4qLGXVtWBg9jJi3rRhVHEB0UMXzdGnCPErtLgJ9y8NCb0p0397FFcxo0VszSbQzCvYBMrU4xKpoc6hPBLAAykLnw7Nkyam_hq6ObwWJohxs5L_Lkf0bHjH8t3FFFvsIwCz7xq6-KYCgjjdVnts0MoyXaSnyFJilAm0ID1pNwNl0lmdhxCb1AHIJQC0AfSZn6LYMMWiyhsN5tKpx5HcYB1k8Y7vxbImchIPEPA0Sik1yIUsAmSi_26sfzmAfd3Y-z90mI6Yn6mRIC30lTDYti9lMS2o-IhHGV8l1gk8ZFOQw6VJZ3sC1h9bMKHSU34_uf2249I8ph6BQ336nfpMW_gd47vttrWAYuOFiEyJEl7lcZXhQTuGL-g-zyxmSpyfZurbECgijS86G2LAzBs-0i02FzH1_92Cji5X9dC2p3fN5FCjoTpaQq27dc3azq1C5lfKTc-jZzqRsJnlKSM2wXMyEUQHagnGk5ZnThbDXG8edck_508t5k7Hb_izYa5TeNftFPT_PIBZ-VF0w2d2BzGIyQ9OitO957XQxwDJjsu2e5Tcm3U92q2VCj9UCF3vGx8lTnN6uGc2FDDqMCQOfwK0eixrXO-BjW4YGCfl-GWoQICT3UyaXEkERRUzg1AV1MKGJnyeO2SzKJB7vwRoVFsRlawaNE1OZpESpjnoEmAuyM7e7yLYGCdBbSMpGudlXzoCOIIbysla-systsluIWVYPL6wc8Opo3rVBfTUNyUYVvHE7IVVCWca2o4oSY2IjsvJaRSgO2QTYJspN_pyaFCUCw511UD6H57YWPxpcPLkpqXAw0wb6eZg_j-IHc-1iSYtPkD_eFPh0rFp2c9FtLjOyRbzF8Sqjh-Cvw3-TLYswUrTm3jLeJ_pnlQxI5ykEcC1mbybqrPNvyjAic1nDONInMxpX1agBa20oKaeEOD_dQrsWOyi8VFSTTO9x-amBG1LRceIrxS8Q-rNHdp3b2OC-c0Vr30hisaPuH1UZhv-YuxoBzxFBKg1vX-5VQZBpNZmd52eAWPqIK0rtPlrLWtmK1vy375xr1WvKTKBOUgbMAHLUwMgCkwVj9zIaHoODyeIcO8EEm7vb6IQhO7A9Rswv-N1r9D02lNdaYAdRaUWUGovDW6n2uDeG18ToOp9DkZr3-WJmeHo_DpxZxbWrHhLqK-FkmTwaR_yLXlNx_7j-Eopa9CiJK0AhjN7Vli24Cto3oWynRCdFNlREgeuq8a2aBGAvCQ_RNLK-t7fU-yIFQ4xBLIGCiejVp7zh6Vr8XXxPLKGCI_XvIDFCwyySfXyOcaj16X_8fqqia_AukbaF9bAkNFkGIeD7bj0QZFcIWZk6NUo_vbQxNlmtXH06CMoj1Ativ9BmFw3fvJn_0FFW5__5Sn1kyxrDOjZ6BPBeXpfWPRQMUsjCIqUORArg8-FJbv-WnS0mQnsZVQbsg940k-icuE7LsSXYKF_xQioiXocyTeJ1f1NmoSU11ZMAkxvzpYt4MLxeFmq8ch8eO8wOJnpXca0p1Mw0gcuzPpFuPqvIH7HZolBjDMUZbtFbg7f-oZjhJrk97nYK67xnKDMZ2ihbxt2jtyf4UIUojRTUeB9lA9QPVZs_M0Lx2Xaw5n3XlpCgS808aJ6ugEAS5f36WjdrzqOmejGYVIin8DXTsqLJiS-_198vj1Wpk8P6mEmIm4UOvy5SM_74Enfy4JQ4tbMoMt30h4U9DNsRB8-s9OVZmI_38-9TUqTzDZNTSHvq02Y8fD45d74v4hXy5txbxWhlIPevbci3wXt5M9lEfbSOssH19WPow2_4ZkVxNKY58f0nJciIFuwIds4QlUOU8PJhyAKeE00HgrSQoRwVUcjWXQ63JAIeu9CWWyYSWmd0zyilZtpv5gqtuSwvCnLEd759OnYA_5JwWu75AVaDMM9dgMkQVr_e-gBt04uZOySGKpGQr7v-nKQA-hkJC6Ejxt2IKHQsKUdUcn2EuP1EuGVGg6wPb77VpXpa9ZGRTXBN-5P6uRpdtsVIGh28Wgpzyz8fh17mDgu0BCsDIARxAeWM9KYVEOMMH1vvvwC9cv2axxpgfKDpHQeoVhK_r2y9ZzJBkRpEB-SY02UFKNNLfEWoSQ6s1LJtGAZSKiM1jOMPAWu_90wEE9-T3CyfkY7HRi1hPQR_mOKMKD3FLoW0UsStW3fuZqIbWMEH3_uMcC2RTrzjeNvWOMUigi7PZ1FlEyy2Pe_OUgcI-hed3LbokZdBDraRrOverowgobfvQo7b3jki6qOlPH2AOcwS0EbHeeObgburjeAmxw8cH72yM-9PQR8XEzffrgWheSI8zc5bqLcXX5rHhsxC8GTYXkfguuFtX-JXi0BnEGFj9dR4lKyRVO_njeaCD0RufN8Dx-QqTAoMvdUN7l54fZ2AlYePYDL9lWfsQmboajfBCaKgvzAi5RCyRLP6bRbCK8Hc2z5I5hJkSEJd-Db5GdXHXoK4ORuLDGbSooD55jMXx2RNdC_djJKspd0ztEqtF0EuDL9xELt7FXjukPksMvutj0o3dbD5gmiEZlJn5gQILTteYnQqjSG0kYL6R6RxSEemAPKG1T8PB49LknuEVPeizJuailylJeni4qC5r6uoWdiSAG7bcYNpsAYmFtzTHVAkZkt-29yjs-dAv8_Jb_CAxczvYbPaXNpUCBVe0cgKZdFP1eFUqfOptPcLARUxUwMJwJjhAJMs1Q0DvIJImtWBw8GDZh7FQUEXNOLW7cZ-9tc2qVAuSifVNiWI4nN6zY01G_NAt4c2jG-RsWz5lGWt-aGCmQQkos_e7vaIV3jXFK0KKmv7v_7hm7p4JJVszFmJi4TjWB5qUfVyBKa5d-9GrYGsuz49j2tfBQUs2uyhB7QSQix3_xOdvAo4BfowqZDiFtOy-63NkxHRRh3DM0twofmxhb7vmbmQjWHOAh4o80UC2-yfDl5KuDQskN6iaxtEDMxLFU85FAFiz1opg8RijcRBx13lyzyr2QhDRhO_osycSNmuPShAisbFFXSZ4_NnuPQOjCW3xeol8Q6w4wj6oZ3uUg2iz8Whi2OayqjugY5-_5NhTf4gvKMfMmbLjaTFSoGijMXSyEPXpd8QHZJ7iwGhJc7ctWWOBC1CNestZBsFjtqM_dRh0h64sQSGmiQWpAuboG-cXbsrOmysujDgDPLu5HrRemZynhKShRdXzot1vsqZ5CSeDy0lNWr_54_uUPz4ajjrpa5NAt81Kuj_SeDFCeYqKEt5ATyvntBgjDOkHU91bSeOj71Vb-pHroEpvbyEEBXsenxuPddZCRg8XevLZC0tRNfH9U4EZmWl4kx5Y1TEqlTTziGwwFonv--66n7ILniJrGZOdzjraPPTeVHmzeZ1VCrE7tYDRwxVgc0E0dpqTbaFrPsQesgLAsEUGB2-LgPvoYUuuAcZ5LYY2tcsKSO4aRATQoEcRnl0otK0hmKPwwu5fZ9kFKcuTQUytK3jnmVmmjVf3sPk=",
+            "id": "rs_02eb2181aabaa82d006a62853fbd9481998acab803e3b2c4ab",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [
+              {
+                "annotations": [],
+                "logprobs": [],
+                "text": "{\"case_id\":\"generalization-comparison-canary\",\"inventory\":[{\"event_id\":\"E1\",\"event_type\":\"COMPARISON\",\"trigger_text\":\"had more comorbidities than\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"The highlighted finding compares the number of comorbidities in patients with RA with that in patients without RA.\"}],\"participants\":[{\"participant_id\":\"P1\",\"entity_type\":\"POPULATION\",\"exact_text\":\"Patients with RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"This is the focal population whose comorbidity burden is compared.\"},{\"participant_id\":\"P2\",\"entity_type\":\"POPULATION\",\"exact_text\":\"patients without RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"This is the comparison population.\"},{\"participant_id\":\"P3\",\"entity_type\":\"OUTCOME\",\"exact_text\":\"comorbidities\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"This is the compared outcome or characteristic.\"}],\"links\":[{\"event_id\":\"E1\",\"arguments\":[{\"role\":\"POPULATION\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P1\",\"explanation\":\"Patients with RA are the focal population.\"},{\"role\":\"COMPARATOR\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P2\",\"explanation\":\"Patients without RA are the comparison population.\"},{\"role\":\"OUTCOME\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P3\",\"explanation\":\"Comorbidities are the characteristic being compared.\"}]}],\"semantic_axes\":[{\"event_id\":\"E1\",\"direction\":\"INCREASED\",\"comparison\":\"GREATER\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"ASSERTED\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\"],\"explanation\":\"The source explicitly states that the focal population had more comorbidities than the comparator; it provides no statistical significance interpretation.\"}],\"root_event_id\":\"E1\",\"completeness\":\"COMPLETE\",\"structure_explanation\":\"The highlighted finding is represented by one complete comparison event with explicit focal population, comparator, and compared outcome.\"}",
+                "type": "output_text"
+              }
+            ],
+            "id": "msg_02eb2181aabaa82d006a62854374448199a5da2f250bac7aa3",
+            "phase": "final_answer",
+            "role": "assistant",
+            "status": "completed",
+            "type": "message"
+          }
+        ],
+        "parallel_tool_calls": true,
+        "presence_penalty": 0.0,
+        "previous_response_id": null,
+        "prompt_cache_key": null,
+        "prompt_cache_retention": "24h",
+        "reasoning": {
+          "context": "all_turns",
+          "effort": "high",
+          "mode": "standard",
+          "summary": null
+        },
+        "safety_identifier": null,
+        "service_tier": "default",
+        "status": "completed",
+        "store": true,
+        "temperature": 1.0,
+        "text": {
+          "format": {
+            "description": "Source-grounded staged scientific event inventory, referential grounding, linking, and versioned classification-argument semantics.",
+            "name": "V9StagedGeneralizationOutput",
+            "schema": {
+              "$defs": {
+                "InventoryEvent": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    },
+                    "event_type": {
+                      "enum": [
+                        "REGULATION",
+                        "POSITIVE_REGULATION",
+                        "NEGATIVE_REGULATION",
+                        "GENE_EXPRESSION",
+                        "COMPARISON",
+                        "ASSOCIATION",
+                        "CLASSIFICATION",
+                        "OBSERVATION"
+                      ],
+                      "title": "Event Type",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "description": "Complete exact source sentence containing trigger_text.",
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "trigger_text": {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "title": "Trigger Text",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "event_type",
+                    "trigger_text",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "InventoryEvent",
+                  "type": "object"
+                },
+                "ParticipantNode": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_type": {
+                      "enum": [
+                        "POPULATION",
+                        "OUTCOME",
+                        "EXPOSURE",
+                        "VARIANT",
+                        "GENE_OR_PROTEIN",
+                        "CANCER",
+                        "SIMPLE_CHEMICAL",
+                        "MEASUREMENT"
+                      ],
+                      "title": "Entity Type",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "description": "Complete exact source sentence containing exact_text.",
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "exact_text": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Exact Text",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "participant_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Participant Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "participant_id",
+                    "entity_type",
+                    "exact_text",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "ParticipantNode",
+                  "type": "object"
+                },
+                "StatisticalObservation": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "exact_text": {
+                      "anyOf": [
+                        {
+                          "maxLength": 1000,
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Exact Text"
+                    },
+                    "observation_type": {
+                      "enum": [
+                        "P_VALUE",
+                        "CONFIDENCE_INTERVAL",
+                        "EFFECT_ESTIMATE",
+                        "NONE"
+                      ],
+                      "title": "Observation Type",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "observation_type",
+                    "exact_text"
+                  ],
+                  "title": "StatisticalObservation",
+                  "type": "object"
+                },
+                "V8SemanticAxes": {
+                  "additionalProperties": false,
+                  "description": "Semantic axes with the preregistered polarity boundary in the schema.",
+                  "properties": {
+                    "author_interpretation": {
+                      "enum": [
+                        "SIGNIFICANT",
+                        "NOT_SIGNIFICANT",
+                        "NOT_CLAIMED"
+                      ],
+                      "title": "Author Interpretation",
+                      "type": "string"
+                    },
+                    "comparison": {
+                      "enum": [
+                        "GREATER",
+                        "LESS",
+                        "NO_DIFFERENCE",
+                        "NOT_APPLICABLE"
+                      ],
+                      "title": "Comparison",
+                      "type": "string"
+                    },
+                    "direction": {
+                      "enum": [
+                        "INCREASED",
+                        "DECREASED",
+                        "NO_DIFFERENCE",
+                        "NO_ASSOCIATION",
+                        "ENABLES",
+                        "OBSERVED",
+                        "NOT_APPLICABLE"
+                      ],
+                      "title": "Direction",
+                      "type": "string"
+                    },
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    },
+                    "evidence_items": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "maxItems": 8,
+                      "minItems": 1,
+                      "title": "Evidence Items",
+                      "type": "array"
+                    },
+                    "explanation": {
+                      "maxLength": 1500,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "polarity": {
+                      "description": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+                      "enum": [
+                        "AFFIRMED",
+                        "NEGATED",
+                        "NULL_RESULT"
+                      ],
+                      "title": "Polarity",
+                      "type": "string"
+                    },
+                    "statistical_observations": {
+                      "items": {
+                        "$ref": "#/$defs/StatisticalObservation"
+                      },
+                      "maxItems": 8,
+                      "title": "Statistical Observations",
+                      "type": "array"
+                    },
+                    "uncertainty": {
+                      "enum": [
+                        "ASSERTED",
+                        "PROVISIONAL",
+                        "UNCERTAIN",
+                        "HYPOTHESIS"
+                      ],
+                      "title": "Uncertainty",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "direction",
+                    "comparison",
+                    "polarity",
+                    "uncertainty",
+                    "statistical_observations",
+                    "author_interpretation",
+                    "evidence_items",
+                    "explanation"
+                  ],
+                  "title": "V8SemanticAxes",
+                  "type": "object"
+                },
+                "V9EventArgument": {
+                  "additionalProperties": false,
+                  "description": "Event argument with the classification boundary in the role schema.",
+                  "properties": {
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "role": {
+                      "description": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+                      "enum": [
+                        "AFFECTED_ENTITY",
+                        "CAUSAL_AGENT",
+                        "STIMULUS_OR_OBJECT",
+                        "POPULATION",
+                        "COMPARATOR",
+                        "OUTCOME",
+                        "EXPOSURE",
+                        "MEASUREMENT",
+                        "CONTEXTUAL_PARTICIPANT",
+                        "EFFECT_EVENT"
+                      ],
+                      "title": "Role",
+                      "type": "string"
+                    },
+                    "target_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Target Id",
+                      "type": "string"
+                    },
+                    "target_kind": {
+                      "enum": [
+                        "PARTICIPANT",
+                        "EVENT"
+                      ],
+                      "title": "Target Kind",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "role",
+                    "target_kind",
+                    "target_id",
+                    "explanation"
+                  ],
+                  "title": "V9EventArgument",
+                  "type": "object"
+                },
+                "V9EventLinks": {
+                  "additionalProperties": false,
+                  "description": "V9 links using the versioned event-argument role description.",
+                  "properties": {
+                    "arguments": {
+                      "items": {
+                        "$ref": "#/$defs/V9EventArgument"
+                      },
+                      "maxItems": 16,
+                      "title": "Arguments",
+                      "type": "array"
+                    },
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "arguments"
+                  ],
+                  "title": "V9EventLinks",
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false,
+              "description": "V9 output retaining V8 polarity semantics and the same JSON shape.",
+              "properties": {
+                "case_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "title": "Case Id",
+                  "type": "string"
+                },
+                "completeness": {
+                  "enum": [
+                    "COMPLETE",
+                    "INCOMPLETE",
+                    "CONTRADICTED",
+                    "ABSTAIN"
+                  ],
+                  "title": "Completeness",
+                  "type": "string"
+                },
+                "inventory": {
+                  "items": {
+                    "$ref": "#/$defs/InventoryEvent"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Inventory",
+                  "type": "array"
+                },
+                "links": {
+                  "items": {
+                    "$ref": "#/$defs/V9EventLinks"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Links",
+                  "type": "array"
+                },
+                "participants": {
+                  "items": {
+                    "$ref": "#/$defs/ParticipantNode"
+                  },
+                  "maxItems": 32,
+                  "title": "Participants",
+                  "type": "array"
+                },
+                "root_event_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "title": "Root Event Id",
+                  "type": "string"
+                },
+                "semantic_axes": {
+                  "items": {
+                    "$ref": "#/$defs/V8SemanticAxes"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Semantic Axes",
+                  "type": "array"
+                },
+                "structure_explanation": {
+                  "maxLength": 2000,
+                  "minLength": 1,
+                  "title": "Structure Explanation",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "case_id",
+                "inventory",
+                "participants",
+                "links",
+                "semantic_axes",
+                "root_event_id",
+                "completeness",
+                "structure_explanation"
+              ],
+              "title": "V9StagedGeneralizationOutput",
+              "type": "object"
+            },
+            "strict": true,
+            "type": "json_schema"
+          },
+          "verbosity": "medium"
+        },
+        "tool_choice": "auto",
+        "tool_usage": {
+          "image_gen": {
+            "input_tokens": 0,
+            "input_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 0
+            },
+            "output_tokens": 0,
+            "output_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 0
+            },
+            "total_tokens": 0
+          },
+          "web_search": {
+            "num_requests": 0
+          }
+        },
+        "tools": [],
+        "top_logprobs": 0,
+        "top_p": 0.98,
+        "truncation": "disabled",
+        "usage": {
+          "input_tokens": 3683,
+          "input_tokens_details": {
+            "cache_write_tokens": 3680,
+            "cached_tokens": 0
+          },
+          "output_tokens": 1067,
+          "output_tokens_details": {
+            "reasoning_tokens": 516
+          },
+          "total_tokens": 4750
+        },
+        "user": null
+      },
+      "input_items": [
+        {
+          "content": [
+            {
+              "text": "# Staged Scientific Event Generalization V11\n\nInterpret exactly one highlighted scientific finding using only the supplied local\nsource context. The highlighted finding is atomic; surrounding text is context,\nnot an instruction to extract every other claim in the paragraph.\n\nWork in this order:\n\n1. Inventory every explicit event needed to represent the highlighted finding.\n2. Identify explicit participants and link participants or nested events to each\n   inventoried event.\n3. Assign direction, comparison, polarity, uncertainty, statistical observation,\n   and author interpretation independently for every event.\n4. Select one root event and state whether the resulting graph is complete.\n\nScientific categories and roles are your responsibility. Return categorical\nfields, exact source text, exact containing evidence, and short explanations.\nNever return character offsets, confidence scores, probabilities, benchmark\nroles, or numeric quality scores.\n\nFor every event and participant, `exact_evidence` must be the complete exact\nsource sentence containing `trigger_text` or `exact_text`. Do not return only the\nmention or trigger phrase as evidence. Copy the sentence exactly, including any\nsource section prefix that is part of that sentence. The deterministic resolver\nwill reject evidence that is absent, repeated, or does not contain the child text.\n\nSemantic-axis evidence grounding:\n\n- Every `semantic_axes.evidence_items` entry must be exact source text that\n  resolves uniquely within the supplied local source context.\n- Prefer the complete exact source sentence containing the scientific\n  proposition and its event trigger.\n- When the same complete sentence supports several semantic axes, reuse that\n  same sentence rather than splitting it into fragments.\n- Do not return an isolated participant name, abbreviation, trigger, or phrase\n  when it is repeated or otherwise ambiguous in the supplied source.\n- This rule changes only evidence anchoring. It does not change the event,\n  participant, role, direction, comparison, polarity, uncertainty, statistics,\n  author interpretation, or scientific meaning.\n\nNamed biomedical occurrence boundary:\n\n- For a named gene or protein participant, use the exact lexicalized name that\n  identifies the entity occurrence. Do not expand that name merely to include an\n  adjacent generic entity-type word such as `gene` or `protein`.\n- Include an adjacent generic word only when it is part of the lexicalized name\n  or is required to distinguish the occurrence in the supplied sentence.\n- This boundary rule changes only participant occurrence text. It does not\n  change entity type, event role, scientific meaning, or the requirement that\n  every returned span be exact contiguous source text.\n\nFocus-gated referential grounding:\n\n- Apply antecedent resolution only when the highlighted finding contains a\n  referring expression that cannot identify its entity or event without earlier\n  words in the supplied local context.\n- For such an expression, resolve one unique explicit antecedent and ground the\n  participant to the antecedent's exact contiguous source text. Do not use the\n  pronoun, relative phrase, demonstrative, ellipsis, or partitive grammar itself\n  as `exact_text`.\n- Preserve an explicitly named entity that restricts the antecedent only when\n  that relation is necessary to identify or interpret the focused event. Do not\n  add general paragraph context or participants from neighboring findings.\n- A source subspan already contained in a complete participant mention is not a\n  separate contextual participant unless it has an independent role in the\n  focused event.\n- An analytic method, model, curve, assay, or representation is not an event\n  participant merely because the finding was measured or displayed through it.\n  Include it only when the focused event independently predicates a state,\n  relation, or value about that item.\n- If no unique explicit antecedent can be resolved from the supplied context,\n  return `INCOMPLETE` or `ABSTAIN`; do not invent or guess an entity.\n\nRole guidance:\n\n- `POPULATION`: the focal cohort or group in a population comparison.\n- `COMPARATOR`: the cohort or group against which the focal population is compared.\n- In a `COMPARISON` event between cohorts, use `POPULATION` and `COMPARATOR` for\n  those cohorts. Do not use `AFFECTED_ENTITY` merely because one cohort has the\n  compared outcome.\n- `AFFECTED_ENTITY`: the entity whose state or behavior is described in a\n  non-comparative state, classification, or regulation event.\n- `CAUSAL_AGENT`: an explicitly causal actor.\n- `STIMULUS_OR_OBJECT`: the treatment, stimulus, or object to which sensitivity\n  or response is described when the source does not explicitly claim causation.\n- `EFFECT_EVENT`: an event whose occurrence or state is affected by another\n  event. Preserve nested events; do not replace them with their participants.\n- `OUTCOME`, `EXPOSURE`, and `MEASUREMENT`: use only for their literal source roles.\n- `CONTEXTUAL_PARTICIPANT`: an explicit participant whose narrower role is not\n  stated.\n\nClassification argument boundary:\n\n- In a `CLASSIFICATION` event, link the classified entity as `AFFECTED_ENTITY`.\n- If a named entity explicitly restricts the identity or scope of that\n  classified entity set, link the restricting entity as\n  `CONTEXTUAL_PARTICIPANT`.\n- A classification label or value belongs in the classification event trigger\n  and semantic axes. Do not duplicate it as `OUTCOME` unless it independently\n  participates in another event.\n\nSemantic guidance:\n\n- A null result is not an affirmative harmful or beneficial association.\n- A numeric P value is a `P_VALUE` observation. It does not by itself mean that\n  the authors claimed `SIGNIFICANT` or `NOT_SIGNIFICANT`.\n- Use `NOT_CLAIMED` unless the source explicitly interprets significance.\n- The `uncertainty` axis describes uncertainty conveyed by the scientific\n  proposition, status, or classification value. It is independent of whether\n  the sentence grammatically asserts that proposition.\n- Use `UNCERTAIN` when the event explicitly assigns an uncertain, unknown,\n  indeterminate, or unresolved scientific status. Use `PROVISIONAL` or\n  `HYPOTHESIS` only when that corresponding status is explicit. Use `ASSERTED`\n  for an unqualified event, not merely because uncertain content is stated\n  declaratively.\n- Polarity records scientific result status, not surface grammar, and is\n  independent of direction and uncertainty. Use `NULL_RESULT` when a study or\n  analysis reports absence of an association, difference, or effect, regardless\n  of negative grammatical form. Use `NEGATED` only for direct denial or\n  non-occurrence outside an analytic null finding. Use `AFFIRMED` for other\n  non-null findings.\n- Preserve scientific negation and uncertainty exactly.\n- Trigger and participant text must be exact contiguous source text. A trigger\n  may include adjacent grammatical words when needed to preserve source meaning.\n- Return `INCOMPLETE` or `ABSTAIN` when the highlighted finding cannot be\n  represented without guessing.\n\nThe output must conform exactly to the supplied strict schema.\n\n\n--- V12 PRESERVED SCIENTIFIC CHANGE ---\n# V12 Focus Event Anchoring\n\nFocus-event anchoring:\n\n- When the highlighted finding contains an explicit event-denoting noun or\n  phrase, inventory that highlighted event and keep it as the root event.\n- A surrounding predicate such as `associated with`, `involved in`, or\n  `related to` must not replace the highlighted event merely because it connects\n  contextual entities.\n- This rule changes only focus-event inventory and root selection. Preserve\n  every nested event required by the highlighted finding, and apply the existing\n  participant, link, role, and semantic-axis rules unchanged.\n- The rule does not prescribe an event type, participant identity,\n  semantic-axis value, benchmark label, or expected answer.\n--- END V12 PRESERVED SCIENTIFIC CHANGE ---\n\n--- V13 PRESERVED SCIENTIFIC CHANGE ---\n# V13 Compositional Focus Root Selection\n\nCompositional focus root selection:\n\n- Select the root only after constructing event links.\n- In the focus-internal event subgraph, when exactly one inventoried event is\n  not the target of another focus-internal inventoried event, choose it as root.\n- Predicates outside the highlighted finding cannot disqualify or replace that\n  root, and a nested effect cannot replace its explicit focus-internal parent.\n- Otherwise apply the existing root and completeness rules unchanged; do not\n  alter inventory or links to force uniqueness.\n- This rule changes root selection only. Preserve inventory, trigger\n  boundaries, participants, links, roles, semantic axes, evidence, and\n  completeness rules unchanged.\n- The rule does not prescribe an event count, event type, participant, role,\n  semantic-axis value, benchmark label, or expected answer.\n\nNon-scientific transport clarification for this exposed V13:\n\n- Every preregistered focus is upstream-eligible because it contains at least\n  one explicit source-supported event. An input with no such event is outside\n  this experiment and must not be sent to the provider.\n- When `completeness` is not `COMPLETE`, `root_event_id` is a required transport\n  anchor, not an asserted scientific root. Set it to the earliest\n  source-supported focus-internal inventoried event in source order.\n- Do not add, delete, relabel, or link events to create that transport anchor.\n  The universal schema still cannot represent a truly eventless abstention;\n  V13 does not claim to solve that residual limitation.\n--- END V13 PRESERVED SCIENTIFIC CHANGE ---\n\n--- V14 SINGLE SCIENTIFIC CHANGE ---\n# V14 Complete Biomedical Participant Denotation\n\nThis rule clarifies the existing named-biomedical occurrence boundary. It does\nnot replace any event, evidence, or semantic rule.\n\n- Select the smallest exact contiguous source span that independently denotes\n  the same biomedical participant occurrence while preserving its\n  scientifically restrictive identity and scope.\n- An adjacent entity-type noun may be omitted only when the retained text is an\n  independently referential lexicalized biomedical identifier that denotes the\n  same participant in that occurrence.\n- Retain the semantic noun head when removing it would leave only modifiers,\n  classifiers, stages, taxonomic restrictions, or other attributive text. Do\n  not reconstruct an omitted head from `entity_type`, the explanation, or\n  surrounding evidence.\n- Retain nonredundant restrictive modifiers unless the same output explicitly\n  represents and links an equivalent restriction. If the schema cannot\n  represent that relation, retain the modifier in the participant span.\n- If either denotation or restrictive scope would be lost, fail closed with\n  `INCOMPLETE` or `ABSTAIN`; do not shorten the participant.\n\nThis rule changes only participant occurrence text. It cannot create or remove\nevents, participants, entity types, roles, links, root choices, semantic axes,\nstatistics, evidence, completeness states, or scientific claims.\n--- END V14 SINGLE SCIENTIFIC CHANGE ---\n\n--- FROZEN EXPOSED CASE ---\n{\n  \"case_id\": \"generalization-comparison-canary\",\n  \"focus_passage\": \"had more comorbidities than patients without RA\",\n  \"local_context\": \"Patients with RA were more likely to be female and had more comorbidities than patients without RA. Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation.\",\n  \"source_id\": \"exposed-gold-40289860\",\n  \"source_sha256\": \"e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84\"\n}\n--- END FROZEN EXPOSED CASE ---\n",
+              "type": "input_text"
+            }
+          ],
+          "id": "msg_02eb2181aabaa82d006a62853f26508199bf8134fe1b057a34",
+          "role": "user",
+          "status": "completed",
+          "type": "message"
+        }
+      ]
+    }
+  },
+  "receipt_sha256": "7fcde5e0b021bb401c11c00b8bbcf29bd53bdb5282a27b55892b91a294f7a61c",
+  "requested_and_observed_budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.010085,
+    "observed_latency_seconds": 8.623367291991599,
+    "observed_output_tokens": 1067,
+    "observed_total_tokens": 4750,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "response_id": "resp_02eb2181aabaa82d006a62853f217c8199b9cee82a1fadd0f9",
+  "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+  "stage": "GENERALIZATION_V14_EXPOSED:generalization-comparison-canary",
+  "typed_output": {
+    "case_id": "generalization-comparison-canary",
+    "completeness": "COMPLETE",
+    "inventory": [
+      {
+        "event_id": "E1",
+        "event_type": "COMPARISON",
+        "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+        "explanation": "The highlighted finding compares the number of comorbidities in patients with RA with that in patients without RA.",
+        "trigger_text": "had more comorbidities than"
+      }
+    ],
+    "links": [
+      {
+        "arguments": [
+          {
+            "explanation": "Patients with RA are the focal population.",
+            "role": "POPULATION",
+            "target_id": "P1",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "Patients without RA are the comparison population.",
+            "role": "COMPARATOR",
+            "target_id": "P2",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "Comorbidities are the characteristic being compared.",
+            "role": "OUTCOME",
+            "target_id": "P3",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "E1"
+      }
+    ],
+    "participants": [
+      {
+        "entity_type": "POPULATION",
+        "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+        "exact_text": "Patients with RA",
+        "explanation": "This is the focal population whose comorbidity burden is compared.",
+        "participant_id": "P1"
+      },
+      {
+        "entity_type": "POPULATION",
+        "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+        "exact_text": "patients without RA",
+        "explanation": "This is the comparison population.",
+        "participant_id": "P2"
+      },
+      {
+        "entity_type": "OUTCOME",
+        "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+        "exact_text": "comorbidities",
+        "explanation": "This is the compared outcome or characteristic.",
+        "participant_id": "P3"
+      }
+    ],
+    "root_event_id": "E1",
+    "semantic_axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "GREATER",
+        "direction": "INCREASED",
+        "event_id": "E1",
+        "evidence_items": [
+          "Patients with RA were more likely to be female and had more comorbidities than patients without RA."
+        ],
+        "explanation": "The source explicitly states that the focal population had more comorbidities than the comparator; it provides no statistical significance interpretation.",
+        "polarity": "AFFIRMED",
+        "statistical_observations": [
+          {
+            "exact_text": null,
+            "observation_type": "NONE"
+          }
+        ],
+        "uncertainty": "ASSERTED"
+      }
+    ],
+    "structure_explanation": "The highlighted finding is represented by one complete comparison event with explicit focal population, comparator, and compared outcome."
+  }
+}
