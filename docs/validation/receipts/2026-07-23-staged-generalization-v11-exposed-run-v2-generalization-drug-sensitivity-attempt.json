@@ -1,0 +1,9 @@
+{
+  "preregistration_sha256": "6157de1e1cb59042a6f532caa3b5f91e248ab8d7e09919fd0a2d98ec2e8b3a6a",
+  "provider_creation_limit": 1,
+  "provider_input_sha256": "3516049df131f1a8d92c344dc98820319e89913e61c067ec23f2a1f6488499de",
+  "provider_retries": 0,
+  "response_id": "resp_08e1ca5666a68da2006a62357b4278819896abf958952c49f8",
+  "stage": "GENERALIZATION_V11_EXPOSED_RUN2:generalization-drug-sensitivity",
+  "state": "ACKNOWLEDGED"
+}

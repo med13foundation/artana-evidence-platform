@@ -1,0 +1,94 @@
+{
+  "case_id": "generalization-uncertainty",
+  "experiment_id": "staged-generalization-v11-exposed-run-v2",
+  "gene_or_protein_occurrences": [
+    "SLC12A3"
+  ],
+  "graph_writes": 0,
+  "qualification_credit": false,
+  "response_id": "resp_0aaea9b941e29168006a62353e760c819bb5ca97535c921e64",
+  "schema_version": "artana.staged_generalization.v11_exposed_run2_case_evaluation.v1",
+  "scientific_grader": {
+    "ambiguous_context_count": 0,
+    "benchmark_fidelity_after_projection": "NOT_APPLICABLE",
+    "benchmark_fidelity_before_projection": "NOT_APPLICABLE",
+    "benchmark_lane_separate": true,
+    "case_id": "generalization-uncertainty",
+    "comparison_fidelity": true,
+    "complete_event_recovery": true,
+    "contradiction_count": 0,
+    "direction_fidelity": true,
+    "exact_evidence_grounding": true,
+    "failure_reasons": [],
+    "family": "UNCERTAINTY",
+    "nested_event_structure": true,
+    "participant_role_fidelity": true,
+    "passed": true,
+    "permitted_context_count": 0,
+    "polarity_fidelity": true,
+    "projection_review_only": true,
+    "required_core_complete": true,
+    "source_discovery_validity": "PASS",
+    "statistical_fidelity": true,
+    "uncertainty_fidelity": true,
+    "unsupported_claim_count": 0
+  },
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.014983,
+    "input_tokens": 2929,
+    "latency_seconds": 17.058472166987485,
+    "output_tokens": 2009,
+    "reasoning_tokens": 1442,
+    "total_tokens": 4938
+  },
+  "v10_comparison": {
+    "count_regressions": [],
+    "improved_fields": [],
+    "preserved_fields": [],
+    "regressed_fields": [],
+    "status": "NOT_CALLED_IN_V9",
+    "unchanged_failure_fields": []
+  },
+  "v11_acceptance": {
+    "failure_classification": null,
+    "negated_complete_sentence_observed": null,
+    "negated_complete_sentence_required": false,
+    "passed": true,
+    "semantic_evidence_unique": true,
+    "v10_boundary": {
+      "failure_classification": null,
+      "forbidden_suffix_absent": true,
+      "passed": true,
+      "protected_lexicalized_name_preserved": null,
+      "protected_lexicalized_name_required": false,
+      "scientific_grader_passed": true,
+      "target_case": true,
+      "target_correction_observed": true,
+      "target_correction_required": true,
+      "v9_count_regressions": [],
+      "v9_fields_regressed": []
+    },
+    "v10_count_regressions": [],
+    "v10_fields_regressed": []
+  },
+  "v9_comparison": {
+    "count_regressions": [],
+    "improved_fields": [],
+    "preserved_fields": [
+      "required_core_complete",
+      "complete_event_recovery",
+      "participant_role_fidelity",
+      "nested_event_structure",
+      "direction_fidelity",
+      "comparison_fidelity",
+      "polarity_fidelity",
+      "uncertainty_fidelity",
+      "statistical_fidelity",
+      "exact_evidence_grounding"
+    ],
+    "regressed_fields": [],
+    "status": "COMPARED",
+    "unchanged_failure_fields": []
+  }
+}

@@ -171,6 +171,38 @@ def test_run2_preregistration_freezes_science_and_all_qualification_spend() -> N
     assert budget["token_latency_and_cost_are_record_only"] is True
 
 
+def test_checked_in_run2_seals_target_repairs_then_unrelated_fail_fast() -> None:
+    result = _object(
+        json.loads(DEFAULT_PATHS.result.read_text(encoding="utf-8"))
+    )
+    outcomes = cast("list[dict[str, object]]", result["case_outcomes"])
+
+    assert result["decision"] == "V11_EXPOSED_RUN_V2_FAIL_UNRELATED_REGRESSION"
+    assert [item["case_id"] for item in outcomes] == list(CASE_ORDER[:5])
+    assert result["failed_case_id"] == "generalization-drug-sensitivity"
+    assert result["first_failure_classification"] == (
+        "UNRELATED_SCIENTIFIC_REGRESSION"
+    )
+    assert result["slc12a3_corrected_by_actual_model_call"] is True
+    assert result["negated_complete_unique_sentence_observed"] is True
+    assert result["all_semantic_evidence_unique"] is True
+    assert result["v9_regressed_fields"] == []
+    assert result["v9_count_regressions"] == ["unsupported_claim_count"]
+    assert result["provider_calls"] == 8
+    assert result["transport_qualification_provider_calls"] == 3
+    assert result["scientific_provider_calls"] == 5
+    assert result["provider_retries"] == 0
+    assert result["duplicate_creation_calls"] == 0
+    assert result["total_tokens"] == 31_080
+    assert result["cost_usd"] == pytest.approx(0.091686)
+    assert result["fresh_cases_consumed"] == 0
+    assert result["remaining_fresh_cases_preserved"] == 7
+    assert result["graph_writes"] == 0
+    assert result["trusted_promotion"] is False
+    assert not DEFAULT_PATHS.case(CASE_ORDER[5]).attempt.exists()
+    assert not DEFAULT_PATHS.fresh_preregistration.exists()
+
+
 def test_large_scientific_usage_is_admitted_before_global_budget_stop(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

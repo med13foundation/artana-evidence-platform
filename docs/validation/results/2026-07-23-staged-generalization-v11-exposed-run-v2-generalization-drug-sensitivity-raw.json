@@ -1,0 +1,96 @@
+{
+  "case_id": "generalization-drug-sensitivity",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "E1",
+      "event_type": "ASSOCIATION",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "explanation": "The focused finding states that TS and DPD are involved in carcinoma patients' sensitivity to 5-FU, without specifying a causal mechanism or direction of effect.",
+      "trigger_text": "are involved in"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "TS is explicitly involved in the sensitivity finding, but the source does not state that it is a causal agent.",
+          "role": "CONTEXTUAL_PARTICIPANT",
+          "target_id": "P1",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "DPD is explicitly involved in the sensitivity finding, but the source does not state that it is a causal agent.",
+          "role": "CONTEXTUAL_PARTICIPANT",
+          "target_id": "P2",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "Carcinoma patients are the entities whose sensitivity is described.",
+          "role": "AFFECTED_ENTITY",
+          "target_id": "P3",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "5-FU is the drug to which sensitivity is described.",
+          "role": "STIMULUS_OR_OBJECT",
+          "target_id": "P4",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "E1"
+    }
+  ],
+  "participants": [
+    {
+      "entity_type": "GENE_OR_PROTEIN",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "exact_text": "Thymidylate synthase (TS)",
+      "explanation": "This is the explicitly named enzyme involved in the sensitivity finding.",
+      "participant_id": "P1"
+    },
+    {
+      "entity_type": "GENE_OR_PROTEIN",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "exact_text": "dihydropyrimidine dehydrogenase (DPD)",
+      "explanation": "This is the second explicitly named enzyme involved in the sensitivity finding.",
+      "participant_id": "P2"
+    },
+    {
+      "entity_type": "POPULATION",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "exact_text": "carcinoma patients",
+      "explanation": "These patients are the population whose sensitivity is described.",
+      "participant_id": "P3"
+    },
+    {
+      "entity_type": "SIMPLE_CHEMICAL",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "exact_text": "5-fluorouracil (5-FU)",
+      "explanation": "The focused 5-FU reference is grounded to the earlier uniquely defined chemical mention in the sentence.",
+      "participant_id": "P4"
+    }
+  ],
+  "root_event_id": "E1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "OBSERVED",
+      "event_id": "E1",
+      "evidence_items": [
+        "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU."
+      ],
+      "explanation": "The sentence affirms an involvement association but gives no directional comparison, uncertainty marker, statistical result, or explicit significance interpretation.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    }
+  ],
+  "structure_explanation": "The focused finding is represented as one association event linking the two enzymes, the carcinoma-patient population, and the 5-FU stimulus. The surrounding enzyme-description clause is not extracted as a separate event because it is contextual rather than part of the highlighted finding."
+}

@@ -1,0 +1,116 @@
+{
+  "case_id": "generalization-drug-sensitivity",
+  "experiment_id": "staged-generalization-v11-exposed-run-v2",
+  "gene_or_protein_occurrences": [
+    "Thymidylate synthase (TS)",
+    "dihydropyrimidine dehydrogenase (DPD)"
+  ],
+  "graph_writes": 0,
+  "qualification_credit": false,
+  "response_id": "resp_08e1ca5666a68da2006a62357b4278819896abf958952c49f8",
+  "schema_version": "artana.staged_generalization.v11_exposed_run2_case_evaluation.v1",
+  "scientific_grader": {
+    "ambiguous_context_count": 0,
+    "benchmark_fidelity_after_projection": "0/1",
+    "benchmark_fidelity_before_projection": "0/1",
+    "benchmark_lane_separate": true,
+    "case_id": "generalization-drug-sensitivity",
+    "comparison_fidelity": false,
+    "complete_event_recovery": false,
+    "contradiction_count": 1,
+    "direction_fidelity": false,
+    "exact_evidence_grounding": true,
+    "failure_reasons": [
+      "unsupported or duplicate event: ASSOCIATION/are involved in",
+      "missing events: ['sensitivity']",
+      "unsupported or duplicate participant: POPULATION/carcinoma patients",
+      "unsupported or duplicate participant: SIMPLE_CHEMICAL/5-fluorouracil (5-FU)",
+      "missing required core participants: ['carcinoma', 'drug']",
+      "required core event arguments are missing",
+      "typed event arguments exceed core-plus-context policy",
+      "root event differs from required core",
+      "semantic axes absent for sensitivity",
+      "direction fidelity failed",
+      "comparison fidelity failed",
+      "polarity fidelity failed",
+      "uncertainty fidelity failed",
+      "statistics fidelity failed"
+    ],
+    "family": "DRUG_SENSITIVITY",
+    "nested_event_structure": true,
+    "participant_role_fidelity": false,
+    "passed": false,
+    "permitted_context_count": 2,
+    "polarity_fidelity": false,
+    "projection_review_only": true,
+    "required_core_complete": false,
+    "source_discovery_validity": "FAIL",
+    "statistical_fidelity": false,
+    "uncertainty_fidelity": false,
+    "unsupported_claim_count": 7
+  },
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.023966,
+    "input_tokens": 2858,
+    "latency_seconds": 26.952000874996884,
+    "output_tokens": 3518,
+    "reasoning_tokens": 2516,
+    "total_tokens": 6376
+  },
+  "v10_comparison": {
+    "count_regressions": [],
+    "improved_fields": [],
+    "preserved_fields": [],
+    "regressed_fields": [],
+    "status": "NOT_CALLED_IN_V9",
+    "unchanged_failure_fields": []
+  },
+  "v11_acceptance": {
+    "failure_classification": "UNRELATED_SCIENTIFIC_REGRESSION",
+    "negated_complete_sentence_observed": null,
+    "negated_complete_sentence_required": false,
+    "passed": false,
+    "semantic_evidence_unique": true,
+    "v10_boundary": {
+      "failure_classification": "UNRELATED_SCIENTIFIC_REGRESSION",
+      "forbidden_suffix_absent": null,
+      "passed": false,
+      "protected_lexicalized_name_preserved": null,
+      "protected_lexicalized_name_required": false,
+      "scientific_grader_passed": false,
+      "target_case": false,
+      "target_correction_observed": null,
+      "target_correction_required": false,
+      "v9_count_regressions": [
+        "unsupported_claim_count"
+      ],
+      "v9_fields_regressed": []
+    },
+    "v10_count_regressions": [],
+    "v10_fields_regressed": []
+  },
+  "v9_comparison": {
+    "count_regressions": [
+      "unsupported_claim_count"
+    ],
+    "improved_fields": [
+      "exact_evidence_grounding"
+    ],
+    "preserved_fields": [
+      "nested_event_structure"
+    ],
+    "regressed_fields": [],
+    "status": "COMPARED",
+    "unchanged_failure_fields": [
+      "required_core_complete",
+      "complete_event_recovery",
+      "participant_role_fidelity",
+      "direction_fidelity",
+      "comparison_fidelity",
+      "polarity_fidelity",
+      "uncertainty_fidelity",
+      "statistical_fidelity"
+    ]
+  }
+}

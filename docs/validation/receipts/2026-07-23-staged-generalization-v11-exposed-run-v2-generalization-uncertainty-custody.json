@@ -1,0 +1,200 @@
+{
+  "output_sha256": "2c5b0ed7148ca83e95277b216e747508a736525aa839b7da08e93e94905deb7a",
+  "provider_input_sha256": "527baa5997ad3e3ff4c01e7e3238d32dac97087899dd9f74a47e0b4192c4bae9",
+  "receipt": {
+    "budgets": {
+      "cost": "RECORD_ONLY",
+      "latency": "RECORD_ONLY",
+      "observed_cost_usd": 0.014983,
+      "observed_latency_seconds": 17.058472166987485,
+      "observed_output_tokens": 2009,
+      "observed_total_tokens": 4938,
+      "output_tokens": "RECORD_ONLY",
+      "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+      "requested_max_cost_usd": null,
+      "requested_max_latency_seconds": null,
+      "requested_max_output_tokens": null,
+      "requested_max_total_tokens": null,
+      "total_tokens": "RECORD_ONLY"
+    },
+    "confirmation_retrieval_requests": 1,
+    "creation_envelope_sha256": "a3df9e33fc4bdd5d28eacd1c00aaa772f7023b02005be744ff389b2ae227f0c7",
+    "differences": [
+      {
+        "allowlisted": true,
+        "creation_sha256": "4d54078f1cbc0b54ababbcfbfd2fed58eaf1d16db3922b832a8c9c9202f1c4fc",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[0].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "f38ce96b2b2576b0fd2d27755b266668a17c74c8078122d8a3905a943aed4a5f",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[1].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "6c1a62e97674143b56a52aa631752e1c5e18aa42ba6cdbd7befed0a1bc4419d5",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[2].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "bba27da746fe944daf14977b253e512864648fea13034cc0c95e1fd47ab88d62",
+        "difference": "FOREGROUND_USAGE_SNAPSHOT_CHANGED",
+        "path": "$.usage",
+        "rationale": "usage is record-only telemetry and confirmation is the authoritative completed snapshot",
+        "retrieval_sha256": "2f95aa10c079c6890bfde0864a876942a498ad17ce2a330168f4cab0bbf7cd2b"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "foreground_request_timeout_seconds": 1800.0,
+    "foreground_usage_policy": {
+      "authoritative_snapshot": "CONFIRMATION_RETRIEVAL",
+      "confirmation_usage_sha256": "2f95aa10c079c6890bfde0864a876942a498ad17ce2a330168f4cab0bbf7cd2b",
+      "creation_usage_sha256": "bba27da746fe944daf14977b253e512864648fea13034cc0c95e1fd47ab88d62",
+      "scientific_validity_dependency": false,
+      "snapshots_differ": true
+    },
+    "identity": {
+      "created_at": 1784821054.0,
+      "model": "gpt-5.6-luna",
+      "object_type": "response",
+      "output_items": [
+        [
+          "reasoning",
+          "rs_0aaea9b941e29168006a62353efcec819b9b895076fa292a8c"
+        ],
+        [
+          "reasoning",
+          "rs_0aaea9b941e29168006a6235430370819bbbf5b525eec4c75c"
+        ],
+        [
+          "reasoning",
+          "rs_0aaea9b941e29168006a6235476d28819b97f0f7b71e63f28e"
+        ],
+        [
+          "message",
+          "msg_0aaea9b941e29168006a62354ac0ac819ba28ed94ec3d8fe49"
+        ]
+      ],
+      "response_id": "resp_0aaea9b941e29168006a62353e760c819bb5ca97535c921e64",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "provider_creation_calls": 1,
+    "provider_input_sha256": "527baa5997ad3e3ff4c01e7e3238d32dac97087899dd9f74a47e0b4192c4bae9",
+    "provider_retries": 0,
+    "provider_schema_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+    "retrieval_envelope_sha256": "7764d5737143626a88964ea271f8a3921d18c5b72f4ba13462530ebe511436c1",
+    "schema_version": "artana.provider_receipt_boundary.foreground_telemetry.v3",
+    "scientific_payload_sha256": "2c5b0ed7148ca83e95277b216e747508a736525aa839b7da08e93e94905deb7a",
+    "status": "VERIFIED_LIVE",
+    "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+    "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+    "usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.014983,
+      "input_tokens": 2929,
+      "latency_seconds": 17.058472166987485,
+      "output_tokens": 2009,
+      "reasoning_tokens": 1442,
+      "total_tokens": 4938
+    }
+  },
+  "requested_and_observed_budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.014983,
+    "observed_latency_seconds": 17.058472166987485,
+    "observed_output_tokens": 2009,
+    "observed_total_tokens": 4938,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "response_id": "resp_0aaea9b941e29168006a62353e760c819bb5ca97535c921e64",
+  "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+  "stage": "GENERALIZATION_V11_EXPOSED_RUN2:generalization-uncertainty",
+  "typed_output": {
+    "case_id": "generalization-uncertainty",
+    "completeness": "COMPLETE",
+    "inventory": [
+      {
+        "event_id": "e1",
+        "event_type": "CLASSIFICATION",
+        "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+        "explanation": "The finding classifies the majority of the detected variants as being of uncertain significance.",
+        "trigger_text": "the majority of which were classified as of uncertain significance"
+      }
+    ],
+    "links": [
+      {
+        "arguments": [
+          {
+            "explanation": "The detected variants, specifically their majority subset, are the entities being classified.",
+            "role": "AFFECTED_ENTITY",
+            "target_id": "p1",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "The gene identifies the scope of the variant set involved in the classification.",
+            "role": "CONTEXTUAL_PARTICIPANT",
+            "target_id": "p2",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "e1"
+      }
+    ],
+    "participants": [
+      {
+        "entity_type": "VARIANT",
+        "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+        "exact_text": "947 variants",
+        "explanation": "This is the explicit antecedent of the referring expression \u201cwhich\u201d; the classification applies to its majority subset.",
+        "participant_id": "p1"
+      },
+      {
+        "entity_type": "GENE_OR_PROTEIN",
+        "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+        "exact_text": "SLC12A3",
+        "explanation": "SLC12A3 is the named gene that restricts the identity or scope of the classified variant set.",
+        "participant_id": "p2"
+      }
+    ],
+    "root_event_id": "e1",
+    "semantic_axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "NOT_APPLICABLE",
+        "event_id": "e1",
+        "evidence_items": [
+          "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance."
+        ],
+        "explanation": "The classification is explicitly asserted, while the assigned classification is uncertain significance. No statistical observation or separate author claim about statistical significance is provided.",
+        "polarity": "AFFIRMED",
+        "statistical_observations": [
+          {
+            "exact_text": null,
+            "observation_type": "NONE"
+          }
+        ],
+        "uncertainty": "UNCERTAIN"
+      }
+    ],
+    "structure_explanation": "The focused finding is fully represented by one classification event, with the resolved antecedent variant set as the affected entity and SLC12A3 as the contextual gene restricting that set."
+  }
+}

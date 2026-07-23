@@ -1,0 +1,225 @@
+{
+  "output_sha256": "05c7c2c7d8aa52449b1980a5e4e0f46eebc5851e8c1c9fe08b1ca501bb0ffb25",
+  "provider_input_sha256": "843ab1781d39ccbc71441728edda93299fda1dce491883fc649f256a7bd5f7b0",
+  "receipt": {
+    "budgets": {
+      "cost": "RECORD_ONLY",
+      "latency": "RECORD_ONLY",
+      "observed_cost_usd": 0.019795,
+      "observed_latency_seconds": 21.872168999994756,
+      "observed_output_tokens": 2820,
+      "observed_total_tokens": 5695,
+      "output_tokens": "RECORD_ONLY",
+      "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+      "requested_max_cost_usd": null,
+      "requested_max_latency_seconds": null,
+      "requested_max_output_tokens": null,
+      "requested_max_total_tokens": null,
+      "total_tokens": "RECORD_ONLY"
+    },
+    "confirmation_retrieval_requests": 1,
+    "creation_envelope_sha256": "1bfa302a13ce5fb3ab31fe86b43d167ab1c8a54e7d69d1127b4943182a81d555",
+    "differences": [
+      {
+        "allowlisted": true,
+        "creation_sha256": "f74ec9bc7c4da668fda32d8cf855a32940f9c2f4c8d947db03d2bb429a0101ec",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[0].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "668f7b95782a93d2a67164cb0d5ed7e51c758dda9e286fa4dcb48c2d5d0100b0",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[1].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "869a9dade4cd96109fdf938a4efd8fa01b0acb099f8015e0544ac2bdef193f7b",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[2].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "19258b756477b0a5285b7cc4d54ab0c52567b2f72538d4096e25f11424749226",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[3].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "61f23de5d813b56c153983a97daa7f6b855668d7f249c3f64abab63c90249a94",
+        "difference": "FOREGROUND_USAGE_SNAPSHOT_CHANGED",
+        "path": "$.usage",
+        "rationale": "usage is record-only telemetry and confirmation is the authoritative completed snapshot",
+        "retrieval_sha256": "b578a08f4ec76bf31b09bbbfebc11e62b25050d5ae8094cd7742f6c657305f65"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "foreground_request_timeout_seconds": 1800.0,
+    "foreground_usage_policy": {
+      "authoritative_snapshot": "CONFIRMATION_RETRIEVAL",
+      "confirmation_usage_sha256": "b578a08f4ec76bf31b09bbbfebc11e62b25050d5ae8094cd7742f6c657305f65",
+      "creation_usage_sha256": "61f23de5d813b56c153983a97daa7f6b855668d7f249c3f64abab63c90249a94",
+      "scientific_validity_dependency": false,
+      "snapshots_differ": true
+    },
+    "identity": {
+      "created_at": 1784821093.0,
+      "model": "gpt-5.6-luna",
+      "object_type": "response",
+      "output_items": [
+        [
+          "reasoning",
+          "rs_0b56db68a6f6227c006a623565c6f88198a5cec09105db1832"
+        ],
+        [
+          "reasoning",
+          "rs_0b56db68a6f6227c006a62356a014c819891f6d10a77099178"
+        ],
+        [
+          "reasoning",
+          "rs_0b56db68a6f6227c006a62356e4a288198891d4d414daa3014"
+        ],
+        [
+          "reasoning",
+          "rs_0b56db68a6f6227c006a623572c3bc8198b7a3d21c2fd95e3a"
+        ],
+        [
+          "message",
+          "msg_0b56db68a6f6227c006a6235768d048198ac0a0ecb42c484e0"
+        ]
+      ],
+      "response_id": "resp_0b56db68a6f6227c006a6235653d48819889530b7b386769d4",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "provider_creation_calls": 1,
+    "provider_input_sha256": "843ab1781d39ccbc71441728edda93299fda1dce491883fc649f256a7bd5f7b0",
+    "provider_retries": 0,
+    "provider_schema_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+    "retrieval_envelope_sha256": "f9aec0628b2cc63fa689dff1ddd39c2813ea8e6ee27fd2fcd58ecd99e57b9c84",
+    "schema_version": "artana.provider_receipt_boundary.foreground_telemetry.v3",
+    "scientific_payload_sha256": "05c7c2c7d8aa52449b1980a5e4e0f46eebc5851e8c1c9fe08b1ca501bb0ffb25",
+    "status": "VERIFIED_LIVE",
+    "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+    "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+    "usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.019795,
+      "input_tokens": 2875,
+      "latency_seconds": 21.872168999994756,
+      "output_tokens": 2820,
+      "reasoning_tokens": 2016,
+      "total_tokens": 5695
+    }
+  },
+  "requested_and_observed_budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.019795,
+    "observed_latency_seconds": 21.872168999994756,
+    "observed_output_tokens": 2820,
+    "observed_total_tokens": 5695,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "response_id": "resp_0b56db68a6f6227c006a6235653d48819889530b7b386769d4",
+  "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+  "stage": "GENERALIZATION_V11_EXPOSED_RUN2:generalization-null-statistics",
+  "typed_output": {
+    "case_id": "generalization-null-statistics",
+    "completeness": "COMPLETE",
+    "inventory": [
+      {
+        "event_id": "E1",
+        "event_type": "COMPARISON",
+        "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+        "explanation": "The highlighted finding reports no difference in OS between the RA and non-RA NSCLC groups based on their Kaplan-Meier survival curves.",
+        "trigger_text": "no difference"
+      }
+    ],
+    "links": [
+      {
+        "arguments": [
+          {
+            "explanation": "RA is the focal cohort in the between-group comparison.",
+            "role": "POPULATION",
+            "target_id": "P1",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "non-RA NSCLC is the cohort used as the comparator.",
+            "role": "COMPARATOR",
+            "target_id": "P2",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "OS is the compared survival outcome.",
+            "role": "OUTCOME",
+            "target_id": "P3",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "E1"
+      }
+    ],
+    "participants": [
+      {
+        "entity_type": "POPULATION",
+        "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+        "exact_text": "RA",
+        "explanation": "RA identifies the focal population in the comparison.",
+        "participant_id": "P1"
+      },
+      {
+        "entity_type": "POPULATION",
+        "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+        "exact_text": "non-RA NSCLC",
+        "explanation": "non-RA NSCLC identifies the comparison population.",
+        "participant_id": "P2"
+      },
+      {
+        "entity_type": "OUTCOME",
+        "exact_evidence": "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09).",
+        "exact_text": "OS",
+        "explanation": "OS is the outcome for which the groups are compared.",
+        "participant_id": "P3"
+      }
+    ],
+    "root_event_id": "E1",
+    "semantic_axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NO_DIFFERENCE",
+        "direction": "NO_DIFFERENCE",
+        "event_id": "E1",
+        "evidence_items": [
+          "There was no difference in OS between the RA and non-RA NSCLC Kaplan-Meier survival curves (log-rank P = 0.08) and in adjusted models (hazard ratio 0.92, 95% confidence interval 0.78-1.09)."
+        ],
+        "explanation": "The finding explicitly reports no difference, which is a null result. The log-rank P value is recorded as a statistical observation, but the source does not explicitly claim statistical significance or non-significance.",
+        "polarity": "NULL_RESULT",
+        "statistical_observations": [
+          {
+            "exact_text": "log-rank P = 0.08",
+            "observation_type": "P_VALUE"
+          }
+        ],
+        "uncertainty": "ASSERTED"
+      }
+    ],
+    "structure_explanation": "The highlighted null comparison is represented with its two comparison cohorts, OS outcome, and reported log-rank P value. Kaplan-Meier curves are treated as the analytic representation rather than an independent participant, and the neighboring adjusted-model result is excluded because the highlighted finding is atomic."
+  }
+}

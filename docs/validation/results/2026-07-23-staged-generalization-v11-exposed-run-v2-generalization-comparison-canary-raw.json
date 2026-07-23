@@ -1,0 +1,83 @@
+{
+  "case_id": "generalization-comparison-canary",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "e1",
+      "event_type": "COMPARISON",
+      "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+      "explanation": "This comparison states that the focal patient group had a greater number of comorbidities than the comparator group.",
+      "trigger_text": "had more comorbidities than"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "The patients with RA are the focal population.",
+          "role": "POPULATION",
+          "target_id": "p1",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "The patients without RA are the comparison group.",
+          "role": "COMPARATOR",
+          "target_id": "p3",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "Comorbidities are the outcome being compared.",
+          "role": "OUTCOME",
+          "target_id": "p2",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "e1"
+    }
+  ],
+  "participants": [
+    {
+      "entity_type": "POPULATION",
+      "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+      "exact_text": "Patients with RA",
+      "explanation": "Focal population in the comorbidity comparison.",
+      "participant_id": "p1"
+    },
+    {
+      "entity_type": "OUTCOME",
+      "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+      "exact_text": "comorbidities",
+      "explanation": "The health attribute being compared between the two patient groups.",
+      "participant_id": "p2"
+    },
+    {
+      "entity_type": "POPULATION",
+      "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+      "exact_text": "patients without RA",
+      "explanation": "Comparator population for the focal patients with RA.",
+      "participant_id": "p3"
+    }
+  ],
+  "root_event_id": "e1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "GREATER",
+      "direction": "INCREASED",
+      "event_id": "e1",
+      "evidence_items": [
+        "Patients with RA were more likely to be female and had more comorbidities than patients without RA."
+      ],
+      "explanation": "The source explicitly reports more comorbidities in patients with RA than in patients without RA, without providing a statistical observation or explicitly characterizing significance.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    }
+  ],
+  "structure_explanation": "The highlighted atomic finding is represented as one comparison event linking the focal population, comparator population, and compared outcome."
+}

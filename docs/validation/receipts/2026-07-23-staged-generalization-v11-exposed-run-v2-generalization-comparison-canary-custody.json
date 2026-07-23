@@ -1,0 +1,189 @@
+{
+  "output_sha256": "7564d523e35d22997ab9fe5425c82aa074d9611d4af2eab586adbf6c1f7d4040",
+  "provider_input_sha256": "6d4691ee52b6e83f2099a7ede63a8d6a8bfe27324e3f582357edeae761b4ae30",
+  "receipt": {
+    "budgets": {
+      "cost": "RECORD_ONLY",
+      "latency": "RECORD_ONLY",
+      "observed_cost_usd": 0.009339,
+      "observed_latency_seconds": 9.01119670800108,
+      "observed_output_tokens": 1078,
+      "observed_total_tokens": 3949,
+      "output_tokens": "RECORD_ONLY",
+      "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+      "requested_max_cost_usd": null,
+      "requested_max_latency_seconds": null,
+      "requested_max_output_tokens": null,
+      "requested_max_total_tokens": null,
+      "total_tokens": "RECORD_ONLY"
+    },
+    "confirmation_retrieval_requests": 1,
+    "creation_envelope_sha256": "ae63b86406cbcbf3110ebe1cc0ee17dd41bd43b65e94c00751231d1cfcfa7438",
+    "differences": [
+      {
+        "allowlisted": true,
+        "creation_sha256": "eb3cce8e702ae2c56ba1864781a72e6895074a06048dc131b8c2544d64df1747",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[0].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "0904cde9d9a875f3ece3fd52d6d563171f954799ae4ed859e0d74b34e5642f5b",
+        "difference": "FOREGROUND_USAGE_SNAPSHOT_CHANGED",
+        "path": "$.usage",
+        "rationale": "usage is record-only telemetry and confirmation is the authoritative completed snapshot",
+        "retrieval_sha256": "7b73859145d310d63108c9cf5a107ecfc5397f65dee4c563443f832bce6a7941"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "foreground_request_timeout_seconds": 1800.0,
+    "foreground_usage_policy": {
+      "authoritative_snapshot": "CONFIRMATION_RETRIEVAL",
+      "confirmation_usage_sha256": "7b73859145d310d63108c9cf5a107ecfc5397f65dee4c563443f832bce6a7941",
+      "creation_usage_sha256": "0904cde9d9a875f3ece3fd52d6d563171f954799ae4ed859e0d74b34e5642f5b",
+      "scientific_validity_dependency": false,
+      "snapshots_differ": true
+    },
+    "identity": {
+      "created_at": 1784821045.0,
+      "model": "gpt-5.6-luna",
+      "object_type": "response",
+      "output_items": [
+        [
+          "reasoning",
+          "rs_0ed773cdedd64d1c006a6235362d308198b417e3fc0cfe2340"
+        ],
+        [
+          "message",
+          "msg_0ed773cdedd64d1c006a62353aaa9c8198aed6c2743491de40"
+        ]
+      ],
+      "response_id": "resp_0ed773cdedd64d1c006a623535ae5481989f3b87cdbe9461a8",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "provider_creation_calls": 1,
+    "provider_input_sha256": "6d4691ee52b6e83f2099a7ede63a8d6a8bfe27324e3f582357edeae761b4ae30",
+    "provider_retries": 0,
+    "provider_schema_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+    "retrieval_envelope_sha256": "5e5f9f9185d6ee441ecb0792264b0f27a7ec93bc310656d60579eabe3160dfab",
+    "schema_version": "artana.provider_receipt_boundary.foreground_telemetry.v3",
+    "scientific_payload_sha256": "7564d523e35d22997ab9fe5425c82aa074d9611d4af2eab586adbf6c1f7d4040",
+    "status": "VERIFIED_LIVE",
+    "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+    "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+    "usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.009339,
+      "input_tokens": 2871,
+      "latency_seconds": 9.01119670800108,
+      "output_tokens": 1078,
+      "reasoning_tokens": 516,
+      "total_tokens": 3949
+    }
+  },
+  "requested_and_observed_budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.009339,
+    "observed_latency_seconds": 9.01119670800108,
+    "observed_output_tokens": 1078,
+    "observed_total_tokens": 3949,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "response_id": "resp_0ed773cdedd64d1c006a623535ae5481989f3b87cdbe9461a8",
+  "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+  "stage": "GENERALIZATION_V11_EXPOSED_RUN2:generalization-comparison-canary",
+  "typed_output": {
+    "case_id": "generalization-comparison-canary",
+    "completeness": "COMPLETE",
+    "inventory": [
+      {
+        "event_id": "e1",
+        "event_type": "COMPARISON",
+        "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+        "explanation": "This comparison states that the focal patient group had a greater number of comorbidities than the comparator group.",
+        "trigger_text": "had more comorbidities than"
+      }
+    ],
+    "links": [
+      {
+        "arguments": [
+          {
+            "explanation": "The patients with RA are the focal population.",
+            "role": "POPULATION",
+            "target_id": "p1",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "The patients without RA are the comparison group.",
+            "role": "COMPARATOR",
+            "target_id": "p3",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "Comorbidities are the outcome being compared.",
+            "role": "OUTCOME",
+            "target_id": "p2",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "e1"
+      }
+    ],
+    "participants": [
+      {
+        "entity_type": "POPULATION",
+        "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+        "exact_text": "Patients with RA",
+        "explanation": "Focal population in the comorbidity comparison.",
+        "participant_id": "p1"
+      },
+      {
+        "entity_type": "OUTCOME",
+        "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+        "exact_text": "comorbidities",
+        "explanation": "The health attribute being compared between the two patient groups.",
+        "participant_id": "p2"
+      },
+      {
+        "entity_type": "POPULATION",
+        "exact_evidence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+        "exact_text": "patients without RA",
+        "explanation": "Comparator population for the focal patients with RA.",
+        "participant_id": "p3"
+      }
+    ],
+    "root_event_id": "e1",
+    "semantic_axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "GREATER",
+        "direction": "INCREASED",
+        "event_id": "e1",
+        "evidence_items": [
+          "Patients with RA were more likely to be female and had more comorbidities than patients without RA."
+        ],
+        "explanation": "The source explicitly reports more comorbidities in patients with RA than in patients without RA, without providing a statistical observation or explicitly characterizing significance.",
+        "polarity": "AFFIRMED",
+        "statistical_observations": [
+          {
+            "exact_text": null,
+            "observation_type": "NONE"
+          }
+        ],
+        "uncertainty": "ASSERTED"
+      }
+    ],
+    "structure_explanation": "The highlighted atomic finding is represented as one comparison event linking the focal population, comparator population, and compared outcome."
+  }
+}
