@@ -40,6 +40,9 @@ from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.
     QualificationPaths,
     V11Run2Paths,
 )
+from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.preflight import (
+    verify as verify_run2,
+)
 from scripts.validation.public_gold.staged_event.generalization.repair_v11_run2.prior_qualification import (
     verify_prior_qualification,
     verify_prior_qualifications,
@@ -144,6 +147,28 @@ def test_invalid_qualification_v1_is_sealed_and_globally_accounted() -> None:
     assert first == addendum
     assert second["failure_stage"] == "RECEIPT_ENVELOPE"
     assert _object(second["usage"])["cost_usd"] == pytest.approx(0.0016385)
+
+
+def test_run2_preregistration_freezes_science_and_all_qualification_spend() -> None:
+    preregistration = verify_run2()
+    science = _object(preregistration["frozen_scientific_contract"])
+    transport = _object(preregistration["qualified_transport"])
+    budget = _object(preregistration["operational_budget"])
+
+    assert preregistration["scientific_version"] == "V11_UNCHANGED"
+    assert tuple(cast("list[str]", science["case_order"])) == CASE_ORDER
+    assert science["prompt_sha256"] == (
+        "5a91a17b28730067ed15ecaab6f26a276d4fd1dfc439856817168674296fa87a"
+    )
+    assert science["grader_relaxed"] is False
+    assert transport["kind"] == "DIRECT_OPENAI_FOREGROUND_RESPONSES"
+    assert transport["background"] is False
+    assert transport["provider_retries"] == 0
+    assert transport["application_max_output_tokens"] is None
+    assert transport["application_max_total_tokens"] is None
+    assert budget["qualification_provider_calls"] == 3
+    assert budget["qualification_cost_usd"] == pytest.approx(0.006699)
+    assert budget["token_latency_and_cost_are_record_only"] is True
 
 
 def test_large_scientific_usage_is_admitted_before_global_budget_stop(

@@ -1,0 +1,140 @@
+{
+  "output_sha256": "ca8fcd1767356cd4c7762729fdecfe98ac8b4d3c141c345208f7602d1f2651c1",
+  "provider_input_sha256": "932858926c74af15aaee09c2a70c44e0df6a02e89f727015f0e4034c6d879a9a",
+  "receipt": {
+    "budgets": {
+      "cost": "RECORD_ONLY",
+      "latency": "RECORD_ONLY",
+      "observed_cost_usd": 0.0019745,
+      "observed_latency_seconds": 4.934230082988506,
+      "observed_output_tokens": 306,
+      "observed_total_tokens": 1664,
+      "output_tokens": "RECORD_ONLY",
+      "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+      "requested_max_cost_usd": null,
+      "requested_max_latency_seconds": null,
+      "requested_max_output_tokens": null,
+      "requested_max_total_tokens": null,
+      "total_tokens": "RECORD_ONLY"
+    },
+    "confirmation_retrieval_requests": 1,
+    "creation_envelope_sha256": "26a22517dda5f0088775dac59f6bc654a627f70b54326557f1a110e4ad816aa5",
+    "differences": [
+      {
+        "allowlisted": true,
+        "creation_sha256": "e6e37c2935be9f5c0cbd1cdd6e6ab1257705d2d358d1fd809d66a6843969ec06",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[0].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "foreground_request_timeout_seconds": 600.0,
+    "foreground_usage_policy": {
+      "authoritative_snapshot": "CONFIRMATION_RETRIEVAL",
+      "confirmation_usage_sha256": "01e85ddaef779f301738297f4d5e25027cead81d227a8c62b69ce76778df8c40",
+      "creation_usage_sha256": "01e85ddaef779f301738297f4d5e25027cead81d227a8c62b69ce76778df8c40",
+      "scientific_validity_dependency": false,
+      "snapshots_differ": false
+    },
+    "identity": {
+      "created_at": 1784820913.0,
+      "model": "gpt-5.6-luna",
+      "object_type": "response",
+      "output_items": [
+        [
+          "reasoning",
+          "rs_0588dbac4d79197d006a6234b27be08198a026cdbc16a0acb9"
+        ],
+        [
+          "message",
+          "msg_0588dbac4d79197d006a6234b3a0d481989b1032ce4a3eb2e1"
+        ]
+      ],
+      "response_id": "resp_0588dbac4d79197d006a6234b1bc9c819882d562288b58b6ed",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "model_generation_calls": 1,
+    "provider_creation_calls": 1,
+    "provider_input_sha256": "932858926c74af15aaee09c2a70c44e0df6a02e89f727015f0e4034c6d879a9a",
+    "provider_retries": 0,
+    "provider_schema_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+    "retrieval_envelope_sha256": "636e4bdb8c3cf6b21dcbce0cbd88b40633e02d062891a5647df5fa08e4cd42a0",
+    "schema_version": "artana.provider_receipt_boundary.foreground_telemetry.v3",
+    "scientific_payload_sha256": "ca8fcd1767356cd4c7762729fdecfe98ac8b4d3c141c345208f7602d1f2651c1",
+    "status": "VERIFIED_LIVE",
+    "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+    "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+    "usage": {
+      "cached_input_tokens": 1355,
+      "cost_usd": 0.0019745,
+      "input_tokens": 1358,
+      "latency_seconds": 4.934230082988506,
+      "output_tokens": 306,
+      "reasoning_tokens": 103,
+      "total_tokens": 1664
+    }
+  },
+  "requested_and_observed_budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.0019745,
+    "observed_latency_seconds": 4.934230082988506,
+    "observed_output_tokens": 306,
+    "observed_total_tokens": 1664,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "response_id": "resp_0588dbac4d79197d006a6234b1bc9c819882d562288b58b6ed",
+  "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+  "stage": "TRANSPORT_QUALIFICATION:staged-generalization-v11-foreground-qualification-v3",
+  "typed_output": {
+    "case_id": "transport-qualification",
+    "completeness": "COMPLETE",
+    "inventory": [
+      {
+        "event_id": "e1",
+        "event_type": "OBSERVATION",
+        "exact_evidence": "Transport qualification sentence.",
+        "explanation": "The sentence reports a transport qualification observation.",
+        "trigger_text": "qualification"
+      }
+    ],
+    "links": [
+      {
+        "arguments": [],
+        "event_id": "e1"
+      }
+    ],
+    "participants": [],
+    "root_event_id": "e1",
+    "semantic_axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "OBSERVED",
+        "event_id": "e1",
+        "evidence_items": [
+          "Transport qualification sentence."
+        ],
+        "explanation": "The observation is directly asserted without a comparison or statistical result.",
+        "polarity": "AFFIRMED",
+        "statistical_observations": [
+          {
+            "exact_text": null,
+            "observation_type": "NONE"
+          }
+        ],
+        "uncertainty": "ASSERTED"
+      }
+    ],
+    "structure_explanation": "The graph contains the single requested observation and no participants."
+  }
+}

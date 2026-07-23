@@ -1,0 +1,34 @@
+{
+  "application_max_output_tokens": null,
+  "application_max_total_tokens": null,
+  "confirmation_retrieval_requests": 1,
+  "decision": "FOREGROUND_TRANSPORT_QUALIFIED",
+  "duplicate_creation_calls": 0,
+  "experiment_id": "staged-generalization-v11-foreground-qualification-v3",
+  "foreground_usage_policy": {
+    "authoritative_snapshot": "CONFIRMATION_RETRIEVAL",
+    "confirmation_usage_sha256": "01e85ddaef779f301738297f4d5e25027cead81d227a8c62b69ce76778df8c40",
+    "creation_usage_sha256": "01e85ddaef779f301738297f4d5e25027cead81d227a8c62b69ce76778df8c40",
+    "scientific_validity_dependency": false,
+    "snapshots_differ": false
+  },
+  "graph_writes": 0,
+  "input_item_retrieval_requests": 1,
+  "model": "gpt-5.6-luna",
+  "provider_creation_calls": 1,
+  "provider_retries": 0,
+  "reasoning_effort": "high",
+  "response_id": "resp_0588dbac4d79197d006a6234b1bc9c819882d562288b58b6ed",
+  "schema_version": "artana.staged_generalization.v11_foreground_qualification_result.v3",
+  "scientific_credit": false,
+  "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+  "usage": {
+    "cached_input_tokens": 1355,
+    "cost_usd": 0.0019745,
+    "input_tokens": 1358,
+    "latency_seconds": 4.934230082988506,
+    "output_tokens": 306,
+    "reasoning_tokens": 103,
+    "total_tokens": 1664
+  }
+}

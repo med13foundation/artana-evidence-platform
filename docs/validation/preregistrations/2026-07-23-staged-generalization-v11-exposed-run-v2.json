@@ -1,0 +1,258 @@
+{
+  "acceptance": {
+    "all_cases_scientific_grader_pass": true,
+    "all_receipts_valid": true,
+    "all_semantic_evidence_items_complete_exact_and_unique": true,
+    "duplicate_creation_calls": 0,
+    "forbidden_target_suffix_expansion": "SLC12A3 gene",
+    "fresh_cases_consumed": 0,
+    "graph_writes": 0,
+    "negated_grounding_case_id": "generalization-negated-association",
+    "negated_semantic_evidence_is_complete_event_sentence": true,
+    "no_v10_boolean_or_count_regression": true,
+    "no_v9_boolean_or_count_regression": true,
+    "provider_retries": 0,
+    "required_target_occurrence": "SLC12A3",
+    "target_case_id": "generalization-uncertainty",
+    "trusted_promotion": false
+  },
+  "authorization": "PREREGISTERED_V11_OPERATIONAL_CONTINUATION_EXPOSED_CASES_ONLY",
+  "execution_implementation_sha256": {
+    "scripts/run_staged_generalization_v11_exposed_run2.py": "33b3261896a2ef62d4300b1abe8ac60b54675c65c379549eb808b9ddb7e4cc53",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/__init__.py": "47ff11f9b2eb905fb51f0f221d970de34a5e3daaf151cd68583c65e97c439180",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/accounting.py": "23ad29c9f6aff6ea4c25b45f3f30abef5a9a12afc173aef1dcb0d26ebfc88081",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/artifacts.py": "ba44ccd79d0d1329853ce5789cf9d2dd72d55c23afbb7e412cfa17f3a6bb3f08",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/config.py": "5291bc28f0a421f81c90aeaa7d58729dace4e92edb6c6a33bd5b1c3af3589c8f",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/fresh_preregistration.py": "5d111e5e524e943f2d4021d3a1689d266ed90633ae532c5f6b7e7366e6117dff",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/preflight.py": "d722139efcb6e47f68221cbcaed95d8f4b0a469ee07ec9edb66998a958f96690",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/prior_qualification.py": "4871ec0ffa8b8f483c1c83171baf4c044a618a79e5d31c2f73140a0e9b81f285",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/provider.py": "959b0bf6d5edbbe2721b977603266ebc767b14e0e37c107dd4ca16852090144f",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/qualification.py": "440d487afab44dfa49da91db998ea41cfe52995a27d2146acb2960484b655dca",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/reporting.py": "c173507f59e3f643850205d411cfc5c66489e01545b739296d61c48d6cb545c7",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/runner.py": "1f5585aacd07893329b763d0d36e40152f366b27efcf3a02206fdf89060f93cf",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/terminal.py": "40b730cab89ae72d0a7d15140461b6507a432e0ddeedee218dfb63ab62f55976"
+  },
+  "experiment_id": "staged-generalization-v11-exposed-run-v2",
+  "frozen_scientific_contract": {
+    "acceptance_changed": false,
+    "authoritative_references": {
+      "embedded_panel_reference_sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+      "grading_artifact_sha256": {
+        "evidence": "fa80d7d5158bc51b5feb9939e6f2dd18701ada66a55f89412a96b462b9f50e8f",
+        "first_review": "02b4710a8d738856cba268018e9dbd958690f27e111ecc3787a33259483a6081",
+        "packet": "d106c2be359243b455ba45ebef0a89cf50b8f6dc7308219e0f0ae772bc571a7d",
+        "policy": "7d045ccca6398ca10d3dfc3b8136fa871c9b118bfc05ed19d43daa905e518649",
+        "schema": "7ce70832da6edb9944ac08921d42127e9cf81f940d34550f9eefb5f853d630b3",
+        "second_review": "4e09a2c1faa6ba367240ce1d372994ac61c17bb0d5f77f70073044710bde0600",
+        "tiebreaker_review": "a8b298b60b5c55c398f0bb7d7a5d452e18a01148311d53b1cce3baa56c5909e5"
+      },
+      "grading_policy_sha256": "da315ef20300e669fbbfb2565f26faad7ba2ba1336de5d7939a7b22b34a2420c",
+      "review_artifact_sha256": {
+        "v5-internet-grader-a": "e49307a293e3cfa8f93cfb75ec6473e422f1d5dce8fa51331a53831ff6da764d",
+        "v5-internet-grader-b": "41f21ea0f50f941fc886dea3f772220580e29b2eba0b8fed221ac6db8cf30b45",
+        "v5-internet-grader-c": "388002786417b626fb21f77481e1d2b3b7526eaa7d8fe644b018a2e22bf11f5b"
+      }
+    },
+    "case_order": [
+      "generalization-comparison-canary",
+      "generalization-uncertainty",
+      "generalization-negated-association",
+      "generalization-null-statistics",
+      "generalization-drug-sensitivity",
+      "generalization-explicit-nested-cause"
+    ],
+    "evaluator": {
+      "changed": false,
+      "implementation_sha256": {
+        "scripts/validation/public_gold/staged_event/generalization/anchors.py": "abecbd8b816e0e927d0ce490a54066e42adff42666810294babf6d1adbd76ab6",
+        "scripts/validation/public_gold/staged_event/generalization/evaluation.py": "a8d33dd3a220879e804c4e4b5084d1c1ee27dfc4ee9c6e1089305665848a52ef",
+        "scripts/validation/public_gold/staged_event/generalization/grading/artifacts.py": "4bbd831cae66dafac9f0be32693edd393de76cefb72b487cd3b4ef6542240759",
+        "scripts/validation/public_gold/staged_event/generalization/grading/evaluation.py": "6dc6186cb262d3494e3decc8143790bcbb1132ad62173b807155c5eb905dc1e9",
+        "scripts/validation/public_gold/staged_event/generalization/grading/policy.py": "cd630f3c4dc8a7725a53ab0fec063413ec932fc39b4cc3dccf279a53da795e4b",
+        "scripts/validation/public_gold/staged_event/generalization/span_identity.py": "b9d21433557c763e8f905827e31f450e1141677d827384b532bd9b49940e541e"
+      },
+      "kind": "FROZEN_V9_EXACT_OCCURRENCE_AND_DUAL_LANE_GRADER"
+    },
+    "grader_relaxed": false,
+    "panel_sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+    "prompt_sha256": "5a91a17b28730067ed15ecaab6f26a276d4fd1dfc439856817168674296fa87a",
+    "provider_format_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+    "provider_input_sha256_by_case": {
+      "generalization-comparison-canary": "6d4691ee52b6e83f2099a7ede63a8d6a8bfe27324e3f582357edeae761b4ae30",
+      "generalization-drug-sensitivity": "3516049df131f1a8d92c344dc98820319e89913e61c067ec23f2a1f6488499de",
+      "generalization-explicit-nested-cause": "99613fa830d944d719c63ec0ff22ccdede74de7b18239e046efbf458004fa163",
+      "generalization-negated-association": "fd410fdfe6a92dd618acf67b33d66720e640e32511698591a6ba22f1414019e0",
+      "generalization-null-statistics": "843ab1781d39ccbc71441728edda93299fda1dce491883fc649f256a7bd5f7b0",
+      "generalization-uncertainty": "527baa5997ad3e3ff4c01e7e3238d32dac97087899dd9f74a47e0b4192c4bae9"
+    },
+    "references_changed": false,
+    "run1_preregistration_sha256": "1beb0e30c5fa26c429259bcf7d72c8629b534488200b14808a34cc93df28bf5b",
+    "run1_scientific_contract_recomputed": true,
+    "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+    "source_sha256_by_case": {
+      "generalization-comparison-canary": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-drug-sensitivity": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880",
+      "generalization-explicit-nested-cause": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+      "generalization-negated-association": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-null-statistics": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "generalization-uncertainty": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b"
+    },
+    "v10_baseline": {
+      "called_case_ids": [
+        "generalization-comparison-canary",
+        "generalization-null-statistics",
+        "generalization-negated-association"
+      ],
+      "historical_result_immutable": true,
+      "historical_result_rescored": false,
+      "metrics_sha256_by_case": {
+        "generalization-comparison-canary": "6a48d9fc235fbbd2cb9855049255dd6a1fc649be5a6a437931efa68ced873625",
+        "generalization-negated-association": "606c5a1e82c7f1af0c1268a788ea9f5c48d3f5ad128001ce4f8c689d5ee3ad38",
+        "generalization-null-statistics": "d351ee8ff7e6693dc775a80fc4fec49a9772390847b695aa883966c81e1520c6"
+      },
+      "preregistration_sha256": "bdcb5127609c2f2c491e0cae2089e1bae593ee85ab86c4fb03ca8ba04142a18a",
+      "raw_output_sha256_by_case": {
+        "generalization-comparison-canary": "8e78aeb3ce80d1eda61ad066b86f88b93a0d35fec85c2714b582417110b6cf28",
+        "generalization-negated-association": "4dac9de1f37e578eeca8171ebf3050e97c5495aa24a3bf35c027348a09fb4126",
+        "generalization-null-statistics": "16fe23d58b2e32b20e6eb69c5ff6a8048d71f0e33c0d8478a4db35cfd417959a"
+      },
+      "report_sha256": "e59f6a41d37b19d4052d39da3233600cb949b9ce8fcceba2c82e10910ceaf3d3",
+      "result_sha256": "afeca31c8d15ce40c7c8cd75750d210353e807c55d121fec65b49b347bce4bb9",
+      "terminal": "V10_EXPOSED_GATE_FAIL_MODEL_CORRECTION_REQUIRED"
+    },
+    "v9_baseline": {
+      "called_case_ids": [
+        "generalization-comparison-canary",
+        "generalization-null-statistics",
+        "generalization-negated-association",
+        "generalization-uncertainty",
+        "generalization-drug-sensitivity"
+      ],
+      "metrics_sha256_by_case": {
+        "generalization-comparison-canary": "6a48d9fc235fbbd2cb9855049255dd6a1fc649be5a6a437931efa68ced873625",
+        "generalization-drug-sensitivity": "6b6a7d70ab46f56de63351ad03cd6ca6ea6686ff2387c861b7eed582915a2548",
+        "generalization-negated-association": "fb097eda0a83fac7f0030663f681e2776ee2bb1cc98ccab8785bcacdfcea9ff1",
+        "generalization-null-statistics": "d351ee8ff7e6693dc775a80fc4fec49a9772390847b695aa883966c81e1520c6",
+        "generalization-uncertainty": "ed5a738068425007286b01f29ff10f0a6e3e072ddf5d6d3b29ecd8b76c8bbb44"
+      },
+      "preregistration_sha256": "7a170db78370571f986208530547c5ee4ec85a148634002f87a18dcc486e85b9",
+      "raw_output_sha256_by_case": {
+        "generalization-comparison-canary": "056d67d5fb2eaafc79945ec3a08458243f788aa836586d256de601ed0c043048",
+        "generalization-drug-sensitivity": "d7e5bc210089326092d823ab1262af4cfb1bd50f7ec36231fbbc5997963394f2",
+        "generalization-negated-association": "e67a910a3ad353f4e69e1a14b6d479941a1dc4ee9d84f7ce2d60f8a704da948e",
+        "generalization-null-statistics": "225d7c6fb29e039924cc0501abe5dc00cd3e4b5b0dfbf9d080a3be2a5597d994",
+        "generalization-uncertainty": "87f0397d6a1a2155426cb6fb426bae4550b57ff7318c6e653bcec33011ae8a73"
+      },
+      "result_sha256": "034cc3f9265a514851dfc5fd39ac3aae81c154a071ed92bf95ed7e175494e399"
+    }
+  },
+  "operational_budget": {
+    "check_before_each_creation": true,
+    "cumulative_max_cost_usd": 5.0,
+    "includes_transport_qualification": true,
+    "maximum_scientific_creation_calls": 6,
+    "qualification_cost_usd": 0.006699,
+    "qualification_provider_calls": 3,
+    "record_actual_spend_after_each_call": true,
+    "remaining_before_scientific_calls_usd": 4.993301,
+    "scientific_results_are_not_retroactively_erased": true,
+    "stop_before_next_call_when_exhausted": true,
+    "token_latency_and_cost_are_record_only": true
+  },
+  "operational_change": "BACKGROUND_TO_QUALIFIED_DIRECT_FOREGROUND_RESPONSES",
+  "preregistered_root_cause_classification": "SEMANTIC_EVIDENCE_PROMPT_CONTRACT_GAP",
+  "qualified_transport": {
+    "application_max_output_tokens": null,
+    "application_max_total_tokens": null,
+    "background": false,
+    "fallback": false,
+    "implementation_sha256": {
+      "scripts/validation/provider_receipt_boundary/__init__.py": "8291018b46a4db88ac589a730f4dc247c2aeb7ede6d01f3aeca41f0c47668510",
+      "scripts/validation/provider_receipt_boundary/background/contracts.py": "c2e48f3e77518f19b8c9e2c105b29e0fa98e0fda668228d460eb3452fa538d41",
+      "scripts/validation/provider_receipt_boundary/canonical_payload.py": "61294b3278b3d7bb6c8ba9127404658ca4c24fe30234e46a989931206f50f908",
+      "scripts/validation/provider_receipt_boundary/contracts.py": "c3cb084c50d2faa654b0f37208786ae33d895fee2b74ef4c117c38e691f25087",
+      "scripts/validation/provider_receipt_boundary/foreground/__init__.py": "8a249844458010d9e7bafd76e8c6ab6b43840235db418986d7b733ce64eb58df",
+      "scripts/validation/provider_receipt_boundary/foreground/contracts.py": "990e6d8df267ae997344061e3e6fcccb0afc8ecb7edb19d668825b70eca86bc6",
+      "scripts/validation/provider_receipt_boundary/foreground/execution.py": "c02b775763baf65ecec3c154b077600aa98f8be190aa1a439f465346a84093b3",
+      "scripts/validation/provider_receipt_boundary/foreground/validation.py": "7311df1ed5e64693982ff875cb73d21412b37d5670fc114d5e68ea3edb6f0bdc",
+      "scripts/validation/provider_receipt_boundary/identity.py": "a07f468ae572ab07ef4b70e7661dcdb416860a71fc1be1b509518aeda1ad8d30",
+      "scripts/validation/provider_receipt_boundary/operational_accounting_v2.py": "83105757297d4797435b0f075287979caeba9458220c0079526c657133b0bfc7",
+      "scripts/validation/provider_receipt_boundary/structural_diff.py": "46e778decc1d15172cfaaa898ae53f693846b779bc9cf84a0ed2415cd2da2e55",
+      "scripts/validation/provider_receipt_boundary/validation.py": "a4dfda3dbabb0383ef6087221f56cb9cc1ba547e876e5134e1099f6e4a3c5500"
+    },
+    "kind": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+    "model": "openai:gpt-5.6-luna",
+    "one_confirmation_retrieval_per_scientific_case": true,
+    "one_creation_call_per_scientific_case": true,
+    "one_input_item_retrieval_per_scientific_case": true,
+    "one_response_id_per_scientific_case": true,
+    "prior_invalid_qualifications": [
+      {
+        "cost_usd": 0.003086,
+        "response_id": "resp_04e41854e026a9cb006a62315dcc7481999537dce276482960",
+        "scientific_credit": false,
+        "usage_addendum_sha256": "758348384e888ed5925390b742c7330327f4707feac53d25427e0924be46d65e"
+      },
+      {
+        "cost_usd": 0.0016385,
+        "response_id": "resp_066d3cf239bde6c7006a6233276d84819b96e7d31389334b8d",
+        "scientific_credit": false,
+        "usage_addendum_sha256": "e965b4f0bef0d23646a9e08e89b6b805ce0530a50f9b8d787caf5ba169e4d56a"
+      }
+    ],
+    "provider_retries": 0,
+    "qualification_artifact_sha256": {
+      "attempt": "f0653ec8b4011b9920cf079f5f392cfa88735b5a221e34849ee6c01f1dacd7e6",
+      "bundle": "825ad66461cd76c454028bc3bec245363b4abcecc409dc295550aff260115085",
+      "preregistration": "81368fbb521f882296535b5b0609b28bc0a9b959cff1a8c73fc035ffa56a7f13",
+      "raw_output": "b6dfa0dafd0f8f189e0fadbedc7c5ab54a92009f14e8281bc7cd1245b6e7b28b",
+      "receipt": "306828755a864d7939447a0dc7ecd7ac95c1e0a04610dc48385d0f2b3d05410f",
+      "result": "241eb7db30148ccdb48640da356ad2abcd82159363594b00c01d2b3a410353fb"
+    },
+    "qualification_credit": false,
+    "qualification_response_id": "resp_0588dbac4d79197d006a6234b1bc9c819882d562288b58b6ed",
+    "reasoning_effort": "high",
+    "request_timeout_seconds": 1800.0,
+    "store": true
+  },
+  "rules": {
+    "fresh_case_calls_allowed": false,
+    "graph_writes": false,
+    "prepare_next_fresh_preregistration_only_on_pass": true,
+    "run1_case_reused": false,
+    "trusted_graph_promotion": false
+  },
+  "schema_version": "artana.staged_generalization.v11_exposed_run2.v1",
+  "scientific_version": "V11_UNCHANGED",
+  "sealed_run1": {
+    "disposition": "INVALID_UNSCORED_DIAGNOSTIC_ONLY",
+    "late_output_admissible": false,
+    "late_output_rescore_authorized": false,
+    "operational_diagnosis_sha256": "e81ce5b234523c38f1304a234789b56dab36967bf33138d74e041bb75d12080a",
+    "report_correction_sha256": "70441b474ffbcd96a7d48c0862a835ea4445bb82d2b73dc26e12efd2b51154da",
+    "sha256_by_role": {
+      "attempt": "f2cc4adc252a0e0d25e3e6690cd760f955a70487758bad8bb6283cd1d4ec78f4",
+      "late_status": "4b762538ce06ef7250c271055cd5b1dc6da4c723459dda3e575c1ad07da13fd1",
+      "preregistration": "1beb0e30c5fa26c429259bcf7d72c8629b534488200b14808a34cc93df28bf5b",
+      "report": "48036e762a548840746a3c788404ecf0115e9d3f2e445f4a7c3b63fa4766b655",
+      "result": "07dafb681ec7fd597f01a619eddfb12e27aadc959136cdecf83db1632f7b8e3d",
+      "seal": "e7063b1e4eb0a88ebc4c618f227358ac1c7ab60757dd06e6269a492bcd9184c4"
+    }
+  },
+  "single_scientific_change": "UNIQUE_COMPLETE_SEMANTIC_EVIDENCE_GROUNDING",
+  "stopping_rules": {
+    "first_scientific_failure": true,
+    "invalid_schema_custody_or_exactly_once": true,
+    "no_prompt_patch_v12_or_third_execution_after_failure": true,
+    "operational_budget_exhaustion": true,
+    "provider_outage_or_missing_secret": true,
+    "sequential_fail_fast": true
+  },
+  "terminal_decisions": [
+    "V11_EXPOSED_RUN_V2_PASS_READY_FOR_FRESH_PREREGISTRATION",
+    "V11_EXPOSED_RUN_V2_FAIL_BOUNDARY",
+    "V11_EXPOSED_RUN_V2_FAIL_GROUNDING",
+    "V11_EXPOSED_RUN_V2_FAIL_UNRELATED_REGRESSION",
+    "INVALID_V11_RUN_V2_EXECUTION"
+  ]
+}

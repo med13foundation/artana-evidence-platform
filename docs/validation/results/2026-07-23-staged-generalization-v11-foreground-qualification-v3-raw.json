@@ -1,0 +1,42 @@
+{
+  "case_id": "transport-qualification",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "e1",
+      "event_type": "OBSERVATION",
+      "exact_evidence": "Transport qualification sentence.",
+      "explanation": "The sentence reports a transport qualification observation.",
+      "trigger_text": "qualification"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [],
+      "event_id": "e1"
+    }
+  ],
+  "participants": [],
+  "root_event_id": "e1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "OBSERVED",
+      "event_id": "e1",
+      "evidence_items": [
+        "Transport qualification sentence."
+      ],
+      "explanation": "The observation is directly asserted without a comparison or statistical result.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    }
+  ],
+  "structure_explanation": "The graph contains the single requested observation and no participants."
+}
