@@ -1,0 +1,1554 @@
+{
+  "cases": [
+    {
+      "a1_sha256": "26cfc5669dcb21dc1782c95067937dfee876effc540d91ef2f443167387c8f44",
+      "a2_sha256": "b81420afcb5dc91af8eb707e355fdd78ac286f56d9b28634f6c3e45844fc9d53",
+      "annotation_source_sha256": "c5fb18dbf9d28bd21b05d0ceb0086dd7aad6db6319583e8d14139db3a39c7142",
+      "case_id": "fresh-cg-pmid-2681013-e5",
+      "case_order": 1,
+      "considered_events": [
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E1",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT"
+          ],
+          "trigger_start": 27
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E2",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 59
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E3",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 59
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E4",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE",
+            "OCCURRENCE_V2_ARGUMENT_NOT_TOKEN_BOUNDED"
+          ],
+          "trigger_start": 279
+        },
+        {
+          "disposition": "SELECTED",
+          "event_id": "E5",
+          "reasons": [
+            "FIRST_ELIGIBLE"
+          ],
+          "trigger_start": 341
+        }
+      ],
+      "direct_cg_reference_sha256": "155a5a27ab3af0d13e46baa26b9efb78d59b86cd50a2b413c19a0499097e876c",
+      "document_id": "PMID-2681013",
+      "event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T9"
+          }
+        ],
+        "artana_event_type": "GENE_EXPRESSION",
+        "event_id": "E5",
+        "source_event_type": "Gene_expression",
+        "trigger": {
+          "end": 351,
+          "start": 341,
+          "text": "expression"
+        },
+        "trigger_annotation_id": "T30"
+      },
+      "participants": [
+        {
+          "annotation_id": "T9",
+          "artana_entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 366,
+            "start": 355,
+            "text": "osteonectin"
+          },
+          "source_entity_type": "Gene_or_gene_product"
+        }
+      ],
+      "permitted_context": {
+        "end": 424,
+        "start": 316,
+        "text": "We have investigated the expression of osteonectin gene in fresh BALB/c fibroblasts transformed by v-Ki-ras."
+      },
+      "selection_reason": "FIRST_OFFSET_ORDER_EVENT_MEETING_ALL_FROZEN_ELIGIBILITY_RULES",
+      "source_bytes_base64": "T3N0ZW9uZWN0aW4gdHJhbnNjcmlwdCBhbmQgbWV0YXN0YXRpYyBiZWhhdmlvciBpbiB2LUtpLXJhcyB0cmFuc2Zvcm1lZCBmaWJyb2JsYXN0cy4gCk9zdGVvbmVjdGluIGlzIG9uZSBvZiB0aGUgbWFqb3Igbm9uLWNvbGxhZ2Vub3VzIHByb3RlaW5zIG9mIGJvbmUuIEhvd2V2ZXIsIGl0cyB0cmFuc2NyaXB0IGhhcyBiZWVuIGZvdW5kIGluIG1hbnkgc29mdCwgZXh0cmFjZWxsdWxhciBtYXRyaXgtcHJvZHVjaW5nIHRpc3N1ZXM7IGFuIG9zdGVvbmVjdGluLXJlbGF0ZWQgcHJvdGVpbiB3YXMgZGV0ZWN0ZWQgaW4gdHVtb3IgYmFzZW1lbnQgbWVtYnJhbmUuIFdlIGhhdmUgaW52ZXN0aWdhdGVkIHRoZSBleHByZXNzaW9uIG9mIG9zdGVvbmVjdGluIGdlbmUgaW4gZnJlc2ggQkFMQi9jIGZpYnJvYmxhc3RzIHRyYW5zZm9ybWVkIGJ5IHYtS2ktcmFzLiBUcmFuc2Zvcm1lZCBjZWxscyBleGhpYml0ZWQgbG93ZXIgbGV2ZWxzIG9mIFJOQSBhcyBjb21wYXJlZCB3aXRoIG5vcm1hbCBmaWJyb2JsYXN0cy4gVGhlIHRyYW5zZm9ybWVkIGNlbGxzIHdlcmUgY2xvbmVkIGFmdGVyIGluIHZpdm8gdHVtb3JpZ2VuaWMgYXNzYXksIGFuZCA0IGNsb25lcyB3ZXJlIGFuYWx5emVkIGZvciBvc3Rlb25lY3RpbiBleHByZXNzaW9uIGJ5IE5vcnRoZXJuIGJsb3RzLiBUd28gb2YgdGhlbSB3ZXJlIHNlbGVjdGVkIGZvciBoaWdoIG9yIGxvdyBvc3Rlb25lY3RpbiBleHByZXNzaW9uIGFuZCB0ZXN0ZWQgaW4gdml2byBpbiBzcG9udGFuZW91cyBhbmQgYXJ0aWZpY2lhbCBtZXRhc3Rhc2lzIGFzc2F5cy4gSGlnaCBvc3Rlb25lY3RpbiBleHByZXNzaW9uIHdhcyBjb3JyZWxhdGVkIHdpdGggaGlnaCBsdW5nIGNvbG9uaXphdGlvbi4gV2hlbiAxMCg1KSBjZWxscyB3ZXJlIGluamVjdGVkIGkudi4sIG1lZGlhbiBjb2xvbnkgdmFsdWUgd2FzIDU1IGFuZCAyMCBpbiBoaWdoZXIgZXhwcmVzc29yIHZzLiBsb3dlciBleHByZXNzb3IgcmVzcGVjdGl2ZWx5IChwIGxlc3MgdGhhbiAwLjAwNSkuIFNwb250YW5lb3VzIG1ldGFzdGFzaXMgaW5kaWNhdGVzIGEgcG9zc2libGUgcmV2ZXJzZSBjb3JyZWxhdGlvbi4gT3VyIGRhdGEgYWxpZ24gb3N0ZW9uZWN0aW4gd2l0aCBvdGhlciBtYXRyaXgtY29tcG9uZW50cyBhbmQgYWRoZXNpb24gbW9sZWN1bGVzIGluIGFmZmVjdGluZyBwb3RlbnRpYWwgbWV0YXN0YXRpYyBzcHJlYWRpbmcgb2YgdHJhbnNmb3JtZWQgY2VsbHMuCg==",
+      "source_encoding": "utf-8",
+      "source_sha256": "ee9a981ca7ceda2f4dfcf320d27f7338fb7f86774833c0b4ce63cd75532adbe8",
+      "source_text": "Osteonectin transcript and metastatic behavior in v-Ki-ras transformed fibroblasts. \nOsteonectin is one of the major non-collagenous proteins of bone. However, its transcript has been found in many soft, extracellular matrix-producing tissues; an osteonectin-related protein was detected in tumor basement membrane. We have investigated the expression of osteonectin gene in fresh BALB/c fibroblasts transformed by v-Ki-ras. Transformed cells exhibited lower levels of RNA as compared with normal fibroblasts. The transformed cells were cloned after in vivo tumorigenic assay, and 4 clones were analyzed for osteonectin expression by Northern blots. Two of them were selected for high or low osteonectin expression and tested in vivo in spontaneous and artificial metastasis assays. High osteonectin expression was correlated with high lung colonization. When 10(5) cells were injected i.v., median colony value was 55 and 20 in higher expressor vs. lower expressor respectively (p less than 0.005). Spontaneous metastasis indicates a possible reverse correlation. Our data align osteonectin with other matrix-components and adhesion molecules in affecting potential metastatic spreading of transformed cells.\n"
+    },
+    {
+      "a1_sha256": "47f2c3079dd4a24e22087b6a1cd8f91456da73a78d7c077f04652ba1141f181f",
+      "a2_sha256": "3861bc1d00fefa89490f48deac5388ec8b522d7eee3f1a18b4513410376e0bad",
+      "annotation_source_sha256": "e7712213b050860fe52d7157fcc255deed5f3267678e6b847fd3a3bcdff25bc4",
+      "case_id": "fresh-cg-pmid-16098727-e5",
+      "case_order": 2,
+      "considered_events": [
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E1",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE"
+          ],
+          "trigger_start": 74
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E2",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 166
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E3",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 211
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E4",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE"
+          ],
+          "trigger_start": 249
+        },
+        {
+          "disposition": "SELECTED",
+          "event_id": "E5",
+          "reasons": [
+            "FIRST_ELIGIBLE"
+          ],
+          "trigger_start": 381
+        }
+      ],
+      "direct_cg_reference_sha256": "563e0eccdcf022738a359ce6b9143b5648d1e8662de43b0aa93cb874f87f33bd",
+      "document_id": "PMID-16098727",
+      "event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T8"
+          }
+        ],
+        "artana_event_type": "POSITIVE_REGULATION",
+        "event_id": "E5",
+        "source_event_type": "Positive_regulation",
+        "trigger": {
+          "end": 392,
+          "start": 381,
+          "text": "progression"
+        },
+        "trigger_annotation_id": "T27"
+      },
+      "participants": [
+        {
+          "annotation_id": "T8",
+          "artana_entity_type": "CANCER",
+          "mention": {
+            "end": 380,
+            "start": 375,
+            "text": "tumor"
+          },
+          "source_entity_type": "Cancer"
+        }
+      ],
+      "permitted_context": {
+        "end": 393,
+        "start": 261,
+        "text": "Recent advances have fostered a more detailed understanding of molecular mechanisms and networks governing EMT in tumor progression."
+      },
+      "selection_reason": "FIRST_OFFSET_ORDER_EVENT_MEETING_ALL_FROZEN_ELIGIBILITY_RULES",
+      "source_bytes_base64": "TW9sZWN1bGFyIHJlcXVpcmVtZW50cyBmb3IgZXBpdGhlbGlhbC1tZXNlbmNoeW1hbCB0cmFuc2l0aW9uIGR1cmluZyB0dW1vciBwcm9ncmVzc2lvbi4gCkVwaXRoZWxpYWwtbWVzZW5jaHltYWwgdHJhbnNpdGlvbnMgKEVNVHMpIG9jY3VyIGFzIGtleSBzdGVwcyBkdXJpbmcgZW1icnlvbmljIG1vcnBob2dlbmVzaXMsIGFuZCBhcmUgbm93IGltcGxpY2F0ZWQgaW4gdGhlIHByb2dyZXNzaW9uIG9mIHByaW1hcnkgdHVtb3JzIHRvd2FyZHMgbWV0YXN0YXNlcy4gUmVjZW50IGFkdmFuY2VzIGhhdmUgZm9zdGVyZWQgYSBtb3JlIGRldGFpbGVkIHVuZGVyc3RhbmRpbmcgb2YgbW9sZWN1bGFyIG1lY2hhbmlzbXMgYW5kIG5ldHdvcmtzIGdvdmVybmluZyBFTVQgaW4gdHVtb3IgcHJvZ3Jlc3Npb24uIEJlc2lkZXMgVEdGYmV0YSBhbmQgUlRLL1JhcyBzaWduYWxpbmcsIGF1dG9jcmluZSBmYWN0b3JzIGFuZCBXbnQtLCBOb3RjaC0sIEhlZGdlaG9nLSBhbmQgTkYta2FwcGFCLWRlcGVuZGVudCBwYXRod2F5cyB3ZXJlIGZvdW5kIHRvIGNvbnRyaWJ1dGUgdG8gRU1ULiBSZXByZXNzaW9uIG9mIEUtY2FkaGVyaW4gYnkgdHJhbnNjcmlwdGlvbmFsIHJlZ3VsYXRvcnMgc3VjaCBhcyBTbmFpbCBvciBUd2lzdCBlbWVyZ2VzIGFzIG9uZSBjcml0aWNhbCBzdGVwIGRyaXZpbmcgRU1ULCBhbmQgdGhpcyBzdGFnZSBpcyBjdXJyZW50bHkgYmVpbmcgbW9sZWN1bGFybHkgbGlua2VkIHdpdGggbWFueSBvZiB0aGUgbmV3IHBsYXllcnMuIEluY3JlYXNpbmcgZXZpZGVuY2Ugc3VnZ2VzdHMgdGhhdCBFTVQgcGxheXMgYSBzcGVjaWZpYyByb2xlIGluIHRoZSBtaWdyYXRpb24gb2YgY2VsbHMgZnJvbSBhIHByaW1hcnkgdHVtb3IgaW50byB0aGUgY2lyY3VsYXRpb24gYW5kIG1heSBwcm92aWRlIGEgcmF0aW9uYWxlIGZvciBkZXZlbG9waW5nIG1vcmUgZWZmZWN0aXZlIGNhbmNlciB0aGVyYXBpZXMuCg==",
+      "source_encoding": "utf-8",
+      "source_sha256": "84723cbe9cdc8d8449db4361f5aac12fd049020a98050045ade6143f632b2fae",
+      "source_text": "Molecular requirements for epithelial-mesenchymal transition during tumor progression. \nEpithelial-mesenchymal transitions (EMTs) occur as key steps during embryonic morphogenesis, and are now implicated in the progression of primary tumors towards metastases. Recent advances have fostered a more detailed understanding of molecular mechanisms and networks governing EMT in tumor progression. Besides TGFbeta and RTK/Ras signaling, autocrine factors and Wnt-, Notch-, Hedgehog- and NF-kappaB-dependent pathways were found to contribute to EMT. Repression of E-cadherin by transcriptional regulators such as Snail or Twist emerges as one critical step driving EMT, and this stage is currently being molecularly linked with many of the new players. Increasing evidence suggests that EMT plays a specific role in the migration of cells from a primary tumor into the circulation and may provide a rationale for developing more effective cancer therapies.\n"
+    },
+    {
+      "a1_sha256": "5fa05a77c9c8ddaf08d873b39d67984db67e297b6b8e2187de70fb6b1c3befd0",
+      "a2_sha256": "a4ff25d7e396f50a127b65842fe4a6d245d9cf2c8dec4dda9b6b525809401858",
+      "annotation_source_sha256": "77fa03360959a61bdf4432fc9f79a31decb32a7478b20c51c03c6b3233be1562",
+      "case_id": "fresh-cg-pmid-7904970-e11",
+      "case_order": 3,
+      "considered_events": [
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E1",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE"
+          ],
+          "trigger_start": 46
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E2",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT"
+          ],
+          "trigger_start": 130
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E3",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT"
+          ],
+          "trigger_start": 147
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E4",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT"
+          ],
+          "trigger_start": 172
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E5",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT"
+          ],
+          "trigger_start": 283
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E6",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 486
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E7",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 650
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E8",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 657
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E9",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT"
+          ],
+          "trigger_start": 714
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E10",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 859
+        },
+        {
+          "disposition": "SELECTED",
+          "event_id": "E11",
+          "reasons": [
+            "FIRST_ELIGIBLE"
+          ],
+          "trigger_start": 1014
+        }
+      ],
+      "direct_cg_reference_sha256": "cc9a15c570524a6f03e2344470381bdc9bc31825433557f6fb00aa94c255022a",
+      "document_id": "PMID-7904970",
+      "event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T25"
+          }
+        ],
+        "artana_event_type": "POSITIVE_REGULATION",
+        "event_id": "E11",
+        "source_event_type": "Positive_regulation",
+        "trigger": {
+          "end": 1023,
+          "start": 1014,
+          "text": "increased"
+        },
+        "trigger_annotation_id": "T52"
+      },
+      "participants": [
+        {
+          "annotation_id": "T25",
+          "artana_entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 1042,
+            "start": 1037,
+            "text": "EGF-R"
+          },
+          "source_entity_type": "Gene_or_gene_product"
+        }
+      ],
+      "permitted_context": {
+        "end": 1233,
+        "start": 997,
+        "text": "The detection of increased abundance of EGF-R or Her-2/neu proteins in human tumours can provide additional information on the disease-free survival and overall survival for patients with breast, ovarian, endometrial or cervical cancer."
+      },
+      "selection_reason": "FIRST_OFFSET_ORDER_EVENT_MEETING_ALL_FROZEN_ELIGIBILITY_RULES",
+      "source_bytes_base64": "W1RoZSBlcmJCIGdlbmUgZmFtaWx5OiBzaWduaWZpY2FuY2UgZm9yIHR1bW9yIGRldmVsb3BtZW50LCBwcm9nbm9zaXMgYW5kIG5ldyB0aGVyYXBldXRpYyBtb2RhbGl0aWVzXS4gClJOQSBhbmQgRE5BIHZpcnVzZXMgY2FuIGJlIHRyYW5zZm9ybWluZyBhbmQgdHVtb3VyaWdlbmljIGFnZW50cy4gVGhlIHRyYW5zZm9ybWF0aW9uIGlzIGEgY29uc2VxdWVuY2Ugb2YgdGhlIGFiaWxpdHkgb2YgdmlydXNlcyB0byBpbnRlZ3JhdGUgaW50byB0aGUgaG9zdCBjZWxsJ3MgRE5BIGFuZCB0byBwcm9kdWNlIHRyYW5zZm9ybWluZyBwcm90ZWlucy4gVGhlc2UgcHJvdGVpbnMgYXJlIG1haW5seSBwcm9kdWNlZCBieSBzcGVjaWZpYyBpbnRlZ3JhbCBwYXJ0cyBvZiB0aGUgdmlyYWwgZ2Vub21lLCB0aGUgb25jb2dlbmVzLiBDb21wYXJpc29uIGJldHdlZW4gUk5BL0ROQSBzZXF1ZW5jZSBvZiB2aXJhbCBvbmNvZ2VuZXMgYW5kIG5vcm1hbCBodW1hbiBnZW5vbWUgb2Ygbm9uLXRyYW5zZm9ybWVkIGNlbGxzIHJldmVhbGVkIGhpZ2ggc2VxdWVuY2Ugc2ltaWxhcml0aWVzIGluIHNwZWNpZmljIGdlbm9taWMgYXJlYXMsIHdoaWNoIHdlcmUgbmFtZWQgY2VsbHVsYXIgcHJvdG8tb25jb2dlbnMuIFRoZXkgYXJlIGltcG9ydGFudCBjb21wb25lbnRzIG9mIHRoZSBncm93dGggcmVndWxhdG9yeSBwYXRod2F5cyBpbiBub3JtYWwgY2VsbHMuIFRoZSBhY2N1bXVsYXRpb24gb2YgZ2VuZXRpYyBhbHRlcmF0aW9ucyBvZiBzb21lIHByb3RvLW9uY29nZW5zLCBsaWtlIHRoZSBlcmJCLWZhbWlseSwgbWF5IGJlIHBhcnQgb2YgdGhlIG1lY2hhbmlzbSwgYnkgd2hpY2ggbWFsaWduYW50IGNlbGxzIGNhbiBhY3F1aXJlIGEgc2VsZWN0aXZlIGdyb3d0aCBhZHZhbnRhZ2UuIFRoZSBlcGlkZXJtYWwgZ3Jvd3RoIGZhY3RvciByZWNlcHRvciAoRUdGLVIsIGMtZXJiQjEpLCBIZXItMi9uZXUgKGMtZXJiQjIpLCBhbmQgYy1lcmJCMyBhcmUgbWVtYmVycyBvZiB0aGUgZXJiQi1mYW1pbHkuIFRoZSBkZXRlY3Rpb24gb2YgaW5jcmVhc2VkIGFidW5kYW5jZSBvZiBFR0YtUiBvciBIZXItMi9uZXUgcHJvdGVpbnMgaW4gaHVtYW4gdHVtb3VycyBjYW4gcHJvdmlkZSBhZGRpdGlvbmFsIGluZm9ybWF0aW9uIG9uIHRoZSBkaXNlYXNlLWZyZWUgc3Vydml2YWwgYW5kIG92ZXJhbGwgc3Vydml2YWwgZm9yIHBhdGllbnRzIHdpdGggYnJlYXN0LCBvdmFyaWFuLCBlbmRvbWV0cmlhbCBvciBjZXJ2aWNhbCBjYW5jZXIuIE1vbGVjdWxhciBhbmQgY2VsbC1waHlzaW9sb2dpY2FsIGFuYWx5c2VzIGhhdmUgaW1wcm92ZWQgdGhlIHVuZGVyc3RhbmRpbmcgb2YgdHVtb3VyIGJpb2xvZ3kgYW5kIHByb3ZpZGUgdGhlIG9wcG9ydHVuaXR5IGZvciBuZXcgdGhlcmFwZXV0aWMgYXBwcm9hY2hlcy4gTW9ub2Nsb25hbCBhbnRpYm9keSB0YXJnZXRlZCB0aGVyYXB5IGRpcmVjdGVkIGFnYWluc3QgRUdGLVIgb3IgSGVyLTIvbmV1LCB0aGUgdXNlIG9mIGFudGktc2Vuc2Ugb2xpZ29udWNsZW90aWRlcyBhbmQgb2xpZ29kZW94eW51Y2xlb3RpZGVzLCBhbmQgdGhlIGFwcGxpY2F0aW9uIG9mIHR5cm9zaW5lIGtpbmFzZSBhbmQgcHJvdGVpbiBDLWtpbmFzZSBpbmhpYml0b3JzIGFyZSBjdXJyZW50bHkgYmVpbmcgaW52ZXN0aWdhdGVkLgo=",
+      "source_encoding": "utf-8",
+      "source_sha256": "e16dd6c95a9c08d89c5ce4c34b27c263b0fc8ad18436ce60005050ff1c0ee653",
+      "source_text": "[The erbB gene family: significance for tumor development, prognosis and new therapeutic modalities]. \nRNA and DNA viruses can be transforming and tumourigenic agents. The transformation is a consequence of the ability of viruses to integrate into the host cell's DNA and to produce transforming proteins. These proteins are mainly produced by specific integral parts of the viral genome, the oncogenes. Comparison between RNA/DNA sequence of viral oncogenes and normal human genome of non-transformed cells revealed high sequence similarities in specific genomic areas, which were named cellular proto-oncogens. They are important components of the growth regulatory pathways in normal cells. The accumulation of genetic alterations of some proto-oncogens, like the erbB-family, may be part of the mechanism, by which malignant cells can acquire a selective growth advantage. The epidermal growth factor receptor (EGF-R, c-erbB1), Her-2/neu (c-erbB2), and c-erbB3 are members of the erbB-family. The detection of increased abundance of EGF-R or Her-2/neu proteins in human tumours can provide additional information on the disease-free survival and overall survival for patients with breast, ovarian, endometrial or cervical cancer. Molecular and cell-physiological analyses have improved the understanding of tumour biology and provide the opportunity for new therapeutic approaches. Monoclonal antibody targeted therapy directed against EGF-R or Her-2/neu, the use of anti-sense oligonucleotides and oligodeoxynucleotides, and the application of tyrosine kinase and protein C-kinase inhibitors are currently being investigated.\n"
+    },
+    {
+      "a1_sha256": "c3d8183628b19df39ba6888aac59df695837ec27e845ca5d0ba3a731d0b498ff",
+      "a2_sha256": "d3cc5bbcbbe1aa17022ebbb3bddb80dc1f812450f33c0fab6603c19610384e96",
+      "annotation_source_sha256": "4eed6f0a0e17ee76ca369e7742abdf7ee8acedb3e0990efa140beed7e0d4dfaa",
+      "case_id": "fresh-cg-pmid-19648108-e11",
+      "case_order": 4,
+      "considered_events": [
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E1",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE"
+          ],
+          "trigger_start": 18
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E2",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT"
+          ],
+          "trigger_start": 229
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E3",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE"
+          ],
+          "trigger_start": 275
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E4",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT"
+          ],
+          "trigger_start": 304
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E5",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 483
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E6",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 483
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E7",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE"
+          ],
+          "trigger_start": 498
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E8",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 513
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E9",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 513
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E10",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE"
+          ],
+          "trigger_start": 524
+        },
+        {
+          "disposition": "SELECTED",
+          "event_id": "E11",
+          "reasons": [
+            "FIRST_ELIGIBLE"
+          ],
+          "trigger_start": 541
+        }
+      ],
+      "direct_cg_reference_sha256": "6ce482892427ba821223cfcdbf5c86374463dbb4a45d5c426a7965e7f3fcbe71",
+      "document_id": "PMID-19648108",
+      "event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T11"
+          }
+        ],
+        "artana_event_type": "GENE_EXPRESSION",
+        "event_id": "E11",
+        "source_event_type": "Gene_expression",
+        "trigger": {
+          "end": 551,
+          "start": 541,
+          "text": "expression"
+        },
+        "trigger_annotation_id": "T31"
+      },
+      "participants": [
+        {
+          "annotation_id": "T11",
+          "artana_entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 579,
+            "start": 559,
+            "text": "glucose transporters"
+          },
+          "source_entity_type": "Gene_or_gene_product"
+        }
+      ],
+      "permitted_context": {
+        "end": 580,
+        "start": 388,
+        "text": "In this study, we have examined the ability of the purine analogue 8-aminoadenosine to acutely reduce glucose consumption by regulating localization and expression of key glucose transporters."
+      },
+      "selection_reason": "FIRST_OFFSET_ORDER_EVENT_MEETING_ALL_FROZEN_ELIGIBILITY_RULES",
+      "source_bytes_base64": "VGFyZ2V0aW5nIGdsdWNvc2UgY29uc3VtcHRpb24gYW5kIGF1dG9waGFneSBpbiBteWVsb21hIHdpdGggdGhlIG5vdmVsIG51Y2xlb3NpZGUgYW5hbG9ndWUgOC1hbWlub2FkZW5vc2luZS4KTXVsdGlwbGUgbXllbG9tYSwgYW4gaW5jdXJhYmxlIHBsYXNtYSBjZWxsIG1hbGlnbmFuY3ksIGlzIGNoYXJhY3Rlcml6ZWQgYnkgYWx0ZXJlZCBjZWxsdWxhciBtZXRhYm9saXNtIGFuZCByZXNpc3RhbmNlIHRvIGFwb3B0b3Npcy4gUmVjZW50IGNvbm5lY3Rpb25zIGJldHdlZW4gZ2x1Y29zZSBtZXRhYm9saXNtIGFuZCByZXNpc3RhbmNlIHRvIGFwb3B0b3NpcyBwcm92aWRlIGEgY29tcGVsbGluZyByYXRpb25hbGUgZm9yIHRhcmdldGluZyBtZXRhYm9saWMgY2hhbmdlcyBpbiBjYW5jZXIuIEluIHRoaXMgc3R1ZHksIHdlIGhhdmUgZXhhbWluZWQgdGhlIGFiaWxpdHkgb2YgdGhlIHB1cmluZSBhbmFsb2d1ZSA4LWFtaW5vYWRlbm9zaW5lIHRvIGFjdXRlbHkgcmVkdWNlIGdsdWNvc2UgY29uc3VtcHRpb24gYnkgcmVndWxhdGluZyBsb2NhbGl6YXRpb24gYW5kIGV4cHJlc3Npb24gb2Yga2V5IGdsdWNvc2UgdHJhbnNwb3J0ZXJzLiBNeWVsb21hIGNlbGxzIGNvdW50ZXJhY3RlZCB0aGUgbWV0YWJvbGljIHN0cmVzcyBieSBhY3RpdmF0aW5nIGF1dG9waGFneS4gQ28tdHJlYXRtZW50IHdpdGggaW5oaWJpdG9ycyBvZiBhdXRvcGhhZ3kgcmVzdWx0cyBpbiBtYXJrZWQgZW5oYW5jZW1lbnQgb2YgY2VsbCBkZWF0aC4gR2x1Y29zZSBjb25zdW1wdGlvbiBieSBkcnVnLXJlc2lzdGFudCBteWVsb21hIGNlbGxzIHdhcyB1bmFmZmVjdGVkIGJ5IDgtYW1pbm9hZGVub3NpbmUsIGFuZCBhY2NvcmRpbmdseSwgbm8gYWN0aXZhdGlvbiBvZiBhdXRvcGhhZ3kgd2FzIG9ic2VydmVkLiBIb3dldmVyLCB0aGVzZSBjZWxscyBjYW4gYmUgc2Vuc2l0aXplZCB0byA4LWFtaW5vYWRlbm9zaW5lIHVuZGVyIGdsdWNvc2UtbGltaXRpbmcgY29uZGl0aW9ucy4gVGhlIHByb3N1cnZpdmFsIGF1dG9waGFnaWMgcmVzcG9uc2Ugb2YgbXllbG9tYSB0byBudXRyaWVudCBkZXByaXZhdGlvbiBvciB0byBudWNsZW9zaWRlIGFuYWxvZ3VlIHRyZWF0bWVudCBoYXMgbm90IGJlZW4gZGVzY3JpYmVkIHByZXZpb3VzbHkuIFRoaXMgc3R1ZHkgZXN0YWJsaXNoZXMgdGhlIHBvdGVudGlhbCBvZiBtZXRhYm9saWMgdGFyZ2V0aW5nIGFzIGEgYnJvYWRlciBtZWFucyB0byBraWxsIGFuZCBzZW5zaXRpemUgbXllbG9tYSBhbmQgaWRlbnRpZmllcyBhIGNvbXBvdW5kIHRoYXQgY2FuIGFjaGlldmUgdGhpcyBnb2FsLgo=",
+      "source_encoding": "utf-8",
+      "source_sha256": "3e63601b84dcd1609bc264cee307858e2a01a28e247aeb90b3d0446e18831ce5",
+      "source_text": "Targeting glucose consumption and autophagy in myeloma with the novel nucleoside analogue 8-aminoadenosine.\nMultiple myeloma, an incurable plasma cell malignancy, is characterized by altered cellular metabolism and resistance to apoptosis. Recent connections between glucose metabolism and resistance to apoptosis provide a compelling rationale for targeting metabolic changes in cancer. In this study, we have examined the ability of the purine analogue 8-aminoadenosine to acutely reduce glucose consumption by regulating localization and expression of key glucose transporters. Myeloma cells counteracted the metabolic stress by activating autophagy. Co-treatment with inhibitors of autophagy results in marked enhancement of cell death. Glucose consumption by drug-resistant myeloma cells was unaffected by 8-aminoadenosine, and accordingly, no activation of autophagy was observed. However, these cells can be sensitized to 8-aminoadenosine under glucose-limiting conditions. The prosurvival autophagic response of myeloma to nutrient deprivation or to nucleoside analogue treatment has not been described previously. This study establishes the potential of metabolic targeting as a broader means to kill and sensitize myeloma and identifies a compound that can achieve this goal.\n"
+    },
+    {
+      "a1_sha256": "ccaba2bcda751b2d7604eeef0dcda19686c6b6180ff6ed3d3fa8fb7561d6225a",
+      "a2_sha256": "2dcd59571511611e34f1b3d50869b766c07e9d75270b76fbd930783cd73a525d",
+      "annotation_source_sha256": "9a137c9b38487aaae79e8e4cf33e75a23f1e9c1ae37a3d2d4ff99df105c84719",
+      "case_id": "fresh-cg-pmid-11306510-e1",
+      "case_order": 5,
+      "considered_events": [
+        {
+          "disposition": "SELECTED",
+          "event_id": "E1",
+          "reasons": [
+            "FIRST_ELIGIBLE"
+          ],
+          "trigger_start": 78
+        }
+      ],
+      "direct_cg_reference_sha256": "048576b3163d138b4cbbb3885370e6615245c124a7c978ef6b7ff0c2ec552abc",
+      "document_id": "PMID-11306510",
+      "event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T2"
+          }
+        ],
+        "artana_event_type": "GENE_EXPRESSION",
+        "event_id": "E1",
+        "source_event_type": "Gene_expression",
+        "trigger": {
+          "end": 88,
+          "start": 78,
+          "text": "expression"
+        },
+        "trigger_annotation_id": "T80"
+      },
+      "participants": [
+        {
+          "annotation_id": "T2",
+          "artana_entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 77,
+            "start": 41,
+            "text": "vascular endothelial growth factor-C"
+          },
+          "source_entity_type": "Gene_or_gene_product"
+        }
+      ],
+      "permitted_context": {
+        "end": 168,
+        "start": 0,
+        "text": "Vascular endothelial growth factor-B and vascular endothelial growth factor-C expression in renal cell carcinomas: regulation by the von Hippel-Lindau gene and hypoxia."
+      },
+      "selection_reason": "FIRST_OFFSET_ORDER_EVENT_MEETING_ALL_FROZEN_ELIGIBILITY_RULES",
+      "source_bytes_base64": "VmFzY3VsYXIgZW5kb3RoZWxpYWwgZ3Jvd3RoIGZhY3Rvci1CIGFuZCB2YXNjdWxhciBlbmRvdGhlbGlhbCBncm93dGggZmFjdG9yLUMgZXhwcmVzc2lvbiBpbiByZW5hbCBjZWxsIGNhcmNpbm9tYXM6IHJlZ3VsYXRpb24gYnkgdGhlIHZvbiBIaXBwZWwtTGluZGF1IGdlbmUgYW5kIGh5cG94aWEuCkFuZ2lvZ2VuZXNpcyBpcyBlc3NlbnRpYWwgZm9yIHR1bW9yIGdyb3d0aCBhbmQgbWV0YXN0YXNpcy4gSXQgaXMgcmVndWxhdGVkIGJ5IG51bWVyb3VzIGFuZ2lvZ2VuaWMgZmFjdG9ycywgb25lIG9mIHRoZSBtb3N0IGltcG9ydGFudCBiZWluZyB2YXNjdWxhciBlbmRvdGhlbGlhbCBncm93dGggZmFjdG9yIChWRUdGKS4gUmVjZW50bHkgVkVHRi1CIGFuZCBWRUdGLUMsIHR3byBuZXcgVkVHRiBmYW1pbHkgbWVtYmVycywgaGF2ZSBiZWVuIGlkZW50aWZpZWQgdGhhdCBiaW5kIHRvIHRoZSB0eXJvc2luZSBraW5hc2UgcmVjZXB0b3JzIGZsdC0xIChWRUdGUjEpLCBLRFIgKFZFR0ZSMiksIGFuZCBmbHQtNCAoVkVHRlIzKS4gQWx0aG91Z2ggdGhlIGltcG9ydGFuY2Ugb2YgVkVHRi1BIGhhcyBiZWVuIHNob3duIGluIHJlbmFsIGNhcmNpbm9tYXMsIHRoZSBjb250cmlidXRpb24gb2YgdGhlc2UgbmV3IGxpZ2FuZHMgaW4ga2lkbmV5IHR1bW9ycyBpcyBub3QgY2xlYXIuIFdlIGhhdmUsIHRoZXJlZm9yZSwgbWVhc3VyZWQgdGhlIG1STkEgbGV2ZWwgb2YgVkVHRi1CIGFuZCBWRUdGLUMgdG9nZXRoZXIgd2l0aCB0aGVpciByZWNlcHRvcnMgYnkgUk5hc2UgcHJvdGVjdGlvbiBhc3NheSAoUlBBKSBpbiAyNiBub3JtYWwga2lkbmV5IHNhbXBsZXMgYW5kIDQ1IHJlbmFsIGNlbGwgY2FuY2Vycy4gV2Ugb2JzZXJ2ZWQgYSBzaWduaWZpY2FudCB1cC1yZWd1bGF0aW9uIG9mIFZFR0YtQiAoUCA9IDAuMDAyKSBidXQgbm90IFZFR0YtQyAoUCA9IDAuMykgaW4gbmVvcGxhc3RpYyBraWRuZXkgY29tcGFyZWQgd2l0aCBub3JtYWwgdGlzc3Vlcy4gSW4gYWRkaXRpb24sIGFsdGhvdWdoIFZFR0YgcmVjZXB0b3JzIHdlcmUgaGlnaGVyIGluIHR1bW9ycyB0aGFuIG5vcm1hbCBraWRuZXksIHRoZXJlIHdhcyBhIHNpZ25pZmljYW50IHVwLXJlZ3VsYXRpb24gb2Ygb25seSBmbHQtMSAoUCA9IDAuMDAzKSBidXQgbm90IEtEUiAoUCA9IDAuMTIpIG9yIGZsdC00IChQID0gMC4wOSkuIFRoZXJlIHdhcyBhbHNvIGEgc2lnbmlmaWNhbnQgY29ycmVsYXRpb24gYmV0d2VlbiBWRUdGLUMgYW5kIGJvdGggb2YgaXRzIHJlY2VwdG9ycyBmbHQtNCAoUCA9IDAuMDA2KSBhbmQgS0RSIChQID0gMC4wMykgYnV0IG5vIGFzc29jaWF0aW9uIGJldHdlZW4gVkVHRi1CIGFuZCBpdHMgcmVjZXB0b3IgZmx0LTEgKFAgPSAwLjIzKS4gQSBzaWduaWZpY2FudCBpbmNyZWFzZSB3YXMgb2JzZXJ2ZWQgaW4gZmx0LTEgKFAgIGxlc3MgdGhhbiAgMC4wMDEpLCBLRFIgKFAgPSAwLjAyKSwgYW5kIGZsdC00IChQID0gMC4wMSkgYnV0IG5vdCBWRUdGLUIgKFAgPSAwLjgyKSBvciBWRUdGLUMgKFAgPSAwLjUyKSBleHByZXNzaW9uIGluIGNsZWFyIGNlbGwgY29tcGFyZWQgd2l0aCBjaHJvbW9waGlsIChwYXBpbGxhcnkpIGNhcmNpbm9tYXMuIE5vIHNpZ25pZmljYW50IGFzc29jaWF0aW9uIHdhcyBkZW1vbnN0cmF0ZWQgYmV0d2VlbiBWRUdGLUIsIFZFR0YtQywgZmx0LTEsIEtEUiwgYW5kIGZsdC00IHdpdGggcGF0aWVudCBzZXgsIHBhdGllbnQgYWdlLCBvciB0dW1vciBzaXplIChQICBncmVhdGVyIHRoYW4gIDAuMDUpLiBUaGUgZWZmZWN0IG9mIHZvbiBIaXBwZWwtTGluZGF1IChWSEwpIGdlbmUgYW5kIGh5cG94aWEgb24gVkVHRi1CIGFuZCBWRUdGLUMgZXhwcmVzc2lvbiBpbiB0aGUgcmVuYWwgY2FyY2lub21hIGNlbGwgbGluZSA3ODYtMCB0cmFuc2ZlY3RlZCB3aXRoIHdpbGQtdHlwZSBhbmQgbXV0YW50IFZITCB3YXMgZGV0ZXJtaW5lZCBieSBncm93aW5nIGNlbGxzIHVuZGVyIDIxJSBPMi0gYW5kIDAuMSUgTzIuIEluIHdpbGQtdHlwZSBWSEwgY2VsbHMsIHdoZXJlYXMgVkVHRi1BIHdhcyBzaWduaWZpY2FudGx5IHVwLXJlZ3VsYXRlZCB1bmRlciBoeXBveGljIGNvbXBhcmVkIHdpdGggbm9ybW94aWMgY29uZGl0aW9ucyAoUCAgbGVzcyB0aGFuICAwLjAwMSksIGV4cHJlc3Npb24gb2YgVkVHRi1DIHdhcyByZWR1Y2VkIChQICBsZXNzIHRoYW4gIDAuMDAyKS4gTmV2ZXJ0aGVsZXNzLCB0aGUgcmVwcmVzc2lvbiBvZiBWRUdGLUMgd2FzIGxvc3QgaW4gbXV0YW50IFZITCBjZWxsIGxpbmVzIHVuZGVyIGh5cG94aWEuIEluIGNvbnRyYXN0IFZFR0YtQiB3YXMgbm90IHJlZ3VsYXRlZCBieSBWSEwgZGVzcGl0ZSBjbGVhciB1cC1yZWd1bGF0aW9uIGluIHZpdm8uIFRoZXNlIGZpbmRpbmdzIHN0cm9uZ2x5IHN1cHBvcnQgYW4gZW5oYW5jZWQgcm9sZSBmb3IgdGhpcyBwYXRod2F5IGluIGNsZWFyIGNlbGwgY2FyY2lub21hcyBieSByZWd1bGF0aW5nIGFuZ2lvZ2VuZXNpcyBhbmQvb3IgbHltcGhhbmdpb2dlbmVzaXMuIFRoZSBzdHVkeSBzaG93cyB0aGF0IGNsZWFyIGNlbGwgdHVtb3JzIGFyZSBhYmxlIHRvIHVwLXJlZ3VsYXRlIGFuZ2lvZ2VuaWMgZ3Jvd3RoIGZhY3RvciByZWNlcHRvcnMgbW9yZSBlZmZpY2llbnRseSB0aGFuIGNocm9tb3BoaWwgKHBhcGlsbGFyeSksIHRoYXQgY2xlYXIgY2VsbCB0dW1vcnMgY2FuIHVzZSBwYXRod2F5cyBpbmRlcGVuZGVudCBvZiBWSEwgdG8gcmVndWxhdGUgYW5naW9nZW5lc2lzLCBhbmQgdGhhdCB0aGlzIGNvbWJpbmVkIHJlZ3VsYXRpb24gbWF5IGFjY291bnQgZm9yIHRoZWlyIG1vcmUgYWdncmVzc2l2ZSBwaGVub3R5cGUsIHdoaWNoIHN1Z2dlc3RzIHRoYXQgdGFyZ2V0aW5nIFZFR0ZSMSAoZmx0LWwpIG1heSBiZSBwYXJ0aWN1bGFybHkgZWZmZWN0aXZlIGluIHRoZXNlIHR1bW9yIHR5cGVzLgo=",
+      "source_encoding": "utf-8",
+      "source_sha256": "460403a3f71c5e6450016e5b22fb230256858e819ade5966bd3c2c819200a994",
+      "source_text": "Vascular endothelial growth factor-B and vascular endothelial growth factor-C expression in renal cell carcinomas: regulation by the von Hippel-Lindau gene and hypoxia.\nAngiogenesis is essential for tumor growth and metastasis. It is regulated by numerous angiogenic factors, one of the most important being vascular endothelial growth factor (VEGF). Recently VEGF-B and VEGF-C, two new VEGF family members, have been identified that bind to the tyrosine kinase receptors flt-1 (VEGFR1), KDR (VEGFR2), and flt-4 (VEGFR3). Although the importance of VEGF-A has been shown in renal carcinomas, the contribution of these new ligands in kidney tumors is not clear. We have, therefore, measured the mRNA level of VEGF-B and VEGF-C together with their receptors by RNase protection assay (RPA) in 26 normal kidney samples and 45 renal cell cancers. We observed a significant up-regulation of VEGF-B (P = 0.002) but not VEGF-C (P = 0.3) in neoplastic kidney compared with normal tissues. In addition, although VEGF receptors were higher in tumors than normal kidney, there was a significant up-regulation of only flt-1 (P = 0.003) but not KDR (P = 0.12) or flt-4 (P = 0.09). There was also a significant correlation between VEGF-C and both of its receptors flt-4 (P = 0.006) and KDR (P = 0.03) but no association between VEGF-B and its receptor flt-1 (P = 0.23). A significant increase was observed in flt-1 (P  less than  0.001), KDR (P = 0.02), and flt-4 (P = 0.01) but not VEGF-B (P = 0.82) or VEGF-C (P = 0.52) expression in clear cell compared with chromophil (papillary) carcinomas. No significant association was demonstrated between VEGF-B, VEGF-C, flt-1, KDR, and flt-4 with patient sex, patient age, or tumor size (P  greater than  0.05). The effect of von Hippel-Lindau (VHL) gene and hypoxia on VEGF-B and VEGF-C expression in the renal carcinoma cell line 786-0 transfected with wild-type and mutant VHL was determined by growing cells under 21% O2- and 0.1% O2. In wild-type VHL cells, whereas VEGF-A was significantly up-regulated under hypoxic compared with normoxic conditions (P  less than  0.001), expression of VEGF-C was reduced (P  less than  0.002). Nevertheless, the repression of VEGF-C was lost in mutant VHL cell lines under hypoxia. In contrast VEGF-B was not regulated by VHL despite clear up-regulation in vivo. These findings strongly support an enhanced role for this pathway in clear cell carcinomas by regulating angiogenesis and/or lymphangiogenesis. The study shows that clear cell tumors are able to up-regulate angiogenic growth factor receptors more efficiently than chromophil (papillary), that clear cell tumors can use pathways independent of VHL to regulate angiogenesis, and that this combined regulation may account for their more aggressive phenotype, which suggests that targeting VEGFR1 (flt-l) may be particularly effective in these tumor types.\n"
+    },
+    {
+      "a1_sha256": "c8dfc1168b679e1c0eacfc885b17f05fc78dd47e21729e6a1cbe4c9646c0f568",
+      "a2_sha256": "ab52bc4987e74a1d0bae92231c7df49f8a90e41cc125712847a6ead50867c667",
+      "annotation_source_sha256": "726f4ff334325b89d5f0f5b9141c62544009a87e2ac19bb32c980cb0853fd7dc",
+      "case_id": "fresh-cg-pmid-18841154-e12",
+      "case_order": 6,
+      "considered_events": [
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E1",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT"
+          ],
+          "trigger_start": 43
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E2",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 56
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E3",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT",
+            "OCCURRENCE_V2_TRIGGER_NOT_TOKEN_BOUNDED"
+          ],
+          "trigger_start": 195
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E4",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE"
+          ],
+          "trigger_start": 469
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E5",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 476
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E6",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT",
+            "OCCURRENCE_V2_TRIGGER_NOT_TOKEN_BOUNDED"
+          ],
+          "trigger_start": 501
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E7",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 512
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E8",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 633
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E9",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 633
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E10",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE"
+          ],
+          "trigger_start": 647
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E11",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE"
+          ],
+          "trigger_start": 761
+        },
+        {
+          "disposition": "SELECTED",
+          "event_id": "E12",
+          "reasons": [
+            "FIRST_ELIGIBLE"
+          ],
+          "trigger_start": 798
+        }
+      ],
+      "direct_cg_reference_sha256": "33ef8b01327c69b671fc10dff2fe4d61bb5aff05bb15669e06ab196b8e66299f",
+      "document_id": "PMID-18841154",
+      "event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T17"
+          }
+        ],
+        "artana_event_type": "NEGATIVE_REGULATION",
+        "event_id": "E12",
+        "source_event_type": "Negative_regulation",
+        "trigger": {
+          "end": 808,
+          "start": 798,
+          "text": "inhibition"
+        },
+        "trigger_annotation_id": "T36"
+      },
+      "participants": [
+        {
+          "annotation_id": "T17",
+          "artana_entity_type": "CANCER",
+          "mention": {
+            "end": 797,
+            "start": 791,
+            "text": "tumour"
+          },
+          "source_entity_type": "Cancer"
+        }
+      ],
+      "permitted_context": {
+        "end": 895,
+        "start": 783,
+        "text": "Further tumour inhibition studies showed that STX243 was also active against MCF-7 paclitaxel-resistant tumours."
+      },
+      "selection_reason": "FIRST_OFFSET_ORDER_EVENT_MEETING_ALL_FROZEN_ELIGIBILITY_RULES",
+      "source_bytes_base64": "VGhlIGluIHZpdm8gcHJvcGVydGllcyBvZiBTVFgyNDM6IGEgcG90ZW50IGFuZ2lvZ2VuZXNpcyBpbmhpYml0b3IgaW4gYnJlYXN0IGNhbmNlci4KVGhlIHN0ZXJvaWRhbC1iYXNlZCBkcnVnIDItZXRoeWxvZXN0cmFkaW9sLTMsMTctTyxPLWJpcy1zdWxwaGFtYXRlIChTVFgyNDMpIGhhcyBiZWVuIGRldmVsb3BlZCBhcyBhIHBvdGVudCBhbnRpYW5naW9nZW5pYyBhbmQgYW50aXR1bW91ciBjb21wb3VuZC4gVGhlIG9iamVjdGl2ZSBvZiB0aGlzIHN0dWR5IHdhcyB0byBhc2NlcnRhaW4gd2hldGhlciBTVFgyNDMgaXMgbW9yZSBhY3RpdmUgaW4gdml2byB0aGFuIHRoZSBjbGluaWNhbGx5IHJlbGV2YW50IGRydWcgMi1tZXRob3h5b2VzdHJhZGlvbCAoMi1NZU9FMikgYW5kIHRoZSBzdHJ1Y3R1cmFsbHkgc2ltaWxhciBjb21wb3VuZCAyLU1lT0UyLTMsMTctTyxPLWJpcy1zdWxwaGFtYXRlIChTVFgxNDApLiBUaGUgdHVtb3VyIGdyb3d0aCBpbmhpYml0aW9uIGVmZmljYWN5LCBhbnRpYW5naW9nZW5pYyBwb3RlbnRpYWwgYW5kIHBoYXJtYWNva2luZXRpY3Mgb2YgU1RYMjQzIHdlcmUgZXhhbWluZWQgdXNpbmcgZm91ciBpbiB2aXZvIG1vZGVscy4gQm90aCBTVFgyNDMgYW5kIFNUWDE0MCB3ZXJlIGNhcGFibGUgb2YgcmV0YXJkaW5nIHRoZSBncm93dGggb2YgTURBLU1CLTIzMSB4ZW5vZ3JhZnQgdHVtb3VycyAoNzIgYW5kIDYzJSwgcmVzcGVjdGl2ZWx5KSwgd2hlcmVhcyBubyBpbmhpYml0aW9uIHdhcyBvYnNlcnZlZCBmb3IgYW5pbWFscyB0cmVhdGVkIHdpdGggMi1NZU9FMi4gRnVydGhlciB0dW1vdXIgaW5oaWJpdGlvbiBzdHVkaWVzIHNob3dlZCB0aGF0IFNUWDI0MyB3YXMgYWxzbyBhY3RpdmUgYWdhaW5zdCBNQ0YtNyBwYWNsaXRheGVsLXJlc2lzdGFudCB0dW1vdXJzLiBVc2luZyBhIE1hdHJpZ2VsIHBsdWctYmFzZWQgbW9kZWwsIGluIHZpdm8gYW5naW9nZW5lc2lzIHdhcyByZXN0cmljdGVkIHdpdGggU1RYMjQzIGFuZCBTVFgxNDAgKDUwIGFuZCA3MiUsIHJlc3BlY3RpdmVseSwgdXNpbmcgYSAxMCBtZyBrZygtMSkgb3JhbCBkb3NlKSwgdGhlcmVieSBzaG93aW5nIHRoZSBhbnRpYW5naW9nZW5pYyBhY3Rpdml0eSBvZiBib3RoIGNvbXBvdW5kcy4gVGhlIHBoYXJtYWNva2luZXRpY3Mgb2YgU1RYMjQzIHdlcmUgZXhhbWluZWQgYXQgdHdvIGRpZmZlcmVudCBkb3NlcyB1c2luZyBhZHVsdCBmZW1hbGUgcmF0cy4gVGhlIGNvbXBvdW5kIHdhcyBvcmFsbHkgYmlvYXZhaWxhYmxlICgzMSUgYWZ0ZXIgYSBzaW5nbGUgMTAgbWcga2coLTEpIGRvc2UpIGFuZCByZXNpc3RhbnQgdG8gbWV0YWJvbGlzbS4gVGhlc2UgcmVzdWx0cyBzaG93IHRoYXQgU1RYMjQzIGlzIGEgcG90ZW50IGluIHZpdm8gZHJ1ZyBhbmQgY291bGQgYmUgY2xpbmljYWxseSBlZmZlY3RpdmUgYXQgdHJlYXRpbmcgYSBudW1iZXIgb2Ygb25jb2xvZ2ljYWwgY29uZGl0aW9ucy4K",
+      "source_encoding": "utf-8",
+      "source_sha256": "67f5372287ef70ba59d3c6632aa43ee55256bd04c9e8cf63f56eb280d32d6055",
+      "source_text": "The in vivo properties of STX243: a potent angiogenesis inhibitor in breast cancer.\nThe steroidal-based drug 2-ethyloestradiol-3,17-O,O-bis-sulphamate (STX243) has been developed as a potent antiangiogenic and antitumour compound. The objective of this study was to ascertain whether STX243 is more active in vivo than the clinically relevant drug 2-methoxyoestradiol (2-MeOE2) and the structurally similar compound 2-MeOE2-3,17-O,O-bis-sulphamate (STX140). The tumour growth inhibition efficacy, antiangiogenic potential and pharmacokinetics of STX243 were examined using four in vivo models. Both STX243 and STX140 were capable of retarding the growth of MDA-MB-231 xenograft tumours (72 and 63%, respectively), whereas no inhibition was observed for animals treated with 2-MeOE2. Further tumour inhibition studies showed that STX243 was also active against MCF-7 paclitaxel-resistant tumours. Using a Matrigel plug-based model, in vivo angiogenesis was restricted with STX243 and STX140 (50 and 72%, respectively, using a 10 mg kg(-1) oral dose), thereby showing the antiangiogenic activity of both compounds. The pharmacokinetics of STX243 were examined at two different doses using adult female rats. The compound was orally bioavailable (31% after a single 10 mg kg(-1) dose) and resistant to metabolism. These results show that STX243 is a potent in vivo drug and could be clinically effective at treating a number of oncological conditions.\n"
+    },
+    {
+      "a1_sha256": "bbd66d5e254baeedbc75de2360e2b97f80a5b61274223a32cc35a420f436be14",
+      "a2_sha256": "b24fa0b370311e652062bba2bcd20a21323b038778333669cba67a66ea0f47f2",
+      "annotation_source_sha256": "39cf0b55832933714313c96bb1cff49d2d1113cea8742ff93c7a817f3f738f3f",
+      "case_id": "fresh-cg-pmid-20448329-e6",
+      "case_order": 7,
+      "considered_events": [
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E1",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT"
+          ],
+          "trigger_start": 0
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E2",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE"
+          ],
+          "trigger_start": 203
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E3",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 251
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E4",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 321
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E5",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 351
+        },
+        {
+          "disposition": "SELECTED",
+          "event_id": "E6",
+          "reasons": [
+            "FIRST_ELIGIBLE"
+          ],
+          "trigger_start": 392
+        }
+      ],
+      "direct_cg_reference_sha256": "2d63bf508dabc2df8d93d5e1689da5c9016c32d19930bb3a5a5bc8e77871ece7",
+      "document_id": "PMID-20448329",
+      "event": {
+        "arguments": [
+          {
+            "source_role": "Cause",
+            "target_annotation_id": "T15"
+          },
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T17"
+          }
+        ],
+        "artana_event_type": "REGULATION",
+        "event_id": "E6",
+        "source_event_type": "Regulation",
+        "trigger": {
+          "end": 396,
+          "start": 392,
+          "text": "role"
+        },
+        "trigger_annotation_id": "T59"
+      },
+      "participants": [
+        {
+          "annotation_id": "T15",
+          "artana_entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 404,
+            "start": 400,
+            "text": "CDC4"
+          },
+          "source_entity_type": "Gene_or_gene_product"
+        },
+        {
+          "annotation_id": "T17",
+          "artana_entity_type": "CANCER",
+          "mention": {
+            "end": 428,
+            "start": 414,
+            "text": "gastric cancer"
+          },
+          "source_entity_type": "Cancer"
+        }
+      ],
+      "permitted_context": {
+        "end": 657,
+        "start": 367,
+        "text": "METHODS: We assessed the role of CDC4/FBXW7 in gastric cancer, through loss of heterozygosity (LOH) and multiplex ligation-dependent probe amplification (MLPA) on 47 flow-sorted gastric carcinomas including early-onset gastric cancers (EOGC) and xenografted conventional gastric carcinomas."
+      },
+      "selection_reason": "FIRST_OFFSET_ORDER_EVENT_MEETING_ALL_FROZEN_ELIGIBILITY_RULES",
+      "source_bytes_base64": "TG9zcyBvZiBDREM0L0ZCWFc3IGluIGdhc3RyaWMgY2FyY2lub21hLiAKQkFDS0dST1VORDogQ0RDNC9GQlhXNywgZW5jb2RpbmcgYSB1YmlxdWl0aW4gbGlnYXNlLCBtYXBzIHRvIDRxMzIgYW5kIGhhcyBiZWVuIGltcGxpY2F0ZWQgYXMgYSB0dW1vciBzdXBwcmVzc29yIGdlbmUgYW5kIHRoZXJhcGV1dGljIHRhcmdldCBpbiBtYW55IHR1bW9yIHR5cGVzLiBNdXRhdGlvbnMgaW4gY29sb25pYyBhZGVub21hcywgYW5kIHRoZSBmcmVxdWVudCBsb3NzZXMgb24gNHEgZGVzY3JpYmVkIGluIGdhc3RyaWMgY2FuY2VyIHByb21wdCBzcGVjdWxhdGlvbiBhYm91dCB0aGUgcm9sZSBvZiBDREM0L0ZCWFc3IGluIGdhc3RyaWMgY2FyY2lub2dlbmVzaXMuIE1FVEhPRFM6IFdlIGFzc2Vzc2VkIHRoZSByb2xlIG9mIENEQzQvRkJYVzcgaW4gZ2FzdHJpYyBjYW5jZXIsIHRocm91Z2ggbG9zcyBvZiBoZXRlcm96eWdvc2l0eSAoTE9IKSBhbmQgbXVsdGlwbGV4IGxpZ2F0aW9uLWRlcGVuZGVudCBwcm9iZSBhbXBsaWZpY2F0aW9uIChNTFBBKSBvbiA0NyBmbG93LXNvcnRlZCBnYXN0cmljIGNhcmNpbm9tYXMgaW5jbHVkaW5nIGVhcmx5LW9uc2V0IGdhc3RyaWMgY2FuY2VycyAoRU9HQykgYW5kIHhlbm9ncmFmdGVkIGNvbnZlbnRpb25hbCBnYXN0cmljIGNhcmNpbm9tYXMuIFBsb2lkeSBhbmFseXNpcyB3YXMgY2FycmllZCBvdXQgb24gMzkgRU9HQ3MgYW5kIGltbXVub2hpc3RvY2hlbWlzdHJ5IG9mIENEQzQvRkJYVzcgYW5kIGl0cyBzdWJzdHJhdGVzIGMtbXljLCBjLWp1biwgTm90Y2ggYW5kIGN5Y2xpbiBFIHdhcyBwZXJmb3JtZWQgb24gMjA0IGdhc3RyaWMgY2FyY2lub21hcyB1c2luZyB0aXNzdWUgbWljcm9hcnJheXMgKFRNQXMpLiBTZXF1ZW5jZSBhbmFseXNpcyBvZiBDREM0L0ZCWFc3IHdhcyBjYXJyaWVkIG91dCBvbiBnYXN0cmljIGNhcmNpbm9tYSBjZWxsIGxpbmVzIGFuZCB4ZW5vZ3JhZnRzLiBSRVNVTFRTOiBMb3NzIG9mIGhldGVyb3p5Z29zaXR5IG9mIENEQzQvRkJYVzcgb2NjdXJyZWQgaW4gMzIlIG9mIEVPR0NzLCBhbmQgY29ycmVsYXRlZCB3aXRoIGxvc3Mgb2YgZXhwcmVzc2lvbiBpbiAyNiUuIExvc3Mgb2YgZXhwcmVzc2lvbiB3YXMgZnJlcXVlbnQgaW4gYm90aCBFT0dDIGFuZCBjb252ZW50aW9uYWwgZ2FzdHJpYyBjYW5jZXJzLiBObyBDREM0L0ZCWFc3IG11dGF0aW9ucyB3ZXJlIGZvdW5kIGFuZCBsb3NzIG9mIENEQzQvRkJYVzcgZGlkIG5vdCBjb3JyZWxhdGUgd2l0aCBwbG9pZHkgc3RhdHVzLiBUaGVyZSB3YXMgYSBzaWduaWZpY2FudCBjb3JyZWxhdGlvbiBiZXR3ZWVuIGxvc3Mgb2YgQ0RDNC9GQlhXNyBleHByZXNzaW9uIGFuZCB1cHJlZ3VsYXRpb24gb2YgYy1teWMuIENPTkNMVVNJT046IExvc3Mgb2YgQ0RDNC9GQlhXNyBhcHBlYXJzIHRvIHBsYXkgYSByb2xlIGluIGJvdGggRU9HQyBhbmQgY29udmVudGlvbmFsIGdhc3RyaWMgY2FyY2lub2dlbmVzaXMsIGFuZCBjLW15YyBvdmVyZXhwcmVzc2lvbiBpcyBsaWtlbHkgdG8gYmUgYW4gaW1wb3J0YW50IG9uY29nZW5pYyBjb25zZXF1ZW5jZSBvZiBDREM0L0ZCWFc3IGxvc3MuCg==",
+      "source_encoding": "utf-8",
+      "source_sha256": "903c41fb858ef5146d0877bb16e5bafa1cef608a6b913914eea2b62c940d1bb0",
+      "source_text": "Loss of CDC4/FBXW7 in gastric carcinoma. \nBACKGROUND: CDC4/FBXW7, encoding a ubiquitin ligase, maps to 4q32 and has been implicated as a tumor suppressor gene and therapeutic target in many tumor types. Mutations in colonic adenomas, and the frequent losses on 4q described in gastric cancer prompt speculation about the role of CDC4/FBXW7 in gastric carcinogenesis. METHODS: We assessed the role of CDC4/FBXW7 in gastric cancer, through loss of heterozygosity (LOH) and multiplex ligation-dependent probe amplification (MLPA) on 47 flow-sorted gastric carcinomas including early-onset gastric cancers (EOGC) and xenografted conventional gastric carcinomas. Ploidy analysis was carried out on 39 EOGCs and immunohistochemistry of CDC4/FBXW7 and its substrates c-myc, c-jun, Notch and cyclin E was performed on 204 gastric carcinomas using tissue microarrays (TMAs). Sequence analysis of CDC4/FBXW7 was carried out on gastric carcinoma cell lines and xenografts. RESULTS: Loss of heterozygosity of CDC4/FBXW7 occurred in 32% of EOGCs, and correlated with loss of expression in 26%. Loss of expression was frequent in both EOGC and conventional gastric cancers. No CDC4/FBXW7 mutations were found and loss of CDC4/FBXW7 did not correlate with ploidy status. There was a significant correlation between loss of CDC4/FBXW7 expression and upregulation of c-myc. CONCLUSION: Loss of CDC4/FBXW7 appears to play a role in both EOGC and conventional gastric carcinogenesis, and c-myc overexpression is likely to be an important oncogenic consequence of CDC4/FBXW7 loss.\n"
+    },
+    {
+      "a1_sha256": "0ec35cbfcba194976d21ccb31645556755f55adf83ee0809f18dec9ef76ef54c",
+      "a2_sha256": "40db2280eeeba6f5dba011fcd6e58d39bcf21a9c4a9f66ce366e9f6f571d29d3",
+      "annotation_source_sha256": "c0b59cc7e33d92bedb506c412a9758f4c0603ce4e108561bd9f46aedd2f492d7",
+      "case_id": "fresh-cg-pmid-8895545-e6",
+      "case_order": 8,
+      "considered_events": [
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E1",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT",
+            "OCCURRENCE_V2_TRIGGER_NOT_TOKEN_BOUNDED"
+          ],
+          "trigger_start": 0
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E2",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 34
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E3",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE",
+            "OCCURRENCE_V2_ARGUMENT_NOT_TOKEN_BOUNDED"
+          ],
+          "trigger_start": 53
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E4",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 66
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E5",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 83
+        },
+        {
+          "disposition": "SELECTED",
+          "event_id": "E6",
+          "reasons": [
+            "FIRST_ELIGIBLE"
+          ],
+          "trigger_start": 215
+        }
+      ],
+      "direct_cg_reference_sha256": "4cd237215063c6b30f43b61f9892c6140159c64495c013516bed102b11c07a24",
+      "document_id": "PMID-8895545",
+      "event": {
+        "arguments": [
+          {
+            "source_role": "Theme",
+            "target_annotation_id": "T6"
+          }
+        ],
+        "artana_event_type": "GENE_EXPRESSION",
+        "event_id": "E6",
+        "source_event_type": "Gene_expression",
+        "trigger": {
+          "end": 224,
+          "start": 215,
+          "text": "expressed"
+        },
+        "trigger_annotation_id": "T53"
+      },
+      "participants": [
+        {
+          "annotation_id": "T6",
+          "artana_entity_type": "GENE_OR_PROTEIN",
+          "mention": {
+            "end": 121,
+            "start": 118,
+            "text": "5T4"
+          },
+          "source_entity_type": "Gene_or_gene_product"
+        }
+      ],
+      "permitted_context": {
+        "end": 343,
+        "start": 114,
+        "text": "The 5T4 antigen is defined by a monoclonal antibody (MAb) specific for human trophoblast. It is also expressed by many types of tumour cell and has been associated with metastasis and poor clinical outcome in a number of cancers."
+      },
+      "selection_reason": "FIRST_OFFSET_ORDER_EVENT_MEETING_ALL_FROZEN_ELIGIBILITY_RULES",
+      "source_bytes_base64": "TWV0YXN0YXNpcy1hc3NvY2lhdGVkIDVUNCBhbnRpZ2VuIGRpc3J1cHRzIGNlbGwtY2VsbCBjb250YWN0cyBhbmQgaW5kdWNlcyBjZWxsdWxhciBtb3RpbGl0eSBpbiBlcGl0aGVsaWFsIGNlbGxzLiAKVGhlIDVUNCBhbnRpZ2VuIGlzIGRlZmluZWQgYnkgYSBtb25vY2xvbmFsIGFudGlib2R5IChNQWIpIHNwZWNpZmljIGZvciBodW1hbiB0cm9waG9ibGFzdC4gSXQgaXMgYWxzbyBleHByZXNzZWQgYnkgbWFueSB0eXBlcyBvZiB0dW1vdXIgY2VsbCBhbmQgaGFzIGJlZW4gYXNzb2NpYXRlZCB3aXRoIG1ldGFzdGFzaXMgYW5kIHBvb3IgY2xpbmljYWwgb3V0Y29tZSBpbiBhIG51bWJlciBvZiBjYW5jZXJzLiBUaGlzIHBhdHRlcm4gb2YgZXhwcmVzc2lvbiBpcyBjb25zaXN0ZW50IHdpdGggYSBtZWNoYW5pc3RpYyBpbnZvbHZlbWVudCBvZiA1VDQgbW9sZWN1bGVzIGluIHRoZSBzcHJlYWQgb2YgY2FuY2VyIGNlbGxzLiBUaGUgNVQ0IGFudGlnZW4gaXMgYSB0cmFuc21lbWJyYW5lIGdseWNvcHJvdGVpbiB3aXRoIGEgMzEwIGFtaW5vIGFjaWQgZXh0cmFjZWxsdWxhciBkb21haW4gYW5kIGEgNDQgYW1pbm8gYWNpZCBjeXRvcGxhc21pYyBkb21haW4uIFRyYW5zZmVjdGlvbiBvZiBmdWxsLWxlbmd0aCA1VDQgY0ROQSBpbnRvIGVwaXRoZWxpYWwgY2VsbHMgYWx0ZXJzIGNlbGwtY2VsbCBjb250YWN0cyBhbmQgY2VsbHVsYXIgbW90aWxpdHkuIFRodXMsIGluIDVUNC10cmFuc2ZlY3RlZCBDTC1TMSBtdXJpbmUgbWFtbWFyeSBjZWxscywgNVQ0IGV4cHJlc3Npb24gaXMgYXNzb2NpYXRlZCB3aXRoIGRlbmRyaXRpYyBtb3JwaG9sb2d5LCBhY2NvbXBhbmllZCBieSBhYnJvZ2F0aW9uIG9mIGFjdGluL2NhZGhlcmluLWNvbnRhaW5pbmcgY29udGFjdHMgYW5kIGluY3JlYXNlZCBtb3RpbGl0eS4gSW4gdHJhbnNmZWN0ZWQgTURDSyBjYW5pbmUga2lkbmV5IGVwaXRoZWxpYWwgY2VsbHMsIDVUNCBvdmVyLWV4cHJlc3Npb24gYWxzbyByZXN1bHRzIGluIGluY3JlYXNlZCBtb3RpbGl0eSwgYnV0IGRpc3J1cHRpb24gb2YgY2VsbC1jZWxsIGNvbnRhY3RzLCBlaXRoZXIgYnkgY3VsdHVyaW5nIGNlbGxzIGluIGxvdyBjYWxjaXVtIG1lZGl1bSBvciBieSBhZGRpdGlvbiBvZiBIR0YvU0YsIGlzIG5lZWRlZC4gVGhlIGVmZmVjdHMgb2YgNVQ0IGV4cHJlc3Npb24gb24gbW9ycGhvbG9neSBhbmQgbW90aWxpdHkgYXJlIHNlcGFyYWJsZSBzaW5jZSBjZWxscyB0cmFuc2ZlY3RlZCB3aXRoIGEgdHJ1bmNhdGVkIGZvcm0gb2YgNVQ0IGNETkEgaW4gd2hpY2ggdGhlIGN5dG9wbGFzbWljIGRvbWFpbiBpcyBkZWxldGVkIHJldmVhbCB0aGF0IHRoZSBsYXR0ZXIgaXMgbmVjZXNzYXJ5IHRvIGFicm9nYXRlIGFjdGluL2NhZGhlcmluLWNvbnRhaW5pbmcgY29udGFjdHMgYnV0IGRvZXMgbm90IGluZmx1ZW5jZSB0aGUgZWZmZWN0cyBvbiBtb3RpbGl0eS4gVGh1cywgNVQ0IG1vbGVjdWxlcyBjYW4gZGVsaXZlciBzaWduYWxzIHRocm91Z2ggYm90aCB0aGUgZXh0cmFjZWxsdWxhciBhbmQgaW50cmFjZWxsdWxhciBkb21haW5zLCBhbmQgdGhlIHJlc3VsdGFudCBlZmZlY3RzIGFyZSBjb25zaXN0ZW50IHdpdGggYSByb2xlIGZvciA1VDQgbW9sZWN1bGVzIGluIGludmFzaW9uIHByb2Nlc3Nlcy4K",
+      "source_encoding": "utf-8",
+      "source_sha256": "aa1361624ac06116bb92e65437190f2e30f23b80c9215b2328e2e403c57590f8",
+      "source_text": "Metastasis-associated 5T4 antigen disrupts cell-cell contacts and induces cellular motility in epithelial cells. \nThe 5T4 antigen is defined by a monoclonal antibody (MAb) specific for human trophoblast. It is also expressed by many types of tumour cell and has been associated with metastasis and poor clinical outcome in a number of cancers. This pattern of expression is consistent with a mechanistic involvement of 5T4 molecules in the spread of cancer cells. The 5T4 antigen is a transmembrane glycoprotein with a 310 amino acid extracellular domain and a 44 amino acid cytoplasmic domain. Transfection of full-length 5T4 cDNA into epithelial cells alters cell-cell contacts and cellular motility. Thus, in 5T4-transfected CL-S1 murine mammary cells, 5T4 expression is associated with dendritic morphology, accompanied by abrogation of actin/cadherin-containing contacts and increased motility. In transfected MDCK canine kidney epithelial cells, 5T4 over-expression also results in increased motility, but disruption of cell-cell contacts, either by culturing cells in low calcium medium or by addition of HGF/SF, is needed. The effects of 5T4 expression on morphology and motility are separable since cells transfected with a truncated form of 5T4 cDNA in which the cytoplasmic domain is deleted reveal that the latter is necessary to abrogate actin/cadherin-containing contacts but does not influence the effects on motility. Thus, 5T4 molecules can deliver signals through both the extracellular and intracellular domains, and the resultant effects are consistent with a role for 5T4 molecules in invasion processes.\n"
+    }
+  ],
+  "consumed_case_id": "fresh-cg-pmid-21963494-e3",
+  "consumed_document_id": "PMID-21963494",
+  "extended_reserve_order": [
+    "PMID-3287150",
+    "PMID-18165897",
+    "PMID-21963494",
+    "PMID-2681013",
+    "PMID-16098727",
+    "PMID-7904970",
+    "PMID-19648108",
+    "PMID-11306510",
+    "PMID-18841154",
+    "PMID-15268651",
+    "PMID-20448329",
+    "PMID-15967832",
+    "PMID-8895545"
+  ],
+  "model_outputs_used_for_selection": false,
+  "original_reserve_order": [
+    "PMID-3287150",
+    "PMID-18165897",
+    "PMID-21963494",
+    "PMID-2681013",
+    "PMID-16098727",
+    "PMID-7904970",
+    "PMID-19648108",
+    "PMID-11306510",
+    "PMID-18841154",
+    "PMID-15268651",
+    "PMID-20448329",
+    "PMID-15967832"
+  ],
+  "provider_packet_excludes": [
+    "direct CG annotations",
+    "expected event and entity types",
+    "expected Theme and Cause roles",
+    "Artana source-semantic references",
+    "expected counts",
+    "benchmark projections",
+    "reviewer artifacts",
+    "historical model outputs"
+  ],
+  "replacement_document_id": "PMID-8895545",
+  "replacement_reserve_position": 13,
+  "reservation_base_commit": "6659ed66^",
+  "reservation_extension_policy": "SAME_SALTED_ORDER_FIRST_ELIGIBLE_AFTER_ORIGINAL_TWELVE",
+  "reservation_salt": "artana-fresh-cg-holdout-v1:",
+  "schema_version": "artana.staged_generalization.fresh_cg_selection.v2",
+  "selected_document_ids": [
+    "PMID-2681013",
+    "PMID-16098727",
+    "PMID-7904970",
+    "PMID-19648108",
+    "PMID-11306510",
+    "PMID-18841154",
+    "PMID-20448329",
+    "PMID-8895545"
+  ],
+  "selection_policy_version": "artana.staged_generalization.fresh_cg_selection_policy.v1",
+  "skipped_documents": [
+    {
+      "considered_events": [
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E1",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 22
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E2",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 22
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E3",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 22
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E4",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 74
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E5",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 196
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E6",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 196
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E7",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 262
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E8",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 302
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E9",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 377
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E10",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 402
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E11",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE"
+          ],
+          "trigger_start": 622
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E12",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 627
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E13",
+          "reasons": [
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 657
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E14",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 672
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E15",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 719
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E16",
+          "reasons": [
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 785
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E17",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 902
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E18",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 928
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E19",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 973
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E20",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 992
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E21",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 1045
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E22",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 1045
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E23",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 1066
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E24",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 1096
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E25",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT"
+          ],
+          "trigger_start": 1195
+        }
+      ],
+      "document_id": "PMID-3287150",
+      "reason": "NO_ELIGIBLE_EVENT"
+    },
+    {
+      "considered_events": [
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E1",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 28
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E2",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 137
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E3",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 253
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E4",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 362
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E5",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 602
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E6",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE"
+          ],
+          "trigger_start": 643
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E7",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 904
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E8",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE"
+          ],
+          "trigger_start": 1020
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E9",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "OCCURRENCE_V2_TRIGGER_NOT_TOKEN_BOUNDED"
+          ],
+          "trigger_start": 1140
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E10",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNRESOLVED_PRONOMINAL_COREFERENCE"
+          ],
+          "trigger_start": 1295
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E11",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNRESOLVED_PRONOMINAL_COREFERENCE"
+          ],
+          "trigger_start": 1295
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E12",
+          "reasons": [
+            "OCCURRENCE_V2_TRIGGER_NOT_TOKEN_BOUNDED"
+          ],
+          "trigger_start": 1653
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E13",
+          "reasons": [
+            "OCCURRENCE_V2_TRIGGER_NOT_TOKEN_BOUNDED"
+          ],
+          "trigger_start": 1653
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E14",
+          "reasons": [
+            "OCCURRENCE_V2_TRIGGER_NOT_TOKEN_BOUNDED",
+            "OCCURRENCE_V2_ARGUMENT_NOT_TOKEN_BOUNDED"
+          ],
+          "trigger_start": 1653
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E15",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE"
+          ],
+          "trigger_start": 1917
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E16",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 1957
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E17",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 2007
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E18",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "OCCURRENCE_V2_TRIGGER_NOT_TOKEN_BOUNDED"
+          ],
+          "trigger_start": 2046
+        }
+      ],
+      "document_id": "PMID-18165897",
+      "reason": "NO_ELIGIBLE_EVENT"
+    },
+    {
+      "considered_events": [
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E1",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 26
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E2",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 117
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E3",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 360
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E4",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "NO_CORE_ARGUMENT",
+            "OCCURRENCE_V2_TRIGGER_NOT_TOKEN_BOUNDED"
+          ],
+          "trigger_start": 381
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E5",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 392
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E6",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 432
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E7",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 537
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E8",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 838
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E9",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 945
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E10",
+          "reasons": [
+            "NESTED_CORE_ARGUMENT",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 945
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E11",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 979
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E12",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 999
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E13",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE"
+          ],
+          "trigger_start": 1092
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E14",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE"
+          ],
+          "trigger_start": 1358
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E15",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE",
+            "UNREPRESENTABLE_DIRECT_ENTITY_TYPE"
+          ],
+          "trigger_start": 1451
+        },
+        {
+          "disposition": "INELIGIBLE",
+          "event_id": "E16",
+          "reasons": [
+            "UNREPRESENTABLE_EVENT_TYPE",
+            "UNSUPPORTED_CORE_ARGUMENT_ROLE"
+          ],
+          "trigger_start": 1768
+        }
+      ],
+      "document_id": "PMID-15268651",
+      "reason": "NO_ELIGIBLE_EVENT"
+    }
+  ],
+  "unresolved_coreference_rule": "DIRECT_TEXT_BOUND_CORE_ARGUMENTS_WITH_NO_PRONOMINAL_MENTIONS",
+  "unused_original_document_ids": [
+    "PMID-3287150",
+    "PMID-18165897",
+    "PMID-21963494",
+    "PMID-15268651",
+    "PMID-15967832"
+  ]
+}

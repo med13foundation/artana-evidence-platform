@@ -17,8 +17,11 @@ from scripts.validation.provider_receipt_boundary.contracts import (
     CanonicalPayload,
     FieldDifference,
     ReceiptExpectations,
+    ReceiptExpectationsLike,
     ReceiptIdentity,
     ReceiptValidation,
+    TelemetryReceiptExpectationsV2,
+    TelemetryReceiptValidationV2,
     UsageAccounting,
 )
 from scripts.validation.provider_receipt_boundary.identity import (
@@ -46,6 +49,9 @@ VALIDATION_ORDER = (
     "RECEIPT_USAGE",
     "RECEIPT_BUDGET",
     "RECEIPT_ENVELOPE",
+)
+TELEMETRY_VALIDATION_ORDER_V2 = tuple(
+    stage for stage in VALIDATION_ORDER if stage != "RECEIPT_BUDGET"
 )
 
 
@@ -120,9 +126,62 @@ def validate_provider_receipt(
     )
 
 
+def validate_provider_receipt_telemetry_v2(
+    *,
+    creation: dict[str, object],
+    retrieval: dict[str, object],
+    input_items: tuple[dict[str, object], ...],
+    expectations: TelemetryReceiptExpectationsV2,
+    latency_seconds: float,
+) -> TelemetryReceiptValidationV2:
+    """Validate scientific custody while treating usage as record-only telemetry."""
+
+    _require_completed(creation, label="creation")
+    _require_completed(retrieval, label="retrieval")
+    _require_response_identity(creation, retrieval)
+    _require_model_identity(creation, retrieval, expectations.provider_model_id)
+    _require_request_binding(creation, retrieval, expectations)
+    _require_creation_description(creation, expectations.provider_format)
+    _require_creation_schema(creation, expectations.provider_format)
+    _require_input(input_items, expectations.provider_input)
+    _require_retrieval_schema(retrieval, expectations.provider_format)
+    creation_payload, retrieval_payload = _require_payload_match(
+        creation,
+        retrieval,
+    )
+    identity = _require_output_topology(
+        creation,
+        retrieval,
+        expected_model=expectations.provider_model_id,
+        expected_payload_sha256=creation_payload.sha256,
+    )
+    usage = _require_usage(
+        creation=creation,
+        retrieval=retrieval,
+        expectations=expectations,
+        latency_seconds=latency_seconds,
+    )
+    differences = _require_known_envelope_differences(
+        creation,
+        retrieval,
+    )
+    return TelemetryReceiptValidationV2(
+        identity=identity,
+        scientific_payload_sha256=retrieval_payload.sha256,
+        creation_envelope_sha256=canonical_sha256(creation),
+        retrieval_envelope_sha256=canonical_sha256(retrieval),
+        provider_input_sha256=hashlib.sha256(
+            expectations.provider_input.encode()
+        ).hexdigest(),
+        provider_schema_sha256=canonical_sha256(expectations.provider_format),
+        differences=differences,
+        usage=usage,
+    )
+
+
 def validate_creation_response(
     creation: dict[str, object],
-    expectations: ReceiptExpectations,
+    expectations: ReceiptExpectationsLike,
 ) -> None:
     """Stop before retrieval when a creation response fails stages 1 through 5."""
 
@@ -137,7 +196,7 @@ def validate_creation_response(
 def validate_retrieval_envelope(
     creation: dict[str, object],
     retrieval: dict[str, object],
-    expectations: ReceiptExpectations,
+    expectations: ReceiptExpectationsLike,
 ) -> None:
     """Stop before input-item retrieval when response envelope stages fail."""
 
@@ -243,7 +302,7 @@ def _require_known_envelope_differences(
 def _require_request_binding(
     creation: dict[str, object],
     retrieval: dict[str, object],
-    expectations: ReceiptExpectations,
+    expectations: ReceiptExpectationsLike,
 ) -> None:
     for label, response in (("creation", creation), ("retrieval", retrieval)):
         _require_single_binding(response, expectations, label=label)
@@ -358,7 +417,7 @@ def _require_single_model(
 
 def _require_single_binding(
     response: dict[str, object],
-    expectations: ReceiptExpectations,
+    expectations: ReceiptExpectationsLike,
     *,
     label: str,
 ) -> None:
@@ -563,7 +622,7 @@ def _require_usage(
     *,
     creation: dict[str, object],
     retrieval: dict[str, object],
-    expectations: ReceiptExpectations,
+    expectations: ReceiptExpectationsLike,
     latency_seconds: float,
 ) -> UsageAccounting:
     creation_usage = creation.get("usage")
@@ -659,9 +718,7 @@ def _require_budgets(
             usage.output_tokens, expectations.max_output_tokens
         ),
         total_tokens=_budget_status(usage.total_tokens, expectations.max_total_tokens),
-        latency=_budget_status(
-            usage.latency_seconds, expectations.max_latency_seconds
-        ),
+        latency=_budget_status(usage.latency_seconds, expectations.max_latency_seconds),
         cost=_budget_status(usage.cost_usd, expectations.max_cost_usd),
     )
     checks = (

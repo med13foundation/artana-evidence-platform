@@ -1,0 +1,157 @@
+{
+  "authorization": "REMOTE_PARITY_REQUIRED_BEFORE_PROVIDER",
+  "execution_rules": {
+    "case_order_immutable": true,
+    "completed_case_science_survives_operational_stop": true,
+    "confirmation_retrieval_required": true,
+    "fallback": false,
+    "graph_writes": false,
+    "historical_rescoring": false,
+    "manual_output_repair": false,
+    "one_creation_call_per_case": true,
+    "promotion": false,
+    "qualification": false,
+    "stop_before_next_on_first_scientific_failure": true,
+    "stop_before_next_when_cumulative_cost_reaches_budget": true,
+    "token_count_answer_length_latency_and_cost_are_record_only": true
+  },
+  "experiment_id": "fresh-cg-occurrence-v2-v2",
+  "frozen_state": {
+    "binding_schema_sha256": "0db47c685c1d6e5dddf644891010cbda3b7694b2de55bf6052cb7856a8ecf68e",
+    "binding_schema_version": "artana.staged_generalization.occurrence_bindings.v2",
+    "case_order": [
+      "fresh-cg-pmid-2681013-e5",
+      "fresh-cg-pmid-16098727-e5",
+      "fresh-cg-pmid-7904970-e11",
+      "fresh-cg-pmid-19648108-e11",
+      "fresh-cg-pmid-11306510-e1",
+      "fresh-cg-pmid-18841154-e12",
+      "fresh-cg-pmid-20448329-e6",
+      "fresh-cg-pmid-8895545-e6"
+    ],
+    "code_sha256_by_path": {
+      "scripts/run_fresh_cg_occurrence_v2_v2.py": "87ef70a958d3d41aee0691a3d6fcc0b2cf2afd79fd27ca59bbd2518c5a4f89be",
+      "scripts/validation/provider_receipt_boundary/background/contracts.py": "c2e48f3e77518f19b8c9e2c105b29e0fa98e0fda668228d460eb3452fa538d41",
+      "scripts/validation/provider_receipt_boundary/background/execution.py": "0b368364e20efa7ef675f310d030ad2ba01b81d624213a26829363955ca36693",
+      "scripts/validation/provider_receipt_boundary/contracts.py": "c3cb084c50d2faa654b0f37208786ae33d895fee2b74ef4c117c38e691f25087",
+      "scripts/validation/provider_receipt_boundary/validation.py": "a4dfda3dbabb0383ef6087221f56cb9cc1ba547e876e5134e1099f6e4a3c5500",
+      "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v2/__init__.py": "f043dd2d4681f61ccdf4656cbdc910e83e48a4e9f9f490431b1cb7216ec76ab5",
+      "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v2/accounting.py": "1ec77fba762a9c9033d2a87f5f362f87d9ab0e7354e50ce490448331fa00d0c9",
+      "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v2/config.py": "22d50a257ff4a6ec6bffa3b9020acda49df4f92f69892d4426b1d220d2852e6b",
+      "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v2/contracts.py": "bd895d8b592934d4fb76cdfa8650f9a329fbe751f6ab504936aeec7e737d0a4a",
+      "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v2/preflight.py": "bb3fb52202bf0e88e8fe9681f5836ab7318f735d6e175e882064a9ecdb365620",
+      "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v2/provider.py": "bb453222f490571122899c2ed5a4d50c874e3668dab8f3b5eca246d96aabfb2b",
+      "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v2/review.py": "199bc7beb8251c6e85ea9e95107466afb5e3b5fd18ccbbd1acb197bcc336804d",
+      "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v2/runner.py": "e271d4018b68cac37c0222a82f0b9d38e8b3ba0b01a423b181fc9e311b59c351",
+      "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v2/selection.py": "c42b07bee002cf5cf9fc1deb9dd5c3ef0dbcb0c1ca25dd4fd2233e94d2d8d5d7",
+      "scripts/validation/public_gold/staged_event/generalization/fresh_cg_v2/terminal.py": "3a303daec1708e116910e2e88549eeba1679ce059290281ebfb5f0114b085076"
+    },
+    "combined_provider_schema_sha256": "fcea9c942822ac2f65277bdae0cac2b082a168523d0b4ca294addc18d6b101a7",
+    "consumed_v1_case_id": "fresh-cg-pmid-21963494-e3",
+    "consumed_v1_case_reused": false,
+    "direct_cg_reference_sha256_by_case": {
+      "fresh-cg-pmid-11306510-e1": "048576b3163d138b4cbbb3885370e6615245c124a7c978ef6b7ff0c2ec552abc",
+      "fresh-cg-pmid-16098727-e5": "563e0eccdcf022738a359ce6b9143b5648d1e8662de43b0aa93cb874f87f33bd",
+      "fresh-cg-pmid-18841154-e12": "33ef8b01327c69b671fc10dff2fe4d61bb5aff05bb15669e06ab196b8e66299f",
+      "fresh-cg-pmid-19648108-e11": "6ce482892427ba821223cfcdbf5c86374463dbb4a45d5c426a7965e7f3fcbe71",
+      "fresh-cg-pmid-20448329-e6": "2d63bf508dabc2df8d93d5e1689da5c9016c32d19930bb3a5a5bc8e77871ece7",
+      "fresh-cg-pmid-2681013-e5": "155a5a27ab3af0d13e46baa26b9efb78d59b86cd50a2b413c19a0499097e876c",
+      "fresh-cg-pmid-7904970-e11": "cc9a15c570524a6f03e2344470381bdc9bc31825433557f6fb00aa94c255022a",
+      "fresh-cg-pmid-8895545-e6": "4cd237215063c6b30f43b61f9892c6140159c64495c013516bed102b11c07a24"
+    },
+    "model": "openai:gpt-5.6-luna",
+    "occurrence_evaluator_package_sha256": "610198ea76396485bf61bd16828402d1fd0ecb38e6565b3d0ce6367c110dd5d1",
+    "occurrence_evaluator_version": "artana.staged_generalization.occurrence_evaluator.v2",
+    "operational_budget": {
+      "application_max_output_tokens": null,
+      "global_max_cost_usd": 5.0,
+      "global_max_creation_calls": 8,
+      "per_call_cost_limit": null,
+      "provider_retries": 0,
+      "silent_retries": 0,
+      "total_token_limit": null,
+      "usage_affects_scientific_scoring": false
+    },
+    "provider_format_sha256": "aa5875e90ff7066bdb729f8f226067f6c8af22e3425f892c02355d9fe6c16f54",
+    "provider_input_sha256_by_case": {
+      "fresh-cg-pmid-11306510-e1": "895701d07e7949d2ad15911102352022755abc9aa2eff3523b769f88b10aa65c",
+      "fresh-cg-pmid-16098727-e5": "847b8488c5d8e16286947013ddddfb3931d6fbc1d440b8a006207f7e155646fe",
+      "fresh-cg-pmid-18841154-e12": "25e836c3eeae50b87a9e7e824ec7451d27e43c9633f9914662e7cb5d0fabd567",
+      "fresh-cg-pmid-19648108-e11": "2827eeb3aef67d0ac182ec9d9512cfadaccbb917686270c58fd558e93623aa8f",
+      "fresh-cg-pmid-20448329-e6": "eb8bb8cfc4f37893c7ed17eb88d62b477a378c218ca5c9f8afb82112c0d0c8f4",
+      "fresh-cg-pmid-2681013-e5": "a1c24ba2bfa10f21b78673a499c5bcd2801a7bd328acec284ee7c8033791c9cd",
+      "fresh-cg-pmid-7904970-e11": "1562dc3c40b39aeb488bf29e480f8c979d8ba7cc4f433029927b54ef01fb81ad",
+      "fresh-cg-pmid-8895545-e6": "0f942b42a7ea70ab1faa5f7ca6e768825da05a416520d7fec103be2d99fea81d"
+    },
+    "reasoning_effort": "high",
+    "replacement_review_packet_sha256": "e78373f80536953fa5e4ab4f3d078a01fd38c13cdd1a1a870ee4f817873de82f",
+    "replacement_review_schema_sha256": "cdf8a2768dfa4e856e4d3182fda89807b12713bc0987cce0228995b0bc030647",
+    "replacement_reviewer_fragment_sha256_by_id": {
+      "fresh-cg-reviewer-a": "ff882ac344acf2021dc0a860bff7c202b30a4c280a8bc15f3a1ececc7f8bf7e1",
+      "fresh-cg-reviewer-b": "d1c38640c4b0978fbe6cc93f8b58e5eb5eaca7c1f573673a1e22f1f9032d7668",
+      "fresh-cg-tiebreaker": "d3d61bc2819653217b0193ae48e4060fc5bbd7c8fc7e0fecabcc7e0651388930"
+    },
+    "review_packet_sha256": "505ef1141d19d940a5395ea7b4e09b8db45e39ff2cd63b4267cf4272d54dd14d",
+    "review_prompt_sha256": "9d3a2e6f598764d81116bd02c38680940f867ea09cdbc269ac8a42cc31806aac",
+    "review_schema_sha256": "786f09fd699ba73d3d58e417ca96f13ce72dae671ca2bb314135354f8cbe7f5f",
+    "reviewer_artifact_sha256_by_id": {
+      "fresh-cg-reviewer-a": "8db2194db5d2399c162983703416fc513f535ceca9244ae54d83a06b117da184",
+      "fresh-cg-reviewer-b": "262b195580b2ba05ad6c33aaecd33c9f203e4bebfcd077c73268c126056d3799",
+      "fresh-cg-tiebreaker": "14706dbf81b9d8a34d12b063d3d6d454fc11d03c19ced592b2518ad02f516406"
+    },
+    "selection_artifact_sha256": "bd91c3472ccfb8b30bc0ae451a1c33c081b9336e2d4bd11762bae89559919b0d",
+    "source_sha256_by_case": {
+      "fresh-cg-pmid-11306510-e1": "460403a3f71c5e6450016e5b22fb230256858e819ade5966bd3c2c819200a994",
+      "fresh-cg-pmid-16098727-e5": "84723cbe9cdc8d8449db4361f5aac12fd049020a98050045ade6143f632b2fae",
+      "fresh-cg-pmid-18841154-e12": "67f5372287ef70ba59d3c6632aa43ee55256bd04c9e8cf63f56eb280d32d6055",
+      "fresh-cg-pmid-19648108-e11": "3e63601b84dcd1609bc264cee307858e2a01a28e247aeb90b3d0446e18831ce5",
+      "fresh-cg-pmid-20448329-e6": "903c41fb858ef5146d0877bb16e5bafa1cef608a6b913914eea2b62c940d1bb0",
+      "fresh-cg-pmid-2681013-e5": "ee9a981ca7ceda2f4dfcf320d27f7338fb7f86774833c0b4ce63cd75532adbe8",
+      "fresh-cg-pmid-7904970-e11": "e16dd6c95a9c08d89c5ce4c34b27c263b0fc8ad18436ce60005050ff1c0ee653",
+      "fresh-cg-pmid-8895545-e6": "aa1361624ac06116bb92e65437190f2e30f23b80c9215b2328e2e403c57590f8"
+    },
+    "tiebreak_request_sha256": "52b4690ad358d08c38b84b563eaa0d040e6a40604f0ddf635ce05fc4d66c30c6",
+    "two_lane_reference_sha256": "e2f4ca70daa76501c6ca6038ac7c62655647b91425966ba84c8e733f02e04f0b",
+    "unresolved_reference_fields": [],
+    "v1_sealed_artifact_sha256_by_role": {
+      "attempt": "52a66f88efbda9982f7d90ff8b83b3eefcfed838e2ea622435ef867ada8538db",
+      "preregistration": "2b26d580422efedcb44b7de8d8b7e973f2dae04bff020cdce85f3b2b8d4c1b98",
+      "report": "2b350fac9cd0cdc9a1207dc85b23cb9fd833b9b4d31af6ba4d3ac71d601c8a6a",
+      "result": "2a006ea527ef2f22670dd1ec61d9a39e099cac415047852a3f44cd4b8b67544a"
+    },
+    "v9_scientific_prompt_sha256": "4ce450b6a79fdb0cb99c48a69eae1390beef21dcf0094099503c03bdb4dd9234",
+    "v9_scientific_schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1"
+  },
+  "instrumentation_change": "ABSOLUTE_SOURCE_OCCURRENCE_BINDINGS_V2",
+  "operational_policy_change": "RECORD_ONLY_USAGE_WITH_CUMULATIVE_5_USD_PRECALL_STOP",
+  "precall_gates": {
+    "local_head_must_equal_remote_head": true,
+    "offline_regression_node_ids": [
+      "tests/unit/test_fresh_cg_v2.py::test_v2_request_omits_output_ceiling",
+      "tests/unit/test_fresh_cg_v2.py::test_large_usage_is_scientifically_record_only",
+      "tests/unit/test_fresh_cg_v2.py::test_budget_stop_prevents_the_next_call",
+      "tests/unit/test_fresh_cg_v2.py::test_v1_artifacts_remain_byte_identical",
+      "tests/unit/test_occurrence_evaluator_v2.py::test_v2_preserves_every_frozen_panel_reference_without_relaxing_science"
+    ],
+    "preregistration_must_be_tracked_at_head": true,
+    "preserved_unrelated_dirty_paths": [
+      "coverage.xml",
+      "docs/validation/reports/2026-07-17-tg04-work-summary-and-current-plan.md",
+      "uv.lock",
+      "validation/"
+    ],
+    "remote_branch": "alvaro/tg04-source-general-claim-verification"
+  },
+  "review_governance": {
+    "primary_answers_disclosed_to_tiebreaker": false,
+    "primary_reviewer_ids": [
+      "fresh-cg-reviewer-a",
+      "fresh-cg-reviewer-b"
+    ],
+    "replacement_independently_reviewed": true,
+    "review_only_scoring": "NO_AUTOMATIC_CREDIT_OR_PENALTY",
+    "tiebreaker_reviewer_id": "fresh-cg-tiebreaker"
+  },
+  "schema_version": "artana.staged_generalization.fresh_cg_preregistration.v2",
+  "scientific_change": "NONE"
+}

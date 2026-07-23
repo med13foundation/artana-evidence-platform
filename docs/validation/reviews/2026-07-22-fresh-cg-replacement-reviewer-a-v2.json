@@ -1,0 +1,92 @@
+{
+  "schema_version": "artana.staged_generalization.fresh_cg_replacement_reviewer.v2",
+  "reviewer_id": "fresh-cg-reviewer-a",
+  "reviewer_task_identity": "/root/fresh_cg_reviewer_d",
+  "reviewer_model_identity": "inherited Codex agent model (platform identity unavailable)",
+  "review_prompt_sha256": "9d3a2e6f598764d81116bd02c38680940f867ea09cdbc269ac8a42cc31806aac",
+  "review_packet_sha256": "505ef1141d19d940a5395ea7b4e09b8db45e39ff2cd63b4267cf4272d54dd14d",
+  "internet_enabled": true,
+  "model_output_blinded": true,
+  "other_reviewer_output_blinded": true,
+  "implementation_reference_blinded": true,
+  "retrieved_source": {
+    "document_id": "PMID-8895545",
+    "retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=8895545&retmode=xml",
+    "retrieved_at_utc": "2026-07-23T03:11:06Z",
+    "response_bytes_sha256": "27146be81bf6fc98269b5f1c3da6a487f99accc2146dcd275b63e8e1083bea49",
+    "context_verified": true
+  },
+  "case": {
+    "case_id": "fresh-cg-pmid-8895545-e6",
+    "event_anchor_id": "T53",
+    "arguments": [
+      {
+        "target_anchor_id": "T6",
+        "role": "AFFECTED_ENTITY",
+        "evidence": {
+          "start": 118,
+          "end": 121,
+          "text": "5T4"
+        },
+        "rationale": "5T4 is the antigen explicitly described as being expressed."
+      }
+    ],
+    "direction": {
+      "value": "OBSERVED",
+      "evidence": {
+        "start": 204,
+        "end": 224,
+        "text": "It is also expressed"
+      },
+      "rationale": "The source affirms expression but states no increase, decrease, or other directional change."
+    },
+    "comparison": {
+      "value": "NOT_APPLICABLE",
+      "evidence": {
+        "start": 204,
+        "end": 224,
+        "text": "It is also expressed"
+      },
+      "rationale": "No comparator or comparison of 5T4 expression levels is present in the permitted context."
+    },
+    "polarity": {
+      "value": "AFFIRMED",
+      "evidence": {
+        "start": 204,
+        "end": 224,
+        "text": "It is also expressed"
+      },
+      "rationale": "The expression statement is positive and is neither negated nor an analytic null result."
+    },
+    "uncertainty": {
+      "value": "ASSERTED",
+      "evidence": {
+        "start": 204,
+        "end": 224,
+        "text": "It is also expressed"
+      },
+      "rationale": "The sentence presents 5T4 expression declaratively without hedging."
+    },
+    "statistics": {
+      "observations": [],
+      "author_interpretation": "NOT_CLAIMED",
+      "interpretation_evidence": null,
+      "rationale": "The permitted context contains no p-value, confidence interval, effect estimate, or explicit significance interpretation."
+    },
+    "permitted_contextual_participants": [
+      {
+        "context_id": "fresh-cg-pmid-8895545-e6-context-1",
+        "entity_type": "POPULATION",
+        "mention": {
+          "start": 228,
+          "end": 253,
+          "text": "many types of tumour cell"
+        },
+        "role": "POPULATION",
+        "rationale": "This exact phrase identifies the cell population in which 5T4 expression is asserted."
+      }
+    ],
+    "overall_rationale": "The frozen source asserts non-directional 5T4 expression across many tumour-cell types, with no explicit expression comparator, uncertainty, null result, or statistical observation. The later metastasis and clinical-outcome association is a separate coordinated predicate and was not added as a participant in the anchored expression event."
+  },
+  "independence_declaration": "I reviewed only the supplied blinded prompt, replacement review packet, replacement schema, and the public NCBI EFetch response. I did not inspect model outputs, another reviewer's output, direct CG annotations, V1 or V2 references, selection implementation, grader output, or other repository review artifacts."
+}

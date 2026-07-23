@@ -13,7 +13,9 @@ from scripts.validation.provider_receipt_boundary.background import (
     BackgroundExecutionBudgets,
     BackgroundExecutionRuntime,
     BackgroundProviderExecution,
+    TelemetryProviderRequestV2,
     execute_background_provider_call,
+    execute_background_provider_call_telemetry_v2,
 )
 from scripts.validation.provider_receipt_boundary.background import (
     execution as background_execution,
@@ -156,6 +158,17 @@ def _request() -> ProviderRequest:
         max_total_tokens=200,
         max_cost_usd=0.25,
         max_latency_seconds=20.0,
+        pricing={"input": 0.000005, "cached_input": 0.0000005, "output": 0.00003},
+        metadata={"experiment": "background-test"},
+    )
+
+
+def _telemetry_request() -> TelemetryProviderRequestV2:
+    return TelemetryProviderRequestV2(
+        provider_input="frozen input",
+        provider_format=FORMAT,
+        provider_model_id="gpt-5.6-sol",
+        reasoning_effort="low",
         pricing={"input": 0.000005, "cached_input": 0.0000005, "output": 0.00003},
         metadata={"experiment": "background-test"},
     )
@@ -426,6 +439,118 @@ def test_final_sdk_http_json_contains_frozen_output_ceiling(
     assert captured_bodies[0]["max_output_tokens"] == 100
     assert captured_bodies[0]["background"] is True
     assert captured_bodies[0]["store"] is True
+
+
+def test_telemetry_v2_final_sdk_http_json_omits_output_ceiling(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_bodies: list[dict[str, object]] = []
+
+    def capture(request: httpx.Request) -> httpx.Response:
+        loaded: object = json.loads(request.content)
+        assert isinstance(loaded, dict)
+        captured_bodies.append(loaded)
+        return httpx.Response(
+            400,
+            request=request,
+            json={
+                "error": {
+                    "message": "offline request capture",
+                    "type": "invalid_request_error",
+                    "code": "offline_capture",
+                    "param": None,
+                }
+            },
+        )
+
+    sdk_client = OpenAI(
+        api_key="offline-redacted-key",
+        max_retries=0,
+        http_client=httpx.Client(transport=httpx.MockTransport(capture)),
+    )
+    monkeypatch.setattr(
+        background_execution,
+        "OpenAI",
+        lambda **_kwargs: sdk_client,
+    )
+
+    with pytest.raises(ProviderExecutionError) as error:
+        execute_background_provider_call_telemetry_v2(
+            api_key="offline-redacted-key",
+            request=_telemetry_request(),
+            transport_budgets=_budgets(),
+            output_model=_Output,
+        )
+
+    assert error.value.stage == "BACKGROUND_CREATION_REJECTED"
+    assert len(captured_bodies) == 1
+    assert "max_output_tokens" not in captured_bodies[0]
+    assert captured_bodies[0]["background"] is True
+    assert captured_bodies[0]["store"] is True
+
+
+def test_telemetry_v2_large_usage_is_recorded_without_budget_rejection() -> None:
+    completed = _response("completed")
+    usage = completed["usage"]
+    assert isinstance(usage, dict)
+    usage["output_tokens"] = 100_000
+    usage["total_tokens"] = 100_020
+    client = _Client(completed, [copy.deepcopy(completed)])
+
+    execution = execute_background_provider_call_telemetry_v2(
+        api_key="test",
+        request=_telemetry_request(),
+        transport_budgets=_budgets(),
+        output_model=_Output,
+        runtime=BackgroundExecutionRuntime(
+            client=client,
+            monotonic=_Clock().monotonic,
+            sleep=lambda _seconds: None,
+        ),
+    )
+
+    assert execution.receipt["status"] == "VERIFIED_LIVE"
+    assert execution.receipt["token_and_cost_policy"] == (
+        "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY"
+    )
+    assert execution.receipt["usage"]["output_tokens"] == 100_000
+    budgets = execution.receipt["budgets"]
+    assert isinstance(budgets, dict)
+    assert budgets["requested_max_output_tokens"] is None
+    assert budgets["output_tokens"] == "RECORD_ONLY"
+    assert client.responses.create_calls == 1
+    assert client.responses.retrieve_calls == 1
+
+
+def test_telemetry_v2_schema_rejection_preserves_observed_usage() -> None:
+    completed = _response("completed", payload='{"unexpected":"value"}')
+    client = _Client(completed, [copy.deepcopy(completed)])
+
+    with pytest.raises(ProviderExecutionError) as error:
+        execute_background_provider_call_telemetry_v2(
+            api_key="test",
+            request=_telemetry_request(),
+            transport_budgets=_budgets(),
+            output_model=_Output,
+            runtime=BackgroundExecutionRuntime(
+                client=client,
+                monotonic=_Clock().monotonic,
+                sleep=lambda _seconds: None,
+            ),
+        )
+
+    assert error.value.stage == "STRUCTURED_OUTPUT_SCHEMA"
+    assert error.value.diagnostics["observed_usage"] == {
+        "input_tokens": 20,
+        "cached_input_tokens": 5,
+        "output_tokens": 10,
+        "reasoning_tokens": 4,
+        "total_tokens": 30,
+        "latency_seconds": 0.0,
+        "cost_usd": pytest.approx(0.0003775),
+    }
+    assert client.responses.create_calls == 1
+    assert client.responses.retrieve_calls == 1
 
 
 def test_polling_timeout_never_repeats_creation() -> None:

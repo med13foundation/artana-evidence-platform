@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import time
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Protocol, TypeVar, cast
 
 from openai import OpenAI
@@ -13,13 +13,16 @@ from pydantic import BaseModel
 
 from scripts.validation.provider_receipt_boundary import (
     ReceiptBoundaryError,
-    ReceiptExpectations,
+    ReceiptExpectationsLike,
+    UsageAccounting,
     validate_provider_receipt,
+    validate_provider_receipt_telemetry_v2,
     validate_retrieval_envelope,
 )
 from scripts.validation.provider_receipt_boundary.background.contracts import (
     BackgroundExecutionBudgets,
     BackgroundProviderExecution,
+    TelemetryProviderRequestV2,
 )
 from scripts.validation.provider_receipt_boundary.background.polling import (
     PollingRuntime,
@@ -80,6 +83,13 @@ class _Client(Protocol):
     def responses(self) -> _Responses: ...
 
 
+class _ReceiptJSON(Protocol):
+    @property
+    def usage(self) -> UsageAccounting: ...
+
+    def as_json(self) -> dict[str, object]: ...
+
+
 @dataclass(frozen=True, slots=True)
 class BackgroundExecutionRuntime:
     client: object | None = None
@@ -105,6 +115,42 @@ def execute_background_provider_call(
 ) -> BackgroundProviderExecution[_OutputT]:
     """Create once, poll one ID, then apply the strict completed receipt boundary."""
 
+    return _execute_background_provider_call(
+        api_key=api_key,
+        request=request,
+        transport_budgets=transport_budgets,
+        output_model=output_model,
+        runtime=runtime,
+    )
+
+
+def execute_background_provider_call_telemetry_v2(
+    *,
+    api_key: str,
+    request: TelemetryProviderRequestV2,
+    transport_budgets: BackgroundExecutionBudgets,
+    output_model: type[_OutputT],
+    runtime: BackgroundExecutionRuntime | None = None,
+) -> BackgroundProviderExecution[_OutputT]:
+    """Create once without output limits and record usage without grading it."""
+
+    return _execute_background_provider_call(
+        api_key=api_key,
+        request=request,
+        transport_budgets=transport_budgets,
+        output_model=output_model,
+        runtime=runtime,
+    )
+
+
+def _execute_background_provider_call(
+    *,
+    api_key: str,
+    request: ProviderRequest | TelemetryProviderRequestV2,
+    transport_budgets: BackgroundExecutionBudgets,
+    output_model: type[_OutputT],
+    runtime: BackgroundExecutionRuntime | None,
+) -> BackgroundProviderExecution[_OutputT]:
     execution_runtime = runtime or BackgroundExecutionRuntime()
     provider_client = cast(
         "_Client",
@@ -225,14 +271,22 @@ def execute_background_provider_call(
         ) from exc
     latency_seconds = execution_runtime.monotonic() - started
     try:
-        validation = validate_provider_receipt(
+        validation = _validate_completed_receipt(
+            request=request,
             creation=polling.terminal_response,
             retrieval=confirmation,
             input_items=input_items,
-            expectations=expectations,
             latency_seconds=latency_seconds,
         )
     except ReceiptBoundaryError as exc:
+        exc.diagnostics.update(
+            _telemetry_usage_diagnostics(
+                request=request,
+                creation=polling.terminal_response,
+                retrieval=confirmation,
+                latency_seconds=latency_seconds,
+            )
+        )
         raise _receipt_error(
             exc,
             response_id=response_id,
@@ -247,7 +301,10 @@ def execute_background_provider_call(
         raise ProviderExecutionError(
             "STRUCTURED_OUTPUT_PAYLOAD",
             str(exc),
-            diagnostics={"response_id": response_id},
+            diagnostics={
+                "response_id": response_id,
+                **_validated_usage_diagnostics(request, validation),
+            },
         ) from exc
     try:
         parsed = output_model.model_validate_json(
@@ -260,6 +317,7 @@ def execute_background_provider_call(
             diagnostics={
                 "response_id": response_id,
                 "scientific_payload_sha256": canonical_payload.sha256,
+                **_validated_usage_diagnostics(request, validation),
             },
         ) from exc
     receipt = validation.as_json()
@@ -289,26 +347,53 @@ def execute_background_provider_call(
     )
 
 
+def _validate_completed_receipt(
+    *,
+    request: ProviderRequest | TelemetryProviderRequestV2,
+    creation: dict[str, object],
+    retrieval: dict[str, object],
+    input_items: tuple[dict[str, object], ...],
+    latency_seconds: float,
+) -> _ReceiptJSON:
+    if isinstance(request, TelemetryProviderRequestV2):
+        return validate_provider_receipt_telemetry_v2(
+            creation=creation,
+            retrieval=retrieval,
+            input_items=input_items,
+            expectations=request.receipt_expectations(),
+            latency_seconds=latency_seconds,
+        )
+    return validate_provider_receipt(
+        creation=creation,
+        retrieval=retrieval,
+        input_items=input_items,
+        expectations=request.receipt_expectations(),
+        latency_seconds=latency_seconds,
+    )
+
+
 def _create_acknowledgement(
     *,
     provider_client: _Client,
-    request: ProviderRequest,
+    request: ProviderRequest | TelemetryProviderRequestV2,
     acknowledgement_timeout_seconds: float,
     monotonic: Callable[[], float],
 ) -> _Acknowledgement:
     started = monotonic()
     try:
-        response = provider_client.responses.create(
-            model=request.provider_model_id,
-            input=request.provider_input,
-            reasoning={"effort": request.reasoning_effort},
-            max_output_tokens=request.max_output_tokens,
-            text={"format": request.provider_format},
-            metadata=request.metadata,
-            background=True,
-            store=True,
-            timeout=acknowledgement_timeout_seconds,
-        )
+        request_parameters: dict[str, object] = {
+            "model": request.provider_model_id,
+            "input": request.provider_input,
+            "reasoning": {"effort": request.reasoning_effort},
+            "text": {"format": request.provider_format},
+            "metadata": request.metadata,
+            "background": True,
+            "store": True,
+            "timeout": acknowledgement_timeout_seconds,
+        }
+        if isinstance(request, ProviderRequest):
+            request_parameters["max_output_tokens"] = request.max_output_tokens
+        response = provider_client.responses.create(**request_parameters)
     except Exception as exc:  # noqa: BLE001 - creation is never repeated.
         stage = (
             "BACKGROUND_ACKNOWLEDGEMENT_TIMEOUT"
@@ -335,7 +420,7 @@ def _validate_acknowledgement(
     acknowledgement: _Acknowledgement,
     *,
     budgets: BackgroundExecutionBudgets,
-    expectations: ReceiptExpectations,
+    expectations: ReceiptExpectationsLike,
 ) -> None:
     try:
         _validate_snapshot(
@@ -381,7 +466,7 @@ def _validate_confirmation(
     confirmation: dict[str, object],
     *,
     response_id: str,
-    expectations: ReceiptExpectations,
+    expectations: ReceiptExpectationsLike,
 ) -> None:
     try:
         _validate_snapshot(
@@ -412,7 +497,7 @@ def _validate_snapshot(
     response: dict[str, object],
     *,
     expected_response_id: str | None,
-    expectations: ReceiptExpectations,
+    expectations: ReceiptExpectationsLike,
 ) -> str:
     response_id = response.get("id")
     if not isinstance(response_id, str) or not response_id:
@@ -491,6 +576,70 @@ def _receipt_error(
             **error.diagnostics,
         },
     )
+
+
+def _validated_usage_diagnostics(
+    request: ProviderRequest | TelemetryProviderRequestV2,
+    validation: _ReceiptJSON,
+) -> dict[str, object]:
+    if not isinstance(request, TelemetryProviderRequestV2):
+        return {}
+    return {"observed_usage": asdict(validation.usage)}
+
+
+def _telemetry_usage_diagnostics(
+    *,
+    request: ProviderRequest | TelemetryProviderRequestV2,
+    creation: dict[str, object],
+    retrieval: dict[str, object],
+    latency_seconds: float,
+) -> dict[str, object]:
+    if not isinstance(request, TelemetryProviderRequestV2):
+        return {}
+    creation_usage = creation.get("usage")
+    retrieval_usage = retrieval.get("usage")
+    if (
+        not isinstance(creation_usage, dict)
+        or creation_usage != retrieval_usage
+        or not isinstance(retrieval_usage, dict)
+    ):
+        return {}
+    try:
+        input_tokens = _usage_int(retrieval_usage, "input_tokens")
+        output_tokens = _usage_int(retrieval_usage, "output_tokens")
+        total_tokens = _usage_int(retrieval_usage, "total_tokens")
+        input_details = retrieval_usage["input_tokens_details"]
+        output_details = retrieval_usage["output_tokens_details"]
+        if not isinstance(input_details, dict) or not isinstance(output_details, dict):
+            return {}
+        cached_tokens = _usage_int(input_details, "cached_tokens")
+        reasoning_tokens = _usage_int(output_details, "reasoning_tokens")
+    except (KeyError, ValueError):
+        return {}
+    if cached_tokens > input_tokens or total_tokens != input_tokens + output_tokens:
+        return {}
+    pricing = request.pricing
+    usage = UsageAccounting(
+        input_tokens=input_tokens,
+        cached_input_tokens=cached_tokens,
+        output_tokens=output_tokens,
+        reasoning_tokens=reasoning_tokens,
+        total_tokens=total_tokens,
+        latency_seconds=latency_seconds,
+        cost_usd=(
+            (input_tokens - cached_tokens) * pricing["input"]
+            + cached_tokens * pricing["cached_input"]
+            + output_tokens * pricing["output"]
+        ),
+    )
+    return {"observed_usage": asdict(usage)}
+
+
+def _usage_int(value: dict[str, object], key: str) -> int:
+    item = value.get(key)
+    if not isinstance(item, int) or item < 0:
+        raise ValueError(f"usage {key} is absent")
+    return item
 
 
 def _counts(

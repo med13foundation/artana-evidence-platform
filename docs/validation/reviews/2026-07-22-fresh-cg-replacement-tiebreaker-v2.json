@@ -1,0 +1,92 @@
+{
+  "schema_version": "artana.staged_generalization.fresh_cg_replacement_reviewer.v2",
+  "reviewer_id": "fresh-cg-tiebreaker",
+  "reviewer_task_identity": "/root/fresh_cg_tiebreaker_final",
+  "reviewer_model_identity": "openai:gpt-5.6-sol",
+  "review_prompt_sha256": "9d3a2e6f598764d81116bd02c38680940f867ea09cdbc269ac8a42cc31806aac",
+  "review_packet_sha256": "505ef1141d19d940a5395ea7b4e09b8db45e39ff2cd63b4267cf4272d54dd14d",
+  "internet_enabled": true,
+  "model_output_blinded": true,
+  "other_reviewer_output_blinded": true,
+  "implementation_reference_blinded": true,
+  "retrieved_source": {
+    "document_id": "PMID-8895545",
+    "retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=8895545&retmode=xml",
+    "retrieved_at_utc": "2026-07-23T03:18:06Z",
+    "response_bytes_sha256": "27146be81bf6fc98269b5f1c3da6a487f99accc2146dcd275b63e8e1083bea49",
+    "context_verified": true
+  },
+  "case": {
+    "case_id": "fresh-cg-pmid-8895545-e6",
+    "event_anchor_id": "T53",
+    "arguments": [
+      {
+        "target_anchor_id": "T6",
+        "role": "AFFECTED_ENTITY",
+        "evidence": {
+          "start": 118,
+          "end": 121,
+          "text": "5T4"
+        },
+        "rationale": "The 5T4 antigen is the entity referred to by 'It' and explicitly stated to be expressed."
+      }
+    ],
+    "direction": {
+      "value": "OBSERVED",
+      "evidence": {
+        "start": 215,
+        "end": 224,
+        "text": "expressed"
+      },
+      "rationale": "The source explicitly states expression but does not say that the expression level increased or decreased."
+    },
+    "comparison": {
+      "value": "NOT_APPLICABLE",
+      "evidence": {
+        "start": 204,
+        "end": 224,
+        "text": "It is also expressed"
+      },
+      "rationale": "The additive word 'also' introduces another expression context, not a greater, lesser, or equal expression comparison."
+    },
+    "polarity": {
+      "value": "AFFIRMED",
+      "evidence": {
+        "start": 204,
+        "end": 224,
+        "text": "It is also expressed"
+      },
+      "rationale": "Expression is affirmatively asserted and is neither negated nor reported as an analytic null result."
+    },
+    "uncertainty": {
+      "value": "ASSERTED",
+      "evidence": {
+        "start": 204,
+        "end": 224,
+        "text": "It is also expressed"
+      },
+      "rationale": "The expression statement is unhedged and contains no provisional, uncertain, or hypothesis language."
+    },
+    "statistics": {
+      "observations": [],
+      "author_interpretation": "NOT_CLAIMED",
+      "interpretation_evidence": null,
+      "rationale": "The permitted context contains no p-value, confidence interval, effect estimate, or explicit significance interpretation."
+    },
+    "permitted_contextual_participants": [
+      {
+        "context_id": "ctx-tumour-cell-types",
+        "entity_type": "POPULATION",
+        "mention": {
+          "start": 228,
+          "end": 253,
+          "text": "many types of tumour cell"
+        },
+        "role": "POPULATION",
+        "rationale": "This exact phrase explicitly identifies the cell population expressing the 5T4 antigen."
+      }
+    ],
+    "overall_rationale": "The permitted context unambiguously asserts that the 5T4 antigen is expressed by many types of tumour cell. It gives neither an expression direction nor a quantitative comparison or statistic; the antibody, metastasis, and clinical-outcome phrases belong to separate definition or association statements rather than the anchored expression event."
+  },
+  "independence_declaration": "I independently reviewed only the supplied review prompt, blinded V2 replacement packet, V2 tiebreak request, and V2 schema, and verified the primary PubMed record through the packet's NCBI EFetch URL. I did not inspect primary reviewer fragments or artifacts, other reviewer outputs, direct CG annotations, reference artifacts, model outputs, implementation files, grader output, or git history."
+}

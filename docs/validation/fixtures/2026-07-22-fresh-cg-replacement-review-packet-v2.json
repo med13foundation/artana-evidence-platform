@@ -1,0 +1,44 @@
+{
+  "case": {
+    "case_id": "fresh-cg-pmid-8895545-e6",
+    "document_id": "PMID-8895545",
+    "event_anchor": {
+      "anchor_id": "T53",
+      "mention": {
+        "end": 224,
+        "start": 215,
+        "text": "expressed"
+      }
+    },
+    "participant_anchors": [
+      {
+        "anchor_id": "T6",
+        "mention": {
+          "end": 121,
+          "start": 118,
+          "text": "5T4"
+        }
+      }
+    ],
+    "permitted_context": {
+      "end": 343,
+      "start": 114,
+      "text": "The 5T4 antigen is defined by a monoclonal antibody (MAb) specific for human trophoblast. It is also expressed by many types of tumour cell and has been associated with metastasis and poor clinical outcome in a number of cancers."
+    },
+    "primary_retrieval_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=8895545&retmode=xml",
+    "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/8895545/",
+    "source_sha256": "aa1361624ac06116bb92e65437190f2e30f23b80c9215b2328e2e403c57590f8"
+  },
+  "full_review_packet_sha256": "505ef1141d19d940a5395ea7b4e09b8db45e39ff2cd63b4267cf4272d54dd14d",
+  "omitted_from_packet": [
+    "model outputs",
+    "other reviewer outputs",
+    "direct CG event types",
+    "direct CG entity types",
+    "direct CG Theme and Cause roles",
+    "expected Artana roles and semantic axes",
+    "expected counts and benchmark projections"
+  ],
+  "review_prompt_sha256": "9d3a2e6f598764d81116bd02c38680940f867ea09cdbc269ac8a42cc31806aac",
+  "schema_version": "artana.staged_generalization.fresh_cg_replacement_review_task.v2"
+}

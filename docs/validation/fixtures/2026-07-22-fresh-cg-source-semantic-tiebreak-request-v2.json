@@ -1,0 +1,15 @@
+{
+  "disputed_field_ids": [
+    "fresh-cg-pmid-2681013-e5:uncertainty",
+    "fresh-cg-pmid-16098727-e5:direction",
+    "fresh-cg-pmid-7904970-e11:contextual_participants",
+    "fresh-cg-pmid-19648108-e11:contextual_participants",
+    "fresh-cg-pmid-18841154-e12:comparison",
+    "fresh-cg-pmid-20448329-e6:contextual_participants"
+  ],
+  "instruction": "Independently adjudicate the replacement case. Only disputed fields will be used as tiebreak votes; retained V1 votes remain sealed.",
+  "primary_reviewer_answers_disclosed": false,
+  "replacement_case_id": "fresh-cg-pmid-8895545-e6",
+  "review_packet_sha256": "505ef1141d19d940a5395ea7b4e09b8db45e39ff2cd63b4267cf4272d54dd14d",
+  "schema_version": "artana.staged_generalization.fresh_cg_tiebreak_request.v2"
+}
