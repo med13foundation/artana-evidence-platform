@@ -1,0 +1,111 @@
+{
+  "artifact_sha256": {
+    "cg_review": "6fd3ea9d25647aad4a0edbef50aaeff9b0a695b6470e5aa27d1cde10b7084b21",
+    "source_review": "d3c49e6272935846d6c205e06dccb06f44237e820a112f50fb07500123d39134",
+    "v11_evaluation": "d1518737c7ce598d54b20bf46f2f383fe8e97b98df985b02ce36b315ad839589",
+    "v11_raw": "e06e85773c79008c7a76d77cadeb4741423942a5b04cdfea7ca2dd6aa384ee88",
+    "v11_result": "5b7e3d2e3827d640878de4d156bb509229bd0c3f35cf10358f1d886ed15950d1",
+    "v9_raw": "d7e5bc210089326092d823ab1262af4cfb1bd50f7ec36231fbbc5997963394f2",
+    "v9_result": "034cc3f9265a514851dfc5fd39ac3aae81c154a071ed92bf95ed7e175494e399"
+  },
+  "case_id": "generalization-drug-sensitivity",
+  "diagnostic_only": true,
+  "field_classifications": [
+    {
+      "field": "highlighted_focus",
+      "v11": "GENUINE_SOURCE_SEMANTIC_ERROR",
+      "v9": null
+    },
+    {
+      "field": "root_event",
+      "v11": "GENUINE_SOURCE_SEMANTIC_ERROR",
+      "v9": "EVALUATOR_ERROR"
+    },
+    {
+      "field": "event_trigger",
+      "v11": "GENUINE_SOURCE_SEMANTIC_ERROR",
+      "v9": null
+    },
+    {
+      "field": "event_type",
+      "v11": "GENUINE_SOURCE_SEMANTIC_ERROR",
+      "v9": "CG_PROJECTION_ONLY_MISMATCH"
+    },
+    {
+      "field": "carcinoma_patient_occurrence_and_type",
+      "v11": "REFERENCE_POLICY_AMBIGUITY",
+      "v9": "REFERENCE_POLICY_AMBIGUITY"
+    },
+    {
+      "field": "drug_occurrence",
+      "v11": "GENUINE_SOURCE_SEMANTIC_ERROR",
+      "v9": "EVALUATOR_ERROR"
+    },
+    {
+      "field": "drug_type",
+      "v11": null,
+      "v9": null
+    },
+    {
+      "field": "ts_participation",
+      "v11": "PERMITTED_SOURCE_CONTEXT",
+      "v9": null
+    },
+    {
+      "field": "dpd_participation",
+      "v11": "PERMITTED_SOURCE_CONTEXT",
+      "v9": null
+    },
+    {
+      "field": "argument_roles_and_attachment",
+      "v11": "GENUINE_SOURCE_SEMANTIC_ERROR",
+      "v9": "EVALUATOR_ERROR"
+    },
+    {
+      "field": "direction",
+      "v11": "REFERENCE_POLICY_AMBIGUITY",
+      "v9": "REFERENCE_POLICY_AMBIGUITY"
+    },
+    {
+      "field": "polarity",
+      "v11": "EVALUATOR_ERROR",
+      "v9": "EVALUATOR_ERROR"
+    },
+    {
+      "field": "uncertainty",
+      "v11": "EVALUATOR_ERROR",
+      "v9": "EVALUATOR_ERROR"
+    },
+    {
+      "field": "statistics",
+      "v11": "EVALUATOR_ERROR",
+      "v9": "EVALUATOR_ERROR"
+    },
+    {
+      "field": "exact_evidence",
+      "v11": null,
+      "v9": "EVALUATOR_ERROR"
+    },
+    {
+      "field": "contextual_additions",
+      "v11": "PERMITTED_SOURCE_CONTEXT",
+      "v9": null
+    },
+    {
+      "field": "unsupported_claim_count",
+      "v11": "EVALUATOR_ERROR",
+      "v9": "EVALUATOR_ERROR"
+    }
+  ],
+  "genuine_v11_errors": [
+    "wrong focused root and trigger",
+    "wrong direct drug occurrence",
+    "flattened argument attachment to the outer association"
+  ],
+  "qualification_credit": false,
+  "reviewed_at": "2026-07-23T16:26:51Z",
+  "reviewer_id": "fresh_cg_reviewer_b",
+  "schema_version": "artana.pmid_21965773.v9_v11_comparison_review.v1",
+  "sealed_terminals_changed": false,
+  "summary": "V11 contains a real focus/root error and a wrong occurrence. The composite patient population, OBSERVED direction, and TS/DPD nodes are not universal scientific errors. The unsupported count is a cascaded structural tally, not a count of independent claims."
+}

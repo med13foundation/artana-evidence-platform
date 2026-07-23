@@ -1,0 +1,101 @@
+{
+  "case_id": "generalization-drug-sensitivity",
+  "cg_exact": {
+    "entities": [
+      {
+        "end": 235,
+        "id": "T6",
+        "start": 215,
+        "text": "Thymidylate synthase",
+        "type": "Gene_or_gene_product"
+      },
+      {
+        "end": 276,
+        "id": "T8",
+        "start": 245,
+        "text": "dihydropyrimidine dehydrogenase",
+        "type": "Gene_or_gene_product"
+      },
+      {
+        "end": 378,
+        "id": "T12",
+        "start": 369,
+        "text": "carcinoma",
+        "type": "Cancer"
+      },
+      {
+        "end": 387,
+        "id": "T13",
+        "start": 379,
+        "text": "patients",
+        "type": "Organism"
+      },
+      {
+        "end": 395,
+        "id": "T14",
+        "start": 391,
+        "text": "5-FU",
+        "type": "Simple_chemical"
+      }
+    ],
+    "events": [
+      {
+        "arguments": [
+          "Cause:T14",
+          "Theme:T12"
+        ],
+        "id": "E9",
+        "trigger_id": "T63",
+        "type": "Regulation"
+      },
+      {
+        "arguments": [
+          "Theme:E9",
+          "Cause:T6"
+        ],
+        "id": "E7",
+        "trigger_id": "T62",
+        "type": "Regulation"
+      },
+      {
+        "arguments": [
+          "Theme:E9",
+          "Cause:T8"
+        ],
+        "id": "E8",
+        "trigger_id": "T62",
+        "type": "Regulation"
+      }
+    ],
+    "focus_event_id": "E9",
+    "triggers": [
+      {
+        "end": 346,
+        "id": "T62",
+        "start": 338,
+        "text": "involved",
+        "type": "Regulation"
+      },
+      {
+        "end": 365,
+        "id": "T63",
+        "start": 354,
+        "text": "sensitivity",
+        "type": "Regulation"
+      }
+    ]
+  },
+  "frozen_artana_reference_seen": false,
+  "model_outputs_seen": false,
+  "retrieved_at": "2026-07-23T16:19:52Z",
+  "review_phase": "BLINDED_CG_PROJECTION",
+  "reviewer_id": "fresh_cg_reviewer_a",
+  "schema_version": "artana.pmid_21965773.cg_projection_review.v1",
+  "source_artifact_sha256": {
+    "a1": "d6f0d526567bfc689d7d4c6ea63e9ba0345ee29b83126edf58f9e317fb624ebe",
+    "a2": "e554de689b08b2b4db29cae32893459eef6ffe0b11860cfa8f7313584537b0e8",
+    "txt": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880"
+  },
+  "source_semantic_review_sha256": "317e312d20d33ebcc2f648917bcdee96ff1ad24e5da24bca14a44d23b1d539f5",
+  "summary": "Exact CG projection requires Regulation/sensitivity with Cause second 5-FU and Theme carcinoma. It splits patients as an unlinked Organism. TS and DPD attach as Causes of two separate outer Regulation/involved events whose Theme is the sensitivity event. These are CG projection requirements, not universally compelled source-semantic roles."
+}

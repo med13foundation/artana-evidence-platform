@@ -1,0 +1,61 @@
+{
+  "ambiguities": [
+    "The phrase does not distinguish intrinsic tumor sensitivity, patient-level clinical responsiveness, or treatment outcome.",
+    "The phrase does not state the nature or direction of TS or DPD involvement."
+  ],
+  "benchmark_labels_seen": false,
+  "case_id": "generalization-drug-sensitivity",
+  "compact_representation": {
+    "comparison": "NOT_APPLICABLE",
+    "contextual_participants": [
+      {
+        "entity_type": "GENE_OR_PROTEIN",
+        "exact_text": "Thymidylate synthase (TS)",
+        "relationship": "INVOLVED_IN"
+      },
+      {
+        "entity_type": "GENE_OR_PROTEIN",
+        "exact_text": "dihydropyrimidine dehydrogenase (DPD)",
+        "relationship": "INVOLVED_IN"
+      }
+    ],
+    "direction": "NOT_APPLICABLE",
+    "event_kind": "DRUG_SENSITIVITY",
+    "mandatory_participants": [
+      {
+        "entity_type": "POPULATION",
+        "exact_text": "carcinoma patients",
+        "role": "POPULATION"
+      },
+      {
+        "entity_type": "SIMPLE_CHEMICAL",
+        "exact_text": "5-FU",
+        "occurrence": 2,
+        "role": "STIMULUS_OR_OBJECT"
+      }
+    ],
+    "polarity": "AFFIRMED",
+    "regulation_required": false,
+    "statistics": "NONE",
+    "trigger_text": "sensitivity",
+    "uncertainty": "ASSERTED"
+  },
+  "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+  "frozen_reference_seen": false,
+  "model_outputs_seen": false,
+  "retrieved_at": "2026-07-23T16:16:00Z",
+  "review_phase": "BLINDED_SOURCE_SEMANTICS",
+  "reviewer_id": "fresh_cg_reviewer_b",
+  "root_assessment": {
+    "outer_context_trigger": "are involved in",
+    "root_trigger": "sensitivity"
+  },
+  "schema_version": "artana.pmid_21965773.source_semantic_review.v1",
+  "source": {
+    "efetch_sha256": "772c57ffdd883b54012a27e37466ca4ff088af078ef1cf45a78f29aad9793e92",
+    "efetch_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=21965773&rettype=abstract&retmode=xml",
+    "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/21965773/"
+  },
+  "source_id": "PMID-21965773",
+  "source_semantic_summary": "The focused claim is an asserted qualitative drug-sensitivity relation. Carcinoma patients and the second 5-FU are mandatory inner participants. TS and DPD are explicit surrounding context but not mandatory inner participants. REGULATION is an optional ontology projection rather than a scientifically compelled source reading."
+}

@@ -1,0 +1,225 @@
+{
+  "adjudication_id": "pmid-21965773-drug-sensitivity-two-lane-v1",
+  "case_id": "generalization-drug-sensitivity",
+  "cg_projection_lane": {
+    "arguments": [
+      {
+        "cg_role": "Theme",
+        "entity_id": "T12",
+        "entity_type": "Cancer",
+        "exact_text": "carcinoma",
+        "target_event_id": "E9"
+      },
+      {
+        "cg_role": "Cause",
+        "entity_id": "T14",
+        "entity_type": "Simple_chemical",
+        "exact_text": "5-FU",
+        "occurrence_end": 395,
+        "occurrence_start": 391,
+        "target_event_id": "E9"
+      }
+    ],
+    "event_id": "E9",
+    "event_type": "Regulation",
+    "outer_dependency_context": [
+      "E7 Regulation/involved Theme:E9 Cause:T6",
+      "E8 Regulation/involved Theme:E9 Cause:T8"
+    ],
+    "qualification_credit": false,
+    "review_only": true,
+    "trigger_id": "T63",
+    "trigger_text": "sensitivity"
+  },
+  "classification_taxonomy": [
+    "GENUINE_SOURCE_SEMANTIC_ERROR",
+    "CG_PROJECTION_ONLY_MISMATCH",
+    "REFERENCE_POLICY_AMBIGUITY",
+    "PERMITTED_SOURCE_CONTEXT",
+    "UNSUPPORTED_EXTRACTION",
+    "EVALUATOR_ERROR"
+  ],
+  "field_adjudication": [
+    {
+      "field": "highlighted_focus",
+      "v11_classification": "GENUINE_SOURCE_SEMANTIC_ERROR",
+      "v9_classification": null,
+      "verdict": "The focus is the sensitivity phrase. V11 replaced it with the outer involvement proposition."
+    },
+    {
+      "field": "root_event",
+      "v11_classification": "GENUINE_SOURCE_SEMANTIC_ERROR",
+      "v9_classification": "EVALUATOR_ERROR",
+      "verdict": "V9 raw output roots sensitivity; its frozen root failure is a mapping cascade. V11 roots the outer involvement proposition."
+    },
+    {
+      "field": "event_trigger",
+      "v11_classification": "GENUINE_SOURCE_SEMANTIC_ERROR",
+      "v9_classification": null,
+      "verdict": "Sensitivity is the required source trigger. V11 used are involved in."
+    },
+    {
+      "field": "event_type",
+      "v11_classification": "CG_PROJECTION_ONLY_MISMATCH",
+      "v9_classification": "CG_PROJECTION_ONLY_MISMATCH",
+      "verdict": "REGULATION is exact CG projection, not a uniquely compelled source-semantic type."
+    },
+    {
+      "field": "carcinoma_patient_occurrence_and_type",
+      "v11_classification": "REFERENCE_POLICY_AMBIGUITY",
+      "v9_classification": "REFERENCE_POLICY_AMBIGUITY",
+      "verdict": "POPULATION/carcinoma patients is source-valid. CANCER/carcinoma is CG-exact. The lanes must not be conflated."
+    },
+    {
+      "field": "drug_occurrence",
+      "v11_classification": "GENUINE_SOURCE_SEMANTIC_ERROR",
+      "v9_classification": "EVALUATOR_ERROR",
+      "verdict": "The direct source and CG occurrence is the final 5-FU at 391:395. V11 selected the earlier metabolism-clause mention. V9 intended the direct occurrence but its old evidence contract could not disambiguate repeated text."
+    },
+    {
+      "field": "drug_type",
+      "v11_classification": null,
+      "v9_classification": null,
+      "verdict": "Both outputs correctly use SIMPLE_CHEMICAL."
+    },
+    {
+      "field": "ts_participation",
+      "v11_classification": "PERMITTED_SOURCE_CONTEXT",
+      "v9_classification": null,
+      "verdict": "TS is explicit optional context, not a mandatory focus-event participant."
+    },
+    {
+      "field": "dpd_participation",
+      "v11_classification": "PERMITTED_SOURCE_CONTEXT",
+      "v9_classification": null,
+      "verdict": "DPD is explicit optional context, not a mandatory focus-event participant."
+    },
+    {
+      "field": "argument_roles_and_attachment",
+      "v11_classification": "GENUINE_SOURCE_SEMANTIC_ERROR",
+      "v9_classification": "EVALUATOR_ERROR",
+      "verdict": "The source roles are AFFECTED_ENTITY for the population and STIMULUS_OR_OBJECT for the drug. V11 attaches all participants to the wrong root. V9's frozen link failure is a mapping cascade."
+    },
+    {
+      "field": "direction",
+      "v11_classification": "REFERENCE_POLICY_AMBIGUITY",
+      "v9_classification": "REFERENCE_POLICY_AMBIGUITY",
+      "verdict": "The source gives no increase or decrease. OBSERVED and NOT_APPLICABLE are taxonomy alternatives, not independently annotated facts."
+    },
+    {
+      "field": "polarity",
+      "v11_classification": "EVALUATOR_ERROR",
+      "v9_classification": "EVALUATOR_ERROR",
+      "verdict": "Both raw outputs correctly use AFFIRMED; frozen false metrics cascade from absent mapped sensitivity."
+    },
+    {
+      "field": "uncertainty",
+      "v11_classification": "EVALUATOR_ERROR",
+      "v9_classification": "EVALUATOR_ERROR",
+      "verdict": "Both raw outputs correctly use ASSERTED; frozen false metrics cascade from absent mapped sensitivity."
+    },
+    {
+      "field": "statistics",
+      "v11_classification": "EVALUATOR_ERROR",
+      "v9_classification": "EVALUATOR_ERROR",
+      "verdict": "Both raw outputs correctly use NONE and NOT_CLAIMED; frozen false metrics cascade from absent mapped sensitivity."
+    },
+    {
+      "field": "exact_evidence",
+      "v11_classification": null,
+      "v9_classification": "EVALUATOR_ERROR",
+      "verdict": "The full sentence is exact evidence. V11's unique grounding does not validate its wrong occurrence. V9's old failure came from repeated 5-FU text."
+    },
+    {
+      "field": "contextual_additions",
+      "v11_classification": "PERMITTED_SOURCE_CONTEXT",
+      "v9_classification": null,
+      "verdict": "TS and DPD nodes are supported optional context. Their presence is not an unsupported extraction."
+    },
+    {
+      "field": "unsupported_claim_count",
+      "v11_classification": "EVALUATOR_ERROR",
+      "v9_classification": "EVALUATOR_ERROR",
+      "verdict": "The frozen 5 and 7 counts are sums of unmapped events, participants, and links, not counts of independent scientific claims. V11's increase is caused by two links from permitted context nodes to an unmapped event."
+    }
+  ],
+  "genuine_v11_errors": [
+    "The highlighted sensitivity event is absent as the root.",
+    "The root trigger is the surrounding are involved in predicate.",
+    "The earlier metabolism-clause drug occurrence replaces the focus-local second 5-FU.",
+    "All participants are flattened onto the wrong root rather than preserving the sensitivity event."
+  ],
+  "graph_writes": 0,
+  "historical_artifacts_modified": false,
+  "independent_review_artifact_sha256": {
+    "cg_reviewer_a": "6d5ac4ea81e1f6637e6ff436ac8ac8dcb9a6f805ff952eabda73ae746be2b3a3",
+    "cg_reviewer_b": "6fd3ea9d25647aad4a0edbef50aaeff9b0a695b6470e5aa27d1cde10b7084b21",
+    "comparison_reviewer_a": "bdaceee1b22f50a11105c0cffeafc5173cf1b7f71cd4f82f97654a21fd9b180c",
+    "comparison_reviewer_b": "5863063f22c16338bf31db365a304f413bf9753100a7e7a0af847e6d86c162ff",
+    "source_reviewer_a": "317e312d20d33ebcc2f648917bcdee96ff1ad24e5da24bca14a44d23b1d539f5",
+    "source_reviewer_b": "d3c49e6272935846d6c205e06dccb06f44237e820a112f50fb07500123d39134",
+    "tiebreaker": "32c53f1794ebd9ed78062405cda11948862460816e1e0f5bfc5b28924cc449cd"
+  },
+  "qualification_credit": false,
+  "schema_version": "artana.pmid_21965773.two_lane_adjudication.v1",
+  "sealed_v11_terminal": "V11_EXPOSED_RUN_V2_FAIL_UNRELATED_REGRESSION",
+  "source_semantic_lane": {
+    "acceptable_direction_values": [
+      "NOT_APPLICABLE",
+      "OBSERVED"
+    ],
+    "acceptable_event_types": [
+      "ASSOCIATION",
+      "REGULATION"
+    ],
+    "comparison": "NOT_APPLICABLE",
+    "event_kind": "DRUG_SENSITIVITY",
+    "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+    "mandatory_participants": [
+      {
+        "entity_type": "POPULATION",
+        "exact_text": "carcinoma patients",
+        "role": "AFFECTED_ENTITY"
+      },
+      {
+        "entity_type": "SIMPLE_CHEMICAL",
+        "exact_text": "5-FU",
+        "occurrence_end": 395,
+        "occurrence_start": 391,
+        "role": "STIMULUS_OR_OBJECT"
+      }
+    ],
+    "permitted_context": [
+      {
+        "entity_type": "GENE_OR_PROTEIN",
+        "exact_texts": [
+          "Thymidylate synthase",
+          "TS",
+          "Thymidylate synthase (TS)"
+        ],
+        "role": "CONTEXTUAL_PARTICIPANT"
+      },
+      {
+        "entity_type": "GENE_OR_PROTEIN",
+        "exact_texts": [
+          "dihydropyrimidine dehydrogenase",
+          "DPD",
+          "dihydropyrimidine dehydrogenase (DPD)"
+        ],
+        "role": "CONTEXTUAL_PARTICIPANT"
+      }
+    ],
+    "polarity": "AFFIRMED",
+    "root_trigger": "sensitivity",
+    "statistics": "NONE",
+    "uncertainty": "ASSERTED"
+  },
+  "tiebreaker_artifact": "docs/validation/reviews/2026-07-23-pmid-21965773-v9-v11-comparison-tiebreaker-v1.json",
+  "trusted_promotion": false,
+  "unresolved_disagreements": [],
+  "v12_authorization": {
+    "authorized": true,
+    "root_cause": "FOCUS_EVENT_ANCHORING_PROMPT_GAP",
+    "single_scientific_change": "FOCUS_EVENT_ANCHORING"
+  }
+}

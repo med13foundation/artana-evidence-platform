@@ -1,0 +1,40 @@
+{
+  "case_id": "generalization-drug-sensitivity",
+  "diagnostic_only": true,
+  "qualification_credit": false,
+  "review_artifact_sha256": {
+    "reviewer_a": "bdaceee1b22f50a11105c0cffeafc5173cf1b7f71cd4f82f97654a21fd9b180c",
+    "reviewer_b": "5863063f22c16338bf31db365a304f413bf9753100a7e7a0af847e6d86c162ff"
+  },
+  "reviewer_id": "fresh_cg_tiebreaker_final",
+  "rulings": [
+    {
+      "classification": "EVALUATOR_ERROR",
+      "field": "v9.root_event",
+      "rationale": "Raw V9 correctly roots E1 at sensitivity. The frozen root mismatch is a cascade from the event-type projection mismatch."
+    },
+    {
+      "classification": "CG_PROJECTION_ONLY_MISMATCH",
+      "field": "v11.event_type",
+      "rationale": "ASSOCIATION differs from CG Regulation, but Regulation is not scientifically compelled. V11's wrong trigger and root are separately classified source-semantic errors."
+    },
+    {
+      "classification": null,
+      "field": "v9.ts_dpd_omission",
+      "rationale": "There is no disagreement. TS and DPD belong to separately documented outer E7 and E8 events and are not required participants of the requested focus event E9."
+    },
+    {
+      "classification": "EVALUATOR_ERROR",
+      "field": "v9.argument_roles_and_links",
+      "rationale": "Raw V9 source roles attach the population and drug to sensitivity. The frozen link failure is downstream of grounding and projection failures."
+    },
+    {
+      "classification": null,
+      "field": "source_role.carcinoma_patients",
+      "rationale": "POPULATION is the entity type and AFFECTED_ENTITY is the source-semantic event role."
+    }
+  ],
+  "schema_version": "artana.pmid_21965773.v9_v11_comparison_tiebreak.v1",
+  "sealed_terminals_changed": false,
+  "unresolved_disagreements": []
+}
