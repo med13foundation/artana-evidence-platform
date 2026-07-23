@@ -1,0 +1,60 @@
+{
+  "all_sealed_tree_paths_current_bytes_equal": true,
+  "critical_file_count": 12,
+  "critical_files": [
+    {
+      "path": "docs/validation/preregistrations/2026-07-23-staged-generalization-v14-exposed-run-v1.json",
+      "sha256": "65ed1cf34f956aceabd4d558fcc9bbca7eb4ab9fad133762c1beffb384a8afb7"
+    },
+    {
+      "path": "docs/validation/prompts/2026-07-23-staged-generalization-v14-complete-participant-denotation.md",
+      "sha256": "854c3b6e08441e6d667ecd48c6f0b86ff26942b9fb2db760a822727634cdf6ad"
+    },
+    {
+      "path": "docs/validation/results/2026-07-23-staged-generalization-v14-exposed-run-v1.json",
+      "sha256": "b569b6db3020c61e8f63def73e8b0d69d94612d2873a8653edf5ce93c22d10d9"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-23-staged-generalization-v14-complete-package-review-v1.json",
+      "sha256": "534b09c11e61f2ff63beb9944f911939836352ba1dc149086b215c2dcbddabf1"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-23-staged-generalization-v14-post-run-independent-classification-v1.json",
+      "sha256": "b7a6c5de43123ae1710ecacd6d7ccc7ac8c634d1860c8899a7948bc690fd69f8"
+    },
+    {
+      "path": "scripts/run_staged_generalization_v14_exposed.py",
+      "sha256": "06f12223e0007f7aea77b39b5222952e673f77b7628a16b2a7aa9327365ff1ad"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v14/evaluation.py",
+      "sha256": "28a6e6f7140bb5d240b34516afe52153d76753b5d6fc30d02ab44d59092811df"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v14/preflight.py",
+      "sha256": "c95cb95396e9e6584f5a2c812e181c8867b5ed9350156b36e689fdda812637d9"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v14/prompt.py",
+      "sha256": "5a2d1ebcd8939479f2f77795e1d82e80ff396fa8691fffcc3462f4a58b5e40a8"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v14/provider.py",
+      "sha256": "87b0a58e9fe0652fa4217387e7c97863ba9c2dd69e8aae8c8dea4eb97c177a04"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v14/runner.py",
+      "sha256": "89c050d8ef0b760677e084daffe019475c38ab98103b7eee0b86be53dc8296cd"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v14/terminal.py",
+      "sha256": "f0db834cf6c15c03a19f4c905a7ffd7650ed9fcf2afeff7e5aa34668f71ece69"
+    }
+  ],
+  "historical_results_rescored": false,
+  "schema_version": "artana.staged_generalization.v15_sealed_v14_manifest.v1",
+  "sealed_tree_file_count": 2718,
+  "sealed_v14_head": "f4aea428aaf7105d9bb8a2f90a1dc52accab44ab",
+  "sealed_v14_tree": "e511c3d4fb8a7bb09634888cc73cf816e154cf7f",
+  "v14_evaluator_sha256": "28a6e6f7140bb5d240b34516afe52153d76753b5d6fc30d02ab44d59092811df"
+}

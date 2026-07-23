@@ -1,0 +1,131 @@
+{
+  "schema_version": "artana.staged_generalization.v15_focus_closure_offline_audit.v1",
+  "audit_scope": "SOURCE_GENERAL_RULE_EFFECT_OVER_FROZEN_EXPOSED_PANEL",
+  "audit_evidence_kind": "OFFLINE_CONTRACT_COMPATIBILITY_ONLY",
+  "provider_behavior_empirically_validated": false,
+  "scientific_fix_already_proven": false,
+  "rule_path": "docs/validation/prompts/2026-07-23-staged-generalization-v15-focus-closure-and-role-bearing-occurrence-custody.md",
+  "rule_sha256": "29baddaac719f944b77b04f935de1ee5a02e1b66f39a2df606334bcfcd228588",
+  "authorization_path": "docs/validation/adjudications/2026-07-23-staged-generalization-v14-to-v15-focus-closure-consensus-v1.json",
+  "authorization_sha256": "ae53055301947346995308a3fda01b6e547265d1e61ca3930e41d829a1b57898",
+  "panel_path": "docs/validation/fixtures/2026-07-22-staged-generalization-panel-v9.json",
+  "panel_sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+  "v14_participant_rule_path": "docs/validation/prompts/2026-07-23-staged-generalization-v14-complete-participant-denotation.md",
+  "v14_participant_rule_sha256": "854c3b6e08441e6d667ecd48c6f0b86ff26942b9fb2db760a822727634cdf6ad",
+  "v14_evaluator_path": "scripts/validation/public_gold/staged_event/generalization/repair_v14/evaluation.py",
+  "v14_evaluator_sha256": "28a6e6f7140bb5d240b34516afe52153d76753b5d6fc30d02ab44d59092811df",
+  "case_order": [
+    "generalization-comparison-canary",
+    "generalization-drug-sensitivity",
+    "generalization-uncertainty",
+    "generalization-explicit-nested-cause",
+    "generalization-negated-association",
+    "generalization-null-statistics"
+  ],
+  "required_invariant_assessments": {
+    "true_anaphora_and_ellipsis_remain_resolvable": "PASS",
+    "focus_local_named_occurrences_remain_local": "PASS",
+    "focus_internal_nested_event_closure_remains_complete": "PASS",
+    "v14_noun_head_and_restrictive_identity_rule_remains_unchanged": "PASS",
+    "v14_optional_inner_edge_policy_remains_unchanged": "PASS",
+    "all_earlier_repaired_behaviors_remain_stable": "PASS"
+  },
+  "case_assessments": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "assessment": "PASS",
+      "v15_expected_effect": "PRESERVE_UNIQUE_COORDINATED_SUBJECT_ELLIPSIS_RESOLUTION",
+      "reason": "The highlighted predicate has a genuinely implicit focal population licensed by the unique explicit subject in the supplied sentence. The exception preserves its exact antecedent occurrence while the comparator and outcome remain focus-local. Comparison direction, roles, and evidence grounding are unchanged."
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "assessment": "PASS",
+      "v15_expected_effect": "EXCLUDE_OUTSIDE_PARENT_EVENT_AND_KEEP_FOCUS_LOCAL_DRUG_OCCURRENCE",
+      "reason": "The focused sensitivity event and its carcinoma and 5-FU participants are independently denoted in the highlighted finding. The preceding governing predicate is outside the focus and cannot be inventoried as an event. The earlier long-form chemical mention establishes identity but cannot replace the role-bearing focus-local 5-FU occurrence."
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "assessment": "PASS",
+      "v15_expected_effect": "PRESERVE_TRUE_RELATIVE_RESOLUTION_AND_FROZEN_OPTIONAL_CONTEXT",
+      "reason": "The relative phrase which is genuinely dependent and resolves to the unique explicit variants antecedent. SLC12A3 remains an independently source-supported optional contextual participant under the frozen policy; V15 authorizes no new optional context. Classification polarity and uncertainty remain separate and unchanged."
+    },
+    {
+      "case_id": "generalization-explicit-nested-cause",
+      "assessment": "PASS",
+      "v15_expected_effect": "PRESERVE_COMPLETE_INWARD_NESTED_CLOSURE_AND_V14_SPAN_RULE",
+      "reason": "The responsible, elevating, and levels events form the complete focus-internal dependency closure and must all remain. The proteins participant is bound within the focus before minimization, so its semantic noun head and HCMV restrictive identity remain governed by the unchanged V14 rule. The V14-local zero-or-one redundant inner causal-agent edge remains optional and cannot replace any mandatory link."
+    },
+    {
+      "case_id": "generalization-negated-association",
+      "assessment": "PASS",
+      "v15_expected_effect": "NONE",
+      "reason": "The event, exposure, outcome, null-result polarity, no-association direction, and exact evidence are explicitly focus-local. V15 changes none of these boundaries."
+    },
+    {
+      "case_id": "generalization-null-statistics",
+      "assessment": "PASS",
+      "v15_expected_effect": "PRESERVE_FOCUS_INTERNAL_COORDINATED_ELLIPSIS",
+      "reason": "The RA and non-RA NSCLC population expressions, OS outcome, no-difference event, and P-value are all expressed in the focus. Coordinated ellipsis remains governed by the existing referential rule. Null-result polarity, statistics, author interpretation, comparison, and evidence grounding remain unchanged."
+    }
+  ],
+  "adversarial_decisions": [
+    {
+      "condition": "FOCUS_INTERNAL_NESTED_EVENT_IS_ARGUMENT_OF_FOCUS_INTERNAL_EVENT",
+      "required_result": "FOLLOW_INWARD_AND_RETAIN_COMPLETE_DEPENDENCY_CLOSURE"
+    },
+    {
+      "condition": "OUTSIDE_PREDICATE_GOVERNS_OR_TAKES_FOCUSED_EVENT_AS_ARGUMENT",
+      "required_result": "DO_NOT_INVENTORY_OUTSIDE_PREDICATE_AS_EVENT"
+    },
+    {
+      "condition": "EXPLICIT_SELF_DENOTING_ROLE_BEARING_OCCURRENCE_EXISTS_IN_FOCUS",
+      "required_result": "BIND_FOCUS_LOCAL_OCCURRENCE_BEFORE_MINIMIZATION"
+    },
+    {
+      "condition": "OUTSIDE_LONG_FORM_DEFINITION_ALIAS_OR_REPETITION_EXISTS",
+      "required_result": "MAY_ESTABLISH_IDENTITY_BUT_CANNOT_RELOCATE_OCCURRENCE"
+    },
+    {
+      "condition": "NO_FOCUS_LOCAL_SELF_DENOTING_OCCURRENCE_AND_ONE_GENUINELY_DEPENDENT_EXPRESSION_EXISTS",
+      "required_result": "RESOLVE_ONLY_ONE_UNIQUE_EXPLICIT_ANTECEDENT_UNDER_FROZEN_RULES"
+    },
+    {
+      "condition": "NO_UNIQUE_SOURCE_SUPPORTED_RESOLUTION",
+      "required_result": "FAIL_CLOSED_WITH_INCOMPLETE_OR_ABSTAIN"
+    },
+    {
+      "condition": "OPTIONAL_CONTEXT_OR_EDGE_IS_SOURCE_SUPPORTED",
+      "required_result": "ALLOW_ONLY_WHERE_ALREADY_FROZEN_AND_NEVER_COMPENSATE_FOR_MANDATORY_STRUCTURE"
+    }
+  ],
+  "unchanged_scientific_contract": {
+    "event_taxonomy": true,
+    "entity_types": true,
+    "mandatory_participants_and_links": true,
+    "root_selection": true,
+    "semantic_axes": true,
+    "statistics": true,
+    "evidence_grounding": true,
+    "completeness": true,
+    "v14_evaluator": true,
+    "v14_optional_edge_policy": true,
+    "bionlp_cg_projection_policy": true
+  },
+  "previously_repaired_behaviors": {
+    "comparison": "PRESERVED",
+    "null_result_polarity": "PRESERVED",
+    "uncertainty": "PRESERVED",
+    "slc12a3_occurrence_boundaries": "PRESERVED",
+    "exact_semantic_evidence_grounding": "PRESERVED",
+    "drug_sensitivity_focus": "TARGETED_BY_SOURCE_GENERAL_BOUNDARY",
+    "nested_event_dependency_closure": "PRESERVED"
+  },
+  "provider_prompt_case_specific_examples": false,
+  "provider_calls": 0,
+  "fresh_cases_accessed": 0,
+  "graph_writes": 0,
+  "trusted_promotion": false,
+  "qualification_credit": false,
+  "verdict": "PASS",
+  "verdict_meaning": "The exact V15 rule is contract-compatible with the frozen exposed panel without changing any evaluator, reference, grader, schema, scientific axis, projection policy, or previously repaired behavior. This zero-call audit is not empirical evidence that the provider will follow the rule."
+}
