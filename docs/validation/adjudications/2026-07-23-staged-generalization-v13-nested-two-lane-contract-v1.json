@@ -1,0 +1,219 @@
+{
+  "adjudication_sha256": "da87d13a2b9e31aff511f0e6cf6cef0dbc1279a236f922292057cf75f80c5da4",
+  "case_id": "generalization-explicit-nested-cause",
+  "cg_full_focus_projection": {
+    "additional_official_focus_event": {
+      "arguments": [
+        {
+          "role": "Theme",
+          "target": {
+            "end": 1206,
+            "entity_type": "CELL",
+            "exact_text": "fibroblasts",
+            "start": 1195
+          }
+        },
+        {
+          "role": "Participant",
+          "target": {
+            "end": 1095,
+            "entity_type": "ORGANISM",
+            "exact_text": "HCMV",
+            "start": 1091
+          }
+        }
+      ],
+      "end": 1194,
+      "event_id": "E28",
+      "event_type": "INFECTION",
+      "exact_text": "infected",
+      "start": 1186
+    },
+    "graph_promotion_allowed": false,
+    "measurement_status": "NOT_MEASURED_UNREPRESENTABLE",
+    "qualification_blocking": false,
+    "qualification_credit": false,
+    "reason": "The V9 output taxonomy has no INFECTION event, CELL entity, or ORGANISM entity. E28 is focus-internal but disconnected from the E25-E27 root dependency chain.",
+    "schema_missing_categories": [
+      "INFECTION",
+      "CELL",
+      "ORGANISM"
+    ]
+  },
+  "cg_root_dependency_chain": {
+    "arguments": [
+      {
+        "event_key": "responsible",
+        "role": "Cause",
+        "target": {
+          "end": 1120,
+          "entity_type": "GENE_OR_GENE_PRODUCT",
+          "exact_text": "immediate-early proteins",
+          "start": 1096
+        },
+        "target_key": null,
+        "target_kind": "ENTITY"
+      },
+      {
+        "event_key": "responsible",
+        "role": "Theme",
+        "target": null,
+        "target_key": "elevating",
+        "target_kind": "EVENT"
+      },
+      {
+        "event_key": "elevating",
+        "role": "Theme",
+        "target": null,
+        "target_key": "levels",
+        "target_kind": "EVENT"
+      },
+      {
+        "event_key": "levels",
+        "role": "Theme",
+        "target": {
+          "end": 1175,
+          "entity_type": "GENE_OR_GENE_PRODUCT",
+          "exact_text": "p53",
+          "start": 1172
+        },
+        "target_key": null,
+        "target_kind": "ENTITY"
+      }
+    ],
+    "events": [
+      {
+        "end": 1157,
+        "event_key": "responsible",
+        "event_type": "REGULATION",
+        "exact_text": "responsible",
+        "start": 1146
+      },
+      {
+        "end": 1171,
+        "event_key": "elevating",
+        "event_type": "POSITIVE_REGULATION",
+        "exact_text": "elevating",
+        "start": 1162
+      },
+      {
+        "end": 1182,
+        "event_key": "levels",
+        "event_type": "GENE_EXPRESSION",
+        "exact_text": "levels",
+        "start": 1176
+      }
+    ],
+    "graph_promotion_allowed": false,
+    "qualification_blocking": false,
+    "qualification_credit": false,
+    "review_only": true,
+    "root_event_key": "responsible",
+    "scope": "EXACT_CG_ROOT_DEPENDENCY_CHAIN"
+  },
+  "contract_id": "staged-generalization-v13-nested-two-lane",
+  "drug_case_policy": "V12_DRUG_METRICS_REUSED_SOURCE_LANE_AUTHORITATIVE_CG_NONBLOCKING",
+  "graph_promotion_allowed": false,
+  "historical_replay_credit": false,
+  "other_exposed_cases_policy": "UNCHANGED_FROZEN_GRADER",
+  "qualification_credit": false,
+  "schema_version": "artana.staged_generalization.v13_nested_two_lane_contract.v1",
+  "source_lane": {
+    "axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "ENABLES",
+        "event_key": "responsible",
+        "polarity": "AFFIRMED",
+        "statistics": "NONE",
+        "uncertainty": "ASSERTED"
+      },
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "INCREASED",
+        "event_key": "elevating",
+        "polarity": "AFFIRMED",
+        "statistics": "NONE",
+        "uncertainty": "ASSERTED"
+      }
+    ],
+    "events": [
+      {
+        "acceptable_event_types": [
+          "REGULATION"
+        ],
+        "acceptable_triggers": [
+          "responsible",
+          "responsible for"
+        ],
+        "event_key": "responsible"
+      },
+      {
+        "acceptable_event_types": [
+          "POSITIVE_REGULATION"
+        ],
+        "acceptable_triggers": [
+          "elevating",
+          "elevating p53 levels"
+        ],
+        "event_key": "elevating"
+      }
+    ],
+    "exact_evidence": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.",
+    "focus_end": 1206,
+    "focus_start": 1091,
+    "links": [
+      {
+        "event_key": "responsible",
+        "role": "CAUSAL_AGENT",
+        "target_key": "proteins",
+        "target_kind": "PARTICIPANT"
+      },
+      {
+        "event_key": "responsible",
+        "role": "EFFECT_EVENT",
+        "target_key": "elevating",
+        "target_kind": "EVENT"
+      },
+      {
+        "event_key": "elevating",
+        "role": "AFFECTED_ENTITY",
+        "target_key": "p53",
+        "target_kind": "PARTICIPANT"
+      },
+      {
+        "event_key": "elevating",
+        "role": "CONTEXTUAL_PARTICIPANT",
+        "target_key": "infected_fibroblasts",
+        "target_kind": "PARTICIPANT"
+      }
+    ],
+    "participants": [
+      {
+        "end": 1120,
+        "entity_type": "GENE_OR_PROTEIN",
+        "exact_text": "HCMV immediate-early proteins",
+        "participant_key": "proteins",
+        "start": 1091
+      },
+      {
+        "end": 1175,
+        "entity_type": "GENE_OR_PROTEIN",
+        "exact_text": "p53",
+        "participant_key": "p53",
+        "start": 1172
+      },
+      {
+        "end": 1206,
+        "entity_type": "POPULATION",
+        "exact_text": "infected fibroblasts",
+        "participant_key": "infected_fibroblasts",
+        "start": 1186
+      }
+    ],
+    "root_event_key": "responsible"
+  },
+  "unchanged_v12_contract_sha256": "432dcec45d8ac920182a22028c99532494acb74443ff8a13e003440d1a88f146"
+}

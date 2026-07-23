@@ -1,0 +1,83 @@
+{
+  "case_count": 6,
+  "cases": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "expected_root_triggers": [
+        "more",
+        "more comorbidities than"
+      ],
+      "impact": "UNCHANGED_SINGLE_EVENT_ROOT",
+      "risk_findings": []
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "expected_root_triggers": [
+        "sensitivity"
+      ],
+      "impact": "UNCHANGED_SINGLE_FOCUS_EVENT",
+      "outside_focus_predicate_must_not_replace_root": true,
+      "risk_findings": []
+    },
+    {
+      "case_id": "generalization-explicit-nested-cause",
+      "expected_nested_edges": [
+        "responsible->elevating"
+      ],
+      "expected_root_triggers": [
+        "responsible",
+        "responsible for"
+      ],
+      "forbidden_root_triggers": [
+        "elevating",
+        "elevating p53 levels"
+      ],
+      "impact": "TARGETED_ROOT_SELECTION_CORRECTION",
+      "inventory_policy": "UNCHANGED_SOURCE_SEMANTIC_TWO_EVENT_LANE",
+      "risk_findings": []
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "expected_root_triggers": [
+        "classified"
+      ],
+      "forbidden_root_triggers": [
+        "uncertain significance"
+      ],
+      "impact": "UNCHANGED_CLASSIFICATION_ROOT",
+      "risk_findings": []
+    },
+    {
+      "case_id": "generalization-negated-association",
+      "expected_root_triggers": [
+        "no longer associated"
+      ],
+      "impact": "UNCHANGED_NEGATED_EVENT_ROOT",
+      "risk_findings": []
+    },
+    {
+      "case_id": "generalization-null-statistics",
+      "expected_root_triggers": [
+        "no difference"
+      ],
+      "impact": "UNCHANGED_NULL_COMPARISON_ROOT",
+      "risk_findings": []
+    }
+  ],
+  "leakage_findings": [],
+  "non_scientific_transport_clarification": {
+    "eventless_abstention_supported": false,
+    "inventory_or_links_may_change_to_create_anchor": false,
+    "non_complete_root_event_id_semantics": "TRANSPORT_ANCHOR_ONLY",
+    "panel_focus_event_eligibility_required": true,
+    "scope": "V13_EXPOSED_PANEL_ONLY",
+    "zero_event_inputs_sent_to_provider": false
+  },
+  "residual_capability_limitation": "The universal schema cannot represent a truly eventless abstention and still requires semantic axes for every inventoried transport anchor.",
+  "rule_sha256": "0ab67bfea1ed75028a4771bc9a1b2f8d00f56bcc228d305a3650e3ae2d0e86f7",
+  "schema_version": "artana.staged_generalization.v13_root_rule_audit.v1",
+  "single_scientific_change": "COMPOSITIONAL_FOCUS_ROOT_SELECTION",
+  "source_adjudication_sha256": "da87d13a2b9e31aff511f0e6cf6cef0dbc1279a236f922292057cf75f80c5da4",
+  "source_general": true,
+  "unresolved_safety_findings": []
+}

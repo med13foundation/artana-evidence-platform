@@ -1,0 +1,30 @@
+{
+  "audit_sha256": "f1fa98abc59900cfa1a8495106b19d3f7ad6d60148e58cb994260cf1778ee718",
+  "case_safety": {
+    "generalization-comparison-canary": "PASS",
+    "generalization-drug-sensitivity": "PASS",
+    "generalization-explicit-nested-cause": "PASS",
+    "generalization-negated-association": "PASS",
+    "generalization-null-statistics": "PASS",
+    "generalization-uncertainty": "PASS"
+  },
+  "focus_internal_scope": "PASS",
+  "leakage": "PASS",
+  "nested_correctness": "PASS",
+  "non_complete_root_credit": "NOT_APPLICABLE",
+  "prior_candidate_disposition": {
+    "decision": "FAIL",
+    "reason": "The prior wording required an explicit transport placeholder fallback before it was replaced by preservation of the existing root and completeness rules."
+  },
+  "projection_separation": "PASS",
+  "residual_limitation_disclosure": "PASS",
+  "reviewer_id": "v13_rule_reviewer_b",
+  "rule_sha256": "0ab67bfea1ed75028a4771bc9a1b2f8d00f56bcc228d305a3650e3ae2d0e86f7",
+  "schema_compatibility": "PASS",
+  "schema_version": "artana.staged_generalization.v13_root_wording_review.v1",
+  "single_change_scope": "PASS",
+  "source_generality": "PASS",
+  "transport_clarification": "PASS",
+  "exposed_event_eligibility": "PASS",
+  "verdict": "PASS"
+}

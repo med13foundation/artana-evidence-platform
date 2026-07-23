@@ -1,0 +1,69 @@
+{
+  "external_inputs": [
+    {
+      "artifact_kind": "SOURCE_TEXT",
+      "document_id": "PMID-21965773",
+      "historical_local_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-21965773.txt",
+      "recovery_url": "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-21965773.txt",
+      "sha256": "0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880",
+      "used_by_build_panel": true
+    },
+    {
+      "artifact_kind": "ENTITY_ANNOTATIONS",
+      "document_id": "PMID-21965773",
+      "historical_local_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-21965773.a1",
+      "recovery_url": "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-21965773.a1",
+      "sha256": "d6f0d526567bfc689d7d4c6ea63e9ba0345ee29b83126edf58f9e317fb624ebe",
+      "used_by_build_panel": false
+    },
+    {
+      "artifact_kind": "EVENT_ANNOTATIONS",
+      "document_id": "PMID-21965773",
+      "historical_local_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-21965773.a2",
+      "recovery_url": "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-21965773.a2",
+      "sha256": "e554de689b08b2b4db29cae32893459eef6ffe0b11860cfa8f7313584537b0e8",
+      "used_by_build_panel": false
+    },
+    {
+      "artifact_kind": "SOURCE_TEXT",
+      "document_id": "PMID-7966592",
+      "historical_local_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-7966592.txt",
+      "recovery_url": "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.txt",
+      "sha256": "cef4eed850665c8e55e5e8deccdef2fa92a05377ffb9bf5666a85b6320192f02",
+      "used_by_build_panel": true
+    },
+    {
+      "artifact_kind": "ENTITY_ANNOTATIONS",
+      "document_id": "PMID-7966592",
+      "historical_local_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-7966592.a1",
+      "recovery_url": "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.a1",
+      "sha256": "2e47b1725178510245a711cb28749271730df2502e84035d2364e6b663230864",
+      "used_by_build_panel": false
+    },
+    {
+      "artifact_kind": "EVENT_ANNOTATIONS",
+      "document_id": "PMID-7966592",
+      "historical_local_path": "validation/public_gold/bionlp_cg/raw/bionlp-st-2013-cg-master/original-data/devel/PMID-7966592.a2",
+      "recovery_url": "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.a2",
+      "sha256": "8921ae260cb96c14867089bd02e12cf614416aacd442d9bed7145db089ec445c",
+      "used_by_build_panel": false
+    }
+  ],
+  "frozen_panel_path": "docs/validation/fixtures/2026-07-22-staged-generalization-panel-v9.json",
+  "generator_attestation": {
+    "canonical_json_normalization": true,
+    "generated_panel_matches_frozen": true,
+    "generator_path": "scripts/validation/public_gold/staged_event/generalization/panel.py",
+    "verified_at": "2026-07-23"
+  },
+  "runtime_source": "TRACKED_FROZEN_PANEL",
+  "schema_version": "artana.staged_generalization.v13_panel_source_custody.v1",
+  "tracked_inputs": [
+    {
+      "path": "scripts/validation/source_general_claim_verification/fixtures/exposed_31_scope_corpus.json",
+      "sha256": "35377c6a263a21a47851e70ea935da27f7d83a34c3f11646a71c9c115b93ccb3",
+      "used_by_build_panel": true
+    }
+  ],
+  "untracked_validation_tree_runtime_dependency": false
+}

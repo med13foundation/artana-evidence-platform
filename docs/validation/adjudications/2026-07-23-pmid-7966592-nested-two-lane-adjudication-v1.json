@@ -1,0 +1,250 @@
+{
+  "adjudication_id": "pmid-7966592-nested-two-lane-v1",
+  "authorization": "V13_SOURCE_GENERAL_REPAIR_AUTHORIZED",
+  "case_id": "generalization-explicit-nested-cause",
+  "cg_projection_lane": {
+    "arguments": [
+      {
+        "event_key": "responsible",
+        "role": "Cause",
+        "target": {
+          "end": 1120,
+          "entity_type": "GENE_OR_GENE_PRODUCT",
+          "exact_text": "immediate-early proteins",
+          "start": 1096
+        },
+        "target_kind": "ENTITY"
+      },
+      {
+        "event_key": "responsible",
+        "role": "Theme",
+        "target_key": "elevating",
+        "target_kind": "EVENT"
+      },
+      {
+        "event_key": "elevating",
+        "role": "Theme",
+        "target_key": "levels",
+        "target_kind": "EVENT"
+      },
+      {
+        "event_key": "levels",
+        "role": "Theme",
+        "target": {
+          "end": 1175,
+          "entity_type": "GENE_OR_GENE_PRODUCT",
+          "exact_text": "p53",
+          "start": 1172
+        },
+        "target_kind": "ENTITY"
+      }
+    ],
+    "events": [
+      {
+        "end": 1157,
+        "event_key": "responsible",
+        "event_type": "REGULATION",
+        "exact_text": "responsible",
+        "start": 1146
+      },
+      {
+        "end": 1171,
+        "event_key": "elevating",
+        "event_type": "POSITIVE_REGULATION",
+        "exact_text": "elevating",
+        "start": 1162
+      },
+      {
+        "end": 1182,
+        "event_key": "levels",
+        "event_type": "GENE_EXPRESSION",
+        "exact_text": "levels",
+        "start": 1176
+      }
+    ],
+    "graph_promotion_allowed": false,
+    "qualification_blocking": false,
+    "qualification_credit": false,
+    "root_event_key": "responsible",
+    "scope": "EXACT_CG_ROOT_DEPENDENCY_CHAIN"
+  },
+  "cg_full_focus_projection": {
+    "additional_official_focus_event": {
+      "arguments": [
+        {
+          "role": "Theme",
+          "target": {
+            "end": 1206,
+            "entity_type": "CELL",
+            "exact_text": "fibroblasts",
+            "start": 1195
+          }
+        },
+        {
+          "role": "Participant",
+          "target": {
+            "end": 1095,
+            "entity_type": "ORGANISM",
+            "exact_text": "HCMV",
+            "start": 1091
+          }
+        }
+      ],
+      "end": 1194,
+      "event_id": "E28",
+      "event_type": "INFECTION",
+      "exact_text": "infected",
+      "start": 1186
+    },
+    "graph_promotion_allowed": false,
+    "measurement_status": "NOT_MEASURED_UNREPRESENTABLE",
+    "qualification_blocking": false,
+    "qualification_credit": false,
+    "reason": "The V9 output taxonomy has no INFECTION event, CELL entity, or ORGANISM entity. E28 is focus-internal but disconnected from the E25-E27 root dependency chain.",
+    "schema_missing_categories": [
+      "INFECTION",
+      "CELL",
+      "ORGANISM"
+    ]
+  },
+  "field_classification": {
+    "axis_failures": "EVALUATOR_CASCADE",
+    "evidence_grounding": "EVALUATOR_SCHEMA_CONTRADICTION",
+    "full_focus_cg_projection": "UNMEASURED_SCHEMA_CAPABILITY_LIMITATION",
+    "infected_fibroblasts_rejection": "REFERENCE_ADJUDICATION_COMPILATION_ERROR",
+    "levels_event_absence": "BENCHMARK_ONLY_MISMATCH",
+    "nested_root": "MODEL_PROMPT_GAP",
+    "p53_occurrence_rejection": "EVALUATOR_DEFECT",
+    "transport": "VALID_NO_FAILURE"
+  },
+  "frozen_inputs": {
+    "compiled_v5_policy_sha256": "7d045ccca6398ca10d3dfc3b8136fa871c9b118bfc05ed19d43daa905e518649",
+    "panel_sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+    "reviewer_a_sha256": "1508448888ec798a787abf0a700d033c4c6334d2a82972fcbc80e26811c3bd3f",
+    "reviewer_b_sha256": "4babadf7e5067c964933b41985276346a16bd3be9030bbb034eb87b55126cf6a",
+    "v12_case_evaluation_sha256": "151dfdb785476d0c9a67293744e859e1bb6b20d3e98f1fbd37c3f69a3507e095",
+    "v12_raw_output_sha256": "c982fdc5282cef320cf2436f3ab70b380547553b6efb091f26fe5c4e6624304d",
+    "v12_result_sha256": "c110ff6eadfa41c90c19b1ff039b007b20926b2efa7ccf53ae596cc351895561"
+  },
+  "historical_disposition": {
+    "retroactive_credit": false,
+    "v12_result_changed": false,
+    "v12_terminal": "V12_EXPOSED_GATE_FAIL_UNRELATED_REGRESSION"
+  },
+  "independent_review": {
+    "material_disagreements": [],
+    "reviewer_count": 2,
+    "tiebreak_required": false
+  },
+  "root_cause": {
+    "classification": "COMPOSITIONAL_FOCUS_ROOT_AMBIGUITY",
+    "forward_prompt_change": "COMPOSITIONAL_FOCUS_ROOT_SELECTION",
+    "owning_boundary": "PROMPT_ROOT_SELECTION_PLUS_VERSIONED_EVALUATION_CONTRACT",
+    "source_general_correction_supported": true
+  },
+  "schema_version": "artana.staged_generalization.v13_nested_two_lane_adjudication.v1",
+  "source_lane": {
+    "axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "ENABLES",
+        "event_key": "responsible",
+        "polarity": "AFFIRMED",
+        "statistics": "NONE",
+        "uncertainty": "ASSERTED"
+      },
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "INCREASED",
+        "event_key": "elevating",
+        "polarity": "AFFIRMED",
+        "statistics": "NONE",
+        "uncertainty": "ASSERTED"
+      }
+    ],
+    "events": [
+      {
+        "acceptable_event_types": [
+          "REGULATION"
+        ],
+        "acceptable_triggers": [
+          "responsible",
+          "responsible for"
+        ],
+        "event_key": "responsible"
+      },
+      {
+        "acceptable_event_types": [
+          "POSITIVE_REGULATION"
+        ],
+        "acceptable_triggers": [
+          "elevating",
+          "elevating p53 levels"
+        ],
+        "event_key": "elevating"
+      }
+    ],
+    "exact_evidence": "HCMV immediate-early proteins were clearly shown to be responsible for elevating p53 levels in infected fibroblasts; expression of HCMV immediate-early region 1 and 2 proteins resulted in elevation of p53 levels in transfected human fibroblasts.",
+    "focus_end": 1206,
+    "focus_start": 1091,
+    "links": [
+      {
+        "event_key": "responsible",
+        "role": "CAUSAL_AGENT",
+        "target_key": "proteins",
+        "target_kind": "PARTICIPANT"
+      },
+      {
+        "event_key": "responsible",
+        "role": "EFFECT_EVENT",
+        "target_key": "elevating",
+        "target_kind": "EVENT"
+      },
+      {
+        "event_key": "elevating",
+        "role": "AFFECTED_ENTITY",
+        "target_key": "p53",
+        "target_kind": "PARTICIPANT"
+      },
+      {
+        "event_key": "elevating",
+        "role": "CONTEXTUAL_PARTICIPANT",
+        "target_key": "infected_fibroblasts",
+        "target_kind": "PARTICIPANT"
+      }
+    ],
+    "participants": [
+      {
+        "end": 1120,
+        "entity_type": "GENE_OR_PROTEIN",
+        "exact_text": "HCMV immediate-early proteins",
+        "participant_key": "proteins",
+        "start": 1091
+      },
+      {
+        "end": 1175,
+        "entity_type": "GENE_OR_PROTEIN",
+        "exact_text": "p53",
+        "participant_key": "p53",
+        "start": 1172
+      },
+      {
+        "end": 1206,
+        "entity_type": "POPULATION",
+        "exact_text": "infected fibroblasts",
+        "participant_key": "infected_fibroblasts",
+        "start": 1186
+      }
+    ],
+    "root_event_key": "responsible"
+  },
+  "source_urls": [
+    "https://pubmed.ncbi.nlm.nih.gov/7966592/",
+    "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.txt",
+    "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.a1",
+    "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.a2"
+  ],
+  "stop_condition_reached": false
+}

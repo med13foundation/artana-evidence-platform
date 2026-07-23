@@ -1,0 +1,128 @@
+{
+  "adjudication_sha256": "da87d13a2b9e31aff511f0e6cf6cef0dbc1279a236f922292057cf75f80c5da4",
+  "case_id": "generalization-explicit-nested-cause",
+  "contract_sha256": "c792b8230c295b1c0e294a0c888254e5e62becf5fd20072389abbfa886192ff9",
+  "diagnostic_only": true,
+  "graph_writes": 0,
+  "historical_replay_credit": false,
+  "historical_result_rescored": false,
+  "lane_separation": {
+    "exact_cg_root_dependency_chain_uses_artana_output_only": true,
+    "full_focus_cg_projection_qualification_blocking": false,
+    "full_focus_cg_projection_status": "NOT_MEASURED_UNREPRESENTABLE",
+    "full_focus_official_additional_event": {
+      "arguments": [
+        {
+          "role": "Theme",
+          "target": {
+            "end": 1206,
+            "entity_type": "CELL",
+            "exact_text": "fibroblasts",
+            "start": 1195
+          }
+        },
+        {
+          "role": "Participant",
+          "target": {
+            "end": 1095,
+            "entity_type": "ORGANISM",
+            "exact_text": "HCMV",
+            "start": 1091
+          }
+        }
+      ],
+      "end": 1194,
+      "event_id": "E28",
+      "event_type": "INFECTION",
+      "exact_text": "infected",
+      "start": 1186
+    },
+    "full_focus_unrepresentable_reason": "The V9 output taxonomy has no INFECTION event, CELL entity, or ORGANISM entity. E28 is focus-internal but disconnected from the E25-E27 root dependency chain.",
+    "full_focus_unrepresentable_schema_types": [
+      "INFECTION",
+      "CELL",
+      "ORGANISM"
+    ],
+    "gold_reference_completion_allowed": false,
+    "source_semantic_pass_implies_exact_cg_root_dependency_chain_pass": false
+  },
+  "schema_version": "artana.staged_generalization.v13_v12_nested_offline_replay.v1",
+  "sealed_v12": {
+    "exact_cg_root_dependency_chain_credit": false,
+    "exact_cg_root_dependency_chain_failure_is_independent_of_root": true,
+    "raw_output_sha256": "c982fdc5282cef320cf2436f3ab70b380547553b6efb091f26fe5c4e6624304d",
+    "result_sha256": "c110ff6eadfa41c90c19b1ff039b007b20926b2efa7ccf53ae596cc351895561",
+    "retroactive_credit": false,
+    "sealed_result_changed": false,
+    "source_lane_fails_only_wrong_root": true,
+    "source_semantic_historical_credit": false,
+    "terminal": "V12_EXPOSED_GATE_FAIL_UNRELATED_REGRESSION",
+    "v13_diagnostic": {
+      "benchmark_projection": null,
+      "benchmark_projection_scope": "EXACT_CG_ROOT_DEPENDENCY_CHAIN",
+      "benchmark_projection_status": "FAIL",
+      "case_id": "generalization-explicit-nested-cause",
+      "completeness": "COMPLETE",
+      "exact_evidence_grounding": true,
+      "failure_reasons": [
+        "source root is not the outer responsible event"
+      ],
+      "focus_event_passed": false,
+      "full_focus_cg_status": "NOT_MEASURED_UNREPRESENTABLE",
+      "graph_writes": 0,
+      "historical_grader_passed": null,
+      "mandatory_participants_passed": true,
+      "participant_roles_passed": true,
+      "passed": false,
+      "permitted_context_count": 1,
+      "qualification_credit": false,
+      "root_only_failure": true,
+      "root_selection_status": "FAIL",
+      "semantic_axes_passed": true,
+      "source_dimensions_except_root_passed": true,
+      "source_semantic_status": "FAIL",
+      "trusted_promotion": false,
+      "unsupported_extraction_count": 0
+    }
+  },
+  "synthetic_forward_diagnostic": {
+    "counterfactual_only": true,
+    "exact_cg_root_dependency_chain_credit": false,
+    "exact_cg_root_dependency_chain_pass": false,
+    "gold_projection_synthesized": false,
+    "mutation": "ROOT_EVENT_ID_ONLY",
+    "qualification_credit": false,
+    "root_event_id_after": "E1",
+    "root_event_id_before": "E2",
+    "source_semantic_historical_credit": false,
+    "source_semantic_pass": true,
+    "synthetic_output_sha256": "18d84c7053beaf8cac3dd542e734abfadeb28f360df4552e6a27bdf41fe23242",
+    "v13_diagnostic": {
+      "benchmark_projection": null,
+      "benchmark_projection_scope": "EXACT_CG_ROOT_DEPENDENCY_CHAIN",
+      "benchmark_projection_status": "FAIL",
+      "case_id": "generalization-explicit-nested-cause",
+      "completeness": "COMPLETE",
+      "exact_evidence_grounding": true,
+      "failure_reasons": [],
+      "focus_event_passed": true,
+      "full_focus_cg_status": "NOT_MEASURED_UNREPRESENTABLE",
+      "graph_writes": 0,
+      "historical_grader_passed": null,
+      "mandatory_participants_passed": true,
+      "participant_roles_passed": true,
+      "passed": true,
+      "permitted_context_count": 1,
+      "qualification_credit": false,
+      "root_only_failure": false,
+      "root_selection_status": "PASS",
+      "semantic_axes_passed": true,
+      "source_dimensions_except_root_passed": true,
+      "source_semantic_status": "PASS",
+      "trusted_promotion": false,
+      "unsupported_extraction_count": 0
+    }
+  },
+  "trusted_promotion": false,
+  "unchanged_v12_contract_sha256": "432dcec45d8ac920182a22028c99532494acb74443ff8a13e003440d1a88f146"
+}

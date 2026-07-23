@@ -1,0 +1,71 @@
+{
+  "case_id": "generalization-explicit-nested-cause",
+  "cg_projection": {
+    "events": [
+      "Regulation/responsible",
+      "Positive_regulation/elevating",
+      "Gene_expression/levels"
+    ],
+    "qualification_blocking": false,
+    "status": "REVIEW_ONLY_BENCHMARK_PROJECTION"
+  },
+  "field_classification": {
+    "axis_failures": "EVALUATOR_CASCADE",
+    "evidence_grounding": "EVALUATOR_DEFECT",
+    "infected_fibroblasts_rejection": "REFERENCE_COMPILATION_ERROR",
+    "levels_event_absence": "BENCHMARK_ONLY_MISMATCH",
+    "p53_occurrence_rejection": "EVALUATOR_DEFECT",
+    "root_event": "MODEL_PROMPT_GAP"
+  },
+  "phase_order": [
+    "BLIND_SOURCE_SEMANTICS",
+    "PUBLIC_CG_PROJECTION",
+    "V12_AND_FROZEN_EVALUATOR_COMPARISON"
+  ],
+  "reviewer_id": "v13_nested_reviewer_a",
+  "schema_version": "artana.staged_generalization.v13_nested_review.v1",
+  "source_lane": {
+    "axes": {
+      "elevating": {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "INCREASED",
+        "polarity": "AFFIRMED",
+        "statistics": "NONE",
+        "uncertainty": "ASSERTED"
+      },
+      "responsible": {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "ENABLES",
+        "polarity": "AFFIRMED",
+        "statistics": "NONE",
+        "uncertainty": "ASSERTED"
+      }
+    },
+    "events": [
+      "REGULATION/responsible",
+      "POSITIVE_REGULATION/elevating"
+    ],
+    "links": [
+      "responsible --CAUSAL_AGENT--> HCMV immediate-early proteins",
+      "responsible --EFFECT_EVENT--> elevating",
+      "elevating --AFFECTED_ENTITY--> p53@1172:1175",
+      "elevating --CONTEXTUAL_PARTICIPANT--> infected fibroblasts"
+    ],
+    "root": "responsible"
+  },
+  "source_urls": [
+    "https://pubmed.ncbi.nlm.nih.gov/7966592/",
+    "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.txt",
+    "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.a1",
+    "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.a2"
+  ],
+  "v12_diagnostic": {
+    "retroactive_credit": false,
+    "source_semantics_apart_from_root": "PASS",
+    "source_semantics_with_observed_root": "FAIL",
+    "v12_result_changed": false
+  },
+  "verdict": "V13_SOURCE_GENERAL_REPAIR_SUPPORTED"
+}

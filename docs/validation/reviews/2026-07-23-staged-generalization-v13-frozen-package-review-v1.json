@@ -1,0 +1,194 @@
+{
+  "blockers": [],
+  "engineering_review": {
+    "candidate_file_count_before_this_review": 39,
+    "deterministic_regeneration": {
+      "offline_replay_byte_identical": true,
+      "preregistration_byte_identical": true,
+      "preflight_verify": "PASS"
+    },
+    "frozen_artifacts": {
+      "nested_adjudication_sha256": "da87d13a2b9e31aff511f0e6cf6cef0dbc1279a236f922292057cf75f80c5da4",
+      "nested_two_lane_contract_sha256": "c792b8230c295b1c0e294a0c888254e5e62becf5fd20072389abbfa886192ff9",
+      "offline_replay_sha256": "8162fb2a4dc4cc7f2664532994922f8abdcb208e61cdf0882d809fd0cee3116a",
+      "panel_sha256": "00dad3d580755a1c2268e1db32e8ccd1d50771b4a8861138eb18f6593e8e188e",
+      "panel_source_custody_sha256": "04e41f5caec8f43885cd6a8cd02ef273d47d44f60be8d072b3946411eb982bb0",
+      "preregistration_sha256": "56ce61fff54a5fbaef2b44d0cb54b349b877a28808f2142fe4364b78e1f60914",
+      "root_rule_audit_sha256": "f1fa98abc59900cfa1a8495106b19d3f7ad6d60148e58cb994260cf1778ee718",
+      "root_rule_sha256": "0ab67bfea1ed75028a4771bc9a1b2f8d00f56bcc228d305a3650e3ae2d0e86f7"
+    },
+    "frozen_manifests": {
+      "canonicalization": "UTF8_JSON_SORTED_KEYS_COMPACT_SEPARATORS_NO_TRAILING_NEWLINE",
+      "execution_implementation": {
+        "canonical_sha256": "3f0ff2cd121d66f7fedbd50d20899a264540770ef6537c9c541ceba2e02a7bb5",
+        "entry_count": 25
+      },
+      "frozen_tests": {
+        "canonical_sha256": "8bbccf132e821988bb6c83d984f22ccde6e92c8f7fd860b63e4a44c92b97615f",
+        "entry_count": 12
+      },
+      "foreground_receipt_implementation": {
+        "canonical_sha256": "ddb891a267f232b4ec6bd021a0c2864776815b144ed9b7d4991c6b354cbc2975",
+        "entry_count": 8
+      },
+      "runtime_dependency_closure": {
+        "canonical_sha256": "119159e498b759f4fb397fffe9e6451455b0248df2df1f58851b7bed379e8def",
+        "entry_count": 121,
+        "forbidden_debris_path_count": 0,
+        "missing_entries": 0,
+        "sha256_mismatches": 0
+      },
+      "runtime_service_subset": {
+        "canonical_sha256": "09288de556ed030bdd1cb2072f32a44beb2662bf3c0e5f82e46bb8bca8aaba80",
+        "entry_count": 46,
+        "loaded_module_count_at_preflight": 43,
+        "loaded_modules_outside_current_repository": 0,
+        "loaded_modules_missing_from_manifest": 0,
+        "loaded_modules_with_hash_mismatch": 0
+      },
+      "shared_frozen_grader_sources": {
+        "canonical_sha256": "b88a4e68ef8c75ea4f8a4c4705b6a178c573c60e41d517c028a9ee05641cbeb1",
+        "entry_count": 5
+      },
+      "transitive_execution_dependencies": {
+        "canonical_sha256": "c25e665abc21a2540919fe3fd8f0fd668ece61908b8b8b520b54e6af59ea1f49",
+        "entry_count": 4
+      }
+    },
+    "status": "PASS",
+    "tracked_inputs_and_debris": {
+      "runtime_reads_tracked_frozen_panel": true,
+      "runtime_service_origins_fail_closed": true,
+      "runtime_service_paths_are_git_tracked": true,
+      "untracked_raw_corpus_is_runtime_dependency": false,
+      "untracked_validation_symlink_preserved": true
+    },
+    "validation": {
+      "mypy_strict": {
+        "files": 27,
+        "status": "PASS"
+      },
+      "pytest": {
+        "failed": 0,
+        "passed": 133,
+        "status": "PASS"
+      },
+      "ruff_format": {
+        "files": 27,
+        "status": "PASS"
+      },
+      "ruff_lint": {
+        "status": "PASS"
+      }
+    },
+    "v12_sealed_identity": {
+      "preregistration_sha256": "12a0b0baf6e3a7134ef340091012805e343f799f148a8f3c104cc75da17831c4",
+      "report_sha256": "0aa03822d0d0211eeae793d10897d30375027781477476642e3b195961abbe55",
+      "result_sha256": "c110ff6eadfa41c90c19b1ff039b007b20926b2efa7ccf53ae596cc351895561",
+      "shared_or_v12_tracked_diff": false,
+      "status": "BYTE_IDENTICAL"
+    }
+  },
+  "execution_gate": {
+    "execution_outputs_present": 0,
+    "fresh_case_consumed_during_review": false,
+    "graph_writes_during_review": 0,
+    "pre_call_requirements_remaining": [
+      "COMMIT_COMPLETE_FROZEN_PACKAGE_AND_THIS_REVIEW",
+      "PUSH_AUTHORITATIVE_BRANCH",
+      "RECONFIRM_LOCAL_AND_REMOTE_HEAD_AND_FROZEN_HASHES",
+      "VERIFY_REQUIRED_SECRET_AND_PROVIDER_ACCESS_WITHOUT_PRINTING_SECRET",
+      "RUN_REMOTE_PREFLIGHT_WITH_ALL_REQUIRED_PATHS_TRACKED"
+    ],
+    "provider_call_made_during_review": false,
+    "trusted_graph_promotion_during_review": false
+  },
+  "findings": [],
+  "independent_review_custody": {
+    "nested_source_reviewer_a_sha256": "1508448888ec798a787abf0a700d033c4c6334d2a82972fcbc80e26811c3bd3f",
+    "nested_source_reviewer_b_sha256": "4babadf7e5067c964933b41985276346a16bd3be9030bbb034eb87b55126cf6a",
+    "root_wording_reviewer_a_sha256": "23e1a31cd204bb640bd885f857a53ddd8c5b1b19a972aafd6622fa189fb2d90c",
+    "root_wording_reviewer_b_sha256": "de9081c511c00957b73659c2a07993ecc86ee55ef369dfc47ba6f438c0526fb9"
+  },
+  "review_id": "staged-generalization-v13-frozen-package-review-v1",
+  "review_scope": "FINAL_FROZEN_PREREGISTERED_PACKAGE_BEFORE_PROVIDER_EXECUTION",
+  "reviewed_at": "2026-07-23",
+  "reviewed_repository_state": {
+    "branch": "alvaro/tg04-source-general-claim-verification-v13",
+    "candidate_base_head": "95ba19a42982f5a8e6f1c19ff2928a19111c2367",
+    "tracked_worktree_diff_empty": true,
+    "unrelated_untracked_validation_symlink_preserved": true
+  },
+  "reviewer_id": "codex_v13_independent_frozen_package_auditor",
+  "schema_version": "artana.staged_generalization.v13_frozen_package_review.v1",
+  "scientific_contract_review": {
+    "abstain_root_schema_resolution": {
+      "non_complete_root_event_id_has_scientific_credit": false,
+      "non_complete_root_event_id_semantics": "TRANSPORT_ANCHOR_ONLY",
+      "panel_requires_at_least_one_source_supported_focus_event": true,
+      "residual_eventless_abstention_limitation_disclosed": true,
+      "status": "PASS"
+    },
+    "additive_to_v12": "PASS",
+    "benchmark_projection_separation": {
+      "exact_cg_root_dependency_chain": "REVIEW_ONLY_NONBLOCKING",
+      "full_focus_e28_status": "NOT_MEASURED_UNREPRESENTABLE",
+      "gold_projection_completion_allowed": false,
+      "source_pass_implies_exact_cg_pass": false,
+      "status": "PASS"
+    },
+    "bio_nlp_cg_independent_scientific_rule": "PASS",
+    "cannot_invent_or_force_inventory_participants_or_links": "PASS",
+    "corrected_boundary": "ROOT_SELECTION_AFTER_ALREADY_SUPPORTED_EVENT_LINK_CONSTRUCTION",
+    "fresh_qualification_status": "NOT_STARTED",
+    "independent_source_check": {
+      "cg_annotation_url": "https://raw.githubusercontent.com/openbiocorpora/bionlp-st-2013-cg/master/original-data/devel/PMID-7966592.a2",
+      "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/7966592/",
+      "responsible_is_outer_source_root": true,
+      "responsible_to_elevating_dependency_supported": true
+    },
+    "no_new_scientific_evidence_claimed": true,
+    "previously_repaired_behavior_regressions": {
+      "comparison": "PASS",
+      "drug_sensitivity_focus": "PASS",
+      "exact_semantic_evidence_grounding": "PASS",
+      "nested_event_dependency_closure": "PASS",
+      "null_result_polarity": "PASS",
+      "slc12a3_occurrence_boundaries": "PASS",
+      "uncertainty": "PASS"
+    },
+    "root_only_correction": "PASS",
+    "scientific_hypothesis": "Within a highlighted finding whose already-inventoried focus-internal event graph has exactly one event that is not the target of another focus-internal event, selecting that event as root after link construction, without changing the event, participant, or link inventory, will correct compositional root selection while preserving every previously repaired source-semantic behavior.",
+    "source_general_not_answer_tailored": "PASS",
+    "status": "PASS",
+    "v13_provider_evidence_status": "NOT_EXECUTED"
+  },
+  "transport_and_governance_review": {
+    "application_generation_or_total_token_ceiling": false,
+    "cumulative_operational_budget_usd": 5.0,
+    "exactly_one_creation_per_case": true,
+    "fresh_cases_authorized": false,
+    "graph_writes_authorized": false,
+    "provider_retries": 0,
+    "rejected_custody_persistence_failure": {
+      "actual_usage_and_cost_preserved": true,
+      "available_canonical_payload_preserved": true,
+      "available_confirmation_response_preserved": true,
+      "available_creation_response_preserved": true,
+      "available_input_items_preserved": true,
+      "available_latency_preserved": true,
+      "next_case_called": false,
+      "provider_creation_calls": 1,
+      "status": "PASS",
+      "terminal_stage": "REJECTED_CUSTODY_PERSISTENCE"
+    },
+    "rejected_or_invalid_call_custody": "LOSSLESS_FAIL_CLOSED",
+    "response_id_reuse_across_cases": "INVALID",
+    "scientific_scoring_affected_by_token_latency_or_cost": false,
+    "status": "PASS",
+    "tracked_frozen_panel_runtime_source": true,
+    "trusted_graph_promotion_authorized": false,
+    "untracked_raw_corpus_runtime_dependency": false
+  },
+  "verdict": "PASS"
+}
