@@ -1,0 +1,145 @@
+{
+  "schema_version": "artana.staged_generalization.v14_post_run_independent_classification.v1",
+  "experiment_id": "staged-generalization-v14-exposed-run-v1",
+  "reviewed_at": "2026-07-23T21:29:42Z",
+  "frozen_preregistration_commit": "44cfd1e1f6e1cfcd00be960f224e03cc9ecad491",
+  "sealed_result_commit": "5ec63546ff7d1ef6a37c60095a9966db7477332f",
+  "preregistration_sha256": "65ed1cf34f956aceabd4d558fcc9bbca7eb4ab9fad133762c1beffb384a8afb7",
+  "sealed_artifacts_sha256": {
+    "docs/validation/evaluations/2026-07-23-staged-generalization-v14-exposed-run-v1-generalization-comparison-canary-evaluation.json": "6f87d90c3ab24f1ad640a52471c9d66715f0d580252ad29f8770b8a5aec6f2b3",
+    "docs/validation/evaluations/2026-07-23-staged-generalization-v14-exposed-run-v1-generalization-drug-sensitivity-evaluation.json": "3e47a2a572f0bae9402af1d32f257e2332f502f9fa5d2d7424b88344bca5c214",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v14-exposed-run-v1-generalization-comparison-canary-attempt.json": "c357d91aa20e8c3cef141631240e057025e4c7e0ab4299fdc27639480b9962e1",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v14-exposed-run-v1-generalization-comparison-canary-custody.json": "5e3750496c4186e92e544421d12717edd42dac8367d29544d714286e296680e6",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v14-exposed-run-v1-generalization-comparison-canary.json": "7fcde5e0b021bb401c11c00b8bbcf29bd53bdb5282a27b55892b91a294f7a61c",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v14-exposed-run-v1-generalization-drug-sensitivity-attempt.json": "ea31e88b1e62cd6e52c505a40ba14a9d254b912579f8d2ba1e0db3d3c0d0fcf5",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v14-exposed-run-v1-generalization-drug-sensitivity-custody.json": "9e440b84de8ab576e2e21d90d9a90e6f5cf48b7b7bb0258db8a322e3fb9fd653",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v14-exposed-run-v1-generalization-drug-sensitivity.json": "eb0f4587fea0268e3ef6eaebb3ce34448cc5eb58f13806288eb4a4b8fad0486d",
+    "docs/validation/reports/2026-07-23-staged-generalization-v14-exposed-run-v1-final.md": "af6f8c5a7d09727cb04d1d144cfb8d99b19ad224c5e7aa98f86c1650e5a741e8",
+    "docs/validation/results/2026-07-23-staged-generalization-v14-exposed-run-v1-generalization-comparison-canary-raw.json": "797d2dab5e729da59a9060e00a2583bb496267a16ce652d3d4ebead302e65c71",
+    "docs/validation/results/2026-07-23-staged-generalization-v14-exposed-run-v1-generalization-drug-sensitivity-raw.json": "38547adb15c1adab3529c7e0217778bf33f2c34aacdc7bfab2d2076900e86b2f",
+    "docs/validation/results/2026-07-23-staged-generalization-v14-exposed-run-v1.json": "b569b6db3020c61e8f63def73e8b0d69d94612d2873a8653edf5ce93c22d10d9"
+  },
+  "independent_reviews": {
+    "source_semantic_science": {
+      "reviewer_id": "independent_v14_scientific_failure_reviewer",
+      "verdict": "MODEL_OR_PROMPT_GAP_FOCUS_SCOPE_REGRESSION",
+      "first_real_failure_axis": "FORBIDDEN_NON_FOCUS_EVENT_INVENTORY",
+      "primary_finding": {
+        "event_trigger": "are involved in",
+        "classification": "SOURCE_ENTAILED_FULL_SENTENCE_CONTEXT_BUT_FORBIDDEN_NON_FOCUS_EVENT",
+        "hallucinated": false,
+        "prior_repaired_behavior_regressed": true
+      },
+      "independent_cofailure": {
+        "observed_participant": "SIMPLE_CHEMICAL/5-fluorouracil",
+        "observed_offsets": [
+          287,
+          301
+        ],
+        "required_participant": "SIMPLE_CHEMICAL/5-FU",
+        "required_offsets": [
+          391,
+          395
+        ],
+        "classification": "WRONG_OCCURRENCE_FOR_HIGHLIGHTED_FINDING",
+        "chemical_identity_correct": true,
+        "occurrence_aware_provenance_correct": false
+      },
+      "not_classified_as": [
+        "EVALUATOR_DEFECT",
+        "REFERENCE_AMBIGUITY",
+        "BENCHMARK_ONLY_MISMATCH",
+        "TRANSPORT_FAILURE",
+        "IRREDUCIBLE_CAPABILITY_LIMIT"
+      ],
+      "source_general_prompt_defect_established": false,
+      "reason_source_general_defect_not_established": "One valid exposed output establishes a system regression but is insufficient to establish a source-general causal correction."
+    },
+    "evaluator_and_reference": {
+      "reviewer_id": "independent_v14_evaluator_failure_reviewer",
+      "verdict": "SEALED_DECISION_STANDS_UNCHANGED",
+      "sealed_failure_classification": "UNRELATED_REGRESSION",
+      "decision_affecting_evaluator_defect": false,
+      "reference_ambiguity": false,
+      "v14_optional_edge_overlay_applied": false,
+      "raw_and_effective_metrics_identical": true,
+      "failure_reason_trace": {
+        "non_focus_events_were_inventoried": "PRIMARY_VALID_FAILURE",
+        "unsupported_participant_extractions": "PRIMARY_VALID_OCCURRENCE_FAILURE",
+        "mandatory_source_semantic_participants_are_incomplete": "VALID_DERIVATIVE_FAILURE",
+        "source_semantic_argument_roles_or_attachments_differ": "VALID_DERIVATIVE_AND_INDEPENDENT_ATTACHMENT_FAILURE"
+      },
+      "passed_axes": [
+        "ROOT_SELECTION",
+        "SEMANTIC_AXES",
+        "COMPLETENESS",
+        "EXACT_SENTENCE_GROUNDING"
+      ],
+      "bionlp_cg_projection": {
+        "status": "FAIL",
+        "review_only": true,
+        "affected_scientific_decision": false
+      },
+      "reporting_only_defect": {
+        "present": true,
+        "description": "The sealed result JSON hard-codes root_cause_classification PARTICIPANT_DENOTATION_BOUNDARY as experiment-hypothesis metadata, while scientific terminals do not define the invalid-terminal root_cause and diagnostics fields. The Markdown renderer reads the absent root_cause field and therefore prints root cause None with empty diagnostics.",
+        "sealed_json_root_cause_classification": "PARTICIPANT_DENOTATION_BOUNDARY",
+        "sealed_json_label_is_observed_failure_cause": false,
+        "sealed_json_decision_affected": false,
+        "rescore_allowed": false,
+        "repair_scope": "FUTURE_REPORTING_ONLY"
+      }
+    },
+    "artifact_integrity": {
+      "reviewer_id": "independent_v14_sealed_artifact_auditor",
+      "verdict": "PASS_SAFE_TO_COMMIT_UNCHANGED",
+      "deterministic_evaluator_replay": "EXACT_MATCH",
+      "attempted_provider_calls": 2,
+      "completed_provider_calls": 2,
+      "admitted_provider_calls": 2,
+      "rejected_provider_calls": 0,
+      "provider_retries": 0,
+      "duplicate_creation_calls": 0,
+      "confirmation_retrieval_requests": 2,
+      "input_item_retrieval_requests": 2,
+      "unaccounted_provider_calls": 0,
+      "distinct_response_ids": [
+        "resp_02eb2181aabaa82d006a62853f217c8199b9cee82a1fadd0f9",
+        "resp_0c79751001b34970006a628546fc90819b96edfcb65ddfec6e"
+      ],
+      "fail_fast_after_case_id": "generalization-drug-sensitivity",
+      "later_case_artifacts_present": false,
+      "cost_usd": 0.07293899999999999,
+      "remaining_cost_usd": 4.927061,
+      "all_provider_spend_accounted": true
+    }
+  },
+  "consensus_classification": {
+    "experiment_valid": true,
+    "sealed_decision": "V14_EXPOSED_GATE_FAIL_UNRELATED_REGRESSION",
+    "sealed_decision_stands_unchanged": true,
+    "owning_boundary": "ARTANA_MODEL_OR_PROMPT_BEHAVIOR",
+    "first_failure_frontier": "DRUG_SENSITIVITY_FOCUS_SCOPE_AND_OCCURRENCE",
+    "target_nested_case_reached": false,
+    "participant_head_hypothesis_provider_tested": false,
+    "optional_inner_edge_hypothesis_provider_tested": false,
+    "v14_targeted_hypotheses_status": "SCIENTIFICALLY_UNTESTED",
+    "v15_authorized": false,
+    "next_action": "STOP_AFTER_V14_CLASSIFICATION_PENDING_SOURCE_GENERAL_ROOT_CAUSE_EVIDENCE"
+  },
+  "qualification_state": {
+    "qualification_credit": false,
+    "fresh_cases_consumed": 0,
+    "remaining_fresh_cases_preserved": 7,
+    "graph_writes": 0,
+    "trusted_promotion": false
+  },
+  "review_operations": {
+    "provider_calls": 0,
+    "fresh_case_access": 0,
+    "graph_writes": 0,
+    "trusted_promotion": false,
+    "sealed_artifacts_modified": false,
+    "historical_results_rescored": false
+  }
+}
