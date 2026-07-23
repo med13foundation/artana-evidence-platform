@@ -1,0 +1,91 @@
+{
+  "adjudication_sha256": "575cd0bfc98ebb7290c4a9be7a2fc9391383f301f59fee0a8bb7401a6bec719c",
+  "cg_projection_lane": {
+    "arguments": [
+      {
+        "cg_role": "Theme",
+        "end": 378,
+        "entity_type": "CANCER",
+        "exact_text": "carcinoma",
+        "start": 369
+      },
+      {
+        "cg_role": "Cause",
+        "end": 395,
+        "entity_type": "SIMPLE_CHEMICAL",
+        "exact_text": "5-FU",
+        "start": 391
+      }
+    ],
+    "event_type": "REGULATION",
+    "graph_promotion_allowed": false,
+    "projection_scope": "BIONLP_CG_EVALUATION_ONLY",
+    "qualification_credit": false,
+    "review_only": true,
+    "trigger": {
+      "end": 365,
+      "exact_text": "sensitivity",
+      "start": 354
+    }
+  },
+  "contract_id": "staged-generalization-v12-two-lane",
+  "graph_promotion_allowed": false,
+  "historical_replay_credit": false,
+  "other_cases_policy": "UNCHANGED_V11_FROZEN_DUAL_LANE",
+  "qualification_credit": false,
+  "schema_version": "artana.staged_generalization.v12_two_lane_contract.v1",
+  "source_lane": {
+    "acceptable_direction_values": [
+      "NOT_APPLICABLE",
+      "OBSERVED"
+    ],
+    "acceptable_event_types": [
+      "ASSOCIATION",
+      "REGULATION"
+    ],
+    "author_interpretation": "NOT_CLAIMED",
+    "comparison": "NOT_APPLICABLE",
+    "event_kind": "DRUG_SENSITIVITY",
+    "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+    "mandatory_participants": [
+      {
+        "end": 387,
+        "entity_type": "POPULATION",
+        "exact_text": "carcinoma patients",
+        "role": "AFFECTED_ENTITY",
+        "start": 369
+      },
+      {
+        "end": 395,
+        "entity_type": "SIMPLE_CHEMICAL",
+        "exact_text": "5-FU",
+        "role": "STIMULUS_OR_OBJECT",
+        "start": 391
+      }
+    ],
+    "permitted_context": [
+      {
+        "acceptable_texts": [
+          "Thymidylate synthase",
+          "TS",
+          "Thymidylate synthase (TS)"
+        ],
+        "entity_type": "GENE_OR_PROTEIN",
+        "role": "CONTEXTUAL_PARTICIPANT"
+      },
+      {
+        "acceptable_texts": [
+          "dihydropyrimidine dehydrogenase",
+          "DPD",
+          "dihydropyrimidine dehydrogenase (DPD)"
+        ],
+        "entity_type": "GENE_OR_PROTEIN",
+        "role": "CONTEXTUAL_PARTICIPANT"
+      }
+    ],
+    "polarity": "AFFIRMED",
+    "root_trigger": "sensitivity",
+    "statistics": "NONE",
+    "uncertainty": "ASSERTED"
+  }
+}

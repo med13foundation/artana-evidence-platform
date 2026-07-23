@@ -1,0 +1,24 @@
+{
+  "audit_sha256": "d0b89e268c8c2e893cb865d2343ffcf3ae5c9e92175206cf445f3c5c5fd324ec",
+  "case_safety": {
+    "generalization-comparison-canary": "PASS",
+    "generalization-drug-sensitivity": "PASS",
+    "generalization-explicit-nested-cause": "PASS",
+    "generalization-negated-association": "PASS",
+    "generalization-null-statistics": "PASS",
+    "generalization-uncertainty": "PASS"
+  },
+  "leakage": "PASS",
+  "prior_candidate_disposition": {
+    "audit_sha256": "3af311b94292fdb3b1e29a353f12509e2f9b80db3f82abe1e904675585d7920b",
+    "decision": "FAIL",
+    "reason": "The prior participant-selection clause exceeded focus/root scope and the audit did not pin nested edges or classification-value separation.",
+    "rule_sha256": "152dadff9e093e8e5bbfab034600a79d97b14e0b3580558965ec37ae7acc199e"
+  },
+  "reviewer_id": "fresh_cg_reviewer_b",
+  "rule_sha256": "a9ea1d2acd867809b2769ce9f52d94b0bfa69a69ba7f2cfb593ad7bb8b31fc78",
+  "schema_version": "artana.staged_generalization.v12_focus_wording_review.v1",
+  "single_change_scope": "PASS",
+  "source_generality": "PASS",
+  "verdict": "PASS"
+}

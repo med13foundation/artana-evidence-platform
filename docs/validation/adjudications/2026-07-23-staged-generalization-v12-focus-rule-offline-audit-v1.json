@@ -1,0 +1,77 @@
+{
+  "audit_id": "staged-generalization-v12-focus-event-anchoring-audit-v1",
+  "case_count": 6,
+  "cases": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "expected_root_triggers": [
+        "more",
+        "more comorbidities than"
+      ],
+      "rule_effect": "NO_CHANGE",
+      "safety_rationale": "The comparison predicate is already inside the highlighted finding and remains the root."
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "expected_root_triggers": [
+        "sensitivity"
+      ],
+      "rule_effect": "TARGETED_CORRECTION",
+      "safety_rationale": "The explicit highlighted sensitivity noun remains the root; the surrounding involvement predicate cannot replace it."
+    },
+    {
+      "case_id": "generalization-explicit-nested-cause",
+      "expected_nested_edges": [
+        "responsible->elevating",
+        "elevating->levels"
+      ],
+      "expected_root_triggers": [
+        "responsible"
+      ],
+      "rule_effect": "NO_CHANGE",
+      "safety_rationale": "The root and all nested effect events are inside the highlighted finding; preserving the root does not flatten dependencies."
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "forbidden_root_triggers": [
+        "uncertain significance"
+      ],
+      "expected_root_triggers": [
+        "classified"
+      ],
+      "rule_effect": "NO_CHANGE",
+      "safety_rationale": "The classification event remains the root; the uncertain value remains a semantic axis rather than a surrounding predicate."
+    },
+    {
+      "case_id": "generalization-negated-association",
+      "expected_root_triggers": [
+        "no longer associated"
+      ],
+      "rule_effect": "NO_CHANGE",
+      "safety_rationale": "The association predicate is itself inside the highlighted finding and remains the root."
+    },
+    {
+      "case_id": "generalization-null-statistics",
+      "expected_root_triggers": [
+        "no difference"
+      ],
+      "rule_effect": "NO_CHANGE",
+      "safety_rationale": "The null-comparison phrase is inside the highlighted finding and remains the root without changing its null axes."
+    }
+  ],
+  "forbidden_specificity_absent": true,
+  "model_outputs_used_to_write_rule": false,
+  "panel_membership_changed": false,
+  "preserved_invariants": [
+    "participant_inventory",
+    "event_links",
+    "argument_roles",
+    "nested_event_dependencies",
+    "semantic_axes"
+  ],
+  "rule_path": "docs/validation/prompts/2026-07-23-staged-generalization-v12-focus-event-anchoring.md",
+  "schema_version": "artana.staged_generalization.v12_focus_rule_audit.v1",
+  "single_scientific_change": "FOCUS_EVENT_ANCHORING",
+  "source_adjudication_sha256": "575cd0bfc98ebb7290c4a9be7a2fc9391383f301f59fee0a8bb7401a6bec719c",
+  "unresolved_safety_findings": []
+}
