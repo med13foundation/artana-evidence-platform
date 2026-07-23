@@ -1,0 +1,59 @@
+{
+  "classification": "PROVIDER_QUEUE_STALL",
+  "evidence": {
+    "attempt_state": "ACKNOWLEDGED",
+    "creation_calls": 1,
+    "current_incomplete_details": null,
+    "current_provider_error": null,
+    "current_read_only_retrieval_at": "2026-07-23T15:07:25.825693+00:00",
+    "current_read_only_status": "queued",
+    "current_usage_available": false,
+    "duplicate_creation_calls": 0,
+    "polling_retrieval_requests": 170,
+    "polling_seconds": 900.0100377080016,
+    "provider_retries": 0,
+    "response_id": "resp_0ea84656be41ad54006a61b0916e4c8199bec1041422465f06",
+    "sealed_late_status": "queued",
+    "sealed_late_status_retrieval_at": "2026-07-23T06:27:21Z",
+    "terminal_failure_stage": "BACKGROUND_POLLING_TIMEOUT"
+  },
+  "experiment_id": "staged-generalization-v11-exposed-run-v1",
+  "internal_provider_root_cause": "UNKNOWN",
+  "provider_contract_interpretation": {
+    "documented_background_behavior": "background=true is asynchronous and clients retrieve while status is queued or in_progress",
+    "installed_openai_python_version": "2.44.0",
+    "local_poller_conformed_to_documented_states": true,
+    "official_documentation": "https://developers.openai.com/api/docs/guides/background",
+    "provider_internal_cause_claimed": false
+  },
+  "run1_invariants": {
+    "late_output_rescore_authorized": false,
+    "late_output_scientifically_admissible": false,
+    "sealed_result_rewrite_authorized": false,
+    "sealed_sha256": {
+      "attempt": "f2cc4adc252a0e0d25e3e6690cd760f955a70487758bad8bb6283cd1d4ec78f4",
+      "late_status": "4b762538ce06ef7250c271055cd5b1dc6da4c723459dda3e575c1ad07da13fd1",
+      "preregistration": "1beb0e30c5fa26c429259bcf7d72c8629b534488200b14808a34cc93df28bf5b",
+      "report": "48036e762a548840746a3c788404ecf0115e9d3f2e445f4a7c3b63fa4766b655",
+      "result": "07dafb681ec7fd597f01a619eddfb12e27aadc959136cdecf83db1632f7b8e3d",
+      "seal": "e7063b1e4eb0a88ebc4c618f227358ac1c7ab60757dd06e6269a492bcd9184c4"
+    }
+  },
+  "schema_version": "artana.staged_generalization.v11_run1_queue_diagnosis.v1",
+  "scientific_disposition": "INVALID_UNSCORED_DIAGNOSTIC_ONLY",
+  "transport_decision": {
+    "application_max_output_tokens": null,
+    "application_max_total_tokens": null,
+    "background": false,
+    "confirmation_retrieval": true,
+    "fallback": false,
+    "input_item_retrieval": true,
+    "model": "openai:gpt-5.6-luna",
+    "one_creation_call": true,
+    "provider_retries": 0,
+    "reasoning_effort": "high",
+    "response_id_custody": true,
+    "scientific_contract_changed": false,
+    "smallest_change": "DIRECT_OPENAI_FOREGROUND_RESPONSES_WITH_SYNTHETIC_QUALIFICATION"
+  }
+}

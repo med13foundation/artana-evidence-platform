@@ -1,0 +1,40 @@
+{
+  "acceptance": {
+    "complete_usage": true,
+    "duplicate_creation_calls": 0,
+    "fallback": false,
+    "hidden_token_ceiling": false,
+    "one_confirmation_retrieval": true,
+    "one_creation_call": true,
+    "one_input_item_retrieval": true,
+    "one_response_id": true,
+    "provider_retries": 0,
+    "scientific_credit": false,
+    "strict_v11_schema": true
+  },
+  "authorization": "TRANSPORT_ONLY_SYNTHETIC_NO_SCIENTIFIC_CREDIT",
+  "experiment_id": "staged-generalization-v11-foreground-qualification-v1",
+  "implementation_sha256": {
+    "scripts/run_staged_generalization_v11_exposed_run2.py": "c263a6670ed6e13c4484a919ddc3f8f3c156a0e4072e0239bce1274ccc278b14",
+    "scripts/validation/provider_receipt_boundary/foreground/__init__.py": "6bad3908d0158c762a34191d7f5519e9e11880ef59d55ecb2b6d3e58e78fbba7",
+    "scripts/validation/provider_receipt_boundary/foreground/contracts.py": "990e6d8df267ae997344061e3e6fcccb0afc8ecb7edb19d668825b70eca86bc6",
+    "scripts/validation/provider_receipt_boundary/foreground/execution.py": "83f49a0823422014b3f605ce68a453d17f01826dab929eea5a8507db63818349",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v11_run2/qualification.py": "cc86f48aa637fc09083daa91ab91cfa9209c546c1762bdbfc2d7967bb8ef6794"
+  },
+  "input_sha256": "932858926c74af15aaee09c2a70c44e0df6a02e89f727015f0e4034c6d879a9a",
+  "provider": {
+    "application_max_output_tokens": null,
+    "application_max_total_tokens": null,
+    "background": false,
+    "fallback": false,
+    "model": "openai:gpt-5.6-luna",
+    "provider_retries": 0,
+    "reasoning_effort": "high",
+    "request_timeout_seconds": 600.0,
+    "store": true,
+    "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES"
+  },
+  "provider_format_sha256": "26bfd7dad638807e4463126c46d66bc959eec00324f9efd68cab32222fe068bb",
+  "schema_sha256": "02594c4ce1cb089e1b23da0495269a8b457f68b3e57396f345a2258a94eb57c1",
+  "schema_version": "artana.staged_generalization.v11_foreground_qualification.v1"
+}
