@@ -22,6 +22,9 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     merge_bound_claim_inventories,
     partition_bound_claim_inventory,
 )
+from artana_evidence_api.document_extraction_support.claim_frames.verification_budget import (
+    ClaimVerificationBudgetTracker,
+)
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
 )
@@ -37,6 +40,10 @@ from artana_evidence_api.document_extraction_support.llm_extraction.claim_invent
 from artana_evidence_api.document_extraction_support.llm_extraction.inventory_convergence import (
     InventoryConvergenceStopReason,
     run_inventory_completeness_convergence,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.verification_loop import (
+    ClaimVerificationRuntimeConfig,
+    run_claim_verification_loop,
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     ModelAttemptAuditRecord,
@@ -141,6 +148,63 @@ class _ChunkInventoryOutcome:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class _ExtractionSchemas:
+    inventory: type[BaseModel]
+    completeness: type[BaseModel]
+    recovery: type[BaseModel]
+    framing: type[BaseModel]
+
+
+def _build_extraction_schemas() -> _ExtractionSchemas:
+    return _ExtractionSchemas(
+        inventory=build_claim_inventory_output_schema(
+            _MAX_INVENTORY_CLAIMS_PER_CHUNK,
+        ),
+        completeness=build_claim_inventory_completeness_output_schema(),
+        recovery=build_missing_claim_recovery_output_schema(),
+        framing=build_single_claim_framing_output_schema(),
+    )
+
+
+async def _verify_framed_candidates(
+    *,
+    candidates: tuple[ExtractedRelationCandidate, ...],
+    source_region: str,
+    source_sha256: str,
+    semantic_unit_id: str,
+    client: object,
+    tenant: object,
+    config: ClaimVerificationRuntimeConfig | None,
+    budget: ClaimVerificationBudgetTracker | None,
+    step_runner: ModelStepRunner,
+    execution_namespace: str,
+) -> tuple[tuple[ExtractedRelationCandidate, ...], tuple[dict[str, object], ...]]:
+    """Run the bounded verifier loop without coupling it to claim framing."""
+
+    if config is None or not config.enabled or budget is None:
+        return candidates, ()
+    outcomes = [
+        await run_claim_verification_loop(
+            candidate=candidate,
+            source_region=source_region,
+            source_sha256=source_sha256,
+            semantic_unit_id=semantic_unit_id,
+            client=client,
+            tenant=tenant,
+            config=config,
+            budget=budget,
+            step_runner=step_runner,
+            execution_namespace=execution_namespace,
+        )
+        for candidate in candidates
+    ]
+    return (
+        tuple(outcome.candidate for outcome in outcomes),
+        tuple(outcome.as_json() for outcome in outcomes),
+    )
+
+
 async def run_llm_relation_extraction_with_zero_retry(
     *,
     normalized_text: str,
@@ -154,6 +218,7 @@ async def run_llm_relation_extraction_with_zero_retry(
     model_id: str,
     step_runner: ModelStepRunner,
     execution_namespace: str = "",
+    claim_verification_config: ClaimVerificationRuntimeConfig | None = None,
 ) -> LLMRelationExtractionAttempt:
     """Inventory claims, then frame each claim in its own strict agent call.
 
@@ -164,12 +229,7 @@ async def run_llm_relation_extraction_with_zero_retry(
     """
 
     del max_relations, output_schema, weak_review_output_schema
-    inventory_output_schema = build_claim_inventory_output_schema(
-        _MAX_INVENTORY_CLAIMS_PER_CHUNK,
-    )
-    completeness_output_schema = build_claim_inventory_completeness_output_schema()
-    recovery_output_schema = build_missing_claim_recovery_output_schema()
-    framing_output_schema = build_single_claim_framing_output_schema()
+    schemas = _build_extraction_schemas()
     extraction_chunks = coalesce_long_sentence_chunks(
         normalized_text=normalized_text,
         chunks=chunks,
@@ -193,6 +253,11 @@ async def run_llm_relation_extraction_with_zero_retry(
     non_relation_items: list[NonRelationInventoryItem] = []
     framing_abstention_count = 0
     raw_relation_count = 0
+    verification_budget = (
+        ClaimVerificationBudgetTracker(claim_verification_config.budget_limits)
+        if claim_verification_config is not None and claim_verification_config.enabled
+        else None
+    )
 
     try:
         for chunk in extraction_chunks:
@@ -200,9 +265,9 @@ async def run_llm_relation_extraction_with_zero_retry(
                 chunk=chunk,
                 total_chunks=len(extraction_chunks),
                 document_fingerprint=document_fingerprint,
-                inventory_output_schema=inventory_output_schema,
-                completeness_output_schema=completeness_output_schema,
-                recovery_output_schema=recovery_output_schema,
+                inventory_output_schema=schemas.inventory,
+                completeness_output_schema=schemas.completeness,
+                recovery_output_schema=schemas.recovery,
                 client=client,
                 tenant=tenant,
                 model_id=model_id,
@@ -227,10 +292,15 @@ async def run_llm_relation_extraction_with_zero_retry(
             for inventory_claim in inventory_claims:
                 framing_result = await run_single_claim_framing_stage(
                     inventory_claim=inventory_claim,
-                    output_schema=framing_output_schema,
+                    output_schema=schemas.framing,
                     client=client,
                     tenant=tenant,
-                    model_id=model_id,
+                    model_id=(
+                        claim_verification_config.framing_model_id
+                        if claim_verification_config is not None
+                        and claim_verification_config.enabled
+                        else model_id
+                    ),
                     step_runner=step_runner,
                     execution_namespace=execution_namespace,
                 )
@@ -243,6 +313,21 @@ async def run_llm_relation_extraction_with_zero_retry(
                     raise AssertionError(
                         "claim framing audit lost its stable inventory identity",
                     )
+                (
+                    verified_candidates,
+                    verification_payloads,
+                ) = await _verify_framed_candidates(
+                    candidates=framed_claim.candidates,
+                    source_region=framing_result.source_region.text,
+                    source_sha256=inventory_claim.source_sha256,
+                    semantic_unit_id=inventory_claim.inventory_id,
+                    client=client,
+                    tenant=tenant,
+                    config=claim_verification_config,
+                    budget=verification_budget,
+                    step_runner=step_runner,
+                    execution_namespace=execution_namespace,
+                )
                 claim_lineage.append(
                     ClaimExtractionLineage(
                         inventory_id=inventory_claim.inventory_id,
@@ -255,17 +340,18 @@ async def run_llm_relation_extraction_with_zero_retry(
                         claim_local_source_end=framing_result.source_region.source_end,
                         inventory_payload=inventory_claim.item.model_dump(mode="json"),
                         framing_decision=framed_claim.decision.value,
-                        candidates=framed_claim.candidates,
+                        candidates=verified_candidates,
                         decision_rationale=framed_claim.decision_rationale,
                         framing_attempt=framing_result.attempt_record.as_json(),
                         raw_agent_output=framing_result.raw_agent_outputs[0],
+                        claim_verification=verification_payloads,
                     ),
                 )
                 if framed_claim.abstained:
                     framing_abstention_count += 1
                     continue
-                raw_relation_count += len(framed_claim.candidates)
-                candidates.extend(framed_claim.candidates)
+                raw_relation_count += len(verified_candidates)
+                candidates.extend(verified_candidates)
                 unknown_relation_types.update(framed_claim.unknown_relation_types)
 
         return LLMRelationExtractionAttempt(
@@ -385,12 +471,8 @@ async def run_llm_claim_inventory_with_zero_retry(
             ),
             inventory_binding_rejection_count=len(binding_rejections),
             inventory_recovery_round_count=inventory_recovery_round_count,
-            inventory_convergence_stop_reasons=(
-                inventory_convergence_stop_reasons
-            ),
-            inventory_convergence_round_traces=(
-                inventory_convergence_round_traces
-            ),
+            inventory_convergence_stop_reasons=(inventory_convergence_stop_reasons),
+            inventory_convergence_round_traces=(inventory_convergence_round_traces),
             inventory_incompleteness=unresolved,
             inventory_binding_rejections=binding_rejections,
             unresolved_binding_rejection_count=(unresolved_binding_rejection_count),

@@ -40,6 +40,12 @@ ClaimExtractionRoutingStatus = Literal[
     "candidate_overflow",
     "semantic_incomplete",
 ]
+ClaimVerificationTerminalValue = Literal[
+    "VERIFIED_UNREPAIRED",
+    "VERIFIED_AFTER_REPAIR",
+    "REVIEW_ONLY",
+    "INVALID_VERIFICATION",
+]
 _CLAIM_EXTRACTION_ROUTING_STATUSES = frozenset(
     {"not_run", "complete", "candidate_overflow", "semantic_incomplete"},
 )
@@ -154,6 +160,8 @@ class ExtractedRelationCandidate:
     claim_frame: ClaimFrame | None = None
     framing_decision: ClaimFramingDecisionValue | None = None
     framing_decision_rationale: str | None = None
+    claim_verification_terminal: ClaimVerificationTerminalValue | None = None
+    claim_verification_qualification_complete: bool | None = None
 
     @property
     def trusted_evidence_eligible(self) -> bool:
@@ -167,6 +175,7 @@ class ExtractedRelationCandidate:
             and self.framing_decision == "SINGLE_FRAME"
             and isinstance(self.framing_decision_rationale, str)
             and bool(self.framing_decision_rationale.strip())
+            and self.claim_verification_qualification_complete is not False
         )
 
 
@@ -186,6 +195,7 @@ class ClaimExtractionLineage:
     decision_rationale: str
     framing_attempt: dict[str, object]
     raw_agent_output: dict[str, object]
+    claim_verification: tuple[dict[str, object], ...] = ()
 
     def as_metadata(self) -> JSONObject:
         """Serialize complete claim-unit provenance for workflow metadata."""
@@ -203,6 +213,12 @@ class ClaimExtractionLineage:
                     if candidate.claim_frame is not None
                     else None
                 ),
+                "claim_verification_terminal": (
+                    candidate.claim_verification_terminal
+                ),
+                "claim_verification_qualification_complete": (
+                    candidate.claim_verification_qualification_complete
+                ),
             }
             for candidate in self.candidates
         ]
@@ -219,6 +235,7 @@ class ClaimExtractionLineage:
             "decision_rationale": self.decision_rationale,
             "framing_attempt": json_value(self.framing_attempt),
             "raw_agent_output": json_value(self.raw_agent_output),
+            "claim_verification": json_value(self.claim_verification),
         }
 
 

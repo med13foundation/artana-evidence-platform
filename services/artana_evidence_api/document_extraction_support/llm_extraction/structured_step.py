@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Generic, TypeVar
@@ -68,6 +69,7 @@ async def run_audited_structured_step(
     """Invoke one kernel step and audit every terminal outcome."""
 
     invocation_id = str(uuid4())
+    started_at = time.perf_counter()
     provider_prompt = bind_prompt_to_invocation(
         prompt=prompt,
         invocation_id=invocation_id,
@@ -105,6 +107,7 @@ async def run_audited_structured_step(
             raw_output=raw_output,
             validation_outcome="invocation_failed",
             error_type=type(exc).__name__,
+            latency_seconds=time.perf_counter() - started_at,
         )
         raise
     except ModelOutputValidationError as exc:
@@ -124,6 +127,7 @@ async def run_audited_structured_step(
             raw_output=raw_output,
             validation_outcome="schema_invalid",
             error_type=StructuredModelSchemaError.__name__,
+            latency_seconds=time.perf_counter() - started_at,
         )
         raise StructuredModelSchemaError(str(exc)) from exc
     except ValidationError as exc:
@@ -138,6 +142,7 @@ async def run_audited_structured_step(
             raw_output=raw_output,
             validation_outcome="schema_invalid",
             error_type=type(exc).__name__,
+            latency_seconds=time.perf_counter() - started_at,
         )
         raise
     except StructuredModelSemanticError as exc:
@@ -152,6 +157,7 @@ async def run_audited_structured_step(
             raw_output=raw_output,
             validation_outcome="semantic_invalid",
             error_type=type(exc).__name__,
+            latency_seconds=time.perf_counter() - started_at,
         )
         raise
     except Exception as exc:
@@ -166,6 +172,7 @@ async def run_audited_structured_step(
             raw_output=raw_output,
             validation_outcome="invocation_failed",
             error_type=type(exc).__name__,
+            latency_seconds=time.perf_counter() - started_at,
         )
         raise
 
@@ -180,6 +187,7 @@ async def run_audited_structured_step(
         raw_output=raw_output,
         validation_outcome="accepted",
         error_type=None,
+        latency_seconds=time.perf_counter() - started_at,
     )
     immutable_raw_output = record.raw_model_payload
     if immutable_raw_output is None:
@@ -216,6 +224,7 @@ def _record_terminal_attempt(
     raw_output: object | None,
     validation_outcome: ModelAttemptValidationOutcome,
     error_type: str,
+    latency_seconds: float,
 ) -> None:
     record_model_attempt(
         invocation_id=invocation_id,
@@ -228,6 +237,7 @@ def _record_terminal_attempt(
         raw_output=raw_output,
         validation_outcome=validation_outcome,
         error_type=error_type,
+        latency_seconds=latency_seconds,
     )
 
 

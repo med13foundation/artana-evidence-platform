@@ -47,6 +47,9 @@ ModelAttemptRole = Literal[
     "schema_retry",
     "zero_candidate_retry",
     "proposal_review",
+    "claim_verification",
+    "claim_repair",
+    "claim_reverification",
 ]
 ModelAttemptPassRole = Literal[
     "claim_inventory",
@@ -56,6 +59,9 @@ ModelAttemptPassRole = Literal[
     "primary",
     "weak_review",
     "proposal_review",
+    "claim_verification",
+    "claim_repair",
+    "claim_reverification",
 ]
 ModelAttemptValidationOutcome = Literal[
     "accepted",
@@ -104,6 +110,11 @@ class ModelAttemptAuditRecord:
     payload_sha256: str | None
     validation_outcome: ModelAttemptValidationOutcome
     error_type: str | None
+    output_schema_sha256: str
+    prompt_tokens: int | None
+    completion_tokens: int | None
+    cost_usd: float | None
+    latency_seconds: float | None
 
     @property
     def raw_model_payload(self) -> dict[str, object] | None:
@@ -130,6 +141,7 @@ class ModelAttemptAuditRecord:
                 "evidence_unit_sha256": self.evidence_unit_sha256,
                 "semantic_unit_id": self.semantic_unit_id,
                 "output_schema_identity": self.output_schema_identity,
+                "output_schema_sha256": self.output_schema_sha256,
                 "provider_execution_response_id": (self.provider_execution_response_id),
                 "provider_response_id": self.provider_response_id,
                 "provider_output_sha256": self.provider_output_sha256,
@@ -140,6 +152,10 @@ class ModelAttemptAuditRecord:
                 "payload_sha256": self.payload_sha256,
                 "validation_outcome": self.validation_outcome,
                 "error_type": self.error_type,
+                "prompt_tokens": self.prompt_tokens,
+                "completion_tokens": self.completion_tokens,
+                "cost_usd": self.cost_usd,
+                "latency_seconds": self.latency_seconds,
             },
         )
 
@@ -261,6 +277,7 @@ def record_model_attempt(
     raw_output: object | None,
     validation_outcome: ModelAttemptValidationOutcome,
     error_type: str | None,
+    latency_seconds: float | None = None,
 ) -> ModelAttemptAuditRecord:
     """Append one exact model-boundary outcome to the active audit session."""
 
@@ -278,6 +295,7 @@ def record_model_attempt(
         raw_model_payload=raw_model_payload,
         validation_outcome=validation_outcome,
         error_type=error_type,
+        latency_seconds=latency_seconds,
     )
     _append_model_attempt_record(record)
     return record
@@ -301,6 +319,7 @@ def _build_model_attempt_record(
     raw_model_payload: dict[str, object] | None,
     validation_outcome: ModelAttemptValidationOutcome,
     error_type: str | None,
+    latency_seconds: float | None = None,
 ) -> ModelAttemptAuditRecord:
     raw_model_payload_json = (
         _canonical_json(raw_model_payload) if raw_model_payload is not None else None
@@ -326,6 +345,7 @@ def _build_model_attempt_record(
         output_schema_identity=(
             f"{output_schema.__module__}.{output_schema.__qualname__}"
         ),
+        output_schema_sha256=_canonical_json_sha256(output_schema.model_json_schema()),
         provider_execution_response_id=provider_execution_response_id,
         provider_response_id=_canonical_response_id_or_none(
             provider_execution_response_id,
@@ -342,7 +362,25 @@ def _build_model_attempt_record(
         ),
         validation_outcome=validation_outcome,
         error_type=error_type,
+        prompt_tokens=_model_usage_int(model_result, "prompt_tokens"),
+        completion_tokens=_model_usage_int(model_result, "completion_tokens"),
+        cost_usd=_model_usage_float(model_result, "cost_usd"),
+        latency_seconds=latency_seconds,
     )
+
+
+def _model_usage_int(model_result: object | None, field_name: str) -> int | None:
+    usage = getattr(model_result, "usage", None)
+    value = getattr(usage, field_name, None)
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def _model_usage_float(model_result: object | None, field_name: str) -> float | None:
+    usage = getattr(model_result, "usage", None)
+    value = getattr(usage, field_name, None)
+    if isinstance(value, int | float) and not isinstance(value, bool):
+        return float(value)
+    return None
 
 
 def _optional_string_attribute(value: object | None, name: str) -> str | None:
