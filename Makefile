@@ -105,7 +105,13 @@ ARTANA_EVIDENCE_API_TEST_PATHS := \
 	 tests/unit/test_nary_claim_runner.py \
 	 tests/unit/test_run_evidence_selection_expert_study_gate.py \
 	 tests/unit/test_run_evidence_selection_review_calibration_gate.py \
-	 tests/unit/test_agent_output_boundary_validator.py
+	 tests/unit/test_agent_output_boundary_validator.py \
+	 tests/unit/test_bionlp_claim_event_import.py \
+	 tests/unit/test_nary_claim_comparison.py \
+	 tests/unit/test_nary_claim_fixture.py \
+	 tests/unit/test_nary_claim_matching.py \
+	 tests/unit/test_nary_claim_operational.py \
+	 tests/unit/test_nary_claim_scoring.py
 
 LIVE_ENDPOINT_CONTRACT_TEST_PATH := tests/e2e/artana_evidence_api/test_live_endpoint_contract.py
 LIVE_EXTERNAL_API_TEST_PATH := services/artana_evidence_api/tests/integration/test_research_init_live_pipeline.py
