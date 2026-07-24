@@ -158,7 +158,7 @@ That reframes the next two weeks: mostly connecting proven parts, not inventing 
 | Work | Unlocks |
 |---|---|
 | Derive `invocation_id` instead of minting a UUID into the prompt (`structured_step.py:71`) | **Reproducibility.** Today the persisted prompt hash differs on every run of identical input — we cannot prove two runs sent the same request. One line stabilizes the prompt hash, stabilizes `run_id`, and makes the kernel's existing replay actually hit. Three tickets, one change. |
-| Publish the importer exclusion ledger | **Honest measurement.** The gold fixture retains 53 of 472 events (11.2%), excluding all nested and multi-argument events. Every score to date is over an easy subset. The counts already exist; publishing them costs nothing and changes how we read every historical number. |
+| Publish the importer exclusion ledger | **Honest measurement.** The gold fixture retains 53 of 472 events (11.2%), dropping nested events (a real schema limit) and single-argument events (an undocumented policy constant). Done — see [the ledger](validation/reports/2026-07-24-tg04-gold-importer-exclusion-ledger.md), which also found that the precision gate structurally penalizes correct extraction, and that 7 gold records carry inverted polarity. |
 | Add `claim_events/` + `public_gold/` to CI triggers; wire staged tests into coverage | **Governance that holds.** A PR lowering a qualification floor currently plans no CI jobs and passes. Versioned thresholds mean nothing if they are unenforced. |
 | Build V1 gold-as-predictions | **A ruler we trust.** Feed gold back as predictions; if any gated metric ≠ 1.0, the scorer is miscut and no score is interpretable. Zero provider calls. |
 
