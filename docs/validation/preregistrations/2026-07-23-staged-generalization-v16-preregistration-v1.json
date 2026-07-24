@@ -1,0 +1,71 @@
+{
+  "schema_version": "artana.staged_generalization.preregistration.v1",
+  "experiment_id": "staged-generalization-v16-exposed-run-v1",
+  "preregistered_at_utc": "2026-07-23T23:30:00Z",
+  "branch": "alvaro/tg04-source-general-claim-verification-v16-mechanism-design",
+  "parent_experiment_id": "staged-generalization-v15-exposed-run-v1",
+  "parent_sealed_result_commit": "e606fcb8f1bbf1dc9480f0feb1d1f2be2520ea28",
+  "parent_failure_classification_commit": "06fd697b4dac60fad396e104c8cf7f7005746fdc",
+  "mechanism_design_document": "docs/validation/design/2026-07-23-v16-participant-completeness-validator-design.md",
+  "hypothesis": "A deterministic per-claim participant-completeness validator with bounded one-shot repair converts the V15 uncertainty FAIL into a PASS without regressing the comparison or drug-sensitivity PASS outcomes, producing a full-panel PASS on the exposed cases.",
+  "null_hypothesis": "The validator/repair mechanism either fails to convert the uncertainty case or introduces a regression on a previously passing case.",
+  "stop_condition_lift_authorization": "Full exposed panel PASS in one run.",
+  "intervention_class": "mechanism_change",
+  "intervention_description": "Add a per-claim participant-completeness validator and bounded one-shot repair to the existing claim-framing path. No prompt-content changes.",
+  "intervention_constraints": [
+    "No change to the V15 system prompt or any prompt content.",
+    "No change to event types, source-general rules, or relation types.",
+    "No change to the shadow planner, inventory completeness reviewer, or claim-adjudication contracts.",
+    "No access to the 7 preserved fresh cases until full-panel PASS is demonstrated.",
+    "Repair call count per incomplete frame: exactly 1.",
+    "Repair call is receipt-logged with the same custody invariants as the initial call.",
+    "No silent retry. No silent fallback to a different model."
+  ],
+  "exposed_panel_cases": [
+    "generalization-comparison",
+    "generalization-drug-sensitivity",
+    "generalization-uncertainty"
+  ],
+  "primary_success_criteria": {
+    "comparison": "PASS",
+    "drug_sensitivity": "PASS",
+    "uncertainty": "PASS"
+  },
+  "telemetry_fields_added": [
+    "participant_completeness.decision",
+    "participant_completeness.missing_roles",
+    "participant_completeness.repair_attempted",
+    "participant_completeness.repair_succeeded",
+    "participant_completeness.repair_run_id"
+  ],
+  "provider_custody_invariants": [
+    "exactly_one_call_per_phase",
+    "receipt_logged",
+    "sha256_hashed",
+    "cost_tracked",
+    "fail_fast_no_silent_retry",
+    "raw_response_persisted"
+  ],
+  "authorization_conditions": {
+    "execution_authorized_only_if": [
+      "This preregistration is committed and pushed before any provider call.",
+      "Exposed panel case set is identical to V15.",
+      "Fresh cases remain untouched and inaccessible.",
+      "Provider budget ceiling is explicitly set and logged."
+    ],
+    "execution_not_authorized_if": [
+      "Any prompt-content change is introduced without a new preregistration.",
+      "Fresh cases are accessed before full exposed-panel PASS.",
+      "Repair call count exceeds 1 per incomplete frame."
+    ]
+  },
+  "fresh_validation_reserved": {
+    "fresh_cases_preserved": 7,
+    "fresh_validation_authorized_only_if": "primary_success_criteria met on exposed panel"
+  },
+  "quota": {
+    "max_provider_calls_per_run": 4,
+    "max_total_cost_usd": 0.25,
+    "max_repair_calls_total": 3
+  }
+}
