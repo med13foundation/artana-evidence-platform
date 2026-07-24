@@ -1,0 +1,130 @@
+{
+  "schema_version": "artana.staged_generalization.v17_post_run_independent_classification.v1",
+  "experiment_id": "staged-generalization-v17-exposed-run-v1",
+  "review_kind": "INDEPENDENT_SCIENTIFIC_AND_CUSTODY_POST_RUN_CLASSIFICATION",
+  "sealed_execution": {
+    "preregistration_commit": "fa8777e7bf97d28cfa5fd9e0e5156dfab0894983",
+    "sealed_execution_commit": "af69dfcd7483daaf10c126a08a763038d5014702",
+    "remote_head_at_seal": "af69dfcd7483daaf10c126a08a763038d5014702",
+    "result_sha256": "d52639b828eab3fc3c7df3f68620b7ef0b1be4deb19339e5088c01a00210cbf6",
+    "report_sha256": "dca920b777f945744e62ff61f5dfa72a3bd544f01cf80515c5786c6b0c2959c7",
+    "decision": "V17_EXPOSED_GATE_FAIL_SOURCE_SEMANTICS",
+    "execution_is_valid": true,
+    "sealed_result_reinterpreted": false,
+    "historical_results_rescored": false
+  },
+  "executed_cases": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "source_semantic_status": "PASS",
+      "evaluation_sha256": "b102d3e91b2fc50db7f0911dde425a0a28a06c916159085d722aaad33afd58ea",
+      "raw_output_sha256": "7778cd5104df3cac486b24c6cac51f1bbb85d676ce1ead282409d3c5ade15f73",
+      "receipt_sha256": "fea31d710b0afaa1b0e4653f239ef6aa0c404c1464a6cc0846f223cb9ccfd982",
+      "response_id": "resp_0ad0d3f92541e60d006a62e69227a08199b20dc9084b25da5f",
+      "cost_usd": 0.019902
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "source_semantic_status": "PASS",
+      "bionlp_cg_projection_status": "PASS_REVIEW_ONLY",
+      "evaluation_sha256": "67f764d960e34b39a9dd77d28dee819188308547f0ccc33fdfb314d6735ecce6",
+      "raw_output_sha256": "4a80e5957462b18965bae55b57696f883355c9116f5be7c3944e9a9093ba3f60",
+      "receipt_sha256": "3761941af02e8a9a6de2ee5729e4bfd89d0275572ed6555fe32fe73912534bbe",
+      "response_id": "resp_0a7e721d817c86c4006a62e6a51ecc819aba98d6cea8bf2681",
+      "cost_usd": 0.024293000000000002
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "source_semantic_status": "FAIL",
+      "failure_classification": "SOURCE_SEMANTICS",
+      "evaluation_sha256": "ebd47cb1ad0eb769a87169f15bc1e5150e84b0ae92afd829b890653e980947d2",
+      "raw_output_sha256": "595150ffc59529e8a63032f31b642deb689fb10c1c0a99d81910c41e1fe50933",
+      "receipt_sha256": "d85817b801ba92a78ed0d9296b4e96a328b8dc812003ef0f267392e17b21d420",
+      "response_id": "resp_07a605b176a537ba006a62e6bc6eb4819b88362b43439f9b6b",
+      "cost_usd": 0.015082
+    }
+  ],
+  "first_failure_frontier": {
+    "case_id": "generalization-uncertainty",
+    "primary_classification": "MODEL_PROMPT_OUTPUT_COMPLETENESS_GAP",
+    "user_category": "model/prompt gap",
+    "source_general_rule": "A non-inline condition that restricts the antecedent of a downstream anaphoric aggregate or partitive must be represented as a typed, occurrence-bound participant-scope link; exact evidence text alone does not encode that relation.",
+    "raw_output_correctly_preserved": [
+      "one focused asserted classification root",
+      "exact highlighted evidence sentence",
+      "a variant-cohort affected argument",
+      "a MAJORITY partitive tied to that argument",
+      "the UNCERTAIN classification value"
+    ],
+    "raw_output_missing_mandatory_structure": [
+      "the separately represented locus participant",
+      "the typed occurrence-bound cohort-to-locus participant-scope link"
+    ],
+    "why_the_failure_is_real": "The frozen V17 source tiebreak requires the non-inline locus scope and partitive for an anaphoric aggregate. The V16 schema supports the required participant and link, the provider received the V17 rule, and neither full-sentence evidence nor a partitive alone supplies the omitted typed relation.",
+    "not_classified_as": [
+      "evaluator or reference defect capable of reversing the failure",
+      "BioNLP-CG projection mismatch",
+      "provider or transport failure",
+      "irreducible model capability limitation"
+    ]
+  },
+  "secondary_diagnostic": {
+    "classification": "EVALUATOR_REPORTING_SPAN_NORMALIZATION_CONCERN",
+    "observation": "The output span 'A total of 947 variants' faithfully contains the frozen cohort phrase '947 variants', but exact-equality matching also reports a missing cohort and cascading invalid partitive.",
+    "scientific_effect_on_v17": "NONE_ON_TERMINAL_DECISION",
+    "reason": "The locus participant and cohort-to-locus link are independently absent, so normalizing the cohort span cannot make the sealed V17 output pass.",
+    "required_follow_up_before_any_new_experiment": "Independently adjudicate source-general containment or normalization rules before changing any evaluator behavior; do not relax or rescore V17."
+  },
+  "custody_audit": {
+    "verdict": "PASS",
+    "provider_attempted_calls": 3,
+    "provider_completed_calls": 3,
+    "provider_admitted_calls": 3,
+    "provider_rejected_calls": 0,
+    "provider_retries": 0,
+    "duplicate_creation_calls": 0,
+    "unique_response_ids": 3,
+    "confirmation_retrievals_per_call": 1,
+    "input_item_retrievals_per_call": 1,
+    "frozen_receipt_validator": "3_OF_3_PASS",
+    "cost_usd": 0.059277,
+    "remaining_operational_budget_usd": 4.940723,
+    "later_cases_called": false,
+    "fresh_cases_consumed": 0,
+    "graph_writes": 0,
+    "trusted_promotion": false
+  },
+  "independent_reviews": [
+    {
+      "reviewer_id": "v17_postrun_scientific_classification",
+      "verdict": "VALID_SEALED_SOURCE_GENERAL_MODEL_PROMPT_GAP",
+      "provider_calls_made_by_reviewer": 0
+    },
+    {
+      "reviewer_id": "v17_postrun_scientific_classification/source_semantics_audit",
+      "verdict": "FULL_SOURCE_SEMANTICS_FAILS_FOR_MISSING_ANAPHORIC_LOCUS_SCOPE",
+      "provider_calls_made_by_reviewer": 0
+    },
+    {
+      "reviewer_id": "v17_postrun_custody_audit",
+      "verdict": "PASS",
+      "provider_calls_made_by_reviewer": 0
+    }
+  ],
+  "program_progress": {
+    "local_progress": "V17 validated the inline-span correction on the comparison canary and retained drug-sensitivity focus with a separate review-only BioNLP-CG pass.",
+    "remaining_exposed_frontier": "The source-general prompt must reliably preserve non-inline antecedent-restricting scope as typed structure before the remaining exposed cases can establish an exposed-panel pass.",
+    "fresh_qualification_status": "NOT_STARTED",
+    "fresh_cases_remaining": 7,
+    "graph_promotion_status": "NOT_ELIGIBLE"
+  },
+  "next_step_authorization": {
+    "automatic_v18_execution": "FORBIDDEN",
+    "required_before_any_v18": [
+      "retain this V17 result byte-for-byte and do not rescore it",
+      "separately adjudicate the source-general span-normalization diagnostic",
+      "derive the smallest source-general correction for the primary missing-scope behavior without a PMID-specific rule or grader relaxation",
+      "preregister, review, commit, push, and remote-preflight any new exposed experiment before a provider call"
+    ]
+  }
+}
