@@ -1,0 +1,79 @@
+{
+  "schema_version": "artana.staged_generalization.v18_anaphoric_locus_completeness_adjudication.v1",
+  "review_kind": "TWO_BLINDED_SOURCE_ONLY_PRIMARIES_WITH_SOURCE_GENERAL_SYNTHESIS",
+  "review_inputs_excluded": [
+    "provider_raw_outputs",
+    "frozen_machine_reference",
+    "historical_evaluator_results",
+    "BioNLP_CG_projection",
+    "provider_prompt",
+    "proposed_v18_rule_text"
+  ],
+  "source_custody": {
+    "uncertainty": {
+      "case_id": "generalization-uncertainty",
+      "source_id": "exposed-human-genetics",
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b",
+      "evidence_sentence": "A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+      "cohort": "947 variants",
+      "non_inline_locus_condition": "SLC12A3 gene",
+      "partitive": "the majority of which"
+    }
+  },
+  "blinded_source_only_reviews": [
+    {
+      "reviewer_id": "v18-anaphoric-locus-primary-a",
+      "production_output_seen": false,
+      "frozen_reference_seen": false,
+      "prompt_seen": false,
+      "proposed_rule_text_seen": false,
+      "benchmark_labels_seen": false,
+      "uncertainty_verdict": "MANDATORY_NON_INLINE_LOCUS_PARTICIPANT_AND_SCOPE_LINK",
+      "rationale": "The gene name is the defining criterion for membership in the counted variant set, not incidental context; it sits outside the minimal grounded span of '947 variants'. The requirement is structural (span-containment), not contingent on how inferable the restriction seems, so it is mandatory whenever the containment test fails. A representation without it is under-specified: it cannot answer '947 variants of what?'"
+    },
+    {
+      "reviewer_id": "v18-anaphoric-locus-primary-b",
+      "production_output_seen": false,
+      "frozen_reference_seen": false,
+      "prompt_seen": false,
+      "proposed_rule_text_seen": false,
+      "benchmark_labels_seen": false,
+      "uncertainty_verdict": "MANDATORY_NON_INLINE_LOCUS_PARTICIPANT_AND_SCOPE_LINK",
+      "rationale": "'In the SLC12A3 gene' attaches to the detection event as a locative argument, not as an NP-internal modifier contiguous with '947 variants' the way an inline restrictor would be. Because it narrows the antecedent's identity from outside its minimal span, it meets the schema's own trigger condition for a participant_scope_link categorically, independent of redundancy or ease of inference. Omitting it decouples a gene-specific finding from its gene and loses asserted content."
+    }
+  ],
+  "source_general_rule": "When a downstream anaphoric aggregate or partitive depends on a restriction that the source states outside its antecedent's own complete role-bearing span, that restriction must be represented as its own participant with a scope link from the antecedent, regardless of how inferable, minor, or contextually redundant the restriction may appear. This requirement is independent of, and not weakened by, any separate rule against decomposing a restriction that is already retained inside a complete parent span; the two rules govern disjoint structural configurations and both must be checked for every anaphoric aggregate or partitive in the source.",
+  "adjudicated_findings": {
+    "uncertainty_typed_scope": "MANDATORY",
+    "uncertainty_cohort_to_locus_scope": "MANDATORY",
+    "uncertainty_partitive_majority_of_cohort": "MANDATORY",
+    "uncertainty_direct_classification_to_locus_argument": "OPTIONAL_REDUNDANT_CONTEXT_ONLY",
+    "uncertainty_locus_omission_excusable_by_inferability": "NEVER_TRUE_STRUCTURAL_REQUIREMENT_NOT_EPISTEMIC",
+    "inline_versus_anaphoric_boundary_v17_rule": "UNCHANGED_AND_INDEPENDENT_OF_THIS_FINDING",
+    "separate_detection_event": "NOT_REQUIRED",
+    "accepted_v18_uncertainty_representation": "One typed occurrence-bound cohort-to-locus participant scope link plus one MAJORITY qualifier on the existing affected event argument, identical in shape to the V16/V17 accepted representation."
+  },
+  "reconciliation_of_sealed_history": {
+    "v16_source_scope_tiebreak": "The V16 conclusion that the cohort-to-locus scope link and the majority qualifier are mandatory for the anaphoric aggregate is preserved unchanged.",
+    "v17_inline_versus_anaphoric_scope_tiebreak": "The V17 conclusion that RA is already retained within both complete comparison-parent spans and must not be decomposed is preserved unchanged; it does not bear on this finding.",
+    "v17_post_run_independent_classification": "V17's sealed diagnosis was that the provider omitted the already-mandatory non-inline cohort-to-locus participant and scope link entirely (zero participants beyond the cohort, zero scope links) despite the requirement being unchanged since V16. This adjudication confirms the omitted structure was in fact mandatory and identifies the omission as a prompt-emphasis gap: V17's rule text devoted most of its weight to the inline-decomposition prohibition and stated the anaphoric-mandatory case as a single conditional clause, which this review found insufficiently prominent given the observed omission.",
+    "resolution": "No source-semantic finding changes. This adjudication is a corroborating re-derivation of an already-settled boundary, undertaken to justify a prompt-emphasis correction rather than a new scientific claim.",
+    "sealed_results_rescored": false,
+    "sealed_results_reinterpreted_as_pass": false
+  },
+  "minimum_fail_closed_matrix": [
+    "A bare cohort participant with no locus scope link fails.",
+    "A direct classification-to-locus edge with no cohort scope link fails.",
+    "A classification of the full cohort with no explicit majority qualifier fails.",
+    "An unanchored, method-occurrence, duplicate, reversed, wrong-role, or untypeable scope representation fails.",
+    "A correctly anchored locus scope link and majority qualifier pass without a direct classification-to-locus edge.",
+    "An inline-retained restrictive modifier decomposed into a redundant scope participant still fails under the unchanged V17 boundary."
+  ],
+  "review_limits": {
+    "provider_calls": 0,
+    "fresh_cases_accessed": 0,
+    "graph_writes": 0,
+    "trusted_promotion": false,
+    "historical_artifacts_modified": false
+  }
+}

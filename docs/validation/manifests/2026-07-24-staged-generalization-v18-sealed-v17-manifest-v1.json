@@ -1,0 +1,164 @@
+{
+  "all_sealed_tree_paths_current_bytes_equal": true,
+  "critical_file_count": 38,
+  "critical_files": [
+    {
+      "path": "docs/validation/adjudications/2026-07-24-staged-generalization-v17-inline-versus-anaphoric-scope-tiebreak-v1.json",
+      "sha256": "8833ca2de376dee282bfdf6ae7b17b2c9862f53ada9ff1792e88411621710fbf"
+    },
+    {
+      "path": "docs/validation/evaluations/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-comparison-canary-evaluation.json",
+      "sha256": "b102d3e91b2fc50db7f0911dde425a0a28a06c916159085d722aaad33afd58ea"
+    },
+    {
+      "path": "docs/validation/evaluations/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-drug-sensitivity-evaluation.json",
+      "sha256": "67f764d960e34b39a9dd77d28dee819188308547f0ccc33fdfb314d6735ecce6"
+    },
+    {
+      "path": "docs/validation/evaluations/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-uncertainty-evaluation.json",
+      "sha256": "ebd47cb1ad0eb769a87169f15bc1e5150e84b0ae92afd829b890653e980947d2"
+    },
+    {
+      "path": "docs/validation/manifests/2026-07-24-staged-generalization-v17-sealed-v16-manifest-v1.json",
+      "sha256": "664d684c70a13f61d5193890505ed4f0e21d9135e1613726efdb9fa142c634b3"
+    },
+    {
+      "path": "docs/validation/preregistrations/2026-07-24-staged-generalization-v17-exposed-run-v1.json",
+      "sha256": "faaeb1eb35400d5913f9477125c470735bedec417468f4d514bf7ac7fcc60cef"
+    },
+    {
+      "path": "docs/validation/prompts/2026-07-24-staged-generalization-v17-inline-versus-anaphoric-scope.md",
+      "sha256": "912c665237923a5ac0d11dc5f2437ed7eebccc0c1c93e0b7aadd6ebd1ed3d1a6"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-comparison-canary-attempt.json",
+      "sha256": "7a6b47a4605af42082db6e01c86d55a656e5bf5c771fd48a0281ff658a925375"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-comparison-canary-custody.json",
+      "sha256": "69de98def44bf1c69fe771bea16d536213f1729fb9f753bc17d766e4b53445c9"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-comparison-canary.json",
+      "sha256": "fea31d710b0afaa1b0e4653f239ef6aa0c404c1464a6cc0846f223cb9ccfd982"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-drug-sensitivity-attempt.json",
+      "sha256": "9233dc5248e787305e37324c511451f5cac75c7e923fef317bf933018a3813b2"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-drug-sensitivity-custody.json",
+      "sha256": "65acc2d4af49a6420a0548c08c1c60f05f553ed1e73d6b0a823cc68e74d7ee70"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-drug-sensitivity.json",
+      "sha256": "3761941af02e8a9a6de2ee5729e4bfd89d0275572ed6555fe32fe73912534bbe"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-uncertainty-attempt.json",
+      "sha256": "cef4631fca0509a6a6a3fe12d65f13e736ad83b5969647f8cc2a2bf7b915beb3"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-uncertainty-custody.json",
+      "sha256": "d996af0284db97ee8abab6718818b0072979cf21a34742f27a32bc09a2144297"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-uncertainty.json",
+      "sha256": "d85817b801ba92a78ed0d9296b4e96a328b8dc812003ef0f267392e17b21d420"
+    },
+    {
+      "path": "docs/validation/reports/2026-07-24-staged-generalization-v17-exposed-run-v1-final.md",
+      "sha256": "dca920b777f945744e62ff61f5dfa72a3bd544f01cf80515c5786c6b0c2959c7"
+    },
+    {
+      "path": "docs/validation/results/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-comparison-canary-raw.json",
+      "sha256": "7778cd5104df3cac486b24c6cac51f1bbb85d676ce1ead282409d3c5ade15f73"
+    },
+    {
+      "path": "docs/validation/results/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-drug-sensitivity-raw.json",
+      "sha256": "4a80e5957462b18965bae55b57696f883355c9116f5be7c3944e9a9093ba3f60"
+    },
+    {
+      "path": "docs/validation/results/2026-07-24-staged-generalization-v17-exposed-run-v1-generalization-uncertainty-raw.json",
+      "sha256": "595150ffc59529e8a63032f31b642deb689fb10c1c0a99d81910c41e1fe50933"
+    },
+    {
+      "path": "docs/validation/results/2026-07-24-staged-generalization-v17-exposed-run-v1.json",
+      "sha256": "d52639b828eab3fc3c7df3f68620b7ef0b1be4deb19339e5088c01a00210cbf6"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-24-staged-generalization-v17-complete-package-review-v1.json",
+      "sha256": "1d91de2585e918087213f14939b3e03f506cf30165b3a25c7fc71cc0e25969b5"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-24-staged-generalization-v17-post-run-independent-classification-v1.json",
+      "sha256": "1c60228ea707535c3b52e6a4cf48af629b2231f9017af3b1227a68a530444902"
+    },
+    {
+      "path": "scripts/run_staged_generalization_v17_exposed.py",
+      "sha256": "d3f91e5d968312c596c643159691e77271f94a1b74217b80c919b2d99f05f2da"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/__init__.py",
+      "sha256": "80a32fa189a480d53fd73b07f564b1205b0d155d8debac8895b38d7ae43e948d"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/config.py",
+      "sha256": "f37b5f13186c23979869e785fa4a41625b3f00a1c4de35d2e669c879d9168dd0"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/evaluation.py",
+      "sha256": "912255772cdcdd302f2f5f084130a31f588fc60ee769504669ab56d02333b3d6"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/preflight.py",
+      "sha256": "c1224ff5f5d660e9505d4325b6d6b2c73a4a66c0653dd4214d0d455c93c7ffb5"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/prompt.py",
+      "sha256": "e1fb1588554b07161811f20471db1140ef618e482a216a32f552ce15faa68f89"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/provider.py",
+      "sha256": "4eadd08aee7cc9e6715065523264821e7ce43f77a1157c08b44a16e82b9e2d78"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/reporting.py",
+      "sha256": "d9beac17a8ce0289c30e13fb5dfb3af50fbec308dd9cd59eb752a2d3034d3af7"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/runner.py",
+      "sha256": "49b983dd8dbb3a8f16908d82c0f1436a89d820128f718035983c11eae53cb14c"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/terminal.py",
+      "sha256": "20b2b9135d6bbdd98073375d391f9e992a9a83ddcddc2d8870f300f11daed0fc"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v17_evaluation.py",
+      "sha256": "acab8fab16597327830a19c20baca53866dbd4215a81af2532c52d4cd96a78c3"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v17_preflight.py",
+      "sha256": "8041691dcb9483d4ab3b79167b62cb74237c942d3fa230a9fb2a9f3d42d1e9f2"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v17_prompt.py",
+      "sha256": "1dbc4a505b7d7b10ba06f4776fc395cd17022a6240d9c80698e1695ff3ee3bb7"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v17_provider.py",
+      "sha256": "53fa8fc2182c5af077046ae9a9e539ac578005fed844a33732c08b96e8d85c0d"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v17_runtime.py",
+      "sha256": "3da1ec4496ceac1323cc00f73c83a450db46a40453b2c1805c8d5388f2bf1b9a"
+    }
+  ],
+  "historical_results_rescored": false,
+  "schema_version": "artana.staged_generalization.v18_sealed_v17_manifest.v1",
+  "sealed_tree_file_count": 2828,
+  "sealed_v17_head": "db96b23d36513f38c8bd9904292c6406ec33d934",
+  "sealed_v17_tree": "dda54adff2412344a6799891dbac010088ffca47",
+  "v17_post_run_classification_sha256": "1c60228ea707535c3b52e6a4cf48af629b2231f9017af3b1227a68a530444902"
+}
