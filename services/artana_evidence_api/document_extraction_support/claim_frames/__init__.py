@@ -65,6 +65,14 @@ from artana_evidence_api.document_extraction_support.claim_frames.normalization 
     bind_claim_frame,
     normalize_claim_frame,
 )
+from artana_evidence_api.document_extraction_support.claim_frames.participant_completeness import (
+    MANDATORY_EVENT_ROLES,
+    ParticipantCompletenessDecision,
+    ParticipantCompletenessFinding,
+    mandatory_event_roles,
+    shortest_role_snippet,
+    validate_claim_participant_completeness,
+)
 from artana_evidence_api.document_extraction_support.claim_frames.promotion_policy import (
     ClaimFramePromotionError,
     require_canonical_claim_promotion,
@@ -112,9 +120,12 @@ __all__ = [
     "InventoryCompletenessDecision",
     "InventoryEpistemicStatus",
     "InventoryPolarity",
+    "MANDATORY_EVENT_ROLES",
     "MeasurementFieldRole",
     "MissingClaimRecoveryDecision",
     "MissingClaimRecoveryDisposition",
+    "ParticipantCompletenessDecision",
+    "ParticipantCompletenessFinding",
     "Polarity",
     "Qualifier",
     "QualifierState",
@@ -135,6 +146,7 @@ __all__ = [
     "coalesce_long_sentence_chunks",
     "derive_claim_local_source_region",
     "is_positive_projection_eligible",
+    "mandatory_event_roles",
     "merge_bound_claim_inventories",
     "merge_claim_inventory_binding_rejections",
     "partition_bound_claim_inventory",
@@ -142,4 +154,6 @@ __all__ = [
     "replace_claim_frame_projection",
     "require_canonical_claim_promotion",
     "require_claim_frame_promotion_preflight",
+    "shortest_role_snippet",
+    "validate_claim_participant_completeness",
 ]

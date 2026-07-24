@@ -24,11 +24,13 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryItem,
     MissingClaimRecoveryDecision,
     MissingClaimRecoveryDisposition,
+    ParticipantCompletenessFinding,
     bind_claim_inventory_items,
     bind_inventory_completeness_review,
     canonicalize_bound_claim_inventory,
     claim_inventory_batch_input_sha256,
     merge_bound_claim_inventories,
+    validate_claim_participant_completeness,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
@@ -174,6 +176,7 @@ class ClaimInventoryStageResult:
     binding_status: InventoryBatchBindingStatus
     binding_rejections: tuple[ClaimInventoryBindingRejectionEvent, ...]
     raw_agent_outputs: tuple[dict[str, object], ...]
+    participant_completeness: tuple[ParticipantCompletenessFinding, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -345,6 +348,7 @@ async def run_claim_inventory_stage(
             ),
             binding_rejections=combined_events,
             raw_agent_outputs=(rejected_raw, *repaired.raw_agent_outputs),
+            participant_completeness=repaired.participant_completeness,
         )
     except (ValidationError, StructuredModelValidationError):
         try:
@@ -637,6 +641,9 @@ def _claim_inventory_stage_result(
         binding_status=status,
         binding_rejections=binding_rejections,
         raw_agent_outputs=tuple(result.raw_output for result in results),
+        participant_completeness=tuple(
+            validate_claim_participant_completeness(claim) for claim in claims
+        ),
     )
 
 
