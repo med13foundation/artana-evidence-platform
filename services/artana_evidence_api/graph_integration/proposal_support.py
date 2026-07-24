@@ -24,6 +24,10 @@ _VERIFIER_OWNED_PROMOTION_METADATA_KEYS = frozenset(
         "trust_floor_failures",
         "trust_tier",
         "trusted_evidence_eligible",
+        "claim_verification",
+        "claim_verification_terminal",
+        "claim_verification_lineage_status",
+        "claim_verification_qualification_complete",
     },
 )
 _RELATION_CONSTRAINT_ERROR_RE = re.compile(

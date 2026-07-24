@@ -229,14 +229,9 @@ def build_document_extraction_drafts(
                 else require_match_display_label(object_match)
             )
             review = build_fallback_document_review(
-                candidate=ExtractedRelationCandidate(
-                    subject_label=candidate.subject_label,
-                    relation_type=candidate.relation_type,
+                candidate=replace(
+                    candidate,
                     object_label=object_label,
-                    sentence=candidate.sentence,
-                    review_status=candidate.review_status,
-                    review_reason_codes=candidate.review_reason_codes,
-                    claim_frame=candidate.claim_frame,
                 ),
                 review_context=normalized_review_context,
             )
@@ -411,11 +406,16 @@ def with_candidate_extraction_trust_metadata(
     """Attach candidate-extraction trust flags to proposal drafts."""
 
     trust_metadata = candidate_extraction_trust_metadata(diagnostics)
+    verification_by_claim_hash = _verification_lineage_by_claim_hash(diagnostics)
     return tuple(
         replace(
             draft,
             metadata={
                 **draft.metadata,
+                **_claim_verification_metadata_for_draft(
+                    draft=draft,
+                    verification_by_claim_hash=verification_by_claim_hash,
+                ),
                 **_trust_metadata_for_candidate(
                     draft=draft,
                     trust_metadata=trust_metadata,
@@ -562,10 +562,18 @@ def _curie_source_for_candidate(source: CurieSource) -> CurieSource:
 
 
 def _candidate_review_metadata(candidate: ExtractedRelationCandidate) -> JSONObject:
-    return {
+    metadata: JSONObject = {
         "review_status": candidate.review_status,
         "review_reason_codes": list(candidate.review_reason_codes),
     }
+    if candidate.claim_verification_terminal is not None:
+        metadata["claim_verification_terminal"] = (
+            candidate.claim_verification_terminal
+        )
+        metadata["claim_verification_qualification_complete"] = (
+            candidate.claim_verification_qualification_complete
+        )
+    return metadata
 
 
 def _claim_frame_payload(candidate: ExtractedRelationCandidate) -> JSONObject:
@@ -603,6 +611,43 @@ def _claim_frame_metadata(candidate: ExtractedRelationCandidate) -> JSONObject:
         metadata["framing_decision"] = candidate.framing_decision
         metadata["framing_decision_rationale"] = candidate.framing_decision_rationale
     return metadata
+
+
+def _verification_lineage_by_claim_hash(
+    diagnostics: DocumentCandidateExtractionDiagnostics,
+) -> dict[str, JSONObject | None]:
+    indexed: dict[str, JSONObject | None] = {}
+    for lineage in diagnostics.claim_lineage:
+        for verification in lineage.claim_verification:
+            final_hash = verification.get("final_claim_sha256")
+            if not isinstance(final_hash, str):
+                continue
+            payload = cast("JSONObject", verification)
+            indexed[final_hash] = None if final_hash in indexed else payload
+    return indexed
+
+
+def _claim_verification_metadata_for_draft(
+    *,
+    draft: HarnessProposalDraft,
+    verification_by_claim_hash: dict[str, JSONObject | None],
+) -> JSONObject:
+    if not verification_by_claim_hash:
+        return {}
+    claim_hash = draft.metadata.get("claim_frame_semantic_fingerprint")
+    if not isinstance(claim_hash, str):
+        return {}
+    verification = verification_by_claim_hash.get(claim_hash)
+    if verification is None:
+        return {
+            "claim_verification_lineage_status": "missing_or_ambiguous",
+            "claim_verification_qualification_complete": False,
+        }
+    return {
+        "claim_verification": verification,
+        "claim_verification_lineage_status": "bound",
+        "claim_verification_qualification_complete": False,
+    }
 
 
 def _is_relation_type_governance_candidate(

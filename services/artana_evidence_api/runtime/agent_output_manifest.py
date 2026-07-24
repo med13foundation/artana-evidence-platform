@@ -12,6 +12,9 @@ from artana_evidence_api.runtime.agent_output_schema import (
     NumericFieldPolicy,
     NumericOrigin,
 )
+from artana_evidence_api.runtime.manifests.claim_verification import (
+    CLAIM_VERIFICATION_AGENT_OUTPUT_POLICIES,
+)
 
 
 def _category(
@@ -745,6 +748,7 @@ _POLICIES = (
             ),
         ),
     ),
+    *CLAIM_VERIFICATION_AGENT_OUTPUT_POLICIES,
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.relation.v3",
         schema_names=("LLMExtractionResult",),

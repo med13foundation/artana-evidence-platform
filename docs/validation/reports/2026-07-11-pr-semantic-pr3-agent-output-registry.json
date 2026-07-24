@@ -2,10 +2,10 @@
   "active_debt_count": 0,
   "debt_manifest": [],
   "debt_numeric_field_count": 0,
-  "origin_governed_numeric_field_count": 3,
-  "registered_category_field_count": 116,
-  "registered_numeric_field_count": 3,
-  "registered_schema_count": 20,
+  "origin_governed_numeric_field_count": 4,
+  "registered_category_field_count": 134,
+  "registered_numeric_field_count": 4,
+  "registered_schema_count": 22,
   "registered_schemas": [
     {
       "categorical_fields": [
@@ -56,6 +56,141 @@
         "ClaimAdjudicationOutput"
       ],
       "shape_hash": "fca1813bd051bf51168f278950c2a2345e740cc01e464838300c12dc4d77da78"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.verdict",
+          "values": [
+            "ENTAILED",
+            "CONTRADICTED",
+            "INSUFFICIENT",
+            "ABSTAIN"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.participant_roles",
+          "values": [
+            "FAITHFUL",
+            "INCORRECT",
+            "AMBIGUOUS"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.direction",
+          "values": [
+            "FAITHFUL",
+            "INCORRECT",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.comparison",
+          "values": [
+            "FAITHFUL",
+            "INCORRECT",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.statistical_interpretation",
+          "values": [
+            "FAITHFUL",
+            "INCORRECT",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.polarity",
+          "values": [
+            "FAITHFUL",
+            "INCORRECT"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.uncertainty",
+          "values": [
+            "FAITHFUL",
+            "INCORRECT"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.observed_statistical_evidence",
+          "values": [
+            "P_VALUE",
+            "CONFIDENCE_INTERVAL",
+            "EFFECT_ESTIMATE",
+            "NONE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.author_statistical_claim",
+          "values": [
+            "SIGNIFICANT",
+            "NOT_SIGNIFICANT",
+            "NOT_CLAIMED"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.completeness",
+          "values": [
+            "COMPLETE",
+            "INCOMPLETE",
+            "AMBIGUOUS"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.failure_axes[]",
+          "values": [
+            "PARTICIPANT_ROLES",
+            "DIRECTION",
+            "COMPARISON",
+            "POLARITY",
+            "UNCERTAINTY",
+            "STATISTICAL_INTERPRETATION",
+            "MODIFIER",
+            "CORE_EVENT",
+            "PRIMARY_PARTICIPANT",
+            "UNSUPPORTED_EVIDENCE",
+            "AMBIGUOUS_SOURCE_SCOPE",
+            "NEW_EVENT_REQUIRED"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "document_extraction_support/llm_extraction/claim_falsification.py"
+      ],
+      "prompt_identifiers": [
+        "document_extraction.claim_falsification.v1"
+      ],
+      "schema_id": "document_extraction.claim_falsification.v1",
+      "schema_names": [
+        "ClaimVerificationOutput"
+      ],
+      "shape_hash": "f50ddb40450841ac3092d8319e001f6f15bcde3128c9a7c06dd79e23dccb1c7a"
     },
     {
       "categorical_fields": [
@@ -534,6 +669,126 @@
         "MissingClaimRecoveryDecision"
       ],
       "shape_hash": "a97e2bcfe7ac51a317407f5e59f5ba66bbd575546fe491ebc4dbf51cd220d33f"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.polarity",
+          "values": [
+            "SUPPORT",
+            "REFUTE",
+            "UNCERTAIN",
+            "HYPOTHESIS",
+            "NULL_RESULT"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.epistemic_status",
+          "values": [
+            "ASSERTED",
+            "PROVISIONAL",
+            "UNCERTAIN",
+            "HYPOTHESIS",
+            "NULL_RESULT"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assertion_arguments[].role",
+          "values": [
+            "INTERVENTION",
+            "CONDITION",
+            "POPULATION",
+            "VARIANT",
+            "OUTCOME",
+            "COMPARATOR",
+            "TIMEFRAME",
+            "STUDY_DESIGN",
+            "TREATMENT_SETTING",
+            "GENE_OR_PROTEIN",
+            "CHEMICAL_OR_DRUG",
+            "BIOMARKER",
+            "EXPOSURE",
+            "BIOLOGICAL_PROCESS",
+            "ANATOMY",
+            "MEASUREMENT",
+            "OTHER_ENTITY"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assertion_arguments[].event_role",
+          "values": [
+            "AGENT",
+            "THEME",
+            "TARGET",
+            "CAUSE",
+            "EFFECT",
+            "CONTEXT",
+            "SITE",
+            "CSITE",
+            "ATLOC",
+            "TOLOC",
+            "FROMLOC",
+            "MEASURE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.source_measurements[].field_name",
+          "values": [
+            "THRESHOLD",
+            "TIMEFRAME",
+            "OUTCOME",
+            "DOSAGE",
+            "POPULATION_SIZE",
+            "OTHER"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.source_measurements[].extraction_method",
+          "values": [
+            "agent_exact_copy"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.qualifier_updates[].value.state",
+          "values": [
+            "PRESENT",
+            "NOT_APPLICABLE",
+            "UNRESOLVED"
+          ]
+        }
+      ],
+      "numeric_fields": [
+        {
+          "debt_id": null,
+          "origin": "source_measurement",
+          "path": "$.source_measurements[].value"
+        }
+      ],
+      "producer_paths": [
+        "document_extraction_support/llm_extraction/claim_repair.py"
+      ],
+      "prompt_identifiers": [
+        "document_extraction.claim_repair.v1"
+      ],
+      "schema_id": "document_extraction.claim_repair.v1",
+      "schema_names": [
+        "ClaimSemanticPatch"
+      ],
+      "shape_hash": "b43a68e382e1ee59123c9e170617cd3fb5a9a1d2a3fcbe694bd007fa023f95ab"
     },
     {
       "categorical_fields": [
