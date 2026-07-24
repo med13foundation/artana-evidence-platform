@@ -1,0 +1,56 @@
+{
+  "schema_version": "artana.staged_generalization.v16_minimal_schema_review.v1",
+  "review_kind": "INDEPENDENT_READ_ONLY_SCHEMA_MINIMALITY_REVIEW",
+  "verdict": "PASS",
+  "scientific_boundary": "The V9 flat event-argument shape cannot distinguish a direct classification argument from a participant-to-participant locus restriction, and it cannot represent that a classification applies to an explicit majority subset rather than the entire antecedent cohort.",
+  "approved_v16_additions": {
+    "participant_scope_link": {
+      "fields": [
+        "restricted_participant_id",
+        "restrictor_participant_id",
+        "relation_type",
+        "exact_evidence",
+        "explanation"
+      ],
+      "relation_type": "IDENTITY_OR_SCOPE_RESTRICTION",
+      "purpose": "Represent an occurrence-bound participant-set restriction without inventing an event or direct event argument."
+    },
+    "partitive_scope": {
+      "location": "existing event argument",
+      "fields": [
+        "kind",
+        "exact_text",
+        "exact_evidence",
+        "antecedent_participant_id",
+        "explanation"
+      ],
+      "kind": "MAJORITY",
+      "purpose": "Represent the explicit partitive applicability of the existing event argument without a new participant or event."
+    }
+  },
+  "explicit_non_changes": [
+    "event inventory",
+    "entity types",
+    "legacy event-argument roles",
+    "root-selection rules",
+    "semantic axes",
+    "evidence provenance policy",
+    "V5 shared grader",
+    "V9 through V15 schemas, evaluators, artifacts, and results",
+    "BioNLP-CG projection policy",
+    "graph persistence or promotion"
+  ],
+  "required_evaluator_behavior": [
+    "Require the normal affected-entity link, one correctly grounded scope link, and one correctly grounded majority qualifier for the uncertainty source lane.",
+    "Allow zero or one independently source-supported direct contextual locus edge only after the required scope link passes.",
+    "Do not accept a direct contextual edge, exact evidence, or a locus node alone as a substitute for scope.",
+    "Resolve character spans deterministically from source evidence and participant text; do not ask the provider to emit offsets.",
+    "Keep the V14 independently lexicalized identifier rule unchanged."
+  ],
+  "review_limits": {
+    "provider_call_made": false,
+    "fresh_case_accessed": false,
+    "graph_write_made": false,
+    "historical_result_rescored": false
+  }
+}

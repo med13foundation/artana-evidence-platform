@@ -1,0 +1,69 @@
+{
+  "schema_version": "artana.staged_generalization.v16_source_scope_tiebreak.v1",
+  "review_kind": "INDEPENDENT_SOURCE_ONLY_TIEBREAK",
+  "review_inputs_excluded": [
+    "provider_raw_outputs",
+    "frozen_machine_reference",
+    "historical_evaluator_result",
+    "BioNLP_CG_projection"
+  ],
+  "source_custody": {
+    "case_id": "generalization-uncertainty",
+    "source_id": "exposed-human-genetics",
+    "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b",
+    "evidence_sentence": "A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+    "evidence_span": [
+      960,
+      1086
+    ],
+    "cohort": {
+      "text": "947 variants",
+      "span": [
+        971,
+        983
+      ]
+    },
+    "locus": {
+      "text": "SLC12A3 gene",
+      "span": [
+        1005,
+        1017
+      ]
+    },
+    "partitive": {
+      "text": "the majority of which",
+      "span": [
+        1019,
+        1040
+      ]
+    }
+  },
+  "source_general_rule": "Preserve a condition when deleting or substituting it changes the referent set, denominator, qualifier, or truth conditions of a participant inherited by an anaphor, aggregate, or downstream event argument. Treat material as optional only when its removal leaves that participant's extension and the focused proposition unchanged.",
+  "adjudicated_findings": {
+    "direct_classification_to_locus_argument": "OPTIONAL_REDUNDANT_CONTEXT_ONLY",
+    "cohort_to_locus_scope": "MANDATORY",
+    "partitive_majority_of_cohort": "MANDATORY",
+    "exact_evidence_alone": "INSUFFICIENT_FOR_MACHINE_READABLE_SCOPE",
+    "separate_detection_event": "NOT_REQUIRED",
+    "accepted_equivalent_representation": "A participant-to-participant scope link plus a partitive qualifier on the existing affected event argument."
+  },
+  "v14_compatibility": {
+    "participant_denotation_rule": "UNCHANGED",
+    "independently_lexicalized_identifier": "SLC12A3 may remain the minimal participant span when its complete result-sentence occurrence is bound.",
+    "method_occurrence": "FORBIDDEN_AS_A_SUBSTITUTE_FOR_THE_RESULT_OCCURRENCE"
+  },
+  "minimum_fail_closed_matrix": [
+    "A bare 947-variant cohort with no locus scope link fails.",
+    "A direct classification-to-locus edge with no cohort scope link fails.",
+    "A classification of all 947 variants with no explicit majority qualifier fails.",
+    "An unanchored, method-occurrence, duplicate, or wrong-role locus representation fails.",
+    "A correctly anchored locus scope link and majority qualifier pass without a direct classification-to-locus edge."
+  ],
+  "sealed_history": {
+    "v15_result_rescored": false,
+    "v15_result_reinterpreted_as_pass": false,
+    "fresh_cases_accessed": 0,
+    "graph_writes": 0,
+    "trusted_promotion": false
+  }
+}
