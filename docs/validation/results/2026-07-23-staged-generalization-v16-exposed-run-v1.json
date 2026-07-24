@@ -1,0 +1,230 @@
+{
+  "admitted_provider_calls": 1,
+  "all_evaluations_persisted": true,
+  "all_provider_spend_accounted": true,
+  "all_receipts_valid": true,
+  "attempted_provider_calls": 1,
+  "benchmark_projection_affects_scientific_decision": false,
+  "benchmark_projection_is_review_only": true,
+  "budget_accounting_status": "FULLY_ACCOUNTED",
+  "budget_exhausted": false,
+  "cached_input_tokens": 0,
+  "called_but_unevaluated_case_ids": [],
+  "case_outcomes": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "custody": {
+        "bundle_sha256": "2a2adc40ea53e1eb8ea7a55fbe293b7e6a225ac66108962cf619a7c1b217ef45",
+        "output_sha256": "ffc96f4f050d9eee81bd805d350b093a21e4a613b24fccd764d38d493dfc8514",
+        "provider_input_sha256": "50a775d491ba62275589e69896bb4cd26b26993901681b3279bf2ebd5f8fb873",
+        "raw_output_sha256": "a37b88cee1d202b0bec324a7e71042e4cbe87f8e2777f0860b707ac5481f1002",
+        "receipt_sha256": "f76fe8f87b73ba5d29ea76d062f205da3d417157f8f88979f3e83cbc5026d59b",
+        "response_id": "resp_0dc3a61ad3c852cb006a62d9356040819ab5295b32de89d191",
+        "schema_sha256": "0b645097208b1f82b0cbd0f72e1702ff4457902a0005c924e716904e4e81f973",
+        "stage": "GENERALIZATION_V16_EXPOSED:generalization-comparison-canary"
+      },
+      "failure_classification": "SOURCE_SEMANTICS",
+      "response_id": "resp_0dc3a61ad3c852cb006a62d9356040819ab5295b32de89d191",
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 0.052694,
+        "input_tokens": 4904,
+        "latency_seconds": 59.890665584011,
+        "output_tokens": 7965,
+        "reasoning_tokens": 7125,
+        "total_tokens": 12869
+      },
+      "v16_evaluation": {
+        "effective_metrics": {
+          "benchmark_projection": null,
+          "benchmark_projection_scope": "NOT_APPLICABLE",
+          "benchmark_projection_status": "NOT_APPLICABLE",
+          "case_id": "generalization-comparison-canary",
+          "completeness": "COMPLETE",
+          "exact_evidence_grounding": false,
+          "failure_reasons": [
+            "evidence grounding failed: child text is absent or ambiguous in evidence",
+            "unsupported or duplicate participant: OUTCOME/RA",
+            "V16 participant scope links are unsupported for this case"
+          ],
+          "focus_event_passed": true,
+          "full_focus_cg_status": "NOT_APPLICABLE",
+          "graph_writes": 0,
+          "historical_grader_passed": false,
+          "mandatory_participants_passed": false,
+          "participant_roles_passed": false,
+          "passed": false,
+          "permitted_context_count": 0,
+          "qualification_credit": false,
+          "root_only_failure": false,
+          "root_selection_status": "PASS",
+          "semantic_axes_passed": true,
+          "source_dimensions_except_root_passed": false,
+          "source_semantic_status": "FAIL",
+          "trusted_promotion": false,
+          "unsupported_extraction_count": 3
+        },
+        "participant_scope_assessment": {
+          "failure_reasons": [
+            "V16 participant scope links are unsupported for this case"
+          ],
+          "grounding_passed": true,
+          "optional_direct_context_accepted_count": 0,
+          "optional_direct_context_observed_count": 0,
+          "partitive_accepted_count": 0,
+          "partitive_observed_count": 0,
+          "passed": false,
+          "scope_link_accepted_count": 0,
+          "scope_link_observed_count": 2
+        },
+        "raw_bionlp_cg_projection_preserved": true,
+        "raw_v14_metrics": {
+          "benchmark_projection": null,
+          "benchmark_projection_scope": "NOT_APPLICABLE",
+          "benchmark_projection_status": "NOT_APPLICABLE",
+          "case_id": "generalization-comparison-canary",
+          "completeness": "COMPLETE",
+          "exact_evidence_grounding": false,
+          "failure_reasons": [
+            "evidence grounding failed: child text is absent or ambiguous in evidence",
+            "unsupported or duplicate participant: OUTCOME/RA"
+          ],
+          "focus_event_passed": true,
+          "full_focus_cg_status": "NOT_APPLICABLE",
+          "graph_writes": 0,
+          "historical_grader_passed": false,
+          "mandatory_participants_passed": true,
+          "participant_roles_passed": false,
+          "passed": false,
+          "permitted_context_count": 0,
+          "qualification_credit": false,
+          "root_only_failure": false,
+          "root_selection_status": "PASS",
+          "semantic_axes_passed": true,
+          "source_dimensions_except_root_passed": false,
+          "source_semantic_status": "FAIL",
+          "trusted_promotion": false,
+          "unsupported_extraction_count": 2
+        }
+      }
+    }
+  ],
+  "completed_provider_calls": 1,
+  "confirmation_retrieval_requests": 1,
+  "cost_usd": 0.052694,
+  "decision": "V16_EXPOSED_GATE_FAIL_SOURCE_SEMANTICS",
+  "duplicate_creation_calls": 0,
+  "evaluator_implementation": "repair_v16.evaluate_v16_case",
+  "executed_case_count": 1,
+  "experiment_id": "staged-generalization-v16-exposed-run-v1",
+  "failed_case_id": "generalization-comparison-canary",
+  "failure_stage": null,
+  "failure_stages": [],
+  "first_failure_classification": "SOURCE_SEMANTICS",
+  "fresh_cases_consumed": 0,
+  "fresh_qualification_status": "NOT_STARTED",
+  "global_max_cost_usd": 5.0,
+  "grading_policy_sha256": "da315ef20300e669fbbfb2565f26faad7ba2ba1336de5d7939a7b22b34a2420c",
+  "graph_writes": 0,
+  "historical_results_rescored": false,
+  "input_item_retrieval_requests": 1,
+  "input_tokens": 4904,
+  "latency_seconds": 59.890665584011,
+  "model": "openai:gpt-5.6-luna",
+  "observed_accounted_cost_usd": 0.052694,
+  "operational_policy_version": "artana.staged_generalization.v16_operational_policy.v1",
+  "output_tokens": 7965,
+  "per_call": [
+    {
+      "admitted_provider_calls": 1,
+      "attempted_provider_calls": 1,
+      "case_id": "generalization-comparison-canary",
+      "completed_provider_calls": 1,
+      "confirmation_retrieval_requests": 1,
+      "duplicate_creation_calls": 0,
+      "failure_stage": null,
+      "input_item_retrieval_requests": 1,
+      "provider_retries": 0,
+      "rejected_custody": null,
+      "rejected_provider_calls": 0,
+      "response_ids": [
+        "resp_0dc3a61ad3c852cb006a62d9356040819ab5295b32de89d191"
+      ],
+      "reused_response_ids": [],
+      "status": "ADMITTED_SCIENTIFIC_CUSTODY",
+      "unaccounted_provider_calls": 0,
+      "usage": {
+        "cached_input_tokens": 0,
+        "cost_usd": 0.052694,
+        "input_tokens": 4904,
+        "latency_seconds": 59.890665584011,
+        "output_tokens": 7965,
+        "reasoning_tokens": 7125,
+        "total_tokens": 12869
+      },
+      "usage_accounting_status": "ACCOUNTED"
+    }
+  ],
+  "planned_case_count": 6,
+  "provider_attempted_case_ids": [
+    "generalization-comparison-canary"
+  ],
+  "provider_calls": 1,
+  "provider_fallback_allowed": false,
+  "provider_retries": 0,
+  "provider_retries_allowed": 0,
+  "qualification_credit": false,
+  "raw_bionlp_cg_projection_lane": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "projection": null,
+      "status": "NOT_APPLICABLE"
+    }
+  ],
+  "raw_v14_diagnostic_lane": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "passed": false,
+      "status": "FAIL"
+    }
+  ],
+  "reasoning_effort": "high",
+  "reasoning_tokens": 7125,
+  "rejected_provider_calls": 0,
+  "remaining_cost_usd": 4.947306,
+  "remaining_fresh_cases_preserved": 7,
+  "response_ids": [
+    "resp_0dc3a61ad3c852cb006a62d9356040819ab5295b32de89d191"
+  ],
+  "root_cause_classification": "SOURCE_SCOPE_AND_PARTITIVE_SCHEMA_ADEQUACY",
+  "schema_version": "artana.staged_generalization.v16_exposed_result.v1",
+  "scientific_change_kind": "VERSIONED_OUTPUT_SCHEMA_AND_LOCAL_EVALUATOR",
+  "scientific_provider_calls": 1,
+  "scientific_scoring_affected_by_tokens_latency_or_cost": false,
+  "scientifically_evaluated_case_count": 1,
+  "scientifically_evaluated_case_ids": [
+    "generalization-comparison-canary"
+  ],
+  "sealed_v15_head": "06fd697b4dac60fad396e104c8cf7f7005746fdc",
+  "sealed_v15_preserved": true,
+  "shared_or_historical_grader_changed": false,
+  "single_scientific_change": "PARTICIPANT_SCOPE_AND_PARTITIVE_REPRESENTATION_V1",
+  "source_semantic_lane": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "failure_reasons": [
+        "evidence grounding failed: child text is absent or ambiguous in evidence",
+        "unsupported or duplicate participant: OUTCOME/RA",
+        "V16 participant scope links are unsupported for this case"
+      ],
+      "passed": false,
+      "status": "FAIL"
+    }
+  ],
+  "stopped_after_case_id": "generalization-comparison-canary",
+  "total_tokens": 12869,
+  "transport_qualification_provider_calls_in_v16": 0,
+  "transport_qualification_reused": true,
+  "trusted_promotion": false,
+  "unaccounted_provider_calls": 0
+}

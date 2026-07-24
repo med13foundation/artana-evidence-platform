@@ -1,0 +1,1664 @@
+{
+  "budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.052694,
+    "observed_latency_seconds": 59.890665584011,
+    "observed_output_tokens": 7965,
+    "observed_total_tokens": 12869,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "completed_provider_calls": 1,
+  "confirmation_retrieval_requests": 1,
+  "creation_envelope_sha256": "403c6165db18f4e263d79d07c476774562b23d0188179583251c6d05b2840e8e",
+  "differences": [
+    {
+      "allowlisted": true,
+      "creation_sha256": "e1c3d3c73b5b05653458a80289440ac8fe9a632748e2266c3540818041dc7052",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[0].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "8efcda7c7e4f5ec2e2a128c88860ef9da961b0b5895dd256e7eca328d44e3315",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[1].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "b4ae6603e287c7b528f0cd6033806851f4027f0fa0aa360ce94c8d57f5aec9c8",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[2].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "ee60e6833921c7d32e003f4d2da089f3860c8ea750e1ce3ec9348ccc73ea2101",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[3].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "1d2e260788f17705cef5081f73418bad5956353f9fc88355b1b754fc0138d168",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[4].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "76a8a3f2b8b5f8f46b1795665dedced3aedf5def3a895d683e9718a1780c9e14",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[5].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "3c0e718e0760951e38fd0f0d245cac21283ce7e35c21ade78d9c674f3eeb9ad2",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[6].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "5f56587ba67d5b5915cb49dc5cc3bc3df9389fb9f5e46d9d4d04fa1005006424",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[7].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "b8f4ccacb4b47beec634bc919743df2f7e06026e446c5dae2537c7d3f82ee692",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[8].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "be444d545d77863874f224d0d5121e08e4ef77197896f0f6e3c75a4b56a0964b",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[9].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "01f746f2aba5f6b6dea29adf1c2e4bc558d20b3b6d279e4eebdd1c8c0d8aa7fe",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[10].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "d6f143554aad9f9e607182c5351aea7a2086db335bf2187dabc7c7d251cf586a",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[11].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "4dff44e0a75d5c72ab810f9e48e461e4f64dfd236049d3518b85ba34b00949e8",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[12].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "952e28a1298f24a6a706c0588b408bb08a1517fa47822f6a272c1ce01d1f9233",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[13].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "d9aa281aa2dd52c4b3a2cf7855bd9068091a772a60329405c0545dc9ec82c284",
+      "difference": "FOREGROUND_USAGE_SNAPSHOT_CHANGED",
+      "path": "$.usage",
+      "rationale": "usage is record-only telemetry and confirmation is the authoritative completed snapshot",
+      "retrieval_sha256": "472c7da4fc31a65f4eddcd956c6ac4c54c5188395fc9501fa78ead8e1bd98461"
+    }
+  ],
+  "duplicate_creation_calls": 0,
+  "foreground_request_timeout_seconds": 1800.0,
+  "foreground_usage_policy": {
+    "authoritative_snapshot": "CONFIRMATION_RETRIEVAL",
+    "confirmation_usage_sha256": "472c7da4fc31a65f4eddcd956c6ac4c54c5188395fc9501fa78ead8e1bd98461",
+    "creation_usage_sha256": "d9aa281aa2dd52c4b3a2cf7855bd9068091a772a60329405c0545dc9ec82c284",
+    "scientific_validity_dependency": false,
+    "snapshots_differ": true
+  },
+  "identity": {
+    "created_at": 1784863029.0,
+    "model": "gpt-5.6-luna",
+    "object_type": "response",
+    "output_items": [
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d935ef88819aac289e2320e97be6"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d9399f30819a812f80e3f9ff83d2"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d93d8d68819aacfdefd68f9d43de"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d9417cc4819a80bf3f5b24e33bd6"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d9455fe8819ab1c531601ee5e4be"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d948e59c819abdccd5acc7ef4828"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d94ca5f0819abd4bdf614c97eaf5"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d95091f8819a8f2baa89476f036c"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d9547d64819aa0bf6c9d8f57074a"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d958313c819aac41873115e47be8"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d95c3144819a8a89aa39e0f19471"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d96000d4819aaa0d89643be956d6"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d963eaa0819a8629a831c50dd25d"
+      ],
+      [
+        "reasoning",
+        "rs_0dc3a61ad3c852cb006a62d967beb4819a85f5bd201f4e54c1"
+      ],
+      [
+        "message",
+        "msg_0dc3a61ad3c852cb006a62d96ae090819aafe13e33a4a72513"
+      ]
+    ],
+    "response_id": "resp_0dc3a61ad3c852cb006a62d9356040819ab5295b32de89d191",
+    "status": "completed"
+  },
+  "input_item_retrieval_requests": 1,
+  "provider_creation_calls": 1,
+  "provider_input_sha256": "50a775d491ba62275589e69896bb4cd26b26993901681b3279bf2ebd5f8fb873",
+  "provider_retries": 0,
+  "provider_schema_sha256": "064e4fb134bc4f914686927b49453630f157d5bbe9f3d956cb3a607684358fda",
+  "retrieval_envelope_sha256": "3c8897b258a8437d07108110560c5541000afd32eb68f6fcf58c776a2963c2e8",
+  "schema_version": "artana.provider_receipt_boundary.foreground_telemetry.v3",
+  "scientific_payload_sha256": "ffc96f4f050d9eee81bd805d350b093a21e4a613b24fccd764d38d493dfc8514",
+  "status": "VERIFIED_LIVE",
+  "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+  "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.052694,
+    "input_tokens": 4904,
+    "latency_seconds": 59.890665584011,
+    "output_tokens": 7965,
+    "reasoning_tokens": 7125,
+    "total_tokens": 12869
+  },
+  "v13_transport_custody": {
+    "confirmation_response": {
+      "background": false,
+      "billing": {
+        "payer": "openai"
+      },
+      "completed_at": 1784863086.0,
+      "created_at": 1784863029.0,
+      "error": null,
+      "frequency_penalty": 0.0,
+      "id": "resp_0dc3a61ad3c852cb006a62d9356040819ab5295b32de89d191",
+      "incomplete_details": null,
+      "instructions": null,
+      "max_output_tokens": null,
+      "max_tool_calls": null,
+      "metadata": {
+        "artana_case_id": "generalization-comparison-canary",
+        "artana_evaluation_contract": "V16_LOCAL_SCOPE_EVALUATOR_WITH_NON_TARGET_EXTENSION_REJECTION_AND_RAW_V14_REVIEW_ONLY_CG",
+        "artana_experiment": "staged-generalization-v16-exposed-run-v1",
+        "artana_operational_policy": "RECORD_ONLY_USAGE_CUMULATIVE_5_USD",
+        "artana_preregistration_sha256": "4a7e62c370ba6ef24e4fee7b4c32e460ecb544e18acc491b95950f547bafdd36",
+        "artana_scientific_change": "PARTICIPANT_SCOPE_AND_PARTITIVE_REPRESENTATION_V1",
+        "artana_transport_implementation": "V13_REUSED_BYTE_IDENTICAL"
+      },
+      "model": "gpt-5.6-luna",
+      "moderation": null,
+      "object": "response",
+      "output": [
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d935ef88819aac289e2320e97be6",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d9399f30819a812f80e3f9ff83d2",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d93d8d68819aacfdefd68f9d43de",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d9417cc4819a80bf3f5b24e33bd6",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d9455fe8819ab1c531601ee5e4be",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d948e59c819abdccd5acc7ef4828",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d94ca5f0819abd4bdf614c97eaf5",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d95091f8819a8f2baa89476f036c",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d9547d64819aa0bf6c9d8f57074a",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d958313c819aac41873115e47be8",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d95c3144819a8a89aa39e0f19471",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d96000d4819aaa0d89643be956d6",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d963eaa0819a8629a831c50dd25d",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0dc3a61ad3c852cb006a62d967beb4819a85f5bd201f4e54c1",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [
+            {
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"case_id\":\"generalization-comparison-canary\",\"inventory\":[{\"event_id\":\"E1\",\"event_type\":\"COMPARISON\",\"trigger_text\":\"had more comorbidities than\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"The highlighted finding compares comorbidity burden between patients with RA and patients without RA.\"}],\"participants\":[{\"participant_id\":\"P1\",\"entity_type\":\"POPULATION\",\"exact_text\":\"Patients with RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"Focal patient population in the comparison.\"},{\"participant_id\":\"P2\",\"entity_type\":\"POPULATION\",\"exact_text\":\"patients without RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"Comparator patient population.\"},{\"participant_id\":\"P3\",\"entity_type\":\"OUTCOME\",\"exact_text\":\"comorbidities\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"Clinical outcome being compared.\"},{\"participant_id\":\"P4\",\"entity_type\":\"OUTCOME\",\"exact_text\":\"RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"Clinical condition restricting the focal patient population; this is the occurrence in \u201cPatients with RA\u201d.\"},{\"participant_id\":\"P5\",\"entity_type\":\"OUTCOME\",\"exact_text\":\"RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"Clinical condition restricting the comparator patient population; this is the occurrence in \u201cpatients without RA\u201d.\"}],\"links\":[{\"event_id\":\"E1\",\"arguments\":[{\"role\":\"POPULATION\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P1\",\"explanation\":\"Patients with RA are the focal population.\",\"partitive_scope\":null},{\"role\":\"COMPARATOR\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P2\",\"explanation\":\"Patients without RA are the comparison population.\",\"partitive_scope\":null},{\"role\":\"OUTCOME\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P3\",\"explanation\":\"Comorbidities are the compared outcome.\",\"partitive_scope\":null}]}],\"semantic_axes\":[{\"event_id\":\"E1\",\"direction\":\"INCREASED\",\"comparison\":\"GREATER\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"ASSERTED\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\"],\"explanation\":\"The sentence asserts greater comorbidity burden for patients with RA, without reporting a statistical observation or explicitly interpreting significance.\"}],\"root_event_id\":\"E1\",\"completeness\":\"COMPLETE\",\"structure_explanation\":\"The focused finding is represented as one complete comparison event with focal population, comparator, and outcome participants. The two RA occurrences are represented as scope restrictors without adding direct event arguments.\",\"participant_scope_links\":[{\"restricted_participant_id\":\"P1\",\"restrictor_participant_id\":\"P4\",\"relation_type\":\"IDENTITY_OR_SCOPE_RESTRICTION\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"RA restricts the identity of the focal patient population to patients with RA.\"},{\"restricted_participant_id\":\"P2\",\"restrictor_participant_id\":\"P5\",\"relation_type\":\"IDENTITY_OR_SCOPE_RESTRICTION\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"RA restricts the comparator population to patients without RA.\"}]}",
+              "type": "output_text"
+            }
+          ],
+          "id": "msg_0dc3a61ad3c852cb006a62d96ae090819aafe13e33a4a72513",
+          "phase": "final_answer",
+          "role": "assistant",
+          "status": "completed",
+          "type": "message"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0.0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "high",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "status": "completed",
+      "store": true,
+      "temperature": 1.0,
+      "text": {
+        "format": {
+          "description": "Source-grounded staged biomedical event output with explicit participant scope links and partitive qualifiers where the source states them.",
+          "name": "V16StagedGeneralizationOutput",
+          "schema": {
+            "$defs": {
+              "InventoryEvent": {
+                "additionalProperties": false,
+                "properties": {
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  },
+                  "event_type": {
+                    "enum": [
+                      "REGULATION",
+                      "POSITIVE_REGULATION",
+                      "NEGATIVE_REGULATION",
+                      "GENE_EXPRESSION",
+                      "COMPARISON",
+                      "ASSOCIATION",
+                      "CLASSIFICATION",
+                      "OBSERVATION"
+                    ],
+                    "title": "Event Type",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "description": "Complete exact source sentence containing trigger_text.",
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "trigger_text": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "title": "Trigger Text",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "event_type",
+                  "trigger_text",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "InventoryEvent",
+                "type": "object"
+              },
+              "ParticipantNode": {
+                "additionalProperties": false,
+                "properties": {
+                  "entity_type": {
+                    "enum": [
+                      "POPULATION",
+                      "OUTCOME",
+                      "EXPOSURE",
+                      "VARIANT",
+                      "GENE_OR_PROTEIN",
+                      "CANCER",
+                      "SIMPLE_CHEMICAL",
+                      "MEASUREMENT"
+                    ],
+                    "title": "Entity Type",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "description": "Complete exact source sentence containing exact_text.",
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "exact_text": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Exact Text",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Participant Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "participant_id",
+                  "entity_type",
+                  "exact_text",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "ParticipantNode",
+                "type": "object"
+              },
+              "ParticipantScopeLink": {
+                "additionalProperties": false,
+                "description": "A directed restriction from a participant set to its named restrictor.",
+                "properties": {
+                  "exact_evidence": {
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "relation_type": {
+                    "const": "IDENTITY_OR_SCOPE_RESTRICTION",
+                    "title": "Relation Type",
+                    "type": "string"
+                  },
+                  "restricted_participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Restricted Participant Id",
+                    "type": "string"
+                  },
+                  "restrictor_participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Restrictor Participant Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "restricted_participant_id",
+                  "restrictor_participant_id",
+                  "relation_type",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "ParticipantScopeLink",
+                "type": "object"
+              },
+              "PartitiveScope": {
+                "additionalProperties": false,
+                "description": "A source-stated partitive whose antecedent is an existing participant.",
+                "properties": {
+                  "antecedent_participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Antecedent Participant Id",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "exact_text": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "title": "Exact Text",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "kind": {
+                    "const": "MAJORITY",
+                    "title": "Kind",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "exact_text",
+                  "exact_evidence",
+                  "antecedent_participant_id",
+                  "explanation"
+                ],
+                "title": "PartitiveScope",
+                "type": "object"
+              },
+              "StatisticalObservation": {
+                "additionalProperties": false,
+                "properties": {
+                  "exact_text": {
+                    "anyOf": [
+                      {
+                        "maxLength": 1000,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Exact Text"
+                  },
+                  "observation_type": {
+                    "enum": [
+                      "P_VALUE",
+                      "CONFIDENCE_INTERVAL",
+                      "EFFECT_ESTIMATE",
+                      "NONE"
+                    ],
+                    "title": "Observation Type",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "observation_type",
+                  "exact_text"
+                ],
+                "title": "StatisticalObservation",
+                "type": "object"
+              },
+              "V16EventArgument": {
+                "additionalProperties": false,
+                "description": "A V9 event argument with an optional source-grounded partitive.",
+                "properties": {
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "partitive_scope": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/PartitiveScope"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "role": {
+                    "description": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+                    "enum": [
+                      "AFFECTED_ENTITY",
+                      "CAUSAL_AGENT",
+                      "STIMULUS_OR_OBJECT",
+                      "POPULATION",
+                      "COMPARATOR",
+                      "OUTCOME",
+                      "EXPOSURE",
+                      "MEASUREMENT",
+                      "CONTEXTUAL_PARTICIPANT",
+                      "EFFECT_EVENT"
+                    ],
+                    "title": "Role",
+                    "type": "string"
+                  },
+                  "target_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Target Id",
+                    "type": "string"
+                  },
+                  "target_kind": {
+                    "enum": [
+                      "PARTICIPANT",
+                      "EVENT"
+                    ],
+                    "title": "Target Kind",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "role",
+                  "target_kind",
+                  "target_id",
+                  "explanation",
+                  "partitive_scope"
+                ],
+                "title": "V16EventArgument",
+                "type": "object"
+              },
+              "V16EventLinks": {
+                "additionalProperties": false,
+                "description": "V16 links whose existing arguments may carry a partitive qualifier.",
+                "properties": {
+                  "arguments": {
+                    "items": {
+                      "$ref": "#/$defs/V16EventArgument"
+                    },
+                    "maxItems": 16,
+                    "title": "Arguments",
+                    "type": "array"
+                  },
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "arguments"
+                ],
+                "title": "V16EventLinks",
+                "type": "object"
+              },
+              "V8SemanticAxes": {
+                "additionalProperties": false,
+                "description": "Semantic axes with the preregistered polarity boundary in the schema.",
+                "properties": {
+                  "author_interpretation": {
+                    "enum": [
+                      "SIGNIFICANT",
+                      "NOT_SIGNIFICANT",
+                      "NOT_CLAIMED"
+                    ],
+                    "title": "Author Interpretation",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "enum": [
+                      "GREATER",
+                      "LESS",
+                      "NO_DIFFERENCE",
+                      "NOT_APPLICABLE"
+                    ],
+                    "title": "Comparison",
+                    "type": "string"
+                  },
+                  "direction": {
+                    "enum": [
+                      "INCREASED",
+                      "DECREASED",
+                      "NO_DIFFERENCE",
+                      "NO_ASSOCIATION",
+                      "ENABLES",
+                      "OBSERVED",
+                      "NOT_APPLICABLE"
+                    ],
+                    "title": "Direction",
+                    "type": "string"
+                  },
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  },
+                  "evidence_items": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 8,
+                    "minItems": 1,
+                    "title": "Evidence Items",
+                    "type": "array"
+                  },
+                  "explanation": {
+                    "maxLength": 1500,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "polarity": {
+                    "description": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+                    "enum": [
+                      "AFFIRMED",
+                      "NEGATED",
+                      "NULL_RESULT"
+                    ],
+                    "title": "Polarity",
+                    "type": "string"
+                  },
+                  "statistical_observations": {
+                    "items": {
+                      "$ref": "#/$defs/StatisticalObservation"
+                    },
+                    "maxItems": 8,
+                    "title": "Statistical Observations",
+                    "type": "array"
+                  },
+                  "uncertainty": {
+                    "enum": [
+                      "ASSERTED",
+                      "PROVISIONAL",
+                      "UNCERTAIN",
+                      "HYPOTHESIS"
+                    ],
+                    "title": "Uncertainty",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "direction",
+                  "comparison",
+                  "polarity",
+                  "uncertainty",
+                  "statistical_observations",
+                  "author_interpretation",
+                  "evidence_items",
+                  "explanation"
+                ],
+                "title": "V8SemanticAxes",
+                "type": "object"
+              }
+            },
+            "additionalProperties": false,
+            "description": "V9 output plus bounded, machine-readable participant scope.",
+            "properties": {
+              "case_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "title": "Case Id",
+                "type": "string"
+              },
+              "completeness": {
+                "enum": [
+                  "COMPLETE",
+                  "INCOMPLETE",
+                  "CONTRADICTED",
+                  "ABSTAIN"
+                ],
+                "title": "Completeness",
+                "type": "string"
+              },
+              "inventory": {
+                "items": {
+                  "$ref": "#/$defs/InventoryEvent"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Inventory",
+                "type": "array"
+              },
+              "links": {
+                "items": {
+                  "$ref": "#/$defs/V16EventLinks"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Links",
+                "type": "array"
+              },
+              "participant_scope_links": {
+                "default": [],
+                "items": {
+                  "$ref": "#/$defs/ParticipantScopeLink"
+                },
+                "maxItems": 16,
+                "title": "Participant Scope Links",
+                "type": "array"
+              },
+              "participants": {
+                "items": {
+                  "$ref": "#/$defs/ParticipantNode"
+                },
+                "maxItems": 32,
+                "title": "Participants",
+                "type": "array"
+              },
+              "root_event_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "title": "Root Event Id",
+                "type": "string"
+              },
+              "semantic_axes": {
+                "items": {
+                  "$ref": "#/$defs/V8SemanticAxes"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Semantic Axes",
+                "type": "array"
+              },
+              "structure_explanation": {
+                "maxLength": 2000,
+                "minLength": 1,
+                "title": "Structure Explanation",
+                "type": "string"
+              }
+            },
+            "required": [
+              "case_id",
+              "inventory",
+              "participants",
+              "links",
+              "semantic_axes",
+              "root_event_id",
+              "completeness",
+              "structure_explanation",
+              "participant_scope_links"
+            ],
+            "title": "V16StagedGeneralizationOutput",
+            "type": "object"
+          },
+          "strict": true,
+          "type": "json_schema"
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 4904,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 7965,
+        "output_tokens_details": {
+          "reasoning_tokens": 7125
+        },
+        "total_tokens": 12869
+      },
+      "user": null
+    },
+    "creation_response": {
+      "background": false,
+      "billing": {
+        "payer": "openai"
+      },
+      "completed_at": 1784863086.0,
+      "created_at": 1784863029.0,
+      "error": null,
+      "frequency_penalty": 0.0,
+      "id": "resp_0dc3a61ad3c852cb006a62d9356040819ab5295b32de89d191",
+      "incomplete_details": null,
+      "instructions": null,
+      "max_output_tokens": null,
+      "max_tool_calls": null,
+      "metadata": {
+        "artana_case_id": "generalization-comparison-canary",
+        "artana_evaluation_contract": "V16_LOCAL_SCOPE_EVALUATOR_WITH_NON_TARGET_EXTENSION_REJECTION_AND_RAW_V14_REVIEW_ONLY_CG",
+        "artana_experiment": "staged-generalization-v16-exposed-run-v1",
+        "artana_operational_policy": "RECORD_ONLY_USAGE_CUMULATIVE_5_USD",
+        "artana_preregistration_sha256": "4a7e62c370ba6ef24e4fee7b4c32e460ecb544e18acc491b95950f547bafdd36",
+        "artana_scientific_change": "PARTICIPANT_SCOPE_AND_PARTITIVE_REPRESENTATION_V1",
+        "artana_transport_implementation": "V13_REUSED_BYTE_IDENTICAL"
+      },
+      "model": "gpt-5.6-luna",
+      "moderation": null,
+      "object": "response",
+      "output": [
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtluoEfP-VEN439Lo_29uit6od3U-BDN3CSbeKOmz2jMw-a1MuJKe09DIX5ckc5JAkps-LW6-3xTs-Fel8KRbU31-NPOgplRPKP5CSj00m-ZJuIa-ZTkGb4ECQUzUmj0w8gqq11tTJdNtTT2mbk7OHBCSPkQVv-5df3uguXRK_qAhagz2C7jTejRTUVT-CYzeAFlgnTQkaCeiqj3uXWl7aVSbrWoc7FrgZWTJU_k8UzQcrI03Mxi62nHsMlh0P0lZOh6ehNWoooa19RsFw8mmJKRz2ZSDIiCuNXKSRiTEYDtDWjEQe-BwlTNI-C8uBM0KwKEQLHLlqVoAfMzbkHFWLKe7tvp_-g-CHaP4dGuSKrG1r7JBfuwnh_dz33OEDkYrXihugJm5lPCS3xLGCb-y7Y50tvpIMhrjvYfkQeOLqaKPhM3TNyxv-yhJd83iG40ek8JYeg2cK76PBm3E8CvxaLjG8r2BeLYyp5Y1J8qqGYUkoZmlvl5SEkUpgZ1udxxcnXSj_46vkN6jfRkqYxtENvnv7DzCOgifUw7L7_u0Y3UQhtsEIdrB4lRVIo3BNi1zsXo8HJn-YfnZsKFOhQnL_rdo5EywA7aGCGRR1prOZvOR_axV_BzTragF7gexA0TN2j9-PIQcM4SS7bWkJhD3cw39T_J9YDBNLWU1aS9D3h9ru7px7m888KPjC7meX1za65jMjBOGcNZZTwIriESH6GgIbUJ_3CguWVpUXEg_1z1RKpXhOq1oJ5IQSGA3iNmEU20HKOb8Gd80fbz1hOFTmD1r-zif5Jfzdf8J8Ndtv2NFVj7yONBXCZfyTEWa720wO09k3rfMqytEICeRnG87eZubMxrUAU4eZC1zaXylJHNhJPLTz7BtD_1nPPD1COOS0zBBxaWrz3kuE52dJqJvOkXmxGwfT5idXaoJg5Zw4w66Gjd5STBWZ6IGkjkX5SliGFSKepLwlgHu968Tvct72-Nvohb-_lqdQsMSSskIWD_rKALco2CouMHbcxtHeax48YCywfRrCui1q8eJlso3dDGVtUioyOgv0L14ZXzKm8fTyy1q_6CohOSEZ6LobxFyvjRAL0owxGhmY1o0dmAqQNwwSaDdz8fWGpTajYxqptdsHCuy3KwWziEDdG0Bi8HRO_xhYUxGSrvtPX8-3SAzAozhlP0qQRQjSUawy-ermVyHrOUitUYfh2BbUPJpG7xjE-BAbJW1E-la5tGHKqTY3MsDO0xmLlL_kwFGXeOWk5LooavwLuMaxm0wTvSIUb-Au2KCluSvs2P2opSswx85zhTddpUbVxk15Vr7rRLklT7yi1gdPXRiQUbg5FjCxDYC6eLTkF4mWj8n2wu-9DxgOP02V9wAlz-e4K2DMLV7ooONZVLkdLJJSgRklO9SxFSI2jf2h_mSwNGI7sADeFM73et6KCgq2t585yFLwBu016bolkwGl9nAD3zno20s0oftvS3qQX2eaWhkpSW8OIrRd3veuA9Fu7DbPtrbbGqEDhjXLSg6duCRJ75HFVqIql1azju0ZFgR_HgSds9uGtInr16Nr1f5Enktn2Q6KATDoW5B4OV8c6MizdvJgM5N7Plv3sKTFaKQ-GO0kG2t_ndBnP52taiUt12mUMSh90BEEbX0jguyGUkfzNFtpxlrz_7NZV9ElHOdjhYz3WgH4Y770EqZ0zkIcKQPA1nSLOvbVZal5cQUcPqRuB66x5_4yfmM9mZnLzA0IbExTizAf-J6P0itLlgc2nxpbzc6S1JrA-mNClw7PWUoehXeN6HqTQManQEnFXJFYW_CdF7fZEKzhtyMvnhuKNrdocbtQQzXxyRmhAvqEkfrbhF9dKG5SGo4ovyN8VQhse8y_38lD8nxqxguYgiA9dXVwMh69fPgPouA_oUWr40rutn3eWZTlKyhDQOOHtnax4OPNnhkiRBGnCGhFBswK3xD9Vpv-MYQ3HR1GYsI7_xMJVTXcWseyacGDhSm5UNRlvHy2sz5UFWztCa1hTSUN0mGbj8K_6jJSN-esYACHlQF5NinRM6rGU4yLhKFMtVfRVSSD8HGjtqASusB_od2idD_tG3bNJKo--zuikrbBoC6K44r3GjPfdaH6HxvbpItKSah_SuSXN1pd5O1AqUSBhQ2v5Ap5-_NyJnMaTZQizUagnc9IRwCxyhrJ_qGbh0rjzBcYTYN9h7dA2ACoDovu4SdXz9M2i9j4DnzrS77lpxv28CdVXPDA9tVAhYMQaG76T5A2daIsy2-avPXZfzdQwsVENJJQnTP_OpeUpSbjIatK8jBuKokpX1ffDZ4KK7b1VLBpFRNIcPSqnHSGClRwhH3nGVCnPhRDbOZTZGhsA1ch0NflGic7U_e9O7rAhspKLpfgHPZlq6lhxCdmqeKNeJ2NQscH4PONkR_58lqsxFKJFu5UDIW2sC-t-LobZ92yHPS-DSQkgYT6oeO9dMTntUei3hIKy0niKWWGTd6D0UZVCfSne2FHIaz9TtDHqFt3re7f3430VFMeENTxTr9GGsSrFFNGidtNGxgLr-dNgvng0xrhbcLDfXDkiAh3WVZeRrrR_iJAoIN2WeT55yTp23cZCw3xKX4O2vAxAP_gAoFOIJ7ZM-borqp4AB-cIMZsPlkbC3THUMVn_ZD26mEB7IDaXUQESEsP59R14uZxFgo2Rw7VcyU5kR9OtG3dhkwmzABVdVvAJ_pLUTv2VKMmi0EaBxQoGSivupHStJ9nE4ifj27iSjH61c6xktB1syfW5J6mv3nfiLs7EQcwkVzPTpsmxJuXr_Mywq__ZD5g-w7xG0UgXpgrLyeIOPByN80AQGkR3ss3BjasXMbBQZGC1IUdb_pS2n42fMCVwUkJPLGboRtMhFQvzmGyacKfug53vZ3CPmmPM3MyuPiz6As6208Z2pTadJnYEOioh6w72mjINCkkkWlsLjs5tpham8uCRuMLptd6LW05sK-Srqb-dEsMmVJGMo9frN3QXr6lz5Qq9zcQ9tkRKRBVoNhjv6robU0SZTZdHYGS2a052r9Ex3QCz9x963UXBJ4C3EDQvW-yTLELIIdxqUVloWoxfk19gjmNAvouA5WblYrv674o6AuimtC6L5m7NgDmFjc_xEvz0xhN1AIX4T6kISyZP3e9e6PNbIXr2z0bYS9c3xcnYLH1LeZPIFf5Rkj5w6vat8IkgqxJ9QxmoUaV-P8QJmJ-rhHdI4JO-mcBKn7GRjy0TmNex77yHzDPKLxqvu0rLjflrF5ZeqKFvi4-8vZhqh3Wp2I5-J0OOt_VDfojr6N0WB9ImCF8PWO6nHB04FsKFf6EpnY5NhcPKrvS-GF2YoY5GCUeJXTorCpmC1Cp4rC8rIvH2F1mmuQPjkV2DG5o68hqpbHny-P72b04Ek81D67r4YFFORAFCLZsplGPOPDjxg_mbjwjIfM6ISLQWv7kA02VfK3R_kdpv7F4clo4lI759izlu2idtGY_i1AuprPfUVjAkO_TNn3Q8BcJOMNdT2cIKNNmAGEy7qyGV-vhOOgthpzMhrMvspjlJ9ij1IvURcB2KJ-18--Ytoi842OYjNF2FJKJNSztJ7lfT3MbQT0R3MR391ZYnY-Ngs2zZU7iVHHjTnwZQWmpnKiwu3BEJQj3LeIq0ckKS5KSpK_a9PRXjXo0ZjxMIqslAh6DTE_jV7MS2Pam018CHRsv5peIG6ig6WrcB4i8Bre9DnKda_mlLPf7juQ2ODAfHDvfMKFspLro4Jly6Mk5YzU3fwBGolCxbzM9joxmRxGwv0xj-SSM83LLohMTbyEyQihRi82NvSss7ZePfjWmPZzwzPiX42emU0wXLmHoTnQiC-fhs04bNKN8Q_i26xmaeBlxEHaiZPgs4k7HSCFRD8mTGljxXsf6b87zaw-VGBUza1rOxztllVIOS4_MBDbmOoybmzKP7fjk077mpJQKyMEXF9MfsLj9zR3a1F0W3xtdsFsKZWR126CyVdaTqHkIKsepqL0_BsTNYBwt_nHJVs0pAhxYwLAqNrr1jFnWjcTv9SHiaX0YxTtb98dRpYlZKr6U8jr6_aM_Lu93JiykENscCk2P6f_Qm6tUTNUoJHTukHraudHm9EDSuDCWzjX3k8yQ5ZQnZheR98ZdMbYUvSwv9ldnhCUPtQ5zapmimw8tn_yTPgWRzicyxiYUNrB1tw7IYkhglqAShUgLtjcTVdWr0O_7_NkXqjhYOR1uv093y5pTe7p4wk5TjMNMdNmoLkRFQkl4HsHQDUtUVosWbMR8-KTe_Ub7qvnhVym3_guP5ELnvYvXHfk_QLPlMtjaJymgKFvlOQmrcih8-1Hojg9T_70ZG7smC_bOdPpk_3TZzTmOgMmy_5RAcw-PNk5r0SlVSpG_UgMoXXihXgvfURNBLpIYxEp5oG0q5IxPds5wzSON9Zpbz_0rBPenIdY9qYYtBKYXsgnsht9yVeiB2L0q3RP-t4WVed86PduXqQkH-1",
+          "id": "rs_0dc3a61ad3c852cb006a62d935ef88819aac289e2320e97be6",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtlubBJpzMHJE6080rFuXlMhX-zJgT1XPyb3ozA6-fyDCQb190j1BAFjpG6VlxmV9zlN9OmdU63fa-k1dHrJMzJBjMkqRIxR0HV6MtCB8eW2E5vyoqQXp4tGnqcoQSMWPSGp0HZK8i-hO4oVZ3Pn4fXYkSQK0qnd3UeT3aYTIGAtgW3YTmG8Niaa52KYsdVQsQZtm9rS5Wx_Vwo7uDVtUqk31H0lVFplHvnfwFwGcPtjONaBH4087y9tYOUq08sF5gZ_Dzcfbp9shTLPhWJSiMFvGdnG1bGGfwZunSU1BeHUwpheycdY9tgXDOYAOQ2QU4sRanzltIouFawQYJsQIIN4o1U6S9jP10cuC2S3lGZDurJ4QjQB66RgRSzNm3YlstB8HCLjt-0EA-4m9TL6OjkfsUweD3K5qDEAFCR70R8SUleroIPqwvAMOUqfxxedyvxPPO5Tg7660nqrOhxjif8FmxQy6kgU2oz4XHqJlyEOL3cNe8reTkTa5HVS1SI7rPZyP0srvQp7bVrNm4P0QVnwp3e3ISKgo7CYKB_afqO0Bb_fzbgw7WvKHE6L2ELocqFmC4i_Jml69qtLpGNtqFP9XbzqiMmtUeMvXqn-z3IvFDXxz-aOmCUNsXpdN5qVoHVHx0Jgq2SzQKd86W8ajtZravISvNtPmyMo87aMRLLBA3jKUXVrKaRG9xd5JbX7x0dQD7ykyQ76fRE2sOahS_LAwA316RBQTIHQe_Raie8XP-2z_g3_kTyF5WDyvy7Pp2WylqKlPv5D3HBBDXpeH_N3OfZ67303cDkVZ4VxpTyOBjTgoVuU1eDjJDRUcSE5v63-bsxTtzqTRAX29SOllwbBcumrUiF3MjI4tq-08_yC_9QmW8rxbyavSIGN7-cFDeEJwm7f5QoJ2YuZZCg-AkVnJ_gD6pxOoiwRbKvn-4EGoybIGWuI8ih28uf8ftWF_uxo4ohQlTECdm946CSO1-HchTRY1In1QYaZMQyBrD885z9ISW4StF9AG9oiGQvSOtvKLnE4Auut_EXthVFryh59vfO_blOD2DY1ixA2cpWq5pRnp5wqrn-pUmu-0mpHeYbp-mKoa7XiFFfeVyzHmNL94PzJ450_bdfY-jRK5jNBEcBba3CuwlhkBGoPi3UqXhUVX3kfUIKq3bot3pAmzVHIFO8L9b4iFErKzNf0qLZBUnugLf7rTA-UjiiJ1YiyBj_jFwstPnjZpPmi2XsJfpvmhy0riEYi6jJrvcn8uJzntWJgl90N4mry2k74zEgBTYc9VgF-kCQ_REelvgXRCd8Z_5wjFmnuPNS_YT_9-F82yhLz_AsxA4mELnGbmw_fbFX6EjbbJi6dgLiS3qbb5vPhGp9ZkKVjBMfj7hXXtS2nbcg4vkP-npfw1U6n5L97z2-YmydeeOdQPq1E7FZzeyn_y4-bhkpYV2i9rKwvPiEqEWnByy7HQofY0eDv-IfCRL5Nof_slc3uFtQe7Gj0qOVGAoPFXf24cGnxcni0xdFI8V2PYo73z6NEhvZIeC2dfCSS-Z5TvTQpc4LtQ-Iau73vaSb7aiJc69kUeGGk5g051WeN7kGuVmfx16gewmRj8L-doWlgN26_9MYfLXgoF1gMzLTuvhT7G23aB5b7KG_1CsSykgZHeoireaXnGfXp01Jhaiqh8j_Eq6ZVjCtDpw2EUbo1FpMQ4AfGoqd-FU7-j7QMy5W6L6_4aTZNH59DRJU4SwA_btpYJlrIgvpONGbk5ZSzXBgEwIFJplwiDLVVJuLpbvP-lmRZ5sUMoQPeB_SKGpaEo8fTYxvYw2Pia0Zpp7A4lZakq78XKjL4zqC1qyvh-RLufofNpAOHZiI7gvyjHsui48OaWEO0lBmuOyg9R7JM4deqbobdzP1W5wp1f7Kju1KVSjMgjDhZ-DCoeTdaGLZ2iNBfQXlElh6HNyvUibcLa07785mf_nbFv1gbbt_1UWk0xuTEU75lvqJh1ZccGQcNQ6lqx6qIXjX9Sa01KO4y4Hw-CvnJj5FM9NMneqiCONJhpUa0g2hyCwG0FGTM9QfKHijKobJziOkkR4SA3wfQ11wNN5bUUAgZXXnhpfbG3Ik_SapVnuqDX800FV6TP5I1qmVJXxvsv_f1k1lO6C-6w0IUCVTlrLknhKbZQ0KI4eMbpdDent3VwHxdDj2Fb8xOrZkM6C4fCUYgvba5Wz3Fbd0ArRIvOTFvxa_d3vn2GpTY1ZLtHcEKkJ5dBg3sLE4fDRZkKj9ICHotZnsyt4rM1D7T2u3H-0F4ofa5oIf7YzN9QNBsCl6Wg68FhjMh4ZcYIB6sEIDOdjY3hVXdt_wq14bQxcFEPT7D-0oAP2EMrEupnT0lNTWBNLPOl9YgH5B585-jAyWjBR6pIQQ8VQMe5wFnoRn7Mg1vW3Tzno-l3C9sKGzohSD7agyoTNqd_VsajUudHNKbycF26Jlt4DHiCPyk-sEASq0m2kKtkhPLV8Nwh_mvidiQ47p5u8WddJ8jx5YrVKHgJuieN2Uh96S7tOTgpUolb1S0Y8SAD2RvmB7IJCKJa333ydgvHg2bowk5XzYbHrutWahrkQlfXbdYmWwe-s12Et3KOsUVe6ASVg8TlmgYZFFnFqP7lD88fxH-wmSmnOQQz6zVvDZZV0ZEOgEDtbLK6BdwMZ6I4dJIZYhp9AtC5LqwVqQBR_dhnt1U3ywu7Monx6b87RpWWqwflEUKq6iKnj9ysPfHIriwvv4tbhqdujhDnkLQ1mwVhYIc4UD93ZjDa9Mmm1iAgF7uiW-lBmSBsWSNoEkHbywOd4LweEIrhWNRL8boosjTMAAPIfT66XX05FGY6hutbwRnA5SyabcPPl5Xgt00hu17kHCt1FzXT-pJ_MfuvVeclpcqbbn6qMyjV_TT0mBu-c-1kZ3lhvWdCQTxpgp3M05TZSbAZXJQTUv3IXnh6LkceE4hZlpRadIOy0270caPd1R30tbXy30gCzcINL-XRdRqLeku6maguaxAXeTYNnSUdMoomgo6U-0i_1fGNzP697Dd0YqKT502aXrlVMEIur38_kW0jQ3eGJCH0hDyjcd_-Svru_vXzcRG35shiQzdGmiTTWYqcgQsb5UHy1Pb2JSFuVfKAy7tbrWBL3hrI8ySzT3sEOMA9gE5PrwEP3CZxcwulKwWgSdSedZsDFqV7kLZy0oAPL1pHZOOv1SniYzOOfVvuSLSNpxLmiQH9NgLwb1EnVPeHIaPQh_UBVOwNJUWV40Osk1qx8QrZQnyTHa_tFMueUZkeWa7FozfmSmPuUGuLQWfXxKiua3RGb0uTJstk54s89CPz-3n50XxXB-4eQapELRJYyHMOqwI8mK67rTXVUUxu2ZnH81I7PrHAUBNu7c0VghqRpx2jSrKStRvOsZN8aITZxnigKNEzTcvVJghfjyVBDkoSsXRXJi54oVKW_bQnc5GRjUrbUCEVc7UukleNLe7X8xvzmXuh0WdKRJWZiBg7VMwnmpGJQWQ_h5RtcQKMtkRziWw_4a9My5oB57XPrS9uf8q-YZdBKnraSstlE4mGZwScpgwYKg0hTEzqor48cuVK8VmlZf-A5P8JYuiCAs1dHXzzQc6Zb57ziDYu3PvGJVOQymgR9p5G3r04BrZXwV8L1i9E_LGAH6nJXQ2iliRB0wBT3F-serauMT_7433msyTw28AyruIFF-6KCil6T77IspHCGEr0-C81-QLP-HBk-2dW1iZJcWwO-LZ-E3gowuFbM9JWOwU1rPcbtOKlmLyJHwM_a00iwTw3h755j_d6aGn-IuRUnTLuohYNnXs5SynzT0rn3hXwB40iZ2GLfJbMt_csswvpqhlpE26Ncz2rrWfdDv07j4e7EeC6xpkSIgq1Ug8CaCkgvvg5MBHOhI_I9qVioPnr2qfQfOR2MDEz_5x15fm6MZiDysqe_TSWbRS19tXhWggHb8NRYaxcDaaQYByDvPAfpRLdIBvNenod4E-I9MLIrAp1l55bcNcMTrA9taXmhtFAr1VNMXDv_XKXR-yy_1C1DUOQ7MX6nzXal6XSbvKvlGW_Uyp8UfwA-IAuRDKnnePsUfafPd18sWVTLibp5zK2SRhcFg8p92ougwskRat_pHu4OzxYh2wEY019JWtSRdmjWfwE4eyX9uGtI6MKJ6ooLFJ-gvnPJX0uPF8okNTi4pujWIx8hdoZODPdKjJHxAxr9Mhqj8kvbpQU72JkD-S208r5VJnIYuyZpb_m3A4Ume9I7qpxrZDqB-MLQhRyy2QihwM5yaJ2I9mkWaHCcZkR23qZid1_bHATg2ge6dR7vOmLR1US74aEc4GKEMbNtM5mslCCycrIEPYMMef1SLx6WiiUDo8W9unMHvzpem48wEcosj_KUYmMB__yq8J45Fsv7qLsQdo60m0fGoFGYn88zl3j_mpxY3e8Ejpwox3WGz0G8z9Ow_PBf9e14X3rHxE3r3X0Fv_nS430Ewc57-1QSEPUng4DOqj-G8oOVhgMtiHdKns4q0DIEVCP3mQKZiPfUcZKw_GKffDOsWM_MtrsIymVaBtOcJZ1dqWLeDKhW-jR0uE_nKykf6sSv1JrBexqAIwqaJtYkgEdNOjgibgOiEXwETAIvKboaFE1Lw7pgCELZWpsFRUD3ylT7zBrvhKwFr-os_7Ph7ed5sYSuhY9F9m",
+          "id": "rs_0dc3a61ad3c852cb006a62d9399f30819a812f80e3f9ff83d2",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtlu_QJWGHZfj0k-n3tW74M08lvKvWQkzJJ47rq2XdtZS5zyA9LFD8tMysakdCdoS3VcmeN8i47YTnH0w5_JbGqKf9eGR_sbO_IIhflQd5guAwEbEccSQLTqxUHkqu_zd3AeoYiRGun6nAs8L1oC9Y27j3BsBWDxjz-7T39wv3lHCAqNWTI3UX0Q4myz4q29g-dAfi55GXg7OTl8rL2_OGjZYrGbqv5GMIPjakvfht1TeCX-O9fg0n0L3Mw-bF7tvRc0gG13Fbm6Hcm4g0dVmFbh0_hY-eV73Lx2wvNkOuHBhoYM6cOZkx3reSbe4aUUdsEpp9gV9RL0KNJhbrk1fCmg4fK0yrM7jtBSLKghvWG6Fl4zkvb-Iv2a8XrlFP10-hjOdBY6yP7J8vz5N7HwNThYeuZbJ80yC3dpiWlg_GokTg770_keyN6x4M6enU5uVf_ywFl0lz_seZz1NTjXWnzJhUISLqWUPZEyE2IJo6kTvD99c_s9EH3ZnV5SQwkvqT1qJDtFNk-gdZNoZ0xRW8krpb1V8abZsyRxoo7ItxnzQ0KCd4hzWfC-fs9Zn1DMK3hGxCUO6tCN0v04KwcJwxwhi0SQin3mv_mgYfE4e8NN-FRTSU_GZ6m4gW8sooJ1k0pSewOIfczlMI5yff-SziXD8rymNa4GeIJZxL9hHXPRhCEUo7ERJwPxnzAFBS3ch99iKTjJyrM3sqmkpSp8rvSk_cEn7uG4HHRyMsPxKAAiWtOndEz0-kHOq2ZDcaCrhXWpW96Rkpg2exKuoHB_fjyzITnX0ywIiYcIWm_2w9Yef7eNfloyXbZtakwYc-sZPCStkNsX-j82Xas7QM6yGjzFqGH1czk5yifZhty5AyDn9tJxndObedFsoTcLz1ijEbwD4axMtEqpTxq1Y9vYIXsT-l0-brDNtixs-piiv9ouAxxxeaS1fT_UKiS2ViYAjGRXBYTjVKNhKzbotsEed1Y1lwTjnNbqMN40sC5ttIkEpdZiEPcAwP8Fcj6rQYgRk9Q_SQW8GN3_RoRE-sqtpAMuH6CP64D6xYeV2VyDEPVaE3dNylyUbheJkDlCu6eXIzt01bQoXdUvWth6vwCfWBrd7_KB7lT49E6iDFIeBR6cN-GmDFm6iLILxf2vH6yRCezDMXVpOZQbYcWfbObanhLWiOXS4lwzvLFZvM6hAVPfLsKMKDqLxXCzNGNh4RbNIMM8rCLZkUm3U155Iz6aXs4lgjsaGUg02ThfmvKY4ZOo5v-3frKa83MLyUAYeQ4sxWT2iBj1u7op9rF9ScVJT3tzh5o4qEnovrsIxxb-2rDB1gefMi9RdRj6DBNubRv1p6LxYuah10CgSzxBj1i54nS1svJsTI6tERMyVZqacGdumXX8G31uP7Kqa4F_v3OmxyFwz9ZkQDd267KhOIxd_9q-QFCgHz47lnqXfHxxJ-i3pamg35u669qr5mVryMeu6Z-iqhroH2H9Ln5ABZMjOuaBQ-lXH5XLIAz6j-_aq_DBbWAKe5KOvMlIfr_FU6ltlwSf99vZSly-fazb_kDUXGijlP5fwlQo_9AOmSsXmxaIDfqFKmmGPAQ9lXFIYHdCzX9Tlk-gs3flK9LBYp9WVPLf-XU0yZM0uGXxrF3yuSugn76SGrDTq-wj0bgM7SRvCY0iWwvkBh3lDbffXmuZu4jYHiEPEYA9K-_hgtW3P8k1vlfNLoQvj3eDRRXLZrfMCwqmM6yd3fF3kyCZr9YUcY89qCVwbD27KnXvRYND6TI9InnRpOSPv_5__mmHOBZhpEUsm3eDXjmH_0Ufksn3h1f3BPaIADBg6vUu_-xrFaAPe9QNUj72kGQ3Y01Vq_DDeKFxgmMLkBnDRvEGkd7cIM1mNZ0LTO6FZr6nDzykaxr00uotCzUAmXEw8-ouEQER_aZn0CTcBvoDT4_dcraS8knaSb1g4qOA1Pa2p8FoMWkA4WigEBg6thtRhPXFg9Qx-dutdCzGun1cKQnO5FDJR7cV7UgU7ugv5RNben_tF3pjB_UEo7--Z_Kxm7MDUgoTlwkt2lw-c7cpVsUEeOBhDlDdZ1GuergW9tDZxdTR_D31HF840eOF43tZr7KpS64yzim-o_t7HnfP0RYxFXXbGunTr_UaautfcHrfRscNEfJnid6ax_wG0vNSI6X6oIjZHFJGxO5bJfF0IHiKogkGUqOOA7aSD95bBkOq2Xw8LtUOzyZFV2nu2yAqhdbeeiwNTHc_HJMjqRWYwulCNIwu4Lh82EM2DFGGjMkzszzvFAecdDZgwf7bV7llKVNKzcGCxleRgO1J5U3435cFyjFv0zv1wW9VdfmGR9F4k_hGRPMBqkmGAd8aq6jNbv10MeKesXYexAuPmyk4HSCl7xVUtfGrMrKqLuf05mhTOHhB24GWJqU6FqmmQNUNhz_9TD-5MSIfQ0Idr2BUTDLcR89ZIqvIGr75ZZ8SMW52zoCxPtG28jVMgidatAaveTctp9sy1Fbh9bYHFXMyBvxOdGIjr9jDiSMoPcnd8KmViBb0EhDlfsHonhETqzKtVjW0qzBwLxuu7JuinGPf3dv503W5EcElKLgAE_-caev2FqqxHqvo2YOK1GLVXJa1k3kW2fpJ7igFX4ClQNBLSxuB5ANmlZSlW6r8WwaOc27f6q_M8cwAN0QbcfsybJFOK8xDgtSILM0ZFvruUKPwHNWrqw5sNwosixEsqfWs6gbdO0_6P5gYv2e9F4BH4AvmtNs10UqDWJC-36c329d2Wp_dIa9HHJa0JP8XlTyU6Xw_69wGhc5p2bpcQrgmiZWqdw8yjV0r3kvkzNRCZlccR4SjgTWINfU-i-2QNpw1R-7_OaG2Dn3irrNyWGLQVWPR1imIp0RmGyiQ63e4txVwgIBAlP4cRgkX__1Fn5CPIgB9Aard4G60qEkhO9hWmHk5NOl8yrenOaGtV4srioEM2wyhyDaqBX30MoSU5hCU946HD69T9KF4zvgdz9dm8DYmue03qKsTcRWC0JvAWfBOgZh6Kqy-SKczK72qHTFTB4M49vJe9dP2xTEMEzHoW91JNK2oPiPUyLDftrMfBSwV1eU8tMA2s-8BAYssgNC6b-Hkoj3Ml5cLUVly2GkCe-rhTqbl1FW2FVdHOGbtO3C5OeZAvrCWk7xYMpSW9U5dHTGL7ohVdBfgeYcaH8vIaDIzYRKppBlqGjMg7My5LheXZYq-Q3moqD7riCURpsf69H5KaZruhX8iYkyEmcV97GjY03uWmC4i88GspOFPVbrGX1vseAqsK6tSZIWds-bHu-fbVBzZAKuR5wajUq7_evX8JLWIrG5r2iq5d-NPdu1sGtrt-lLmojBXX2r7yGnreHGGNRZSVCAESFeG0W0_MT1iH2xlI3wwTS0bDE-gfKLA8z_kpOtL8gPePCcwAE__m1SmbUKxRBQcuV4p3tzAJy0mmg1qkXqk2WsvD6mXvSUWh2kj-M-k6XRzOZN5ZkHcWePtldp_Y1mr50KF8LuBuyK0XtoACZOZMqKx56rlIPx8vdEFEE5zgAzg1EAEH1e79AyUr-4-Xs7fOX_POuleMiKzpVBu3AAFxuow9smaTR0Us5rtWAuku2j_XHXbrCHaFVq2jbQ1VvUHicTO7qrJ9UlTTC5Q16ZFLzFNfUpJwtnbqoe2O3T-XleE0joAnm3OnjdLJAqZrAqd3XlO-Ha3rlhhGEqQ1yYD7A9atyDGI1pnf6KsuJUbmsQBAXHliRfBrld1yl8AL-O2xBOhE_1R2V79Wsgx6Yo4hXo-uMGHZO73t20WWMwuD-pMo0wPO2cyHiFE9jve3YDD9Wp803-uUsCuqy4pIbQo_Pv13wuuDjNtuLv_wwCW1idYJTEjlpoROCT2XRqf0B8udiJaJFnfbwEgDIQZNzzBiTCaG113z5jR15c69vb2UBxTlH4flzAIFOYJNFJWzsPsV1U4HXyC7PNs09Vq7vzi1zBSoOT6XnJus_M6trYq4W4nQnD_YcCIYk7IK7676En_sWkJ5-vu8RqQ2TH7gfxgw7Y5AlBqVM_yunfKFBH6qs1dRbrNaEY6P99sbJrNzKDqe0_OCjZOxGGBH25soKPzGDaivIrE-d0dIAKzhpWZjDQX0wWh2NMaWED7CmAopKVDSl6Xn6xxH3Iz_PvrnuzXde6oNssT5s1tUSHu4VqlnTgrnpAiI-957cQkJTDcoR7YdEMVibBJN6IPztUHb-xI14fwIaqDzV0qcNz9VFQzFih09KNHx3ky6PplJ-e5T6gWtX_dOKWkxhlxKmDoJpl0sqi2bkkrqAS67OvkHXdwTsbBdiQHCDstc2-SLFAUsREICXpn2mIA0Pvz00jGfQ-oQnbZ",
+          "id": "rs_0dc3a61ad3c852cb006a62d93d8d68819aacfdefd68f9d43de",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtluAHhl8mqO2uo9pKXXYA41Zag58vLfQ7z9uCiG1Bd_mjOyuRvJOW1bFi4YJ4GCHtMBJ9gVuALJMXO7FkKZqVnk9xni6I9VD7MkOF7wH7xuKHgIe843_7wdD2LJNPjrn_bzwTq5b3p4IkhtWUJF1LVysvn5hrj4Vx1qfMk5r3aUcG-HeVA6dOy1Zr_7puLZN2b0KHJjBHUL5W3tQNQgoko94JHP0y8mwZEDnR_UBhvwnWKE0aVQ9bOTlmf8DvRPSzmldLwP0N8wWYsSDi7gk-DjdmhSya2fxTwWXmhWE2-lpb3vYRUTbBuEIbiJBVN6Fj0jOZSANwNG4smZoaDf2OWrdowrjth__OYk95xIU193SSPHdow0l05_zi0Jgj9Fp-5yMYtyCxsqkhyDs4ub9KY9UB5PaFRgLcODbpgIaPCnV3yp4O2Tw-1-ypVZ4rBs46_eP_3fBXtAJEqru-6k-ggz81XMvNa8kuFu1jDaMv35KixrZGdZ8iMxq2HXMsPVnYnRDoY6UreXPVwn0iPqOswlEcGO_UmjtoeSdP_7i91DGcAJe0uoFtlax2pl7pCHvpri7RTMP8SC2q-VN15v6c9AR3d6lEhkj9Qy8GhWj7onAi2QjdsbcSfmV-3TwKiVyGdSyF4nMe89CzQV_z2MNCgvHpYgS1m_4WYq4Z_V1YStQ9h4EgGUWoMRV2ALysQ2XyqDeQtGdC9V0b3IA3tLN3OPmiPWr1ybFgdUSsaCTKBXLUzsaEPNlw94jlsOF9I54F8ehpT9i3d6C-McZTsEbVoErhmo_7Ugd-DI2Y5U9--DudTOo7CnObY1b4NH7ClsgFtpyvAKaOhyQH0M9KweP_ateuaMLmAilAkZDPCrDmmS7jpGcz7uB4EV8Tifi5F4Gublbtz13ppaJy1j2UskslgVbNGBMrPM_zWEdKbVVwOXdumAytEoEGFxtkX5eKB4dqSCS6oblVgcqdiFToB0J5VZef-K7CBKMSHBHppu7AuU-F8hxk8A3hamg52mvcWcNWY-en6oZcbaJmzYsB-RA2nffAMWKLQjFQ8d04PTuhSS6SpM5c2ytXPt2ElCFgIIEgVuuSh2XsLSkCXFCUS3i6Kd30NM6H7nQs8ZFBsiBNAlouSm0DYKG3_syvpYjg_uWduCk8uAj4myr5RMadHcUp9zT9tWBLl32TQ_gUOt0i9-CLEWx4dGEQfxFi_wPCik9IS0Th8DtApS6flyW0KUxAa1Gu68Cdy_ZEsDz1d2chcBytdqkznZhNTpDNbdeXbWDGgiwZPQnyhdddgy4za97_64o1tIJ2SSG4r4HHoXWicWJck4P4dKu4AKczrIVulWi9WRYwSJKptq01dNLBv4xPREtbzYDgldEcpB28CYR5povw-I88p-yT-KY6pi_m9FdUxU_H3P-G69gynltoZGGJFFfym3avCbVE5YnT8LE1A3i-hleDsoUrZnTV0F8iIp1lki2ZWw0_FwfE_dHvY7uzF6IatCHfyQH9n3zsjcvWws0ll1rMtObOFtlYmTJ5GurJZ5M7ZFd7osA_wTXE3n1UudWxbKEMNeNa6QPJkMCJl3vx3JWCtvz4CrhIDATcyGGlQ2i8q5Ct-ywlY95vf7ZK6OcRJDp8uQn_UpOsp4STjbePGQZb5YJGJgA4DSnJuIktMZFkrfqlXfyYZpXNAKr7mJfoE-2po9VfjhHbynnen_vXaQagOyMy0gZxWehjJDLDmDhJ1cRJGkwarUwygqqfIhIp34SBL7TANBR0LYQ4X7UF7d-dvzpQL32osfo6cC2pCv8xIWFykFwx5ZENqA6bu-GEJmVTDYKcH9Zih_ExjGvKPD41AWhFYpL4697nFFovSyRk3ocOKZgM9sSWY4jPWKiVBvNI9QyyWij_OpbXxrF_3_Amr3fFlQ_5vNCi5LBHkpKW8dMUdVPg0Py6HAa2Kgm5sSwjVxWcIfXDs6ojBMkNpsAD1wmbibc0be8hI_hTLlL0AFsQYrYvnfc4mqadKz_QPGHDlIMRQgvWMF5fPtGjKsHEFzFRs-D-2kp6vEQ-bOuJkFFSObSbBmaMcGGnvVrjpUQR62ScBltim6ZkcM1PEBsm1m7A0tpwQor5gDVd6R1e7MISdAM5faa8oifJPaEVANFJse8XhsBwTE8HybzyvjQENl0z8RJeWoI0BxgLjZBKiEwl7zO1p3A2bU7iI11xJqOgyJO4tHnM9rY6sukWge5XQjgYnO_PLwMHaD7aEBz2IoXiLmyDo7qraxw_2LkPvd1utkWpqMR1XY9RmaPuiCn3mEhS6HCodng-E2ElyKN7jKqh6-wHf-8EDp-kSEhgjqp88qvS69H0WUN15jnLaqx76ptt9HDTZ17Fz99Hs5-EaAes7iPqtfkjSB5WyJOp8HuLaDmpvihv6g7qjKEYediNPvypioKreZRY1IVN6XU1fKgurx2ARI0GCCOVpMIuL4MukkbKFukKRKwo58NMchX32S4Ff4cPsbFB0V-foz39En7Ti9T2K2SsHVw4WhMF2X1y9Tii82mYEJJ4XknTiN_s2F1uBkX6AIXCNdKH5mDYIlVnGMqZ4o4G8Z_s93QafbGjFSz2Ia6wxZXMu-h2hr_0Sk1AILNz_VCzxletunFvxdAFyqk3QyHznCLO5SiOjAalincPTE00qcwfxV0g_4ZvVw79OZRhI9l5lvMaGye0oeoReBAxkPhqqZygZeVJAyiJ2w8X7qIUbucH6KxUevxN1dy5RSbiWmBMO0G-zgqD3IzxrtPnhaBI4cGc4mXiB9Z0GI9P4_FHNmV_ub4pbAYj1g_Pp3s7HdAP-H8peuYcFgZjNeg6Mvc5NomRcJsaaBJkpMynapj0HES0OoKaENo5JZLerjD91AI7d6WnixlkuDBhYxo1ee2IpNPf5TBdO7n_KzrePkt8Qd2OB68f0IQgsb9-L2HMWfoFR5KDyztE2s6eDPinu6oGptHw55_SVTIYVulU2o70BjF7vMgDqQOXpORbZg5CB-LtNMYgYmGJ8QIcVNDjwPAxZKCkIHPjDNYtcbqSeubpFpUwkFFiYFsdAx2m5BJYGsEw7M2oiYi-p-HmDcnndcBbhOAdLdshmgiyvi_T67WTtrK7Urv4gbtRjhoGMo-fYE5Ociv9xLcUIfkbac3b6qFJlgIbWsGG0S3d0pCVgCYJ9WY0gY89VYKEXcj4l5GtveZpqJK80LBKedsbyfuq6aeIF3qmsmDDRUyQL1VFOHjb6ool5vGhMJt_GoYxpPjslVchKlFNVcLobTaehq6TLJOYT--y_VoUNbYal3ETX_mx3b7SVwVwpTdKDjeoQUMgjK0INZiVmoRHk3MNZmpGzvSWbw8ftrkr4JIpDy-L-aA1rmS9bqMsCLEO-0SBjxifp3rk28XK8O2OK944fCYVd15fMM0jztpCIXYQ1y_JeVsBNGqvXBT6FZkaXIGnuMwRw_s2pASJYfmmNwZW2_UlmEs8NVMdnkzQ65WJfUXGP7lGHYdK4avZwjpyBa3aRxhd_0Xp-Me843x0ujSfrJduK5rZA571eTsv2G23X75PSu2ERCOYooGK3BM8k-BoSqBoGO129a5oWO_YV552_jWLbCtcmlgiU5g7IM-NSH3mljUUT-gXNo4rSzi4fjEX-uNpP25ENBE_PvkI5wbOayp7e5hJS0Mw9pmkSkMfuUkRhwFHkmjZPWJv9lRXin2ODd21HuHxoi8Q87gCkQeXdeMCXSwXsHni_BptI1x618gXqz9ZZh0A5lIkRhagQHoyDaGdF2QkwLScqTKswYC5qLZNVgBEkVXTYHLA0Xo3N6S8QnqwqJTehYj_G7sTyXDtF0iDFyrTRnxNs3OiNqlPzg2iPXAzvyXiWV_4Hv72AhDMlx8KbkdPsdqwbRJvJ937rovAHXljSKZyfHqONQh9grShdCv_5UXr1OVQEYfD4B4QYz1aiWwpDuWXz3SFsCrpilHD0NMSzbrQ2GQKXy43z7Bprdox9CrksiYktlW1iXuM-UdTASag-GeOW7y-TyS2PwmVUFAUjVuw2Fjnh5Dk_ufMD--_gPW0TJyJx6Fwa9Aabt6KAdhm6paAXim9j-iBWmCYLTTtYweCPOx8UfpT4QUm_1Dcy644vcFoi8M2Ftzr6_db0PKJwOH2lwW8LmH5Hd5sJno_tXOC7AWYeR8GXNE88zEKfWj_hElTL7VCQxh_OYI-QMANRl0FI4ULB6L5JW0WV2mS3hiHyGni1_bv_rXjl8y_tgN5B-otyv8zgc9CsHWP4hFPMggtJFNuF7bozXfRgiglV9nksMatoNfZO9n52NAvGj610sIEucWul7mVlkilpjjJjTQg4=",
+          "id": "rs_0dc3a61ad3c852cb006a62d9417cc4819a80bf3f5b24e33bd6",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtlulQ6qoJBqV1XTQ9nsPa_VE1pfPwXwEhajbbgPZnw4USk8hpvrt_rXwaTdiWMqlNer3Ueup9cgEdLbdn8ZMaq0Qdle4l8k_4NgwlIFS6jqSJEgW74UemtJ4_b0GD2i-750xXrU73FA6zQfwuQDM2gKxL4BQlC5Qq1Tle73EZxrDCQ_KyqbLoG5Mgg8ur55PdmWC6DRGgklKM6JczYVkFe-HGQqXPj-aSImSEy3oCxR7nIk2OHvNSZJeIG02mAV9i0RnHrrKQldPceO-YClCDo3B5INeHgLYhFaSvVWlx8oqnrfOfI5u_D7Hc36TzHPxpTZS8PwSmoIgjGZeV6Vr4wIvAdGMHq6ShbV-QZNkxD3IqBd44d0xoXvpfKGHb7O-K_kuGtmYleHyfBrhnUdfWo4iXBBngYVbk1ZF7PjVRymnB_i1TV_mF3ze1n6HAZeiI91XJ89l1XE-blCrR-Sx71zhO55y_5lf365AhNZxOULOexbty6VNmBnROYDwUTYtHnsbIt6ApUM680Nw4xSMoDeuMghPSp86wsCNMHGj_N5_YOeljYACft454Muid74m_c0jczvRwrv24AjbIH1PdpHBEDrUFvq5u3iJcZh1HILHuSaOlGSxVawGncnww4YCs3BFT8BpytGiC4Dum3qxxPDMKlTlve0PadkCNd6Ts5ATD0D-ofWOLHl5UTnQABGdVi7W1gtfWV9pPGUn__RUnWYcn7DW2Tz_8OxzX69xhaFsoftzXiLDVbP2XzIG9RsNtQOETWzn0mH4xOSyfDAQwyIZjeTCVj6s0T-L70Hf6xVeSRW8_S9IjvSWWT5nBNrdU9MifqWpEGmLWTTnqweYV886NVKedte_iUcUE93sg1u9R7F3rp5agGfhlerMAUwjvyNKXVUif5IwAb2e-WxmfCC03vLcJ-iGssOCVVc52os_2YlAqy3QMlesE8zO2gBknrI9BzGzaVA2JIqJgWcO2qYMDhkQ4WYuKs2ELcs9pKoRwxhoB6XSpM73e4CSqjygLUiRPvxBFJC0uexc7VkM2vr3pGNicVh-20Ga3PTfXIOpiNJ0VpXZ1ctyhhQ5poAq50bN9umTrKYss1dM1BigYDQdME55DDjmsdKXS3tRfMeqBePchcxs6aKA8sw1CAK1FbcZYlyV03r5jmbDu5etZrdeMuUqCYmVsJzbPCfv2334zViT4BPJImNBrmZL5tICdE4WRiKWVaIU-msTJtxslLeZTxPUx9_ksbW4bsBlnOUGY-K4y_4pLJJuUNXfWtsf1Sr3PcPnfVFx7ULZPbSrc6LTAC2zma3x0E3eMpw1dBIEvdMyZ_WP_y_wfmeSLw0inK6MqRgCODBIaxjhNO4lQPvs383BjbOsaIq4QIDmBpWmv_2pXPTc15fqPt5UIUMWXAxJ9K79lL68UQa5MwQcy-FVpOzBX6tEkJrmjVLMUs4v25-30QQXwVRvrfkQsIKlPl_4rzg75hlsYYF4j2-D7epFTdouSs3UjYBfH7L8j-FPvQ3ao_QRTxKJrSoV5vT4t25xBOXnUHMZkNEbDXrpKWRRZ6O9WiXs9QfoH85II6QX-XvM0rDXqNOdOFqjan54y2hSTRj0q_bxpwGGIT1UXFfnl-c8LE7LGbscHnueXI7mMPcJeFV6ZHSEKPqx_OcxIGNnIOgHZOx1EvAB_1ucwEjjGFUAYX3S0pvwVI1PWiTNbx7b2j8uLE3_BwnuO5Hj5IfOVie37e4KosRnCElv8xpJBud_ed2Ft51s9FwFHhCK4B6UAcixAPgc7ANKeYK2R1Sj7LK3wVwxc-Z9Cbx3FsMsU8aRatSgzJx7yLlVpVTpWGKQUDbIhVGUKb77y4ANECzEDidWXbjRfu-yELOVoPWGAyL_SwSM2aXA4bBjJw-A6aWiJL7FD94kY9BGhO5bPUIEuI9aLEkkN6lWGQVQATisZf53JUqgnMCEzCGoh4hNLqu67S9MMTrRrs5nFt6bsK4CcdrwyNx17UsreLLK85fN-pj45xchHtAmthjqj4i6eNg_oWjztXjotC5PdHxbvDrQbEWVYO_pSOV7mPEEIMY9D0KvpoyI_giQAzIN2mVYOTx1Q8km3NvK7J7xog5izKDPDzKdJp1-tZH9Z5EJl3GGG8LdBkH2Ejkio0TdFyHEz50KLV5UjMg7cIZ697RXoT4Pdk9_S3_cdiH0XzCHCS5hvmcUbSOt35LkVqdoRcog90ojotH1CdF6-xv6_bnv47luDILi_L0jdze6Q74XLGb9UTfy5YCdiykg9jVSb8hvZ-HxfPdKO1_PNp2kpRPMOXdrMXaehK6XXNhgmcOfTct0i2I1iQgpvGKlbWbRf6XInGdEob6vNdRuIJ33MioKH8kR-90dQKujmKJzfwFDgycWVAY6NM00UCFOkYJONirQVqp8xXaCj5JZKWJqD5vbFqSlRtRT5ZW4NzLOECPTrhWd48UpEGE7QzJgHw1NkSlTuNJpcU9g89fDsypLwXkPAs9YWHlkLJd-rpMwAD5bgj3MJ3eFgHq5h0XIX-rNesrTPAFcwIcL46kvEeA632kV7BNPaRJumMq5frBrM-n1alNdFFWllhv4a6-tE3RVUfSQn_0QygwTSaGV66xZU0pKxAEnve68HsW-AJUVgrjNqJkYOhi0hQg0HaczakwDVrzDbIMD_vlcIU-T-IuGlDfACP0FQMsVDHGvO31WqxZ02DtJzM-sIiy7Ir0CCbEoZOL-62p2PLmrtUm4DNnjsxbhXxOTwVYAuyuHFnHg5K90jjnGfduSQ-klhOC8vwZHeSHM-7hDP_sWCgo-e1-BRkQKw2ywWNSmC5s_BGhbrjx3U51ptFWkAzRTRfnfz4SFIrVtGIZyjHkDyT6lSKuk3YjBQYI-xyPZFd-IjdH_Fz1WY8UOiXuXYW-LHzATK_5dtobnaIyBHyglIZQgdS5kTIS5e8ARo7VDXUIq7hB9XUz8lP_6235_WG-rOq554L-GpZhBgRQfvV5KfcXoVRt4l1YTWF-pM_Agp4cT1fI_jmdYJL3U_5A22t_fynHNRwKJTgxoDFNOaZa7YVzO2FZlXv1-_djSb-gYe8xwTHKorX7ArHsKthFjNxUpPV2eO68mq65Qs8QYh5fixJNKKgcuUV6b300XejH_L5UqioS9XKZVBwwCqv3AYlH47LhyCKFxC8mLz8GBd202ytQPJYCJwdcjgOZ_nZYvNewmF85jKk_6c9auHZY4FOig8WWhkpRdNpQwXBjWXDGqrzElk4B3b3-bpfYhZq9Cn75geE8X2U3Wtwsq-JhDaYJQE0_zeiIjEqLL_-iXL7U8iz9FLD9rFWELleHCUDqEI4CRce3xrkIBQqayDpLyjVmvTzqJjN66O7M232zUJ44eVPPFARFSRCUYFm8QeBzxrREdx9o4ds9QWww8bS37muv7Hf-hOJ8eP-744s2Feb2eT3obxMrJeVK_cBIQ7phccBRxgV3nLsZKPk2gKdF1Pn6Mtc8Y6OlGEDb8UIjTiDA9jSuG64ySdnCJqk06PrFAx736sxYliJE0cbYxvPcLRluPxE8rikcxh-l9UNsw08coTbVDG8v6tIh4HrcIQne5dECUPmbeFj3dkv9qYUKPdAUCLkz_ZaChsHFZcD94HqYFjzsQ15BdZWVztQqryri4E4Sia3fZ-AvClBfTUVnOdjFGvG-b07759S5lrBW5qeJIad1-Huab0WGnf2QWOUsWeZMPPaPEI9Yz8w8iSLjj3BAlAwCPsfhutLAraczX_DCyWOOSGG-dH3nQ1aeWLn4D91sr6pp3BpTJ_Y9BpvvxVQr7So7k7TSvTSb9eHlYJlA1Sv489pXziOMMO3BHser6XD8fHJlfw11fyvSr2zl7ODsKrRcUABqPQP2wMhZIkaXxCOYrlhB6lH7CoA5pjdSayLgJaHnibk1us8YISu89f24fHOVAqO8bww6dO97Xu6qjU1AJtVJ0OSaqB12lUJe_GcStpAEgGTS5TEZympDG_Xs-NgSyPp9XGT3152J_hRKVsRkDN8XM8yZunktiM3-TyVkKElfqwNLK5K8w-y1j6nQnh51Pst7cMzp-yo6g4VRCpm0WsSUVoVYv62zF0i8PWwzFDq26G68Yua3F187OTFM7CoRWIzduwF8l7M=",
+          "id": "rs_0dc3a61ad3c852cb006a62d9455fe8819ab1c531601ee5e4be",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtlu7BdEq-GWxj9-xXoD2j3v08VdMOwHXplnLJrVz3SDEEgFQEgf7rwH2ArbgTk0Vm4kVa5gKZaM-w591qmQgDDiOt9zK6L-AcDF_Gu570JBDcTpLQsFxngiwoEPhS0Zu3NfPyhAo11eziMs3EUnRBs9HKztC6wvf0KtfRSJBFT1YXhc40qg-CzbT2rNfoyN36zg0EH6gg3uGa4fgiZavTu_mEF1wjRWQXrIW_ydJO7LTT86be0TBapzm43DCRxWYHqpPLUmFX4uXwUaGuY3ugEKJhXJ2kZqGGJxc6ZYMJxujuDOMESlKfKT2Xzuw8bBAqzBYbqb-rbFMVG0G6IuQ3n5Htug3a2sj7VeMFulh2c9GhPUwRUUn3brpLvvaVduDAZc9lQIZ1e1MpyQlfkAEREabS2Hl6V6ZEFT51PL0jIKqvjEpw4SlnYO6_G4ehsz6Mf538ThdnJemCcY_1iF_Iozf1_HDjO2PDHjmJcnYsuremQBTsDNGEgtzUtEqStOIqjA7vo2W8nlWiNguSqZjY05iLIy6v5Xvq6iz0TfRsZcye_Yj_oriqeP3bjThe7LptdsuoKYcgmGFHv-_jEB-sD-w4moquCgoEMSm6-4qh-PWlGYoTj7I_OBiovsF6pBUZEBMrD1FmJqp5C3Ajk7eSvUEOfmz8dkoncueA7aNQP_1el_8Aptr3sX32CBzIk81UJhnd2feFdPHH040LWv1d7x9RAtm4G5wPvsnMCBaPTsTj-kneOpCTfSgr9tkQjUQnSJfcplvRplGArHXxf_2O-63cwsglaVA_dWYTYZy6UHMtIXCiC2YAK5pxMKq78pybWc6OsqN36M7Ka1CrnC6WARJsXOFEKo2WG2_lZ4PHZNDqJ0j7hNcuWkx9_DqhVwMmt3z70ssU_XD03kj9WaBMB3OROjNIlS-EgGZABbvSueqjezg2f9ZkjUze91BogiSuSAyaTxUj1MgheBsu2HHgxgbVuHG6RswV9EzkT3v84_gKfDueGfuRiH0e-hAwLQ4TaQbVhMZE3QxRz21zUXF3pfBj0JLVZ6FaTmEKZj5Trq5hMIO9pGv4Su2A-dYeuRXKoRh2WtKGKfduWLN1Y0lOCU9OmGlprTRG8x4AiEVLXgROMwAG2Omswasd8ImcP5_PG0bN0jikFue5Akm-AdPg5t2JlQq_4acB8h5h5MLdMUt4nPf8-xWfG4gMnb1lv9bTncNqQIpYUQjSzA_QY0iS6E6EPqlsog1abVUTEo_hpNm9IVLuWBmUAJVV7vTM7up25-Um2THkb3z5N3XtVFfqTEMqpIy8lRcj6BkVa3oG3nmyatDaBGlHfoy-7gphVdwk-IGub_KqiX5_8XK7KIKLuFEmWIjXOb9rJr4fjOtoypo7PRLO6-W6WwKTaIkKHIhog-7GIdLiebjiTU5bMjdXZBxX80AXuiT8IijTlY76KkaiSWQb_1QJ_uwu37y5HZWMjzFFy6CuXL9gSVE35hvCRJe_3mxNUabbndtiXliCmY9IhGM_PjknmlcytUgE3ZhyI_qDHv8A8Fj_-coT-5Jq4skPZ7vuk_Ro6ExS28A2MZ-Hq53kzShbikfKha288OEBp2GaZhzayP56H2VDfMBQn03Vzv2Cnpj-YRVMJkVkRMPLRUW8wD2-i-cm_a73UKla5dRtAL29ZA-wwGIJYclO2NHKhfTok3oB3L7btel1Ja0H-I3Vg_s8bwriAd0hgtxWZCHlQ87BMGsvUKTn-S1nAAhVT2_dokp9piccfZlmpaA_8c7Yee2jq66aT65G76WeNMAm0cc5316xsKVNivqGMK2dKKP4ti2DyWcef9d4IfT2ARErzAi5IGR84M4VsskNGS5xJoJvmy8dVei8TniCzSqguMLapnp75RQU4IVK4mX1Qap1-gdrV41ucO_8NAHbBqYCI6SBuB25WVsW9X1ktLVMi-elzh9SeAkY4TXMK7i_hIPlGpje6IrF8F4woeuSQDAXwnQvk1brdp7J1G6tFL8_Qd74TM8aRQP-0bbv9GRB3jdwoDajLOI6_PrHPR0SCob_zwSRKTMBieEhhUypX24POgaSG7ES5DQiOnzHXmT2yd4LF1TEIN4mMl7eAzpNVcL2eZjWoq7z6fbZRbtdoiKlNK5sw5j3P06t-FbAtOiEtetEgyVFQ8edLEoETyNVmsdNC8S_pqqL3X7pyggv8kkyUCuTNig77LRL2FTpo0W-rOluQyYoYdClZA8WEZSFAX5BeTWj2_iSuVLQsEszVUXYZLKnLN-GodmszTn6K0eGZbQpfm2QYNdMaq-oAhKh4tDtkrAan19vxREdbzXSkSVouXsPY5YX7b8QQjeCJcKcoi6wlX3Kb4x9cznDvcZ2s0JPTCyb9qUlVwsQhLHGDUbe8RffX0aEjIBLksdw5tAuEon391L8_Ri_26Fec-5Nvg62zcLwmiT_bly30XM4_72rqaiWgfShHCzi719RoznaB2sx2XytsJ2nSUviAlRNnfV1gUK8tB6lFWRjwxel1G8ESBvJTmxK2EhdtojhS1hApcWwH2bQdCPktiGHODyiuRwVsRxuSddye1qKtVVtYsE1reN1laL56Ys5mCIMU78OITRb8X_96t2keC1bvXL83sHnmDHW7ZMrIE7lAP1I1-0KZMf4IDtrbxTAsOpFlxOafQ0arqNcdtg6lfu4hRTMceXyRxKgLpkUvEapE_VRcT4y15B6ezf2lD41usiWvW4BFMsYOPcrQEm9lzoLfLaY2JCzB6sc8NTbe4-1V4gPxaX1YU2CYWJZfPyUKewEsUf3F_yb0zy_BdUDpaebu3bC7pWrFnyCG-r27GdJ4ZaELxc-wOsWGnwAd5UvOOHUZX-5_M18GTQsTLJ_1-xEAFdHgSJfEq2h4j7tULZn6PK-CdT-okT8BfSbT48uxHS7Zmpf31EIMbHcmXr08hR8tjgL3tJgI7fSoncWyMUBT61e_VLwSi-aL28rk5F9-vUK6Rlc-KadkQAKh1HAJvF5FnyPUQqo1LN34SP0bMy1jtiTXQsj8ZDGR9DlALT85WXDd2-VKws43yrrUKlH3XzfOYc3cBinEjOqYyUbMQTj_EtPGMGgYv77huyAfVVuukfJTqbpR_HXtUuHKWIudeV9_YDHszLCrVHLkyiLzZ5d2GhUxJ2c4eYhfV1r3hKcSZdi08eSt82kB_58rWNVwJPI4odchJS5WCkTaRfE6A33qYoac2cPRjpBHW8e7Yk8stUJoXlPJWlr8aKtspCDh0BqdjbOQqMsvpgmTgWFi1kiB7WsBxtz8ym8Xr7xbwRKiSf_bDNQQeEaU6jGhjf7IplIrZC0zi0ePgu0bJGCfPD1Gh9bY553ImXILLci__VuoI1hH0GqbIiu7W_52vPGV6onvFSxyJMNiU_kihGUrRckcOamV5wBbHlOfyLWLailo_P2KMO1wp84TytCwgqztg7tX9ObeiiJ2vtHVr4UtwDBE0v-2xQyXUhyGwZyylgtJvbXfD3ptjbdrVd1BRqGebvr2jSUkWbi3AO-MCF17SykrXKa0UXoXGJH-QZoOCRELDfCBpoZ7YgD9YWjM3ulOaZjYLEjfACIQTtgfMoal-v9jCujZT-jCilXQMj2v32VA_ASYxpgSEFeq6xVrv-vtaT7lpbLEr3R54nQpT2QSH72QRi6YRhuNcTLShQh96osrGIewW2AbJOoI-C--1E3Ja9t3WpXwoI3TblDsbWWMvf_azTQfgI3z1y0p-ej4C-c9kr-GBumlkEAXHoJpTPq6OzKugDy6Zo675uZJrnFE1tvdqLVZzFWKbAQVWQvUERV1xmep0tkJ9yrl6cekabJ38JWXkwdOk7CFhc7a03la79Ax3BQMg3nzkvcL2iNe953uYetLVBC02xtDQgZd3h5It2QkcYmMqACeHc4Wnt5P4r0l3xbsId9-ivaWXGYPuTGgnn0UBWmF8z7cbv5_i_m8DxYPh5OEMGc1XzOLGdNG5RhZZXcDf2EOx0-uNQIGZnzpHhYNEY580KTaz12-alXb9h0pfUPGw-YP3BnPPUcPFCWlqcuRHrhgz3WiRjb1mbl9SIU4c9tSp1jLSNrdRsdk5fPPKim_-ALwz80fsz2Sapcs6qVNA5TI-Cc9wyyhBbIvAWbAOmvOc6kybVb-JEAgG1BuGf_1gk-WynNcTkhoGpoIm2pkuKLqGqemdzAnlspE8QVUs8CzlZ0znI1XP-SXkZfkOlUejyxsboMsSRvCU8aN13nELfLTSDkWGXlTgGwbbKOVgV-kECuOtEee6blVUwQH1zkIVq7Dn2qo4Zu2fIS7vkz03i21sMJNYrmt4js3Sx_gtbWwvBRchFeZafL82lU2L9zkWvR4C6gLpHrgmlsZBvRQUDYtHzn4CvRi23zcUv64o7YzsxVtItDop4tKclqa_RawMugvM03A88kxdUOhX-P-MUwdbV4Sbtx2rXGVSqdnPjxwMmQqqyvOy4OhUTPqU3LAUPo-_G1RKkABkyJVKg1e2CjNIR_XDwg5YY5zg-xsVYG4=",
+          "id": "rs_0dc3a61ad3c852cb006a62d948e59c819abdccd5acc7ef4828",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtlucocfTsITanCmGYDmnoQnePcz3dUksRmitPTSwa6vjjPWaWxjnOUcs6z1bzaWGpCWs5gdSvGQUUfD6mBGqiZ-YZdoHWYbBtITSoMyFqoSinI6qjdCCrVYcuzv-b8dt6-xaD49vpv85kvH1D05HixgVpKUNpLSAV1EdS-4qk0Tl0DqxppoPuSoPL2kPmUfqvIp80lVNu6WxB-pg1BmQ-M64pafq8ba7c5OWwlq5z9aFp1FfFzit2s_ZyvqO04lW6Xq8h4kiGBlB7MZkgxdKnHVb6Qpkwjl-Yha-URO5WPQ0uyKKjzwtaLvL1EVFpGBcNIypMMmf77kv3crXmu1z663BKVVnR7NcI_RWaGVlOgKuK3vB7DCDY2yxHc_3lhAUxOK-iYFglGDNEWwvtuIphYUiYLXTEjRDeya3wUXOBRNj9W5A7W5fm1XpiB2ExJZ9RF1eoLuOVwlS8oDk2CbiueBBhLZQKkVFXQTy6-G69YsYwVp3Uw3V7mVaLXJSSksfKqBBIYs9CJRZoRNrXPlfVGdVcSvgrDBGAIg55-_BMtsIALCyOVoveqhtMQxZdMPYx0Eph5gl3spY5hLO9-smbaity4N9TNiJ5Bm4OeBeKzfwUbWw6qMGMOCRsWoUfc-R2O_2xYZsbN0_yKNf5uNHpyzdQLSvdaXwWpafDmwOz9lXTXhPM5Z97jCuK7Th7JUAG4z6Spp4G0D9_uwtSiwqOwWgrYpi3Wc_93jdPK7K138j7xLPbhSzB3ThO-VZyPQiQc11N1Eids55lbnxXzoB-_iQX9I-rJfDHtgot6Ge7qF7rxxCPAShcbE0K8NIkHtkPPfik4pc4ugkEJ9XUIiA2yPfJB-JfP6IElVDfiAVl3xydbMN3cP5SyBv0wykzqkqveP_mdf2U14NX9yjkverPLD-y0BPQ78BhmmOU7TIgKpJleyJ8mZQHh_FJv24UJLEobGI4ObShNy8_bmfEhn4OUkD31p1PCTTLWpEc7JhmxiUNGklStY8z0wHv7bv5zsodi7I_4UDc8stSwC3aGw7_1Ba8ElJ7J5wZJ_4CJCBJh3a45FXU5rkTbNbGpZS9LA_-uUi_Qzs7ODfzeV4WX0eiUC9JeyZezG12J126n_KCHrTyK7hAI9vZNT9wXAonWyJbht-m_yGNraeYQiYrrPasLGtZdoV99fguDo5bNPIMLC9AubjwdXOgI0T_KLdw6pi40iU6LJ-G3Otft4qFuu_rwFSXSd7bXIMVL_XtVuFBl4QV4yQwjjJOhqt45EkwMEZM2TAmk3R4zbMY8863nESj617JWXHl9PtRO9-nceDkBHUCWUFTF_0Rm6NkMMcpgiAJAmAoLm3U_3vLvYeLy14nDMlYqsLTDRbwJ1iZdKakc1E8nrl58WCH157Re4Ot1DuEqZxaLJZHZ4zYxU1k0GpiubL0wxZy_L8-NkVVM-PSkzKtJhdzjLpOl3tQ6Xo63ahlJ8TayVpCP4SXANg-rW6NUwupMMgOYiK6Y6PirZs0Z1mv1t1hXaCC9nujPz4HJmhxyCH_HZNabfwRronKDpt-Qaykz4nAJwHX3lLqOU-blYrEjfMT5utyR2v9CQT7Ne1dJnNFhscrTtEynzXMF72sLnNTlzSEF5u4tUQo8n6Zlhihd6yYsNpaIsrHeaM0cSAzENs2UQgrElNiEP3YlG5sZ3yJMAY33VpnfWtTYFRKcog_vPh8_wJetSI0iF0NYeA7RZtQwwg7G0KXve6s5GdasBFmbKsapPNdO57wfVJRBGngJ5SphNskm6cs1w3NND6JWgDsWNrenDP_r0zNlsLW8v9MsqFQXwa9nZE_CIwsoiUm_aR8voJCiLc6LW0cPanAIrD1-9Sxzs9wHdR7w5sh67-B1T1KBMbhAkfYYUmFnha-2lOjZA-zIfk27JzUooHNaGczakpQtZLTTXGRq-PhPDBlnVkFIpsUD0sbpYCWkUnZ2SEXt1imAnEs58ypa8HxZBI1uDkUmwA9LtmS_9gS1k6780F_wX7kD3XC70HoEzNJlYnPJT-4gAvjWM6Tiud2RFPdliFl0O5KoJpXCBiA6xFfs9DoEA6fzRre4KjEeYStihlQL8pVMfyRi9aC6NKXSeggTRSjt4cm9cg6D40SRVcRzq8VAsKS7FIHaJ_9A3skx4LTCj_ek1_0bT_YbABhRMyk4q6p5V4SijYR_o3ZIPjDoE9xD9YbzhLj0Aryg50PfGLuMPAAdhMIi8qCKDXgB5sslGD3TtdpIVWjv1hOwV7jMy0I-3wr6_YPSmBsrWX-OaEnqHbgjK-NOBlOvuAypuyYuDQmQZNcy_CfYoToVeC6ErakAiOp1z-sHKul8F8zwbHSRRiGeDTHMhEdiRtsxEOo4jD6YVOYYKgGbNY1gNwxS1nKQcTzHj34NmS_q1gCtKe8XctD_0prnWtQd13hT3ariJsL797GJ76a7Gte01U4y0UMK14s62w_O0oYq53RFPiVnSMwZ3KC5PRHxi4NMqQydmI2hJBtJsKRzqqQ59tuIGdHA2fUFk-f2pf-rZDyimG6ipRJMSMtXOpgR_Ycl-4PdvFyqgODysrQvs3sAqhye38YXPCtBSOiA9bmyvyfx2C56zFHZv33VTaXRzxr_UIr-s5_i11ZrWnbV8aQ7sbFVzP7tP-IPxUadEZbBldRFeKQRV_Nlaz3osTvmZsjqnf3vNfUIYaaCp_ngSIaY37KVhZypQaZQbgXy4zpTgwjxpdF-60ubMvECxlM8HbL3IvwGoCxlELy948O2mMt-ReGe_HmMLLJLEgK9o18vVoQDQjOsnQlukAfXjIo55GM_S_XYytXPBif7aAhPmtfLBXb6_Yv32wxYhlpiq4vtsq4JjSLWS-aUI3mFCUrwACkKrODSB29gFnCBbrp7YtNd_gwmLuEbCgSkCqgPAd_zFOxJO28doA3e_wRLzXL6xFZQVMPahUlG6yWB6Uzx1xTpoVmC--4CqVs1ah-o1F1-s_fkAPCGWCLIxuvcJAECRIpI5nPBRtDz2EJvFijrK0YMl4LEzKT_YBC4r7Q7pbZ2FATWeXBr74K44jn5JzEBrX-971nKEryzR86yLo97AWzmrXsL6ghHciG56LqjH0U06oHQx2vpzrszmqpFiAKQYdxsYarOu6lkv8J4-LY4LYEpuQaoBu4Etjofe_MrIAgcAiSE3FFCmD19Z_W9PeuvLMyFMLHqH2qH6bRsABzMJoikZFH0DENUJNTSiGXHfUBuiL9RSovOrMyhBTkd3GRUHvcAigbsYW9ZODZn_uTcPlzJanAUuD-mbgUrVjXEbHUbHKtSg45WLldcesDMC4g0zq-gAODyQwy-prMkuPTxOndIbcwsWi6RwRrXmUkd-t39H_bbRTba8ENDD_9dvaaNDttbXxFcu44BZFz-kMEsJSpXFFVowzpF_mBMlKAOGm3AKoB3xsDTGV92_bMaLMV0EmBU9mU9Su8wyjHHxeBC9H09iS2YoHMHqtxrjilb5ezKHN3f5qKexCoAHdtv5CA1D-bjo7QHCTHalv_yMkQoREpUv5QIoittwx_gVPup0M5vbCtvItKvUK_Hhvqf5lXFUSGc1n1miek5q19XioIC_kcumjps6KL-2fFwJJ6a6umy6O9qc9cH8lt3jeLzah0_IFV2UwtW1B2eWoL8HWc4LoOKs8sYnKsKcHXGSLmmWLfzwEatM5olMjDc3q-EBFEDPpo4U3udNmdBJ6JIjuLP5bKnCGPVpBobT_3Mo4B-2pTRcA6SzlNiEGSCFRJ2jWNbTd2T2NfzXrMe1DZ1DGwaRFdsM_L3IGSMe1dv2j5P3FX9RaGd_PnhnHhh1Cfut42E5XMEOwEHOY2A-m8mamSEJgQ_oxn61mAmMCM9TyNlK3yIJ7iB2CoPZmIE8ehtObDv-mUXzO83M8mdGADGnm7_0q_Keg9zU5txCquyN2_yJ-2NdcKQqhE1vyePqbC4fQOi5FngllA3_fGtCiCLfmVemMyRNndYdON1cP6NMjvo92XCHtGmSUTPHMcUaRqvd7xZTcIHXGPegiiZjAaCP3T-Y0-oAQjCHRr0ODafNNjPF3EtqnSNFyw9LiNcp9RW-U1sMJAoUcgEbyiorDbUF_iRem7oxrV2DH0NXYCX51kPzhxGzcefSYoKsxRHt7AIT1MAYEO6BqkDaUb4l9peCVUCviuPll0AJpUXo2srlRe5stYsFXnETnNyMYdOOl88mIqolnlOlc5hX6pvtBkqSkEYmBprH3OTzoVRz31wfIDLV4sgs5rHoWgs9H3tJO-dnL04xm7C485VEmP6Yj9hoVykuw2JsgHmq08MHPRpSJ3vaNvtDXNkCNMGukjwux2U9-w-RTlpu2Z4bohjMhwotbp7PPYD0aoi5y1Vjlc6tN22co52682SDeY1KIjmcvm5eYoNs2nzq_IYXmuNi1pa0GqALcvAuBy0yuDZJxY_iXRkyYd0mIOIARcum0XvXNUkxWNhyW09a_WBGomNeApsSAoy84GO6Z0eg_FJwn4K-K-vKV80W1c6uYyWmwhFHfrFCNbn8gJ6QDt4Xm2TEzgPQha1rAQCGOgpUjeHVxVrT5J6vyVdH5P9SWvZgADPzDAgADYSOcWHS",
+          "id": "rs_0dc3a61ad3c852cb006a62d94ca5f0819abd4bdf614c97eaf5",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtluZvWBH8xcndO2Ky-N9F2Y3l-ceQB0uUBx3mYnygtiyt3puhwY6BOTLZVJHzvQWDWkMkF_cN138oEYrEYD0LoMkvjJe_lGnVqBYsVF7LfAoUK04C8liBuac9FhO5Gwv2G-7_S6JHoyuK8K3BVTQVaFXGb0sEgfHQq4RxL_qJASnQLnYoi1PmA_lGV5a32ND3VoeJ9xIdBSg8XJf-YJO6aavVhcETwW0oVp-oSejPDJpvjEGWYAu5B-_TZiaBPxM8_x42MmWMhmJXsas2O2dy_LmVv-mDWM46FPpvqlqdmAv1j-KTuoMEah0r0g7tsnDLEeIBhgaFzMGL-l1v7f_4t3bMd3exEUljhjdO7XLzAv2YRgo-P-CFH1-dqrZySmfBZnbeCgWVABcuz07WlJ5g7cP8yyMcq1_Y4v-4ncuTQwXv-DovfNlYfvI1BztE3IbajD9sMRLUzknwbFcCCWPLCGnWHlvVvThuLGytIPzYUMtvHwoBQLFBn4OjvnrQkVeZLBpdU91QLMJMmqjUiPCyObPcOqeSEP2ECWAGOf3o_4MrpF00fJRaJUEyJ69dKKXMlm5ucdhCxhXBx6mlzULFdWaDZ7ERB3AdqkIvkdsQ2IK2y6a9SFl5jDXWNP0qxOF2URTGauqXOc6iav_Fw9MO-6V2WtATQqiOjhVC1oB7o3nSdOnPlO31NB_iWwUTjqBnDKeMIrnfVhDokuMD0Fyv1pIP0xtFMr97Kad_iI2feHsysc7Rnhl4O__e278L60-5jdgLoENrYSIp3fiqxStY0NvcN7MIosKTteZobS-3MEIZqD6WxH6bRDFxTLzwoI1tDwNGZNU92Tc2fDpAxb1BsAkV3dfjNT0L7nvTefYhf1XQJha9Hwiv_yt2CyjtiOOTSEkOa5ySAwPOAIUhfCMOaMH2D4pylpLS6xyWjFEGqFow7hcDazL1prZs3DLvcB-Ri48P9ubBA1vRdyyuD3NJMnKy1lC8kd299tX1EQiSZDXMPK__zMYdzdd781FZ1GsBcZd1Y7Dz0i2r5RqJmO_IMyoWmhzTFVAr7IoSj3jvrzLbBVifYktn62n9VVo1esmN2_Jr1M1lnCOx-ODtAtjQ7tG_kQQ1bQrQR9iTgWKXBAu2iXfr5uUnFkQLIwVWrIB_IDzpskwXsGSMhLqF-eww8Wjsd08yQxwHWXVt2GTrRfSc1VmLCaN0I_KRQTo4e4aUx6rHx4lzJjFvAd4nbTSBkvutuWTRmzhSvQUQaa0LtFNqEqH1tnKAmF_q8ISxKsz8XIj-8US87wpVFhp522KSbu73NA5iHr1hZHpi-RoktRCvbjYIvwi-JO_lwvYLbKlo3ZwD0sJAOQGHBMYU8C-uamspcmNf7yHG9VZ-ZzBMR654yGG0b32xoYC-EqjcwNYd07YKibmSoE35fz0NcVAImy30JfR8Me8dpMxuboXFUAF-df1l_Dm_CEazGUfrUAH65kXCCmWkgnI0xgIo9Lwpq41RRPs4NvIpW7zJBgFyd0ZSJIhiGCd3FVbpPY-p3ZDjq5g2frR6yUvOnVf5P4wt4XicB_csXnrt7mOBS3SlqWQ4TdG-_1jfNXdKXLq-PD1BJOoYh7qP0J6QI8x6cbRsQUOnbspBDciF2KDgsnVgjebd2TjK2hNLeZyJKqqYPZHc6y2SSodukxXbJUaIHkTf6wNwcCG_wrHJLgOzrIY_zBf-65VHWWLwuqirFrwNVLhEpwnjH-4z8yeBSzDYQFWYZkKxg4v0cEw4SxlSev_lly-y_Me-hv055EqT8W0VrSv6Vjhk5g0RLaPlaW3XSG046l3FS_6WTEORQm-eCl28M69Vo0uueFQYLOFp_mrVG2OeI-YMhGSiQPlDfkCXHQ0D8UNFZDJ-4CZfC2R5CA3sucCmmI6PVAgVWQeOXcJhRiZ4VD7Vk2_LHGsGFffqvDG7P3VKpPZ2s9zkfaaMpBXKoUNcRQjXksX9Ew28gUcFGAJA72cz4-0tWc3JnHu2HuphYqvPKYJd5Tzsn9QpT9Ui2vRo0oa8U9JPnrX4e5KVIwXt_ZLeZEWza3v2ju5HW-1TJd2OqLMN1NlfRZXIJpQd8RS5BQb3DOGjlmnVjTRSYmSxzhb2fM7lB-pl9idCypwGdoK3cY_Mj_LyL6TThfNw2dHYRbu8bvyiQ0FLULBQRRBtKM5ErS2IjbfqZyIDyqrfnl0Jkz1gH1Q9sVe12AF-w8x_KT3IxuJlJ6vxIj3EXazpWo_C0WQuVs-Tho2sMJ_Tuw-VuLT6WlqSb26jrelDtr0TIA8KkDj29L4a_9HvF7_OyKhgmrW6gptTWKRmc5ogZc7ePL_0sKXjWDAp4cmzLSOJwx4JbyXdhI4I8P5LDFzuZpyGMJcBNmd3lCjXkEqykMHKmTeAsjzofxrQTyWEMcvZvmNgdrNcwR3_rj2YgXv2tsH1sEsNio4QHDwe2lqV_fd3ckD1P1QDjR512PvFWp3qHKXyNOyWpZFghAu7i7uC8h8-inlfVb-eLow34yYJgNptpFafCkEsYmOhkKMM00YnTB8AVDq3mzJqotvXJvL5Hpb7JqNzf-9mh6qicJKcxLSEVgmT7PHBJUVtuXgmRwXMsiv__j_gbvDKQx41v953e-OIja5HWYH51w_7giS9OWLdZ-xp0oS_-28tKVlit5ubF-84pMf92dIJaNUVQAmXmG9UWAxHUkYsWAxMAUlvtUpH3qRgmL42ARWchWnGgqvN6KNww8suYL2BszJLHFGIkOmy6vE2QKpOHgU_fIP1zn0WcRtYQ9bw5KPV-2fu3c3sOILvclrIfOo-e8q2f6rrZQoveNurPg9JOPKwE9a8JCp7B0gkyTYyItzt5ejXwLjalMBXB1RXaaWZHQpCeJRZI1kh3AKVU5yXkwrX3TbUKsAR3Q5DEjURdOFcR3c3Ndev6DYZhvdhfAT-VOcr1Yx7FnUNUiQdh8k3EzU5M8s43ieWp9ZOw2ueVNvBPA1j7MrE9ak2riYLKqXFjwFaJ9vB1XbrSRsmtiag7QWSU8DwgVo5vb3uJruzB2IH4uSwgmOgawhGHq-k8TE1GvkKIPgXKwPwmU_8fL_VwCy3gbt2j6Vsak591kyjBF5ggKLgcEQ3CvVifYsUYtkzdq4cJtAH3EWJb3jcF98rDt2KATcsgPaDbqwC99VxxOJ-BM20oUGUUJ5_0IqpiLzLfpXAxJbnZPpOBZ6EItWetZknsaSgQtBXZYLWF_7RCyT80vriOHBA43fnmjff-NwhHjcZ7uUW-u_JI5T1w0jKH_s6NArNm-xPNoVnIF1e7bIRmnVHnFK3YJMQ9kmh1BX-JIK8det0XcPxmajlWAlySzVvGOfhpt3lCONoRfwdgFV_4rOwQ78hofHEE_JDZ1rIl5TnCkxkmRLUiz-XpUbX3x-GgAJxZ4NXguxRLlqw8HtG4fELXFK7ETCRtdqg0PQGxvfg9xM7Cn1c35cQMFCS5gDvPwazb0t3VMFQ02h_hFMsCSluFmVc-QrnwCSNny17swKDIxLgMDnQ2HT-7kPYHg1-n_62EeCEkeJ4Y2HfqCzxJE7fQzxdDmxtr5jEpyZuplUdUOaF9d5PMZbPO_bgRdhEfJEueQ9ypVF_hTJGmO42H7fb-bCckHO5x1pU9HJtRTeaL-cxmQ9C-m6Vp6ZXPkjRiAexUSeKr3kK-x9trevTX1wnZN4AiNxHhNuns4SM3WGAnqeEAmOMkSxrM7VJ67cjkYn8gXKWsX9DKwP6JVtd6VFU14URxh85YZm38_fPqgTlFvQoePQ3LdIbl1iBRopygI3QxpNqG5fZIC0eRJeyOSnH_rPBuq8Vm_eoqHl4ysEucRf3V3M_udt-j-6x7zFcaPWspiRlWCHOnpvnXmGb0d12W4hDlg0rO9fUk5-pKfFkF15p5OosOdzmHnJ8r1GVJdcyOO535y-XJ50aG5AQ_klBcQheClDQmzJIx5Ehwhx0cR3LxMMUgf7ba5uv97ATOQkL5n3JMwlpSDh-5sqxp9anodSL3169IevaJtPNYkAPw95CzCIe39JlAaWLRFbP22clOuafCvt1CxpEsknsAwvKdCuYOKwK7s-zCntzUnG4mQ2JmOJcpRPHs0DrVFyDJr2LAO6MyhxVcK_pXNzfErdJdlMTvl2sewDzYjr2-p14SeZG67lc2tLwgGlLhvuzUjUtCq69V3tc1LaMPvHs5c5iKic3DCz4LXMf5n0TS_pQ0aPlxuTM0AgX_JDM7vFzaVLVYV_tMCFoYjHTtcpCOPX0OHJziGsqdvOa52efdOxNwLUiXOiuJHAP7WAKJ3ggOUqsVwmekyxL7fc_n5AuYDnDtbKmXmK9t3zllczuBZAAgPPfC0",
+          "id": "rs_0dc3a61ad3c852cb006a62d95091f8819a8f2baa89476f036c",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtlu_-VeECBZo5_qY2YW4BYYxiVReT1bmiF6Jrwh0MuBBIMP0HA4w-e9Lzok0uWUmWlWbr4c8UoCJw5LlfD2sTqjBOq5j7P_jy-99VLhTB41RcF-SKLK3ugbl9EKpUxf1AaisqoroXflZRl2fuJitntWlm1GM2YdPg5QQw8fqRTko6EkBiLd1dWjKZHvRR44FulrV_STarit37CWsSrog6CGIhW6Jk_XbpnzRDqU5fOuIDgO79bB15Sz5ZIKg42Z2qESvmS5YahZXOXjcRcOmIDLw33DGHxBkFXVDEfcO_GPJIF9UWNUm6RjbB2DEvnH0G_iOUhHSaFd_a8AyEBOCafzDfcJZ8Sw6VT2wZsSaU_7IjxAoVhQqSvsqWBSVHgyX5xCYAMS5x_VS9_iEsBYvj06pIV3YK5HByJcgjsgSYDsVZy0ueraVaNGFVjgfOeFeIe5EkSai5i3PotXI8-e_3Ck-FllxBm3cM-A4sGMl_6ekwgE27X6Rt0fBfiKmTKk8K1L32cCcbi9aCS4ycsg2fC7c4vkCEKVQjb8zyx-9ZBBpBe2gK6kh0LKlXxQibgzZqRcmxzroAV9yt4fQ8q6HRmc3BNLgSWcXyP0L4NnIQkkmTyeNegLRRwA1UqkhXv0fV1ObxXKWfTCX24qzV78-AQ9WWzdpDJdMqzWO6ELpmPJHUyE0vjnFQ7AhSo1ssIzWA_8_DKxtchTxCgEqUwhX21ZO6u_R4mylM8On4l_D_K_Bj5_2JaevcPDDLu8f-CtknlqfqlEXmySdk-EbM67V8rkNk65XohY2PBWcz_AydYcdyQoEIzETCaSLvL1lmpMYbULHj3QX_a6_sWTFedGC9_UWjl0K-9ByD6DORm2RZxksepuryazgtCwqhv4AhKM2etlQZqyq3wpYZADiR2nRS9qJ8LI8AmdcaXVCR_6pzr4DJlr7w1uUmp_51i1aADBhopSBLyua2_AF2-q4KBnOWeXM2GmAjZxuotdigLzZvP8fXGBUi3LUV37xX_XTaXW4hpENiG_tQvmzosDk6RRvlEC6_hH_FquRZZLq6gaLZiZxFRGX79MnPYE2YkOqJbuPT1l90Ph5CU21DLb9vkXS0U4B-iuE7mYSgrikuGe8ZATd-_I8BF3FntSYbpKe1I9ij-l_xqmNfb5sHAttOSTiYaXCFxB7yu3jkg3TLdh_ZlDTB159Z68n61iyuYngG8pz8RiXinqsJIsejUbUTE2MBB-B3f7W5w2H7N-7bgaGaIv_lMN6vSzuU6CWKlED-QrcL6GMH1PLNfaTZ1BjTFn45BT5m-5_ZGa2fLKsAOZg3mXJbyURjqQgDrFm9iMW0pLHSQLquzWNlqkjodkHOCyzol1gvC9suB7qQ6S8vzj_r_TUUMivhYAc1PfvUfeIWiL3H2BpczbQob-mZElmSQ5gWKau1RAInXQ1IAH3J5hTmzg0loBci1T4MbQ922MTAijTKQ1KdDkYJbYcHtug-og22wWFShZytXdSTPf8rU5g_CXVHjdLwi8saB8RxuGjFchZmyQ2WHjOSDFOpzs19FtKz8hnOjQIOL3bS90iXOTsed4ua-no1lNDsOMcWq7ishPnLskEvj3e2N0XzDZgMjv8dCuDlUG8JiWzHjUufNB2svSmSX6uCsXhBKQgCE7a6KEG-hCop1pip3Os0JPjZn4hFBplxtOfVlFc5D7c15wvpo_OPFbgIAUnUL0Nuiwg5Bh0pDXSWEcqp6mdeAVGwbIHGQuWpqGurvkX7uqUrcLFIlbq30krb8K9DVBWTRX2ob9ZJ7NaF4coOTnQAFFnGnYNQP9URHEfTni_KR814_Bpz5GtXAe75hQubFpU_GUU05UOV7bPPACbsOUHpk-U8Wh7_Z1ZdjT9R330MQ2ScvGLWVvONgsjtZZIB6552U8rS2gK8IrFAC_PbA4bcoM0m9ar7tYOepPyd6T15Jtclyp4WT-siFPh-uMa6dk_X5JW5ksQQ6f5-3sH-1oWMg8vu6Jl8-4IkQb8RCTHp8bP0uPBo6EahVIQ84PYMPQNqg8REkQ-cOySnRp5BFeEzU1vN_HdCGHyjmREDNSmLfHmX9zzQr_GKMRyH93Z2LvtbroTfKahIVkYWlTman2Njra7F3FIQte-6Qu3OQmnCH7fnx2pHempxYptNZsCxHaMj8wdT_m1m8cw8J79Cwq6H5lniLbjZegzyIgqb4hI3POeu-9STnH3LUuMwUmYPpE71SgC65GPDR-bdrJ32MnzhMcTqUMF2x1G5NGrjJ_-IJBoNQt16IzHkj_eovINnwlbMVyAdUMR2zhdr68hEK6ah2_UDEiEBtTI8mOzM2YuHk8BDLoKmJw3wc7t8Fi7t1X66eAfsGFOGexWaOwe_MM2BoeOyi71qr3RoaTcqQkZluNBZmKsaHgnyG297VMMImZVl8mSSLtJ9tAbn6ZlNBtmwc44vx6cDOeKZCtwdQAZsDZ-vcgCEFTBWYkMD_liFkoHHAHoVrW1C-5w_0reE_KXwvpK889gk0_HEvvQBNuQnGWGynR-FI4bN3fwvWVS_U1tupJnwF4oFWxfO_IBJPO6ftWiQh_GZUJW3-C6i8JZmp5px_etigZyeZ_dgB6xVVvZRv5dezLf1roYc2D3gV24aVU1cWkHXJQCsPLlHiVJy0tBFSzXujBcE0oKskVoCWUVYtTA5GrFrP2UUN-DpigbZ1dClCYfmUJ1yP65rLROCuotrATClh62IbAPTcKPQxsRwEwhqagKYBZ_Kw6wT9lldLgY1C4fe0XckRrDNM4MD4yUhOSw5lMDIed_eN28aFanO5a-yHf2zeuqKpLMr3OYLtXJxBLvIl7WrSCqjsaL48IA3k8ShDcmXF_Lpi-Er-CspLTLweiyHq28UwMQsNB9FRYGiNSN-NS-uK6EptEHa0oSqlHGrvk4pv77aBN8k-IauBt_3sqiczLFJwP0mvFu-CJbDR06A2DTbwJwNaT33lHfQrVpPUzUjg27i2prQOLplNu2WwaPsnjiAP40ng_znn8s5z8-MANo1MP45PLlyFvK_6BY-zij5r72hmuOp6rQFtvgL06IbgFen1Zx1zJKUAI426G-w7Oj5-NACMo8lDK6hmJX9FzHmWJrHKKoWenHbV0xFVILn4ZLUzBkc1MKIykv3JheIkUE327PK2FAkAJnSUU-mkMCOlYqbNMQOMCiYhtofVTMoxrSH2RltOzfC6y3jVK8n30opBrS8oSJVptRp_Yv8YFnNPIXFiHhaxe8hY10h3sk8ZzxC8Stp7bbD_jtz7yiIx2IDjLSy-2aU1cCuVINfyAtugmUm9xs214t14gTxP9elBKwHhBOMseKvTviq1-xGgQf4hCNsKAok3zqbuNnmiC_-qtEJFSsgZPUBVY9uVoWu02BmipAWAFJPsLn9PNk7cDzzNaguRlq7Cq98WFav16U14Kxj4n1By60v6gAv2zMPzXgAnFC3voh2cNfGTo7O3xF4mR4b1euRX9KCcYDyCeyozU0JqdOdC9EnuyqxA_v0yhhuc_s8hC7euuJn43JB3pyP4RGXe-2RmeO3YmPk5pNmoYXqarH3uiKwrluRXs_IkIwAg6sBSaDQRB2auFlyf-GBrUKQsgg7xOLGrLV8g6eagWwWs_6vt_GQha783cauBle1Nj2AVl-kIk22I01lKBXnJVnuSPBkp65JZujNxRvQfEHgs8N-O4dSt4JwFBBPmxKlNlxE_zy7siZWKwBk4eBrvztLNlM2I3KIt258hIfQvDUWa2kmrj_UpTzJTRKiXdrJMSkzJsYBoXCxqKMVFI-MU6bDWnU8_WHPrsaqKlE0fDmNs7hKdDfHOS0CfQrhdKzpB1UOEZ965hvFPbTl1e7SwH4UeTirdJ4Ohwk38CNWdXcziGSc6X0dGGgE3kt0qHdEopcbtHxZ5dTdGGyeuu0lgsQTJQl3nLA5FKfgBmiRoHpVxlZXSj8cr42ZwtCROaNdIG0uTOCE1YTTs2H4zLNrN0qiEMLoD4r08ubyIwT1o80kBD7w7gpxpzWYggOTjCgpYEoAwwhduuZrY2rHdMWfmktU945Z-STaPQKvl82kSvqWfPH4Uc7VnvPVbne6RagJkzEv94LQbLpvHptJBnPxZOOUvu3gDO5eSZ8OxQGWQN4wZrE8wjVM4i4pae_qoJtE_ZzBCHPxl-LZ5Cx2G95WTuBHcGWvDqRfQ-tpZ8lICYLc-Ey6fDnXXTPWoYt8YnbOi7RNX2gxy2l5bnf9eg03p8GjbDa9PFexpjPFmFsf_NDh3dF9WPiEKZiYw9LRcJtBrdEbVqdiY4CVuGoxjnIVId8wsZNCF40NP6s4yE6gM=",
+          "id": "rs_0dc3a61ad3c852cb006a62d9547d64819aa0bf6c9d8f57074a",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtluwm6ULhv3T3Xd6ZaZigUU2CwIuQVJyxhpZcHIE0dBWoixEvEpQccRow231PlvlMLCSQlfBkKmzZ1pO_my4N1k3HBeasHvprQ0lFQKhJ0IbZ3qRWXTy9aVkOTJVz1rnbPXBxd4xDipnUYye8bxtEmGe_A5LRpNTlneYn2F6TtzClusdeKxDh-_KE34flbGZF327Xj7f2ORrL1-W619J_xU2QvOM-L-Ffb3W4UoJChEumTtnb_tnfjIc-hZzaaEblINTuZiPO-VUU3Gw59e1imq9GrZPzZrfoH9gTgG4l6nNK11kqIAWkyRPShQ2EFqXbkBj1f-VbUKJ0uvnYhzrWUOCAd0mNFKbl7b6IPSg4jNYCWU3aIcwgy_PPvRx2B8FkSADfQ-3emFG5TRIar0femnVKxb7fPreMLn1fAXKDDzQOZQ55EfsC6KOLnzJisDawIEQ-sO_3-3pd1L6_Nn9us4y21f0WqDtapJw1MIxcNDfAz2grLhrpsYmMD5di8lTzSyXuJ6lNmovdQaNC0xErXPWJrXR7zLcnSf-Z8izY-D_wjn-r7yci99_IB8fTJaWz2QpgA_vw627375J9GWjxznYfO3c-phmRftl8ninu257nA02LANiARHnnTXtTVFGLaov6c6oMInOLgr_RtVimRHQ0Jf3EZl-zn5LyrkYQA3m69dNsCyH0XnUolM9Juu0uUoZDnDe3YnxsOJTs22B1iy1X54NWa8ETfDnWB1ibS7MD1n8jwbuKVYvMuxyzMrLbA7cklkNqQSi-TQIOYTxIUzrFA7l7IW0uwivouT0wRrTJUUckW-SON1JcGkNHeYPK_o6Ow5JDssfSrfhHpPhi712jcYRogXFd9dphwjeP3H7JHEGfLLVSJY-eKKFZ-3QVumYd8XuI3GocJaV0Aiou433-evR21d4ecFlyFJ_jw4Uain9H9-ZHOaFZvmQXn5d0fqU-OAq_dvGcdFRvo46GJRB_iF7h4FN-8LdHuXbOGxCBei1Dfi_WMXeqSI-1m7LBYye6HLyh-LlXwPCPVt8o9eYShx8dDvETBGBKH_hOO1tUjUl7kzlTSGbBdt-8aV0FkzjQrSZTpmSUe4pMxw4wDwmc_ApxkdWHaLaZ_nVS2LiZeQWVkVwHKJBURVXaAa-30e7SRpa69Ws85gXfPt0Jsd_tgDbROqrRFkAOMGOA9V-e5JGTkpMAp1easXGwmNGjimUVHJ3pPpgYMKMH2peXqUG19rJlRHh9BXYF_jhvU1RpqA6gCiJzKPBnAC0YSJfhYt2gzgcso4iV5uHgC5kjeWo2h_sNLih54kL6tfBubMyXRnSj-Wez4jjcvJiD4kmR3VQjdnZbEJXHj9wPR9wul1UfZH2e8YGXaZpno6jwCtVjUPX8A8N3O6vcJ213STn8PZWPGe2u_pDd4jEon6dJH2d3SOc1VBodvUhmK0Aty32QhfKcAIPN3TpZ2Btazr9Npbud9y4XcUNDGvvQjZx00rAqgV_QFUKzio3gGuDJs9JRAdqLQIpJDBh6IR1c32d42dDgZYh6gCxjogPKAaqTK7rbdjfnOppeCY8VUe1BEbeTNvh8Xm_9J1Gkd8py2HJ9p5fhrHKJ3_-yV8GZpW13pwlJpLfuOkubIOxZUMfG4lM4LLrV0fnllqnHXdvTZ2U9SNn_8CWoeB11bWzV3L0u0Vvq44MpLrwRgqLZRO_7-2i5BtyNP6o-WLFBAI5oQcivntmyVomtem7f-M9g_7-XujGB0ogKLEuK7Z_EIviPrDiy_lkCuCZVlCl8Nd-6ItT3AYmYx4vOZaZKxHFE2BM12xr5hpi-q6uDnAHrKdlVaTEBQLhemWuckcGcaE0gQdfupDxaP2TJlNfmRwknv3AXLHxfEkjnIwHW3Bb1HvbMmj1YDaIOiRYOUVN0qinspARx5lLOhiy9p-oW2RF_vHxWq1pOc1f7658uqvTm3XA4UfOkiA0kng68CG9bt3f4iQ2JuRFJynhvoomck_TrdcwL4sXFseBHctWtms51fhq7gTLtHoEw6uVxs2AVG83nt5lcMdVXkGnCNAQVQLOawq56Gtp4gOX4Xda1eu0-ta-XrELyTNMBMDCCInOq0BGSBuGBip76WcOp4SznBMBVQ7yntyOjTFoLFIID6iMLyF3JXfqzh67lznh1sFqu_pBNV7KDy87-upp-uTKms2srVHtOAXVl7h4ZOJBGcQieEmt20xV5SDs3O-AMjndQFM_NfN_i8U1Nr96jHyeWK20aSxNZAHWgwTEhWj6j9ql7Tgnk8VITchrIRT8jCfTF6MbCn5FKZt5x0UGoH7sUF90H9MdUiuISXY2KrAVjYgMp0uR8FRKLvn216gQAGIO6nb1i91yB9JaaoZHh8V2Yv8xWUHZWtU7Mk9HSrvtdLRDIbKlBnWOf5qRhr2yulF7Xm56cNVponkVyKlSWLLvt7MEcMHUSJDrrUcqHYODCKsugLgvoawS-6ohmNOhaFWUfKvLU5kuPoYmGhSRGJ7AM6k_Ya1WF1jPSdsa5evJ95EQmZ8vR-dRTAfGDWamZNwndeQtHwmq3AGF2KcULDzLz4D-marKg0D7p8E_vsoFBFIYLwNi-c0_5dKxnX73USaF2fbT6UBPZN9uc9MD_21g5ZQnCKUj0mMCyTXpBp--ffjv3wdjoICwODSk4sKf9GPVR3XoxmtVSGVEQiu3MmGJlAA51D04sEoCfIycHgH7zxrrvWDFfLSyOeVxciELkm8HjBLNXBiSWg8TsiUpqXG19VF4JfXMNhGIlOpKvnE263Zkuy1hPryoogRWGLnGqqSKsUjlVY0KrwYzxRdnY0qUY6akVV-GjrQjpf1OQIWHQ6VILiniSxoPxHmzdhaWBOnPObJTFJ6oVAtNDeLCPTINxGFa8PyQY8WUOd6DWql4exXDGbpo5fkt_EbdJdK4u9jJdk7__HXA6VJZvOOFOvbEwCSF_5yb5LAh2xNPXSjUKaNcgJMwA2TRy41PgBlgCttZgECF0YDaRPHWHvIzK7u0pot_zhnKUnfa2Uke0tAuxVVNFgD0ucWQFcpHcNIyvYoKvO4bGAD6axBduTtf7dqSHSBdqi7pcd4tGvJa_Qn2y98M1gxSCIBf0fBH2YAiI6sTD-ireXKH7Ya4xwzxFpG_OnF78oh19Q-zkWHJhuICyeIPyQlZdGcozjTn1eRWSHCLShy13uw6RvgHuQZ3YYi7hOMT9HGbxmhYrnd25ksodB2Px6ga14cWmVcG3w7guLtukpTAnf4PqQZwzxvqYbiRDN3A2YssRyiSpsMXLyEFy39Z4J07RbrEr7_eOAtvcGcxsvNTj_Q6x3YI2Cndu2Jln-mF6sgPf7k8wkniGADeVwTLvNYT6fZ0yAIHu1_j3_L7zZTFSiUK5QULrCSkjphoDlr81yE8F-YmQ4f_5703EYau5RG4gPT_wN2pl0h0TbC8GqwLhpvGO-AxJHolQqK9zfyd1Mspvj3lCIUtAC59Ue9W_m3-dlTutrMF4HFf8U7f6x1jokm2g6lWHgBrhmb7XQq-JMHQ1n87TWZIHK8aReJZiERGzY8lDsMsnITct7-2VMEy80RVyTfD1e5ofjp04gMGrUutTFRgqPMJQDDTWj0NJQiqWPKHxPhz0O-Z7pDwCHOdKa930l7hITjVL42P1p7yOW7LQ9qY2xyhvkX4RtCLJylkVcsK0PQnNcoci01jwG_-3e1J0udC1nojc_vCJhcqRlhJ14N8yDjDexHnNhtWu7xQ8VKZHu2YW_bwIVb666BGkQY0Qp6794EH0EuPGmY_U2VmMI4jCyej2G-rUktyBDBfPHyE_fk1cjc_s2H7phkGa5J-nT9meZLTWUUBeC15qGUUIXD1au09lGs-sGTwLMZSFyERU6PmLKqeboX1JfZkJQCosRW7WXN7XonBW8g3LMl2t1qCBj44GSrbCtEv9WVpwF-8hZoJ-z7Il8GTU_f1J5iRc2l7sFT8GEDIjqaiCx3PbQzXEKREG_X35ZEr9VKRI2FE1TdtMhM9ypODnyS4jF8iEFfg9BHgbtWluhr7lyJ6uEG3PVvnygjPRFkp8l1sw0uG4VbixvuLkuuRWWldUNQVOsTPOuT63_C2HRhZ28iGBfv_b9Pa6zhUrN5D_hpDc2oVwgfStOeZgXnGvoShd0YRspofeGXsrP4l7_djVTgNZ7HTSPyF3LAZJOGgKEjZ13qNZ5hHN1f5U1PwftAuBVlu25C7hNkEjM-ndJCTjzNtzLn4uF4w4WZObhgkiRuixMs7CMf5RmW3aMcFbl4evOJelFjwqOlmYsj1EaNs3k9Mg5P_MLcPJx3_7RkFl5_10CDIyr5J-5rwpVp3-ZnTxiBP_WSZhgGBMG-W-s4FIkUc6pZWmJVdxKJzDcI5Qa7ZG0SnNM=",
+          "id": "rs_0dc3a61ad3c852cb006a62d958313c819aac41873115e47be8",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtlu5a4yMEJxKCnZcxCAoV-MjPcPj_sgjcllXvWy9Sm-YGHauWN8SLDxd_el_tNNpPsn5T29DPS0btVn4NJiNZhWpJzL_4989gDZeABVNl8jOlojTunz1ZhcXPaU57prAucTPVeKsLNGZS9VOv1YcnfnBMn8XgMErZv4Hkf-dFGabut20r8fJIFpRfznZB5THZdI06_T3QmSnUjojxmIabUBhCjY2rA7fr8YkHpXT0UX722EUOzDzF4Igq8DtQ49vtxMFWzK2dWQwKWbhX81ZCClwkpPEsUJ1jsrb5uWwGH8Ff8-lWGMZ1RcPGNatMTaIWtaQ4UH7mi-CqX61ExkbTQiQgMc7dGo9bxXSrD-ztGUWCFiPvbNoJLDcoHWW3ZhXv2k9I_3Q0ixQEuxxsNMGYY23lKyvbWH3lP9Hs-RWOAkLy5jy_lzGw5JPQrDnUIHC9pWJYU93lchRt4EAByXwOXWXBrn3pCS6d9S3pmo9fXCX7ynNuhJO9-26SPlFp6fhHAlWNluaKDyEeVyoB2Byr7lZn4QItGJLQVgt3mngoBzO4aZ2TV9IvxnaKqL-XZwgnn03b_jvMyPIiZQ41VBUJhIoLGsY5Nq4xxObVY1ot8ikzp6fM252UtADsAZB7HAROmkNLlyeEgxu6UTBz9sYS0PQnysXiv6z2xkumuY0qhReRaslxfopRyZr0B1w0xPeG8Lq1MHmm_gonseg7mK6xlcJlXFAdKZK-A8BCcypdUmPyV7PA6cmk6xa4tbspjTe0RplgVbckw5ERDZgnRSpNId9pQ13RMvtf-nlIezXdSMIWBnrKcik7VIVVmQjoJTK7Wl1cqEPjY_jq2h3hS9EHODPC9bMex1nqLVNH7oTEW0JvP6FhlV5xZu2EXhx_b0YW6rPfqvF5Uf--mqc7lBwL1ogtAky70rfSkw3fgY7tNNhi9F4ZNp4UC_Kcg8udPLqUNx8_XLa8VzDdW8fkjsKo5nmyuyO-2uJ2eDBlz5DxZd0VJYIqHVsA8XCGrvyuyl_cz5qgRWoviM9qHlIJN4v7oVDbY0K_KA8CNt6PrrQ8DndW7QxAmc3rS5hw1N-gV70-tKetaVv8Tu6czVIcWPvzeWgx2CXRpAB-tILFokezgB1E1BR6OfFh67BB47VCz-H7aZ2z9-EcnXij7ueBz31fv5xMg27n1qNolra8Atsyicdg98oHtqzEBCJ9D-0bYDlqedM1S3o0QiEazm4Sw4Blzy7yGNXEHwrz6copPn1trtj6z8OjOkd2yb41qZgSU91wf813QHMhWEkKo1YYr65uamxq0vLTENSOTS3eBDbUF2zC4OL8SIs-zPzYHkb2ZbvkpHoH-DF9ee6Gg1thq54v5ZLW6rHZmqb8qpM7tparYMvaWRyoWwHDOmBLskI_yQWZVkdAEOdK7zzi8gYzlaU9Zt4zKgI1ZyAX0q9NishGVWNPAFQqfEfbDTOoK77bTejwnLl4pvI7uVwtbnGdH2OyhYtMYHcFDL6sRbz1EXsYeRgGrsDbuxxgGABnqeotqtpbdn1AmCA_sEeeZ3ypMQzl4hEDyLWdHoV8axuLIIhY-tYyJuK50fFRVILUTAVk_KbP7vkqbIMFklFZbJXPTApOZhOMKDRgLh0S8mJ4TyAF2yMXMLyc23l2tTJV7Muaqzst9mjcrwB-i3ARIlBiSJhIy-osFRE_VuGyIFrYbdL9WI67ao-QXEc7lcmTR03yFn5hAe2QlC1usB8MbJVvnl_o0Dcay_PojFz6RwpXAbZIERrM5cq348NPs3DbbXLMI_pYYi8FSx90kr9r28z8cZbZoO6g-6UIbnQwbGYsMj3NX0lJprMFc3XJXGQqFCb4WsZpb-LDTAw_z7i-mX83Xo7zqWVATLNkQ1VMyGGkTxv-P36wZTHtandC2jERh1T-p3Q9RsEdSvzRrnY6_WJFnXHrGYw_13NeEyhxonay0fdq8MpGu5STJcNtERf09zDjHH9eoBq8gLaoKquYYZ_5piu7kf5nzL429vdTeIJGu4GM5rr17PMkhxX7Ozo1l15WynPqcwNpdORxwFuC_yKCfiuQfvvk5Nq6Df9UPUrvddu76lxFbh5Pv8cpc5KHx2CpRxJdhIB7G1Vf1NmYh1Ym2M_GV2aiASjEHoPrVAvpLHZS4qE_oV257t9HlB8PORozfS-DgtADaZeAbvFauxtINyv-cXTR_meHhcQKfw2r_Cwpo90l_-cTWL92u4Spbh3Szv5JVR2mpQZ6bdW-R52HGK-SsGM8FbUuI8NLVM5CpoSGUQYaShFHJ73_ZM6OwqC6wR-ds-2SILJnT6wZWvIVukttkwCy0ihV-PEzZVLLwHsCcSnYlSQ-Y40QYNOu7m06ENHH6rxveZxOLwOyhiui2wk_xBjsR6EiZkcVDTMIh9FRtViI5AuvR-X_5FNZEDPwGqpWwb7X1FIv6YKAkgs-jcSUfe5aQditzECBpM3t2YcJgty3Vu7CE7iJ6f3kblrVzxrlOEH0bdmdJfLlh9D3TvHMqupS6MKfpAxUcbu_KeLdJPR0FUeoc94fzLMXIXJzyOjxePOz3UjZ9wTA_AdHYPQ-GwrOkpA7TmIjGythiQ0UlGg2lRaVaWm_x8xbbQJriWd2YA5pS5GPnQIco3KaqkVlc5nxe42FU3GK6YS_V3Cmvt3zq6iSkrcBCphqKP2pMJurVFynkdNcx63yeef8Z6MA4ru1stdUllKALzOe45grHBD3lAGPsBllJ3N6Qg575uXgLAlVIiNs03Y96F3nP5nanpit2sJc4aVM1nKvrJI2jb5QZ4QwEtWX6htBPtCx1SXCsaj0hYBCdiI1lXZSeR0xN0f0FGJ-VASYUhr3MLJwjTYYxaZMO030TucFcAM4bc4P2MF0dYYPwMmZRCbg7y0CbgQ2whBoSziOnrqBwpxoyRA_OAjiuK1WYmuMM7wlFscftAMlN8FH5bpUdarnd-Zfdq4borgzCltV2eEqtvkcLl4YxpQ_6JZdaAamfvm7j6-3v1Wm920uwue_UoOiYvXZ-Xq0tm_9NJ9r8wXBJS0URsL1orpz7LhyrctHROTUsqLorzDVMzh3_n9vdC8G8ybHFdQ3ix367KFIoRZcYEfOJClxXddPazsZdoF8eNLjJFLIrc3FC1gKJc_AYvWl-7sgaMSoQ7h6ZVIRWnK9K0Zgvhf2mP1LDSuBZA46o4pfixuJOPFzd3v_vxlCuSgGJubqdBpB0sR607SpdRFAJIhsiNOg6OT5ngP1-iqJwe7PyhkUzIXk8y75wzGrWHTU24xBIPfGi088TmiY1jdykKTMqOsoiaxBdLH0qb2wPoSSbG3tBJfjqUVTvlo91Jypo7igWsJtxtVVTD0lvSJ8GBI9tZtXwHRaqiEXzKUU7WHPlKJPaa4J7yPUAjGKfsMbqN5dOV5DgDBMpZazHz4NK_cEEOcgswSZsSBqnvfNQpYtmeBba3oa9SpsIGp-poYzarq3D5vQadM9gXIXhFZsn3cLN04LAh0Ceyiq8VkgBiadC_oiDLRndKdyoRFcKFDCkHZvBJFXy0BZytsOZVmep4tVSWloxz2FTIutCyCZQzatocHniOOsO9S2ul3jIWEiiwUCfCv9hIi4aUIW9oQU1p1OMvQTRW74EFTL3xeLIiMW5K1QnlOZISkc6tfJpGgQ6kzNogEUUPaBJReF-UMKo16COfpbqaEPPqwsQ3JUFbzD05qEPWR_clq_8NJg7K8S5Z3Mi6OOIAtKBSmpkaE5cl4o95surS_FFJQ9mlyyT4K72I0D1nmKoMgcmp0gG8Q8taxQRhftGa22WPm3OG5hLoyfCc1-agXKyMOMx-DgomAQ5nnE0-e3d70S6iS_1YFrqM0P2NWKBtOpeQ5u-Q5DfLanMrbTvDMJO6SctWgWjEtt0tgUKRh_qGQ1vMSYTD7iIWEL0hqvMEcmtc7RP_OcT9ce06SoQos6WxYIjSWUj5QKY62eBlkh5K_B3lRWGdtgVKMKwfiwLBMBeov1sS9O6p_3s1qxDOuWZy-PikelSSGdOLREeEm_ggVkUs0rZMK1sa1rqg14ZrbiP5C3ktDVeiR9FL-8eyoeaNM9cQgM1oESxfe_W7R0iYg_TwTy6VdGd-PoNPOiSBUQ04il9CD5rYc_ICHZswDysBWXRynIt59rC3ZeE9yxqcenl5uwWnNSh_Q1yXIuDBux8ygFpTVBehno4X_indbMrP9HnS4gOg8thhovRk5ieMdVU8huDXTzeuS4Thf5XwKbK2YJRzQlITA6Qm2GSfx0q-yndRDc7SnTiYUko9jjT5CD-r0Ll3N9BCWdQDgYzpu6eb5oh-uGr0GiM7DyAX9plDcTRig-h7qd0-IXcwki2PYFZrOYUI1tHKbWIfmSo9y5A8PkVdpm4zs-pcNS7SXzdoqFO8C8KTXfo5RLTme0VMO-P85CThU7bboK5t_vnfIsoGbn57314EILa3tSU=",
+          "id": "rs_0dc3a61ad3c852cb006a62d95c3144819a8a89aa39e0f19471",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtluakfkiVMqO-sogWi2nA7QHuC8bvy-W-aUb0q7zJ6KM7KKSrXdYt80Dz7ZpYYvNZ1NLMKxoXnKv5p2gh5swWGYlfIymke-hwzb8XNJocqHC8ipNgwzfyOeV4_Gqp0xb36CFUbc2YdoAhWODkTWpjrefSQhkCEju1ZAELTb7G237BvFuejQkVj6cHBpksZeFjiTmY1kySDBtMgMQ30ynLrtwXYIILiTHYPpCbWroSUjuz3HLnspQSrgaDx40vuBsNSru-YE26x0RLecaZo6oBYB9gyk55s7ozsq1wed3z75vKghLQ5Nk7K_kZPztlSBg2BRY2ctnPPQ1hQCaD1zLlaOHg7RKJWgvuvWlNzbFU_TqF_hV7vYoS98Na0R4KAdFr_RP_d4NTuiILjIb99Bb3jLm-lJyAHva2Or-efYEvbDv3xkVLjEwns6GBcncHHAy7dDYhh2QM0GuvEU7J5NDP-UcgBtJbUAPTdLVQd8nCwvwUteeoFez7KfO6dWRkpWHsNol5d5iXQr_4pbmHr7aYnN37-d3KKPRhwdVhUIw8PSdBGDZzCOMkl4eqsGg-DfhL3XYHb49MDBFdotdNM6-faELrCCOcctzHGv5PzS8RqwgdDDuORrtttMytEnIZTCPsmRFKxx2P8dLPGXRrbNq56YPz_aUQX3wVWg9AonB9nIvY6R46XH8wPpHVT1mxjpphGWgBzjPY_aib3Izhd19bWZeeqhypBvrp5sq4qj9I5172oqLISv-BVZQYzz9DhYYCh8ZDhcPSScRrxJTY5duMBqXe74BRsk8HbnR1yJCWLVs6H-8oD-oyLAgnlwamO48ZHz_NxDQcqfn_ZSsaXCLlni3f9ljSoz2kCQkfx88klCjkfH0oGug5DXaEIgOM_vtFdZhSCqldLIVGZNBeGEuLdIMF45cQbhUolxKFAk2zkmbGkV4bivyBt0n_75uisdVmR2YIE-WPS9lH1BFVqreQTqLSelijtNMCaS7LfiJWg6TIUliyy9mIgqpN8ZM8wzzrlYq2a5MHfbTmGP-JED3gqvxNYp6yAlVr4xJuDlZp74GnHcVWkhojLhinNJnLRYKu5vHfuw5kpUZZqNklpk9dKwlGIv2qXc2XYsbJhbUTGIkRdttm4FA-F_KblYabArO0MFyhbqoKsVkgj4jrSgdnckJuwCCM3nmaIV_vl3DPXaIj2tSSyoH2K8Mec9TM22V6-yLwlIr08T7q5euUypCoKuXcGrIUg2dqa08MLACgh9AZqotyyxHJPnVaTnwsDNqzzHBxWlnTYfrdQnEamDqAOjYnqr_w6vQCTKL7BFHbywCrKa-HdKKKLmxYy1Z8oCoT3pZ5sz_ndpovJ9ohoT7Ow4HcY2tdKqXMmRnMDRtd33OWc5LWt1ujjc73l1Ef58h9nq5T29ytAgqit_fjkKwh52W2EMwJQMsk0fCE-wgNrOIeSE7415DHzvz0v2xiLsmgvQB_ZqkS9ruGqfeovnPRb5HCQLMJ8paMfbVXLZYsWQ8RjX-AbkJpLt5OkUx5WAt8pZlTs4BMpv_D_5BFPtLOvAhHbSVEXjMkHVrqYd49VO9XLmqeHvlHpm0JKyBppcE_EfBVo-sP_d3Ew1RF286Lq4QRL9u_A550GhAfdmndCXXk_9LCXwP9RUQBByxz3BBIxYQZyaSryCRt1FIsa0pC0jrXXD_XrFi8FrCGVubA0-4BAEQkrCZESlx3_ut4cE894-lhut5gnQzxbsHKhTTiLw1HB5XMSaYUBANYc00G4NfkDXSKuvRE4V3rydnmyZkFl2NjpUkv8rVYK1sTRLSogHvwxEwTjsqMG_vAfwkFg4o-LaPq9l8q55O0I9gmmSfvqZUf0yNLlzexfH8hJaHZ8aLB0Uq6muHPE5cptH8r-KIWbYfkXoi0rLoT5UY3DtuKMiHEYSNAgdn93N6QmqYQ82S11XoQaORxS6zG4k6L3YFQ1zKdAasXGg5aBXUMufyj9gHfTXPHyOUFYkmKlYoAYYQ_T__OPoq9ymh_MKKZpw017fHXJVUhPqb-nu5Ki7ZpaORKR2jb39Oi6h2K2ZXIWm0SjHuyFHOTcxlVHd8tgX-ooG1f800Uqwiq3z-hJJWjhibwLzZlUCDah02plDj4Xn2FPJu0Dv2QBfFCNouRw9PxFJJOYuA_Kmf1LRbwRz835HEMsjrj_Ph-5sRcTYbb6GSkooG6q3Sv1hvK-kYIz5y6U1BZcR2VIVoYHpmmUkGYFNGshH3RGocAoD5cztPKLkYrnr7P51yAoJeUm7k-zZ0l19oVlFzlcOpDWHgz_DqS8ixZ4WlvwhBZcInj5-iEaaxqCl9NZMuATn1HnlQiUzqLcSp9BVvDMQhxByQNZhEMECpbti0lpXn4t2_888MQFyXcCWho7SxGnOXAk7N9ULo5tUI_m5iqGahgtGFZsgzjJuPA-RLFleR_n5MJmNCd6ev7uPd9Jm7wabrgQc_-2YxnKU-enLBGhoJe4aZngWEF2uyMzBy_8oLo8AY6RMea6buISe5oav34Pqqp9ig9Nx80KBO_xpzlxsxEZB5bqrrdaC6xmK4y0j_aoGYmEq6m69qBvqYmyXzxY8DGmlfF6wQqejrkoRXITVvGjCPUs_Qe-IIWiD0TrMIOOnZJ7TYXv_1yaatm-7-0yW0zsIfOXE2Wi-M_XCADhrFIObB-ISzNygZ4secjLCyHAjQTOJrCkE5IukTRxolLNyKDwlZJ9AkFGZfPIg-UO03CbazcS6H8cjhG58j75XgnAiS9sXDJ5_caHsMWZYx9JOe82XYJUwxwmYkVkdRXWQpbkEtdtgbkvaTK3jOS9YIhT0jRvL_Etb47d-6kP4QNJjKNimLufAUATGR87mOKIYrgfSqXZjXkJx5j6Snu3P6TA6a4wf1xu-4e0FnRl5HHD48oNB8qUjd4NJRarH7pkvbc0B3u-0cTkX71hBymFO5TTOd4Xi2syLnSO-wYu5ApMxC3hQ7AMeDrvEyu5J8Wzk97tdJwF9ojvDN4aq3JfL6wrRJxMR6lBQlC-oOob73lleuIhUICR8IbJqofVNtTWVPCevZ2xMHEoPdD0bTu9yjnYnDeJ9rtb4S7VEBqSVWBMCkMfC3bT_JgbWnhPj3TjzvRDH-EpDca_8W0YT1Er1GAm44zWDfG9im7hLe4VtSSaLLayaLhuDUHQNnkxo1eHqrXK5GUqL30lFieKT9h1kYI12AcB7l9ZTnTAQM1KVa8hWAtpeMb1LguLiCuJzhh7JBl49wN64X5R5Ub3cD2s6cvMdnDsXTk1BuJmi5BRuAMT37vhyzoDfWhwnpAj43UMrN2GxK4QKuDWY3G94Ac3_yn3D_ieq1aQ1MFdr14V6IenaSAkHdlAdUkGek5kdDdVwUj8McyIrUbzeIqCNVKI5BTIP7I0Z5RxmE58ICvvrY3yXqXtgirqiooNj3kCV-Yy4MT0xitkUWpBDoBzfyPgx4rAxhgfe0p5fqEgb8AFk9HcuJCkiZgGLGCy2VrWYwc8QvOcQBeGorWLNb0iSr0qP8qi2AYdEQrIdhYP9uJVd47LpqPe_4UbqB_Sx0QydZ4SLXYVO-q8Wl4DsZKLcqb6l87HqJUa8ySAEm2H3HlmSuha2uVQq7vRVu00p8Jv6dMtUU0UJkGTSc63FeuaFs8QyZGFinrY4rJyUhJtQpez8-Frp9smux7GpucDBk4ykurkT2ABM2tTM6TUMQXbFb-sJd1adiFvqJNJalOVyCRe47VQrM1uaAoEAAfcxVgvVP_fYzWWyC87bdY1KC_EWmIERWQWkaVyfoRRlgo38ZwIhvTh5hJm2pvZJpZ17HGEBxFK88mJbRSrV8ZsMqH780boO-WbyFzAfRtzOojs83IDNu_QfN_BvwvbZqBA0JhIckLICDnHiVG9QtQy416LXMqOKWb8rvz4AxJ3Re8kVNByWR5al0J4GxstDdaaxDb-jog5rWSb2RG19nGoIqRJ7XwDE61Njvm7cpwJ8fLXVFfgdwMUqNCPncnNDTk-CdjEq5aXlY0z3l7p2nbyR0igqA3ck4NT83SrDK8AlVZyEgI0vChVlnoHo61J0thXLSOoMo9djxyuR6YHh6VDYkWcf_VcYKD9yRthY-M1Yb47OldR5BpzmS3QBhRSSmnOc4qf8jO6XrPPrfKcS3dKp9dy5ywehf9U02LrZUxIbNoLDzZe6phiCwEKpBaZs-yVk2aNM6OGH7vHNbW-qgqimHaNBRLisv2dSpFjVz28bTyAPQ7FUsEGS_DBxwP522jiyFxlPOZs2R-YMAl5jVDT5VsjQh1ZrPhrbVgUboV7MxyfaL4FiWZyDKixzrrMLgazR12H8x_URwYaba79-HYwW",
+          "id": "rs_0dc3a61ad3c852cb006a62d96000d4819aaa0d89643be956d6",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtlunujt8ZU0CAZyXjsyuMAcOcne6_zMOAHavXCADAJKxpILi2LmzaIQzb2IIbvpNLMct32n8OWdBi469khOrphwHCkYXjNLTkWQN7PSbtO6rZWhbh4wgFfT_qDpC2UBV97yuZJsFqEBX2spWgYpEVv6zMA6ohNMzI8iW9zatYN4Z1ogNHP5wWkmFCCBi6djF0nzRKCSczm0UG_wBZJuSqU4m8Au73Ffc4sTSrlFU77Zu9xBXG2ekZsyiJKIxO0iHIcby-jTvUHAvKba86sTQGlmNNSv6kgrpxrwAp7eJBBeY2fQROuRBpgljcJ88SYbqb1siTXmXP9BZZkqm0yfksg5PCMsqfkDGoQyCXqKr3SXK0iA978b__0hIGgwQPqkJugaO0VVKh6Vuk-uOOnKvR7o4cRkvx6aKZKy137j-TYBfgvPza-6_dN-DMRsg7FcgBQZ7kAKuM2PrHsIlu0zYvS_kbywO1f4cbH0yTzLUzAJhZ_j9QGFsZH4dX6U8_ZSw3kYnBmCGxk6XbBZJB5NKro6FoDbWdK4VLnyTVUf8PXTeKWA-nm-mnAbVXsVM6kMqxNylur302MA2LADMN0OKCLeNlGjFotXOrk5valDF74ha7fIOugJ5wTGGInktStkYJuVJADy83xgMB9yFTHEN0LFy67REltYIMSBbC9wzEwiR6eL4OIcmRI9uElleHAbpRIWA7vI3W_J927fzj6Z0lyKQvHYsJ2Fl2BwuQ_Pv_uQNnW4KKdmSghity-BSXf8B9cTWkF5ZIaR5swXZKikyaOqNoIHb0N33hTgXnYwH1Pl8LHQp_4JgOmRfNa4NxjRm_UdT9cUbiTdZvnzx2JzY_n_fjTdH8H8oZAgAFNZkkrLmrRh6W_xNGhVFnNkApb4wJ46nhvc-E1WfJ6DSO9_TvsvjojNZMX5DLe_I4IZqmk5asCHmmxF62aSrYEf1tcQiXRdQIkXTMYRNURZ7swHb-0K3E_e1vw4Xa-M_wuvfpW2jarnTTsgxSjGOibvlWC_7QqLutKhKPPXFl-YfhYkeO0LEPYFzl8Oz8OpSTwo0B8jegFuw6RehmRwDKPjrF56BvAHsdFtXl6t3EG9vSdI0Bzkw_ODpQJyCtfwZGzC-JCWbygjULf8awDfU3qG8-602JK0dlp-nzQm7VkCaWBBWukcxvVcmbqDQEOcOh6y-wJa1gkuwwhecb1eQ1IgqXP2VjaiXfPwUENwK8ASMAFA4UOvs7NplYoDxC1eMmL9SOp1vu1pMA9Kh8KJJ1xTknWDyz5zfeQUyoWmbQmM2ZKOSvnVXDSKuZui2h166qqkKUZVqS_n6hDZBnuXuHTGOwY6tf7nVUr0oYP63Y-b16CQZBmC8-QR3d1qM2BM2QsUFiNDAVZyhsp7CiwMxd8K1BSmygYF31VvC-BeT3FdUfmpAhHdjUw5pQDPJTDR8R3_X-VGqrU7vXQH5oz4Rj0uh6L1aMtM_Lu6F1uWfqbMmEKXrbOVj6BglECUXCukk3qS8bEFtLIRakQYsZzBRxIXQPTKPM3S4_oS9e_m-U4NrLkyAkbuV73hPBBg-iE38a7e9XQP8Dtup_O6b72m40c2MlTpnpGCK5mJBnFAEzRepLNT04W-f0T042KnlndYWdk9x0Yn8pHlphVet6x8JMOQGPGcgaU8n5qSaRR3oN6gMcOteUZv9nn-33Ueta4-XQFaet3wE86QGNaqerKtOXXctQW_Nh0Y_vm70sty16cBX1K-ZhZM5PlwIlnk76JP9LsTSU_zwG_sLZzuOuE-1Lxjdd2F_ohNu3MO3s-3e7ZG9ot0x0nTaUXuv9HMp8HueEAzQJX80vCGpY8UHjihSoSJsvi3DFwciR2eqwYQvX7Z24g0kv6Rk-z1IaLPSgzgkp9area1yxR4KBVAok0IjNL0TDZfz1wLLY4OjBncv9zcjogThUmyzWclCHHmffzEB3BQk2w06Op6BKxqXN4qFLrCNrn2rXqoIU35ZoVbGDUQPWju3FbCjLzXMizCgwMiQDQYoP0tHltJq2xcdDqTYuITvOCCIKGWO1VT5OohrbAJ10PNfEfRf-_3dZxakBdqkWZ0gG0PJbC7wl2Y1WtjZppWSbrI53uNH3wqyY8nls7BhJ6Jy71JaEgETkH0zTX5Oht8irMQ-lSk5kvtUq3utLAxdB2XBqsITW6Eu1HqIu09arCNDqO668q48vy45ubDoKNaF_zHW5-Re1anFcLMwm8z7Xo4sYqv1gXsEmLFu0fsr7lRPLgVZQuDSBHgW-yXlU4w29CFCQu3eZQEOhGn0f4vAa-4BVlbTPgAf4LEdrDweO_W89ErREhccejfRghZdTZ2v4YcUQL0qkeoLw5sdVa3DfpNa1WXktlcrQ1ttPPHbuAnxrrr9IbGAlecmdjsOg4_hooUNcgnu65VQ-0RpBytvtXrP-JtAUOU-H-oWW3m-9mC4TM-vW6XvwOv-ujCvhC1c2XtFs1ziXbzuHOosEXL3DozSkVsLv62PN2Oq2vWaE2Xbv1f6dqywnjJzuBQ6syaWwcosw96GcA619rsUFXiKD2sHJyYuoU1msa2FL_nm51iSLN0BntxVlCdL1VNJyhObGR1Nk83qEta2Y1tHkXSUZi0r2BQW1OAvVme9k7PzmcfpiKqK-qbjB2VzXhlRMrzCTt7W4YeJd2vtJcGynrtMYCmeTJ1x_8Vn_HmuxdrhNXu7xdh6s5UQUmPucjNS2S8Ezqyc4FBkN99f6XsJj2IlVvkiO21g8_IoGI57912Az-etECzUPQpGH_y1KKhuI8YUp_Cbn-oiOe2HKyjWhU2F5Z2sj0FrVSKXxXozxFnW9QDPn9bzGnPww7PrDcE-3woesUNFYdaO38htuomcp1an2TPhjagjXkBkWXls-ljYbbEekDgD2ib-GXoCfVwP6opUYECBNxk0h0XNBgqnyVMo3X0kUWEK38PVJpoSkngdFwnrOEM8rUi48ZpeXOKJsT6W3XXIUkcWDYkWX4MJBaoHn1ye5cruNR6Tv7Rhut1ckpGpMUsMqaoWd39v6YfNtpU4cfkByfHW40mj4xOf3F2yKpBEkfJrTSC3U4LhmRaFAVx-jpzDsQoHsX29jH0t2ZJIpKlmvoLGwtX-Kf1ziaebR3YJQHfvpTsDrKX5h4qyzx7zCGFlyVszdS6-Ep7FX9L03c5pNPlYgK0ayoZmRI_LTdkNSvybcq-zwp9tQShi7NZWQYIBsYg77cmD2LBGozPPBkfLlZ3bpOaRrqAiwDDTnxWGqy60aMEu6JpcqMNUc67dID7aIm8B4QsGDhm2zIaI7at8HsjxeN-fMZc6eHn5sjnhx1FVyeEKitNAXU_6qo395jrRWZL3z6jRME5m3B-_Q5XZG-7kA0Na8T9EjGRCXdJPrlTufkUC6RNllTov0_VsmnZ7nHIweVPc0y5OUn5zlq6HImqvDTEvWHCnK-w7e5t84mT3aIewpJQCaMimKrqDRVlXP1lcZw4UeRYUXpF6qDcyj0PIvXJnjSE38cijRAd4xcKDKNe90R0IaNwhvCMjzOSEetRVaVxBlTdFPl_pUKXzmiyJit6L38pszbqAw9mdJm4h_N7lQyutJ4zVIyoqdVkWZtfQTLc53RpIQY9NvcPv4Zne8kP6AHCWqoMWhV3lO2M05WFQHEKhU0DMtnYsySiuEFvlzvhi7hncejGQexdfbR4m-o6JM2RYqdONlJBwevWMxb1NY6doolj7h0tlxe-MJR_ud5oByYhwOcCCOvJW6jv3HlnOf4mz15gr0ZmqszD3vCBCG8NQtiTafPFKcCyRBVw4H0GP7zx2WykHcJevoKkF_8idq-FfxsUx8pv5hPZ1H2mpY3rJUvWK0pZ_bkv4NDorIrzl8Pe5slARQ1fz1tpRPrEDwx0DM3yOqbChKVN-dwmzh7BjV3s-nva7a-IxOhJJGIloUOzjWafBRYr8xgbZSjOtprRRh-jHKggOKcSbhjLQOjJAxnPP8nnkrEAPN1Fr3ZWW-Pk-tl1ayXUbkdt-fntHnf_GarSW09ylyx8YTVHv6RDgjhnVa7Wye8mn_ExfK9egm1TdRpPryN7dSHtbLE56xOSJ9_wpqp5I_MFWI_5Po5PNQC5R8cBeQfnOPRwNCU5_t7ihvqWKiU4TH7UvkY5wNCZk0g7HHbhjGLlgyPA8BwrpZ-kDUOf0Xy6TkiSECQr3fN69PCeH6sQzd_4EksbaO58hWF105qT_Q3kbNPt7BdvAhXHgBdrzOWGV66xv5G921LI4HLwYd2n6XwFBs-qMLT5sgU2OXnuiQs_A5z0NuKxYfBRSLu_cTmOL-WLg1poYgpBD3bX95ttDBZLXsrK1EKBVTGtx0dOep04fkJ3hpt-lfsbHrMbcmBooBW-Oxy09X28TrrzSyrB6PBQz98zmXDo7PumhDiJksA3hLO5bwNwnbBWZCVbnw1Lz7NOlimyO5RSeehax6AHuPuZJoDwW19EH_mHvSabmhvqrIZVHyJ6KRDlnXOVADu_Xw==",
+          "id": "rs_0dc3a61ad3c852cb006a62d963eaa0819a8629a831c50dd25d",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYtluaNwzZBcwnoozyuIMFK0IBUMOQoCmLDgmKDacQf8b-AALq4YctRwevbUMtuNtIzrvEQfa5WvedWuNa8CI9-Tu52Ba4Bqz-HUqXjknjAlZ5GwmlsH-Jorc0Usae_YKZ7JsDSIsGVyfD3mAPfKA4wZEUWeYLxjXbXgDe2wlkBUKh9yxnu27n1svpuAHKckYtsr_Ojd092oT_jKezZTQOzxybjWpubXUVM0MhJRifSa3fhBi-A5eKQ_uDGzTPDpLl5hUerpbat0yPsQV2JOOF5nHrSwfquQH77IxB-p6R0nFEub9x2SjiY4Pvww4VgkteeHowwqkiCkz4lti4WMfmPAMnG9t3YeBJqoULk7NNCv2tBoOZwtNUzM-PEr3U_uNUrA4VGbQqQgGR-nEoJBr-IPHJnC-DD9LCfJDRHYzKs9vgenTKhbAQfVPD1xV9FCtmWp3rAJIwPfVBHwx1PHNPX4cEqs5nnEX_gpwNxkUtUMsNjXEebvWbi8B0nRp_Vcwt8jI5U7P7HR0X8pB3zuscTugI0pLJpjboMV4yok9_uHvvDc4CiDOgDStby4OtIzxQqkskW7Z-nx-eLXS188PYjJG4wIy7vlbZmafhQEC5aqtdkEy1UUa3wLFwMN2Z79H3dkLwkPL2ocBhm2bTs0N8S70OfM0oT6pD-WFGOyNkFl7yEiWM19dPYL5ObTnOxJWLpeJeis3sTAHZYCpTJSXA6fj3GREse3418U31V4xJu9QLKXCiKIHVtsw8BNs8aboVSTYriMvmMK19UUFMuwLDSaCrB7Lz4g62y8cGdtuqWagH-19kk6TVMH5RhQ5F_9C8ejOZQnKMhLDRRWj94fjzQB1QiREbpQdijWyTpqmSSpEOmUNJdmVkYEs77Dn0RaQsZHPu-XRHujt6Hrf-UKyRo8p67NUl6cQSCO0ZEevKs32qKEaKJetCz7EsiC-9vifcmQJ4G_U3zJOugMUOHAsHoWfirIByeZT__TeWTUz4GhVjJc9HCDylNA497Iec-gcv9H_uauowUflEI0WxStY-Xy-OLAhhUUWKZAPwg9VMJ29gWToQ7uvQ4b_qvwhpeTmFcUhm7Ap9R1nawxrb-MeDoQVFla8UTL31StOk1P8-JywmMCtmduFt4bbJ7GcvDJwCXmqo4JHFny24qf8Vtg1ERHV7T8TToPDhPBYS1I39AjVDkuIYj5OAfC-C0P8FlkZlTFr3hzB6Rx6dmf-YqMjVEy_MEatrzLCyJQXj3EUX6w5RCSFjCPV_8XA6y8EbvuvlTz2WRvAAcFKMheQEN2wm_eyhszIwIEpp_LJnxwPMqGppW4jkt7S-_GUMLKbxquaoZqw4VFoNC62zElTpBLzyot4yIxgqX1cAMueL-w9pyXZlMgQVS6dCKjcN7Zsl0bOR9zwUniThn6VZumz8jY99TpNqBGfuxTMqlzWv1MPFWt0kV6EOzLC6gSSuS2WpYQF0wtnfcYfH6lJZBLXfutOdyfoS1qjLXMibX-Q819dCHGvgBkAJXJ9a3CuDbqm_PnyED3zqEOuTjm8pIavVRFkqeYpEd-qbycAp_qbeg5L3NRJTA5cSKbrgg4DS45sKfbP9Ec0KhgeHSBzfk3xwSV5NnuMMkdrXPBa0EkSUOeAmWWq1LzQk3WcVooDufp6TKtNSjjdv7tLQgHstbOYzNvto5wrw8kY629cyYyqGHwfQiT__nz9zpOHlgqXOtUeELTLlAxfrE_zd6xeMso6pJ_zFbPWi1Men-ezGdypHPi20LGD9vncmoDXi6DWhQcIHOoCxdLrbM7XmNtCgMjcT5GdWNUu075QCcI6w2TDuR64HspBQqvdgXCVkeM5zrVXOn0cTBC5PHCSJdQq5-yTgG-wGx0eh7us9Efb_ngsgc3PqgBtpL_ErG-LfclUgT7FxBY0G7FmNNf4Cg-GEE7vSEia5vVPAdMdL43ACnIqsOt4-o9EjoQbpHBFagSB2xdFoSrRCC06hiherB7j_tgmfJGXDg7XNcqrjjDimWnpcPAWo6DZjoTSzTouasP-AGrW3oC5FRqATDQisZ2pJI7Ed6NrE4M4GbymXYSllbvzZkz0Ay7gJZzr0s6MwFDtqR7qpc0tuF68RlHsCMvRCGj1kgtF9CLzwKmI5R5mS8x8tZP3HIu0XiaHhchO3YcHYEsa_7-S2ylOSTzcl4QUDb-_oGzt-S1ZZD0qlLK_bLmvSLuGWRVuRAN2Gnps_0r6HfgZYlfeByCrjfrHeUFon8sSPTxh-YaUtRnCeSkqvriKGjyJqESJsbS4h3FLGPPS9hvui5uuznAxQl-bFIwV_cXFXxfix2NbphLPR5XdvtfRTO2tCrlPfbkq0HmKbv8LlOSECZHeWZw1SmSkhk2Rfp9thTlxi9POFjbyzBvGDiozsqSooRLHSsXhFkr_tz_rbUSgLTii984LvQ5w4pJkMY5_kJ_z2YOXbr-tM7pcqjHKJlo13l0-0CaU2S8ZLI3_UELUGSOgh5xcaAvyW_UdLDzMVcmvK2yBSDpukfv7jbIs0NG8DMl9AZneTB0GO7rXeGmG9P46Vx0hSzx3pNtrX0X1Ya-5KblZMoIESxRyiflgSgBEeHLgsFCMAPtEsqv9ratD0g8T-c18qlA1KEXB25pUnagqNQfB0OzHzLw7qhD3xLDS5RiYAhDPXDOldzctlF3G7Nv1VU-aucGy89ab4BU2tcdQc36g3zvIo5fYVhYxxc9Trw0l5WED6GwsVO7BRidX2rDlXrFTuoRenaxH_1PlvGKgcERALqVmcUVf5gWBv8teJcg0ASubfa65ZmxIVd0lzn6tQ7zM1oGpHob_BuCCM4NelPKleZN7RwcNhwxg2O64in47AV4hddPn7hWC6b0XaqAvCXLzu2lnnld8b5lntiKzL-NPm_CNqRj6WPaOHbrvZqsSKppHijLRYYvBuhkIRTtE8p17DJY3qoQGgwtbBYf1OmfbTf2tgXe9cJpQY5RlttoDyY329TEnB9b3JX6I9aqxv3sXHeJleWd3uWj0caNhRzMeaeQEhmPqg3oEwlEZZAbDXivL6LH8KDIO-oKUoFb_DOx7o3HHJgg7mPMPLpP3S-_GL0eK7AZ6q-eJgZn96KG65TQpSkn_htAO88rJWphhCOQNz7MPNHHgkguxYS9cDDZ_Dj2Rgia9jCsVWHjvbQ83XfRhewCjJSj3STXHP-Aop40gN3xQlKvl88Jn-b_kue2SdHc_oEZst-I4LPKldSV2-vBY3hjyazdNmZgqYOXkfCpplek5LJ26fSS4wY8SbApye0FROjOnfJGrptdHfqGysNyuS4mQv22RtOslBvz6nLNEfM9TPf_MDNAASDjNKE1R8Wm5S0h8s6YJw06EDEpk1wfpCTbyhvZkNzkCUEq6wsjS2cix5qTwFmvY1P7P1BdydEkoWbiYKVmh6kWYStvjamkBTiv3nxaIgoNbcZur3_Kt2Oh4Ks0C8kYTo0lUsvi_TdlUC1etIiKYNEflL49CeJ3Orzv59lSMeGSBDmB5qzqrNeNYAIdQiUnZi27L4EKCbGWXD-gE5mIB_GVac4eIH-Swdt_o3IFVgjcctI_3tYpDrfcNXnq3fvJLmnLxpADVMOoMvF0MorNHulwfxXHZQHiCPO0K9dj0CPEGDPPmakxRXjujfw82hNn8VuSv97XEIuDJ5yzYDyxTuZ5o58HhTTsRJjqq1L4jJ8DfiwpXPrJj",
+          "id": "rs_0dc3a61ad3c852cb006a62d967beb4819a85f5bd201f4e54c1",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [
+            {
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"case_id\":\"generalization-comparison-canary\",\"inventory\":[{\"event_id\":\"E1\",\"event_type\":\"COMPARISON\",\"trigger_text\":\"had more comorbidities than\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"The highlighted finding compares comorbidity burden between patients with RA and patients without RA.\"}],\"participants\":[{\"participant_id\":\"P1\",\"entity_type\":\"POPULATION\",\"exact_text\":\"Patients with RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"Focal patient population in the comparison.\"},{\"participant_id\":\"P2\",\"entity_type\":\"POPULATION\",\"exact_text\":\"patients without RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"Comparator patient population.\"},{\"participant_id\":\"P3\",\"entity_type\":\"OUTCOME\",\"exact_text\":\"comorbidities\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"Clinical outcome being compared.\"},{\"participant_id\":\"P4\",\"entity_type\":\"OUTCOME\",\"exact_text\":\"RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"Clinical condition restricting the focal patient population; this is the occurrence in \u201cPatients with RA\u201d.\"},{\"participant_id\":\"P5\",\"entity_type\":\"OUTCOME\",\"exact_text\":\"RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"Clinical condition restricting the comparator patient population; this is the occurrence in \u201cpatients without RA\u201d.\"}],\"links\":[{\"event_id\":\"E1\",\"arguments\":[{\"role\":\"POPULATION\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P1\",\"explanation\":\"Patients with RA are the focal population.\",\"partitive_scope\":null},{\"role\":\"COMPARATOR\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P2\",\"explanation\":\"Patients without RA are the comparison population.\",\"partitive_scope\":null},{\"role\":\"OUTCOME\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P3\",\"explanation\":\"Comorbidities are the compared outcome.\",\"partitive_scope\":null}]}],\"semantic_axes\":[{\"event_id\":\"E1\",\"direction\":\"INCREASED\",\"comparison\":\"GREATER\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"ASSERTED\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\"],\"explanation\":\"The sentence asserts greater comorbidity burden for patients with RA, without reporting a statistical observation or explicitly interpreting significance.\"}],\"root_event_id\":\"E1\",\"completeness\":\"COMPLETE\",\"structure_explanation\":\"The focused finding is represented as one complete comparison event with focal population, comparator, and outcome participants. The two RA occurrences are represented as scope restrictors without adding direct event arguments.\",\"participant_scope_links\":[{\"restricted_participant_id\":\"P1\",\"restrictor_participant_id\":\"P4\",\"relation_type\":\"IDENTITY_OR_SCOPE_RESTRICTION\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"RA restricts the identity of the focal patient population to patients with RA.\"},{\"restricted_participant_id\":\"P2\",\"restrictor_participant_id\":\"P5\",\"relation_type\":\"IDENTITY_OR_SCOPE_RESTRICTION\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"RA restricts the comparator population to patients without RA.\"}]}",
+              "type": "output_text"
+            }
+          ],
+          "id": "msg_0dc3a61ad3c852cb006a62d96ae090819aafe13e33a4a72513",
+          "phase": "final_answer",
+          "role": "assistant",
+          "status": "completed",
+          "type": "message"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0.0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "high",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "status": "completed",
+      "store": true,
+      "temperature": 1.0,
+      "text": {
+        "format": {
+          "description": "Source-grounded staged biomedical event output with explicit participant scope links and partitive qualifiers where the source states them.",
+          "name": "V16StagedGeneralizationOutput",
+          "schema": {
+            "$defs": {
+              "InventoryEvent": {
+                "additionalProperties": false,
+                "properties": {
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  },
+                  "event_type": {
+                    "enum": [
+                      "REGULATION",
+                      "POSITIVE_REGULATION",
+                      "NEGATIVE_REGULATION",
+                      "GENE_EXPRESSION",
+                      "COMPARISON",
+                      "ASSOCIATION",
+                      "CLASSIFICATION",
+                      "OBSERVATION"
+                    ],
+                    "title": "Event Type",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "description": "Complete exact source sentence containing trigger_text.",
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "trigger_text": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "title": "Trigger Text",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "event_type",
+                  "trigger_text",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "InventoryEvent",
+                "type": "object"
+              },
+              "ParticipantNode": {
+                "additionalProperties": false,
+                "properties": {
+                  "entity_type": {
+                    "enum": [
+                      "POPULATION",
+                      "OUTCOME",
+                      "EXPOSURE",
+                      "VARIANT",
+                      "GENE_OR_PROTEIN",
+                      "CANCER",
+                      "SIMPLE_CHEMICAL",
+                      "MEASUREMENT"
+                    ],
+                    "title": "Entity Type",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "description": "Complete exact source sentence containing exact_text.",
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "exact_text": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Exact Text",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Participant Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "participant_id",
+                  "entity_type",
+                  "exact_text",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "ParticipantNode",
+                "type": "object"
+              },
+              "ParticipantScopeLink": {
+                "additionalProperties": false,
+                "description": "A directed restriction from a participant set to its named restrictor.",
+                "properties": {
+                  "exact_evidence": {
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "relation_type": {
+                    "const": "IDENTITY_OR_SCOPE_RESTRICTION",
+                    "title": "Relation Type",
+                    "type": "string"
+                  },
+                  "restricted_participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Restricted Participant Id",
+                    "type": "string"
+                  },
+                  "restrictor_participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Restrictor Participant Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "restricted_participant_id",
+                  "restrictor_participant_id",
+                  "relation_type",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "ParticipantScopeLink",
+                "type": "object"
+              },
+              "PartitiveScope": {
+                "additionalProperties": false,
+                "description": "A source-stated partitive whose antecedent is an existing participant.",
+                "properties": {
+                  "antecedent_participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Antecedent Participant Id",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "exact_text": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "title": "Exact Text",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "kind": {
+                    "const": "MAJORITY",
+                    "title": "Kind",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "exact_text",
+                  "exact_evidence",
+                  "antecedent_participant_id",
+                  "explanation"
+                ],
+                "title": "PartitiveScope",
+                "type": "object"
+              },
+              "StatisticalObservation": {
+                "additionalProperties": false,
+                "properties": {
+                  "exact_text": {
+                    "anyOf": [
+                      {
+                        "maxLength": 1000,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Exact Text"
+                  },
+                  "observation_type": {
+                    "enum": [
+                      "P_VALUE",
+                      "CONFIDENCE_INTERVAL",
+                      "EFFECT_ESTIMATE",
+                      "NONE"
+                    ],
+                    "title": "Observation Type",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "observation_type",
+                  "exact_text"
+                ],
+                "title": "StatisticalObservation",
+                "type": "object"
+              },
+              "V16EventArgument": {
+                "additionalProperties": false,
+                "description": "A V9 event argument with an optional source-grounded partitive.",
+                "properties": {
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "partitive_scope": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/PartitiveScope"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "role": {
+                    "description": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+                    "enum": [
+                      "AFFECTED_ENTITY",
+                      "CAUSAL_AGENT",
+                      "STIMULUS_OR_OBJECT",
+                      "POPULATION",
+                      "COMPARATOR",
+                      "OUTCOME",
+                      "EXPOSURE",
+                      "MEASUREMENT",
+                      "CONTEXTUAL_PARTICIPANT",
+                      "EFFECT_EVENT"
+                    ],
+                    "title": "Role",
+                    "type": "string"
+                  },
+                  "target_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Target Id",
+                    "type": "string"
+                  },
+                  "target_kind": {
+                    "enum": [
+                      "PARTICIPANT",
+                      "EVENT"
+                    ],
+                    "title": "Target Kind",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "role",
+                  "target_kind",
+                  "target_id",
+                  "explanation",
+                  "partitive_scope"
+                ],
+                "title": "V16EventArgument",
+                "type": "object"
+              },
+              "V16EventLinks": {
+                "additionalProperties": false,
+                "description": "V16 links whose existing arguments may carry a partitive qualifier.",
+                "properties": {
+                  "arguments": {
+                    "items": {
+                      "$ref": "#/$defs/V16EventArgument"
+                    },
+                    "maxItems": 16,
+                    "title": "Arguments",
+                    "type": "array"
+                  },
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "arguments"
+                ],
+                "title": "V16EventLinks",
+                "type": "object"
+              },
+              "V8SemanticAxes": {
+                "additionalProperties": false,
+                "description": "Semantic axes with the preregistered polarity boundary in the schema.",
+                "properties": {
+                  "author_interpretation": {
+                    "enum": [
+                      "SIGNIFICANT",
+                      "NOT_SIGNIFICANT",
+                      "NOT_CLAIMED"
+                    ],
+                    "title": "Author Interpretation",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "enum": [
+                      "GREATER",
+                      "LESS",
+                      "NO_DIFFERENCE",
+                      "NOT_APPLICABLE"
+                    ],
+                    "title": "Comparison",
+                    "type": "string"
+                  },
+                  "direction": {
+                    "enum": [
+                      "INCREASED",
+                      "DECREASED",
+                      "NO_DIFFERENCE",
+                      "NO_ASSOCIATION",
+                      "ENABLES",
+                      "OBSERVED",
+                      "NOT_APPLICABLE"
+                    ],
+                    "title": "Direction",
+                    "type": "string"
+                  },
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  },
+                  "evidence_items": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 8,
+                    "minItems": 1,
+                    "title": "Evidence Items",
+                    "type": "array"
+                  },
+                  "explanation": {
+                    "maxLength": 1500,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "polarity": {
+                    "description": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+                    "enum": [
+                      "AFFIRMED",
+                      "NEGATED",
+                      "NULL_RESULT"
+                    ],
+                    "title": "Polarity",
+                    "type": "string"
+                  },
+                  "statistical_observations": {
+                    "items": {
+                      "$ref": "#/$defs/StatisticalObservation"
+                    },
+                    "maxItems": 8,
+                    "title": "Statistical Observations",
+                    "type": "array"
+                  },
+                  "uncertainty": {
+                    "enum": [
+                      "ASSERTED",
+                      "PROVISIONAL",
+                      "UNCERTAIN",
+                      "HYPOTHESIS"
+                    ],
+                    "title": "Uncertainty",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "direction",
+                  "comparison",
+                  "polarity",
+                  "uncertainty",
+                  "statistical_observations",
+                  "author_interpretation",
+                  "evidence_items",
+                  "explanation"
+                ],
+                "title": "V8SemanticAxes",
+                "type": "object"
+              }
+            },
+            "additionalProperties": false,
+            "description": "V9 output plus bounded, machine-readable participant scope.",
+            "properties": {
+              "case_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "title": "Case Id",
+                "type": "string"
+              },
+              "completeness": {
+                "enum": [
+                  "COMPLETE",
+                  "INCOMPLETE",
+                  "CONTRADICTED",
+                  "ABSTAIN"
+                ],
+                "title": "Completeness",
+                "type": "string"
+              },
+              "inventory": {
+                "items": {
+                  "$ref": "#/$defs/InventoryEvent"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Inventory",
+                "type": "array"
+              },
+              "links": {
+                "items": {
+                  "$ref": "#/$defs/V16EventLinks"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Links",
+                "type": "array"
+              },
+              "participant_scope_links": {
+                "default": [],
+                "items": {
+                  "$ref": "#/$defs/ParticipantScopeLink"
+                },
+                "maxItems": 16,
+                "title": "Participant Scope Links",
+                "type": "array"
+              },
+              "participants": {
+                "items": {
+                  "$ref": "#/$defs/ParticipantNode"
+                },
+                "maxItems": 32,
+                "title": "Participants",
+                "type": "array"
+              },
+              "root_event_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "title": "Root Event Id",
+                "type": "string"
+              },
+              "semantic_axes": {
+                "items": {
+                  "$ref": "#/$defs/V8SemanticAxes"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Semantic Axes",
+                "type": "array"
+              },
+              "structure_explanation": {
+                "maxLength": 2000,
+                "minLength": 1,
+                "title": "Structure Explanation",
+                "type": "string"
+              }
+            },
+            "required": [
+              "case_id",
+              "inventory",
+              "participants",
+              "links",
+              "semantic_axes",
+              "root_event_id",
+              "completeness",
+              "structure_explanation",
+              "participant_scope_links"
+            ],
+            "title": "V16StagedGeneralizationOutput",
+            "type": "object"
+          },
+          "strict": true,
+          "type": "json_schema"
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 4904,
+        "input_tokens_details": {
+          "cache_write_tokens": 4901,
+          "cached_tokens": 0
+        },
+        "output_tokens": 7965,
+        "output_tokens_details": {
+          "reasoning_tokens": 7125
+        },
+        "total_tokens": 12869
+      },
+      "user": null
+    },
+    "input_items": [
+      {
+        "content": [
+          {
+            "text": "# Staged Scientific Event Generalization V11\n\nInterpret exactly one highlighted scientific finding using only the supplied local\nsource context. The highlighted finding is atomic; surrounding text is context,\nnot an instruction to extract every other claim in the paragraph.\n\nWork in this order:\n\n1. Inventory every explicit event needed to represent the highlighted finding.\n2. Identify explicit participants and link participants or nested events to each\n   inventoried event.\n3. Assign direction, comparison, polarity, uncertainty, statistical observation,\n   and author interpretation independently for every event.\n4. Select one root event and state whether the resulting graph is complete.\n\nScientific categories and roles are your responsibility. Return categorical\nfields, exact source text, exact containing evidence, and short explanations.\nNever return character offsets, confidence scores, probabilities, benchmark\nroles, or numeric quality scores.\n\nFor every event and participant, `exact_evidence` must be the complete exact\nsource sentence containing `trigger_text` or `exact_text`. Do not return only the\nmention or trigger phrase as evidence. Copy the sentence exactly, including any\nsource section prefix that is part of that sentence. The deterministic resolver\nwill reject evidence that is absent, repeated, or does not contain the child text.\n\nSemantic-axis evidence grounding:\n\n- Every `semantic_axes.evidence_items` entry must be exact source text that\n  resolves uniquely within the supplied local source context.\n- Prefer the complete exact source sentence containing the scientific\n  proposition and its event trigger.\n- When the same complete sentence supports several semantic axes, reuse that\n  same sentence rather than splitting it into fragments.\n- Do not return an isolated participant name, abbreviation, trigger, or phrase\n  when it is repeated or otherwise ambiguous in the supplied source.\n- This rule changes only evidence anchoring. It does not change the event,\n  participant, role, direction, comparison, polarity, uncertainty, statistics,\n  author interpretation, or scientific meaning.\n\nNamed biomedical occurrence boundary:\n\n- For a named gene or protein participant, use the exact lexicalized name that\n  identifies the entity occurrence. Do not expand that name merely to include an\n  adjacent generic entity-type word such as `gene` or `protein`.\n- Include an adjacent generic word only when it is part of the lexicalized name\n  or is required to distinguish the occurrence in the supplied sentence.\n- This boundary rule changes only participant occurrence text. It does not\n  change entity type, event role, scientific meaning, or the requirement that\n  every returned span be exact contiguous source text.\n\nFocus-gated referential grounding:\n\n- Apply antecedent resolution only when the highlighted finding contains a\n  referring expression that cannot identify its entity or event without earlier\n  words in the supplied local context.\n- For such an expression, resolve one unique explicit antecedent and ground the\n  participant to the antecedent's exact contiguous source text. Do not use the\n  pronoun, relative phrase, demonstrative, ellipsis, or partitive grammar itself\n  as `exact_text`.\n- Preserve an explicitly named entity that restricts the antecedent only when\n  that relation is necessary to identify or interpret the focused event. Do not\n  add general paragraph context or participants from neighboring findings.\n- A source subspan already contained in a complete participant mention is not a\n  separate contextual participant unless it has an independent role in the\n  focused event.\n- An analytic method, model, curve, assay, or representation is not an event\n  participant merely because the finding was measured or displayed through it.\n  Include it only when the focused event independently predicates a state,\n  relation, or value about that item.\n- If no unique explicit antecedent can be resolved from the supplied context,\n  return `INCOMPLETE` or `ABSTAIN`; do not invent or guess an entity.\n\nRole guidance:\n\n- `POPULATION`: the focal cohort or group in a population comparison.\n- `COMPARATOR`: the cohort or group against which the focal population is compared.\n- In a `COMPARISON` event between cohorts, use `POPULATION` and `COMPARATOR` for\n  those cohorts. Do not use `AFFECTED_ENTITY` merely because one cohort has the\n  compared outcome.\n- `AFFECTED_ENTITY`: the entity whose state or behavior is described in a\n  non-comparative state, classification, or regulation event.\n- `CAUSAL_AGENT`: an explicitly causal actor.\n- `STIMULUS_OR_OBJECT`: the treatment, stimulus, or object to which sensitivity\n  or response is described when the source does not explicitly claim causation.\n- `EFFECT_EVENT`: an event whose occurrence or state is affected by another\n  event. Preserve nested events; do not replace them with their participants.\n- `OUTCOME`, `EXPOSURE`, and `MEASUREMENT`: use only for their literal source roles.\n- `CONTEXTUAL_PARTICIPANT`: an explicit participant whose narrower role is not\n  stated.\n\nClassification argument boundary:\n\n- In a `CLASSIFICATION` event, link the classified entity as `AFFECTED_ENTITY`.\n- If a named entity explicitly restricts the identity or scope of that\n  classified entity set, link the restricting entity as\n  `CONTEXTUAL_PARTICIPANT`.\n- A classification label or value belongs in the classification event trigger\n  and semantic axes. Do not duplicate it as `OUTCOME` unless it independently\n  participates in another event.\n\nSemantic guidance:\n\n- A null result is not an affirmative harmful or beneficial association.\n- A numeric P value is a `P_VALUE` observation. It does not by itself mean that\n  the authors claimed `SIGNIFICANT` or `NOT_SIGNIFICANT`.\n- Use `NOT_CLAIMED` unless the source explicitly interprets significance.\n- The `uncertainty` axis describes uncertainty conveyed by the scientific\n  proposition, status, or classification value. It is independent of whether\n  the sentence grammatically asserts that proposition.\n- Use `UNCERTAIN` when the event explicitly assigns an uncertain, unknown,\n  indeterminate, or unresolved scientific status. Use `PROVISIONAL` or\n  `HYPOTHESIS` only when that corresponding status is explicit. Use `ASSERTED`\n  for an unqualified event, not merely because uncertain content is stated\n  declaratively.\n- Polarity records scientific result status, not surface grammar, and is\n  independent of direction and uncertainty. Use `NULL_RESULT` when a study or\n  analysis reports absence of an association, difference, or effect, regardless\n  of negative grammatical form. Use `NEGATED` only for direct denial or\n  non-occurrence outside an analytic null finding. Use `AFFIRMED` for other\n  non-null findings.\n- Preserve scientific negation and uncertainty exactly.\n- Trigger and participant text must be exact contiguous source text. A trigger\n  may include adjacent grammatical words when needed to preserve source meaning.\n- Return `INCOMPLETE` or `ABSTAIN` when the highlighted finding cannot be\n  represented without guessing.\n\nThe output must conform exactly to the supplied strict schema.\n\n\n--- V12 PRESERVED SCIENTIFIC CHANGE ---\n# V12 Focus Event Anchoring\n\nFocus-event anchoring:\n\n- When the highlighted finding contains an explicit event-denoting noun or\n  phrase, inventory that highlighted event and keep it as the root event.\n- A surrounding predicate such as `associated with`, `involved in`, or\n  `related to` must not replace the highlighted event merely because it connects\n  contextual entities.\n- This rule changes only focus-event inventory and root selection. Preserve\n  every nested event required by the highlighted finding, and apply the existing\n  participant, link, role, and semantic-axis rules unchanged.\n- The rule does not prescribe an event type, participant identity,\n  semantic-axis value, benchmark label, or expected answer.\n--- END V12 PRESERVED SCIENTIFIC CHANGE ---\n\n--- V13 PRESERVED SCIENTIFIC CHANGE ---\n# V13 Compositional Focus Root Selection\n\nCompositional focus root selection:\n\n- Select the root only after constructing event links.\n- In the focus-internal event subgraph, when exactly one inventoried event is\n  not the target of another focus-internal inventoried event, choose it as root.\n- Predicates outside the highlighted finding cannot disqualify or replace that\n  root, and a nested effect cannot replace its explicit focus-internal parent.\n- Otherwise apply the existing root and completeness rules unchanged; do not\n  alter inventory or links to force uniqueness.\n- This rule changes root selection only. Preserve inventory, trigger\n  boundaries, participants, links, roles, semantic axes, evidence, and\n  completeness rules unchanged.\n- The rule does not prescribe an event count, event type, participant, role,\n  semantic-axis value, benchmark label, or expected answer.\n\nNon-scientific transport clarification for this exposed V13:\n\n- Every preregistered focus is upstream-eligible because it contains at least\n  one explicit source-supported event. An input with no such event is outside\n  this experiment and must not be sent to the provider.\n- When `completeness` is not `COMPLETE`, `root_event_id` is a required transport\n  anchor, not an asserted scientific root. Set it to the earliest\n  source-supported focus-internal inventoried event in source order.\n- Do not add, delete, relabel, or link events to create that transport anchor.\n  The universal schema still cannot represent a truly eventless abstention;\n  V13 does not claim to solve that residual limitation.\n--- END V13 PRESERVED SCIENTIFIC CHANGE ---\n\n--- V14 SINGLE SCIENTIFIC CHANGE ---\n# V14 Complete Biomedical Participant Denotation\n\nThis rule clarifies the existing named-biomedical occurrence boundary. It does\nnot replace any event, evidence, or semantic rule.\n\n- Select the smallest exact contiguous source span that independently denotes\n  the same biomedical participant occurrence while preserving its\n  scientifically restrictive identity and scope.\n- An adjacent entity-type noun may be omitted only when the retained text is an\n  independently referential lexicalized biomedical identifier that denotes the\n  same participant in that occurrence.\n- Retain the semantic noun head when removing it would leave only modifiers,\n  classifiers, stages, taxonomic restrictions, or other attributive text. Do\n  not reconstruct an omitted head from `entity_type`, the explanation, or\n  surrounding evidence.\n- Retain nonredundant restrictive modifiers unless the same output explicitly\n  represents and links an equivalent restriction. If the schema cannot\n  represent that relation, retain the modifier in the participant span.\n- If either denotation or restrictive scope would be lost, fail closed with\n  `INCOMPLETE` or `ABSTAIN`; do not shorten the participant.\n\nThis rule changes only participant occurrence text. It cannot create or remove\nevents, participants, entity types, roles, links, root choices, semantic axes,\nstatistics, evidence, completeness states, or scientific claims.\n--- END V14 SINGLE SCIENTIFIC CHANGE ---\n\n--- V15 SINGLE SCIENTIFIC CHANGE ---\n# V15 Focus Closure and Role-Bearing Occurrence Custody\n\nThis rule clarifies two boundaries of the existing focused graph.\n\n1. Focus closure. Construct the mandatory event graph from events denoted by the highlighted finding and the complete focus-internal dependency closure of nested events needed to represent that finding. Follow a dependency inward when a nested event is an argument of a focus-internal event. Do not traverse outward to inventory a predicate outside the highlighted finding merely because it governs, embeds, relates to, or takes the focused event as an argument. A genuinely dependent focus-internal referring expression may resolve under the existing unique-antecedent and ellipsis rules; that resolution does not authorize a neighboring or governing predicate as an event.\n\n2. Occurrence custody. For each participant role, bind the role-bearing source occurrence before minimizing its text. If the highlighted finding contains an explicit self-denoting name, symbol, abbreviation, independently referential lexicalized biomedical identifier, or head-complete nominal bearing that role, bind that exact focus-local occurrence. A definition, synonym, long form, abbreviation expansion, canonical alias, or repeated mention outside the highlighted finding may establish identity but cannot replace the bound occurrence. Only when no independently denoting focus-local occurrence bears the role may a genuinely non-self-denoting pronoun, relative phrase, demonstrative, ellipsis, partitive, or implicit argument resolve to one unique explicit antecedent in the supplied context; ground the participant to that antecedent\u2019s exact occurrence, or fail closed under the existing rules if no unique source-supported resolution exists. Within the bound occurrence, apply the existing complete participant denotation rule unchanged: select the smallest exact contiguous span that independently denotes the participant while retaining its semantic noun head and nonredundant restrictive identity.\n\nExisting source-supported optional contextual participants and optional edges remain permitted only where the frozen rules permit them, and they remain optional; this rule authorizes no new optional context. Optional material cannot add an outside event, compensate for a missing mandatory participant or link, change the root, or change semantic axes, evidence, or completeness.\n\nThis rule changes only the outward focus-closure boundary and participant occurrence custody. It does not prescribe or alter event types, entity types, mandatory participants or links, roles, root-selection rules, semantic axes, statistics, evidence grounding, completeness rules, or projection policy.\n--- END V15 SINGLE SCIENTIFIC CHANGE ---\n\n--- V16 SINGLE SCIENTIFIC CHANGE ---\n# V16 Participant Scope and Partitive Meaning\n\nThis rule adds a source-semantic representation for a condition that narrows a\nparticipant set used by a focused event. It does not authorize additional\nevents, participants, event arguments, or source claims.\n\n- When a named participant restricts the identity or scientific scope of a\n  participant set used by a focused event, emit both participant nodes and one\n  `participant_scope_links` item from the restricted set to its restrictor with\n  relation type `IDENTITY_OR_SCOPE_RESTRICTION`. Ground the link to the complete\n  source sentence that expresses the restriction.\n- When an existing event argument denotes a stated partitive subset of its\n  participant set, retain the ordinary argument and attach `partitive_scope` to\n  that argument. Use kind `MAJORITY` only for an explicit majority expression,\n  copy its exact text and complete evidence sentence, and bind its antecedent to\n  the same participant target as the argument.\n- A scope link preserves participant identity; it is not a new event argument.\n  Do not add a direct event-to-restrictor argument merely to restate the scope.\n  If such a direct argument is independently explicit in the source, retain it\n  only under the existing role and occurrence rules.\n- Bind every scope participant to its exact source occurrence before minimizing\n  its text. The existing complete-participant-denotation rule remains unchanged:\n  an independently referential lexicalized biomedical identifier may omit an\n  adjacent generic entity-type word, but the complete evidence sentence must\n  still anchor the source occurrence.\n- Use empty `participant_scope_links` and no `partitive_scope` when the focused\n  finding contains no source-stated scope or partitive condition. Never infer a\n  restriction or a majority from surrounding context alone.\n\nThis rule changes only the representation of explicit participant scope and\npartitive meaning. It does not change event inventory, entity types, mandatory\nevent arguments, root selection, semantic axes, evidence grounding,\ncompleteness, historical graders, or BioNLP-CG projection policy.\n--- END V16 SINGLE SCIENTIFIC CHANGE ---\n\n--- FROZEN EXPOSED CASE ---\n{\n  \"case_id\": \"generalization-comparison-canary\",\n  \"focus_passage\": \"had more comorbidities than patients without RA\",\n  \"local_context\": \"Patients with RA were more likely to be female and had more comorbidities than patients without RA. Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation.\",\n  \"source_id\": \"exposed-gold-40289860\",\n  \"source_sha256\": \"e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84\"\n}\n--- END FROZEN EXPOSED CASE ---\n",
+            "type": "input_text"
+          }
+        ],
+        "id": "msg_0dc3a61ad3c852cb006a62d9356910819a8844cb262d38623e",
+        "role": "user",
+        "status": "completed",
+        "type": "message"
+      }
+    ]
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "bionlp_cg_projection_lane": "RAW_REVIEW_ONLY",
+  "case_id": "generalization-comparison-canary",
+  "custody": {
+    "bundle_sha256": "2a2adc40ea53e1eb8ea7a55fbe293b7e6a225ac66108962cf619a7c1b217ef45",
+    "output_sha256": "ffc96f4f050d9eee81bd805d350b093a21e4a613b24fccd764d38d493dfc8514",
+    "provider_input_sha256": "50a775d491ba62275589e69896bb4cd26b26993901681b3279bf2ebd5f8fb873",
+    "raw_output_sha256": "a37b88cee1d202b0bec324a7e71042e4cbe87f8e2777f0860b707ac5481f1002",
+    "receipt_sha256": "f76fe8f87b73ba5d29ea76d062f205da3d417157f8f88979f3e83cbc5026d59b",
+    "response_id": "resp_0dc3a61ad3c852cb006a62d9356040819ab5295b32de89d191",
+    "schema_sha256": "0b645097208b1f82b0cbd0f72e1702ff4457902a0005c924e716904e4e81f973",
+    "stage": "GENERALIZATION_V16_EXPOSED:generalization-comparison-canary"
+  },
+  "evaluator_implementation": "repair_v16.evaluate_v16_case",
+  "experiment_id": "staged-generalization-v16-exposed-run-v1",
+  "failure_classification": "SOURCE_SEMANTICS",
+  "graph_writes": 0,
+  "qualification_credit": false,
+  "raw_v14_diagnostic_lane": "PRESERVED_UNSCORED",
+  "response_id": "resp_0dc3a61ad3c852cb006a62d9356040819ab5295b32de89d191",
+  "schema_version": "artana.staged_generalization.v16_case_evaluation.v1",
+  "scientific_decision_lane": "SOURCE_SEMANTICS",
+  "trusted_promotion": false,
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.052694,
+    "input_tokens": 4904,
+    "latency_seconds": 59.890665584011,
+    "output_tokens": 7965,
+    "reasoning_tokens": 7125,
+    "total_tokens": 12869
+  },
+  "v16_evaluation": {
+    "effective_metrics": {
+      "benchmark_projection": null,
+      "benchmark_projection_scope": "NOT_APPLICABLE",
+      "benchmark_projection_status": "NOT_APPLICABLE",
+      "case_id": "generalization-comparison-canary",
+      "completeness": "COMPLETE",
+      "exact_evidence_grounding": false,
+      "failure_reasons": [
+        "evidence grounding failed: child text is absent or ambiguous in evidence",
+        "unsupported or duplicate participant: OUTCOME/RA",
+        "V16 participant scope links are unsupported for this case"
+      ],
+      "focus_event_passed": true,
+      "full_focus_cg_status": "NOT_APPLICABLE",
+      "graph_writes": 0,
+      "historical_grader_passed": false,
+      "mandatory_participants_passed": false,
+      "participant_roles_passed": false,
+      "passed": false,
+      "permitted_context_count": 0,
+      "qualification_credit": false,
+      "root_only_failure": false,
+      "root_selection_status": "PASS",
+      "semantic_axes_passed": true,
+      "source_dimensions_except_root_passed": false,
+      "source_semantic_status": "FAIL",
+      "trusted_promotion": false,
+      "unsupported_extraction_count": 3
+    },
+    "participant_scope_assessment": {
+      "failure_reasons": [
+        "V16 participant scope links are unsupported for this case"
+      ],
+      "grounding_passed": true,
+      "optional_direct_context_accepted_count": 0,
+      "optional_direct_context_observed_count": 0,
+      "partitive_accepted_count": 0,
+      "partitive_observed_count": 0,
+      "passed": false,
+      "scope_link_accepted_count": 0,
+      "scope_link_observed_count": 2
+    },
+    "raw_bionlp_cg_projection_preserved": true,
+    "raw_v14_metrics": {
+      "benchmark_projection": null,
+      "benchmark_projection_scope": "NOT_APPLICABLE",
+      "benchmark_projection_status": "NOT_APPLICABLE",
+      "case_id": "generalization-comparison-canary",
+      "completeness": "COMPLETE",
+      "exact_evidence_grounding": false,
+      "failure_reasons": [
+        "evidence grounding failed: child text is absent or ambiguous in evidence",
+        "unsupported or duplicate participant: OUTCOME/RA"
+      ],
+      "focus_event_passed": true,
+      "full_focus_cg_status": "NOT_APPLICABLE",
+      "graph_writes": 0,
+      "historical_grader_passed": false,
+      "mandatory_participants_passed": true,
+      "participant_roles_passed": false,
+      "passed": false,
+      "permitted_context_count": 0,
+      "qualification_credit": false,
+      "root_only_failure": false,
+      "root_selection_status": "PASS",
+      "semantic_axes_passed": true,
+      "source_dimensions_except_root_passed": false,
+      "source_semantic_status": "FAIL",
+      "trusted_promotion": false,
+      "unsupported_extraction_count": 2
+    }
+  }
+}
