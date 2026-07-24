@@ -1,0 +1,162 @@
+{
+  "schema_version": "artana.staged_generalization.v16_post_run_independent_classification.v1",
+  "classified_at_utc": "2026-07-24T03:28:24Z",
+  "experiment_id": "staged-generalization-v16-exposed-run-v1",
+  "branch": "alvaro/tg04-source-general-claim-verification-v16",
+  "sealed_result_commit": "85dc790a787508115f25719a879dbb3807596fb6",
+  "sealed_result_preserved": true,
+  "historical_results_rescored": false,
+  "review_scope": {
+    "provider_calls": 0,
+    "fresh_cases_accessed": 0,
+    "graph_writes": 0,
+    "trusted_promotion": false,
+    "sealed_artifacts_modified": false,
+    "diagnostic_only_replay_count": 0
+  },
+  "observed_failure": {
+    "case_id": "generalization-comparison-canary",
+    "sealed_decision": "V16_EXPOSED_GATE_FAIL_SOURCE_SEMANTICS",
+    "sealed_decision_remains_authoritative_for_v16": true,
+    "first_failure_classification_recorded_by_v16": "SOURCE_SEMANTICS",
+    "post_run_interpretation": "The run and its custody are valid, but the V16-local evaluator and preregistered exclusivity policy generated a source-semantic failure for a source-supported structure that the frozen provider instruction generically requested. This classification does not convert the sealed output into a pass.",
+    "source_semantic_status_recorded_by_v16": "FAIL",
+    "bionlp_cg_projection_status": "NOT_APPLICABLE",
+    "passed_dimensions": [
+      "event_inventory",
+      "root_selection",
+      "semantic_axes",
+      "completeness"
+    ],
+    "frozen_failure_reasons": [
+      "evidence grounding failed: child text is absent or ambiguous in evidence",
+      "unsupported or duplicate participant: OUTCOME/RA",
+      "V16 participant scope links are unsupported for this case"
+    ]
+  },
+  "source_semantic_boundary": {
+    "source_sentence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+    "focused_finding": "The comparison asserts a greater comorbidity burden for patients with RA than for patients without RA.",
+    "required_core_representation": {
+      "event": "one COMPARISON event",
+      "population": "Patients with RA",
+      "comparator": "patients without RA",
+      "outcome": "comorbidities",
+      "semantic_axes": [
+        "AFFIRMED",
+        "ASSERTED",
+        "INCREASED",
+        "GREATER"
+      ]
+    },
+    "scope_link_source_status": "SOURCE_SUPPORTED",
+    "scope_link_mandatory_status": "OPTIONAL_PERMITTED_CONTEXT_WHEN_COMPLETE_PARENT_SPANS_ARE_RETAINED",
+    "rationale": "RA materially restricts each comparison arm, and the raw output's P1-to-P4 and P2-to-P5 topology preserves the positive and negative restrictions without adding an event or event argument. However, both complete population spans already retain the source truth of those restrictions. Two blinded source-only primary reviews therefore classify separate RA scope links as permitted lossless context, not mandatory core semantics. An evaluator may not label those source-supported links unsupported merely because the case is not the uncertainty case.",
+    "representation_limit_exposed": "The V16 schema has no clinical-condition entity type and no parent-scoped occurrence field. The raw model used OUTCOME/RA twice with the same sentence evidence. That is not a scientifically appropriate ordinary event-participant representation and cannot be globally occurrence-resolved by the frozen exact-grounding validator."
+  },
+  "independent_reviews": [
+    {
+      "reviewer_id": "v16-postrun-source-semantics",
+      "review_kind": "POST_RUN_SOURCE_SEMANTIC_REVIEW",
+      "verdict": "SOURCE_SUPPORTED_SCOPE_TOPOLOGY",
+      "rationale": "Both RA occurrences materially restrict separate comparison populations; the output adds only scope links and no event, role, or claim."
+    },
+    {
+      "reviewer_id": "v16-postrun-contract-consistency",
+      "review_kind": "POST_RUN_PROMPT_EVALUATOR_CONTRACT_REVIEW",
+      "verdict": "EVALUATOR_POLICY_CONTRADICTION",
+      "rationale": "The prompt generically tells the provider to emit a scope link for a named restrictor, while the V16 evaluator and preregistration reject every non-uncertainty extension without source assessment."
+    },
+    {
+      "reviewer_id": "v16-postrun-occurrence-design",
+      "review_kind": "POST_RUN_SCHEMA_AND_OCCURRENCE_REVIEW",
+      "verdict": "PARENT_SCOPED_OCCURRENCE_BINDING_REQUIRED_FOR_INLINE_SCOPE",
+      "rationale": "Each RA is uniquely resolvable within its already unique parent population span, but not against the repeated whole sentence; an ordinary OUTCOME participant must not be accepted as the carrier."
+    },
+    {
+      "reviewer_id": "v16-postrun-custody-audit",
+      "review_kind": "POST_RUN_TRANSPORT_AND_CUSTODY_AUDIT",
+      "verdict": "PASS",
+      "rationale": "One acknowledged, completed, admitted response with one creation, one confirmation retrieval, one input-item retrieval, zero retries, duplicates, rejected calls, or unaccounted calls; 25 cross-artifact bindings passed."
+    },
+    {
+      "reviewer_id": "v16-ra-scope-primary-a",
+      "review_kind": "BLINDED_SOURCE_ONLY_PRIMARY",
+      "production_output_seen": false,
+      "frozen_reference_seen": false,
+      "prompt_seen": false,
+      "benchmark_labels_seen": false,
+      "verdict": "OPTIONAL_PERMITTED_CONTEXT",
+      "rationale": "Complete population spans preserve the RA-positive and RA-negative groups; separate scope links are a faithful projection but are not an additional asserted finding."
+    },
+    {
+      "reviewer_id": "v16-ra-scope-primary-b",
+      "review_kind": "BLINDED_SOURCE_ONLY_PRIMARY",
+      "production_output_seen": false,
+      "frozen_reference_seen": false,
+      "prompt_seen": false,
+      "benchmark_labels_seen": false,
+      "verdict": "OPTIONAL_PERMITTED_CONTEXT",
+      "rationale": "The source truth is the comparison between the explicitly named cohorts; requiring decomposed RA links would be an evaluation or schema preference."
+    }
+  ],
+  "adjudication": {
+    "primary_category": "EVALUATOR_DEFECT",
+    "subtype": "V16_NON_UNCERTAINTY_EXTENSION_EXCLUSIVITY_CONTRADICTS_SOURCE_GENERAL_PROMPT",
+    "secondary_category": "VERSIONED_SCHEMA_TAXONOMY_AND_OCCURRENCE_CUSTODY_ADEQUACY_DEFECT",
+    "prompt_evaluator_contract_defect": true,
+    "evaluator_implementation_matches_frozen_v16_policy": true,
+    "frozen_v16_policy_is_source_general": false,
+    "reference_ambiguity": false,
+    "benchmark_only_mismatch": false,
+    "provider_or_transport_failure": false,
+    "irreducible_capability_limitation": false,
+    "model_capability_failure": false,
+    "why_the_raw_output_is_not_a_retroactive_pass": "The raw output's event, core arguments, root, and axes are correct and its scope topology is source-supported, but it encodes RA as duplicated OUTCOME participants without an appropriate clinical-condition type or parent-scoped occurrence custody. The sealed V16 evaluator failure is preserved and the raw output receives no qualification credit.",
+    "resolution": "The V16 local evaluator must not use case identity to reject all scope structure. Source-semantic treatment must instead depend on whether the restriction is retained losslessly in the complete parent span and, if separately projected, whether the representation is typeable and occurrence-bindable."
+  },
+  "forward_only_repair_boundary": {
+    "source_general_repair_supported": true,
+    "owning_boundary": "VERSIONED_PROMPT_SCHEMA_AND_LOCAL_EVALUATOR",
+    "minimum_source_general_rule": "Do not decompose a restrictive modifier into a new participant merely because it is named when the complete parent participant span already retains that restriction. Require a separate typed scope representation only when omission would leave a required antecedent, aggregate, or event argument unresolved, and accept it only when the current version can type and occurrence-bind it fail-closed.",
+    "optional_inline_scope_capability": "If a later version intentionally supports optional inline scope mentions, bind each mention strictly within its uniquely grounded parent participant span, require common exact evidence and one reviewed relation type, reject duplicate, reversed, reused, absent, non-strict, or ambiguous children, and never let it replace a mandatory parent, event argument, outcome, or add a direct event edge.",
+    "not_authorized_by_this_artifact": [
+      "rescore or alter V16",
+      "treat the raw V16 output as a scientific pass",
+      "change shared or historical graders",
+      "start a provider call",
+      "access a fresh case",
+      "write to the graph or promote a claim"
+    ],
+    "next_provider_call_authorized": false,
+    "fresh_validation_authorized": false
+  },
+  "program_decision": {
+    "local_target_status": "V16_FROZEN_FAIL_EVALUATOR_POLICY_AND_SCHEMA_BOUNDARY_CLASSIFIED",
+    "complete_exposed_panel_passed": false,
+    "fresh_qualification_status": "NOT_STARTED",
+    "fresh_cases_consumed": 0,
+    "remaining_fresh_cases_preserved": 7,
+    "remaining_exposed_cases_unexecuted": [
+      "generalization-drug-sensitivity",
+      "generalization-uncertainty",
+      "generalization-explicit-nested-cause",
+      "generalization-negated-association",
+      "generalization-null-statistics"
+    ],
+    "graph_writes": 0,
+    "trusted_promotion": false,
+    "current_stop_condition": "No next experiment is frozen, independently reviewed, committed, and pushed."
+  },
+  "frozen_evidence_sha256": {
+    "docs/validation/preregistrations/2026-07-23-staged-generalization-v16-exposed-run-v1.json": "4a7e62c370ba6ef24e4fee7b4c32e460ecb544e18acc491b95950f547bafdd36",
+    "docs/validation/results/2026-07-23-staged-generalization-v16-exposed-run-v1.json": "0175fef781e7471bec34a149a3a880151deaeacff34d38c5815bde689df237f5",
+    "docs/validation/results/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary-raw.json": "a37b88cee1d202b0bec324a7e71042e4cbe87f8e2777f0860b707ac5481f1002",
+    "docs/validation/evaluations/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary-evaluation.json": "5a9b4bbaaed0f3df1d6f55af083166a9131678e206b864a10dce0147943a68b0",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary-attempt.json": "bb110960cfaa32a49d05626d0290c617f5e659e3dde2755bc18eb9f79586bdf2",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary-custody.json": "2a2adc40ea53e1eb8ea7a55fbe293b7e6a225ac66108962cf619a7c1b217ef45",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary.json": "f76fe8f87b73ba5d29ea76d062f205da3d417157f8f88979f3e83cbc5026d59b",
+    "docs/validation/reports/2026-07-23-staged-generalization-v16-exposed-run-v1-final.md": "b1b1ac7cd032bb72321935932860c70389345c7a6b4bc70376cc519539a5a8f6",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v16/evaluation.py": "930b1af1aa58c1b9d396fc99adc093a725c54133d8bc2b468608a32dc9ff1679"
+  }
+}
