@@ -1,0 +1,1540 @@
+{
+  "output_sha256": "25b9fd0b0d57d23a9fa19558376711f207decfcf94dbd8822bc29326560ba519",
+  "provider_input_sha256": "a1e2e20b6a850e005db6e33b0ad9875526f58b8af89acbd2745601d3bcb59a07",
+  "raw_output_sha256": "4a80e5957462b18965bae55b57696f883355c9116f5be7c3944e9a9093ba3f60",
+  "receipt": {
+    "budgets": {
+      "cost": "RECORD_ONLY",
+      "latency": "RECORD_ONLY",
+      "observed_cost_usd": 0.024293000000000002,
+      "observed_latency_seconds": 23.495943917005206,
+      "observed_output_tokens": 3238,
+      "observed_total_tokens": 8103,
+      "output_tokens": "RECORD_ONLY",
+      "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+      "requested_max_cost_usd": null,
+      "requested_max_latency_seconds": null,
+      "requested_max_output_tokens": null,
+      "requested_max_total_tokens": null,
+      "total_tokens": "RECORD_ONLY"
+    },
+    "completed_provider_calls": 1,
+    "confirmation_retrieval_requests": 1,
+    "creation_envelope_sha256": "929ca4353ed22e6a09792308fc2e2fadfaa8bc0a9c3cb00ba6670e8837aa0e77",
+    "differences": [
+      {
+        "allowlisted": true,
+        "creation_sha256": "51dd264f6607632a3a3cc84bc3202f7d7fb058cbcb06030a48ce862ea26f8fe0",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[0].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "093835dbb135b15ec65f6a079ad6aed815c4cd1388dc6d34c014e1716fb41b56",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[1].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "669692b1370b102f7bbcce82e13fb43b3aa9e541a57ef254f9d6dd496865a3b4",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[2].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "ff7ca24acf35ca4e462426f71f0e74d273d686ee7ae8fb417a18af264e65a0c7",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[3].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "46e2420139080c5c872687a813ab66101ff0f539406a70aaa11b8b1078293130",
+        "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+        "path": "$.output[4].encrypted_content",
+        "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+        "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+      },
+      {
+        "allowlisted": true,
+        "creation_sha256": "03367b96173af7f93d493d5aca7039971a2d9a548ddbe4ec624f99d9872e3e9e",
+        "difference": "FOREGROUND_USAGE_SNAPSHOT_CHANGED",
+        "path": "$.usage",
+        "rationale": "usage is record-only telemetry and confirmation is the authoritative completed snapshot",
+        "retrieval_sha256": "1578e72f4bc5cc541f68a9ae0e606821f1173767bec66fbec8756db6eece00a8"
+      }
+    ],
+    "duplicate_creation_calls": 0,
+    "foreground_request_timeout_seconds": 1800.0,
+    "foreground_usage_policy": {
+      "authoritative_snapshot": "CONFIRMATION_RETRIEVAL",
+      "confirmation_usage_sha256": "1578e72f4bc5cc541f68a9ae0e606821f1173767bec66fbec8756db6eece00a8",
+      "creation_usage_sha256": "03367b96173af7f93d493d5aca7039971a2d9a548ddbe4ec624f99d9872e3e9e",
+      "scientific_validity_dependency": false,
+      "snapshots_differ": true
+    },
+    "identity": {
+      "created_at": 1784866469.0,
+      "model": "gpt-5.6-luna",
+      "object_type": "response",
+      "output_items": [
+        [
+          "reasoning",
+          "rs_0a7e721d817c86c4006a62e6a604a8819a9071ed9205abedc5"
+        ],
+        [
+          "reasoning",
+          "rs_0a7e721d817c86c4006a62e6a9d810819a8d3e978ec41f0bc5"
+        ],
+        [
+          "reasoning",
+          "rs_0a7e721d817c86c4006a62e6ad9764819a8f16471a2796b242"
+        ],
+        [
+          "reasoning",
+          "rs_0a7e721d817c86c4006a62e6b1744c819a90499f0e5149bf3c"
+        ],
+        [
+          "reasoning",
+          "rs_0a7e721d817c86c4006a62e6b517f4819aa9320deaa8b455a5"
+        ],
+        [
+          "message",
+          "msg_0a7e721d817c86c4006a62e6b89158819a9365a6e238705c9e"
+        ]
+      ],
+      "response_id": "resp_0a7e721d817c86c4006a62e6a51ecc819aba98d6cea8bf2681",
+      "status": "completed"
+    },
+    "input_item_retrieval_requests": 1,
+    "provider_creation_calls": 1,
+    "provider_input_sha256": "a1e2e20b6a850e005db6e33b0ad9875526f58b8af89acbd2745601d3bcb59a07",
+    "provider_retries": 0,
+    "provider_schema_sha256": "a184e7a0ac12a8c9e17dc633ea61165d6cdc0ac43c016996842f11210c4257cd",
+    "retrieval_envelope_sha256": "81c72674e065b3648b81344e85a3b1a9a16a73bd41522998686e0a96efe11a81",
+    "schema_version": "artana.provider_receipt_boundary.foreground_telemetry.v3",
+    "scientific_payload_sha256": "25b9fd0b0d57d23a9fa19558376711f207decfcf94dbd8822bc29326560ba519",
+    "status": "VERIFIED_LIVE",
+    "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+    "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+    "usage": {
+      "cached_input_tokens": 0,
+      "cost_usd": 0.024293000000000002,
+      "input_tokens": 4865,
+      "latency_seconds": 23.495943917005206,
+      "output_tokens": 3238,
+      "reasoning_tokens": 2588,
+      "total_tokens": 8103
+    },
+    "v13_transport_custody": {
+      "confirmation_response": {
+        "background": false,
+        "billing": {
+          "payer": "openai"
+        },
+        "completed_at": 1784866491.0,
+        "created_at": 1784866469.0,
+        "error": null,
+        "frequency_penalty": 0.0,
+        "id": "resp_0a7e721d817c86c4006a62e6a51ecc819aba98d6cea8bf2681",
+        "incomplete_details": null,
+        "instructions": null,
+        "max_output_tokens": null,
+        "max_tool_calls": null,
+        "metadata": {
+          "artana_case_id": "generalization-drug-sensitivity",
+          "artana_evaluation_contract": "V17_LOCAL_SCOPE_EVALUATOR_WITH_V16_UNCERTAINTY_OVERLAY_AND_NO_INLINE_DECOMPOSITION",
+          "artana_experiment": "staged-generalization-v17-exposed-run-v1",
+          "artana_inline_scope_policy": "NO_INLINE_OPTIONAL_SCOPE_DECOMPOSITION",
+          "artana_operational_policy": "RECORD_ONLY_USAGE_CUMULATIVE_5_USD",
+          "artana_output_schema": "V16_REUSED_BYTE_IDENTICAL_NO_NEW_SCHEMA",
+          "artana_preregistration_sha256": "faaeb1eb35400d5913f9477125c470735bedec417468f4d514bf7ac7fcc60cef",
+          "artana_scientific_change": "INLINE_VERSUS_ANAPHORIC_SCOPE_BOUNDARY_V1",
+          "artana_transport_implementation": "V13_REUSED_BYTE_IDENTICAL"
+        },
+        "model": "gpt-5.6-luna",
+        "moderation": null,
+        "object": "response",
+        "output": [
+          {
+            "content": [],
+            "id": "rs_0a7e721d817c86c4006a62e6a604a8819a9071ed9205abedc5",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "id": "rs_0a7e721d817c86c4006a62e6a9d810819a8d3e978ec41f0bc5",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "id": "rs_0a7e721d817c86c4006a62e6ad9764819a8f16471a2796b242",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "id": "rs_0a7e721d817c86c4006a62e6b1744c819a90499f0e5149bf3c",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "id": "rs_0a7e721d817c86c4006a62e6b517f4819aa9320deaa8b455a5",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [
+              {
+                "annotations": [],
+                "logprobs": [],
+                "text": "{\"case_id\":\"generalization-drug-sensitivity\",\"inventory\":[{\"event_id\":\"E1\",\"event_type\":\"ASSOCIATION\",\"trigger_text\":\"sensitivity\",\"exact_evidence\":\"Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.\",\"explanation\":\"The highlighted finding denotes the sensitivity relationship between carcinoma patients and 5-FU. The surrounding predicate is outside the highlighted focus.\"}],\"participants\":[{\"participant_id\":\"P1\",\"entity_type\":\"POPULATION\",\"exact_text\":\"carcinoma patients\",\"exact_evidence\":\"Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.\",\"explanation\":\"Carcinoma patients are the population whose sensitivity is described.\"},{\"participant_id\":\"P2\",\"entity_type\":\"SIMPLE_CHEMICAL\",\"exact_text\":\"5-FU\",\"exact_evidence\":\"Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.\",\"explanation\":\"5-FU is the chemical stimulus or object to which sensitivity is described.\"}],\"links\":[{\"event_id\":\"E1\",\"arguments\":[{\"role\":\"AFFECTED_ENTITY\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P1\",\"explanation\":\"The population has the described sensitivity.\",\"partitive_scope\":null},{\"role\":\"STIMULUS_OR_OBJECT\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P2\",\"explanation\":\"Sensitivity is described toward 5-FU without an explicit causal claim in the highlighted finding.\",\"partitive_scope\":null}]}],\"semantic_axes\":[{\"event_id\":\"E1\",\"direction\":\"OBSERVED\",\"comparison\":\"NOT_APPLICABLE\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"ASSERTED\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.\"],\"explanation\":\"The source presents the sensitivity relation as an asserted finding, without a direction of change, comparison, statistical result, or explicit significance interpretation.\"}],\"root_event_id\":\"E1\",\"completeness\":\"COMPLETE\",\"structure_explanation\":\"The focused finding contains one explicit sensitivity event with both role-bearing participants directly expressed, so the focused graph is complete.\",\"participant_scope_links\":[]}",
+                "type": "output_text"
+              }
+            ],
+            "id": "msg_0a7e721d817c86c4006a62e6b89158819a9365a6e238705c9e",
+            "phase": "final_answer",
+            "role": "assistant",
+            "status": "completed",
+            "type": "message"
+          }
+        ],
+        "parallel_tool_calls": true,
+        "presence_penalty": 0.0,
+        "previous_response_id": null,
+        "prompt_cache_key": null,
+        "prompt_cache_retention": "24h",
+        "reasoning": {
+          "context": "all_turns",
+          "effort": "high",
+          "mode": "standard",
+          "summary": null
+        },
+        "safety_identifier": null,
+        "service_tier": "default",
+        "status": "completed",
+        "store": true,
+        "temperature": 1.0,
+        "text": {
+          "format": {
+            "description": "Source-grounded staged biomedical event output using the immutable V16 schema. Retain a material inline restriction inside its complete participant span; separately represent scope only when an independently grounded non-inline anaphoric or aggregate relation requires it.",
+            "name": "V16StagedGeneralizationOutput",
+            "schema": {
+              "$defs": {
+                "InventoryEvent": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    },
+                    "event_type": {
+                      "enum": [
+                        "REGULATION",
+                        "POSITIVE_REGULATION",
+                        "NEGATIVE_REGULATION",
+                        "GENE_EXPRESSION",
+                        "COMPARISON",
+                        "ASSOCIATION",
+                        "CLASSIFICATION",
+                        "OBSERVATION"
+                      ],
+                      "title": "Event Type",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "description": "Complete exact source sentence containing trigger_text.",
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "trigger_text": {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "title": "Trigger Text",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "event_type",
+                    "trigger_text",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "InventoryEvent",
+                  "type": "object"
+                },
+                "ParticipantNode": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_type": {
+                      "enum": [
+                        "POPULATION",
+                        "OUTCOME",
+                        "EXPOSURE",
+                        "VARIANT",
+                        "GENE_OR_PROTEIN",
+                        "CANCER",
+                        "SIMPLE_CHEMICAL",
+                        "MEASUREMENT"
+                      ],
+                      "title": "Entity Type",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "description": "Complete exact source sentence containing exact_text.",
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "exact_text": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Exact Text",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "participant_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Participant Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "participant_id",
+                    "entity_type",
+                    "exact_text",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "ParticipantNode",
+                  "type": "object"
+                },
+                "ParticipantScopeLink": {
+                  "additionalProperties": false,
+                  "description": "A directed restriction from a participant set to its named restrictor.",
+                  "properties": {
+                    "exact_evidence": {
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "relation_type": {
+                      "const": "IDENTITY_OR_SCOPE_RESTRICTION",
+                      "title": "Relation Type",
+                      "type": "string"
+                    },
+                    "restricted_participant_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Restricted Participant Id",
+                      "type": "string"
+                    },
+                    "restrictor_participant_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Restrictor Participant Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "restricted_participant_id",
+                    "restrictor_participant_id",
+                    "relation_type",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "ParticipantScopeLink",
+                  "type": "object"
+                },
+                "PartitiveScope": {
+                  "additionalProperties": false,
+                  "description": "A source-stated partitive whose antecedent is an existing participant.",
+                  "properties": {
+                    "antecedent_participant_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Antecedent Participant Id",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "exact_text": {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "title": "Exact Text",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "kind": {
+                      "const": "MAJORITY",
+                      "title": "Kind",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "exact_text",
+                    "exact_evidence",
+                    "antecedent_participant_id",
+                    "explanation"
+                  ],
+                  "title": "PartitiveScope",
+                  "type": "object"
+                },
+                "StatisticalObservation": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "exact_text": {
+                      "anyOf": [
+                        {
+                          "maxLength": 1000,
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Exact Text"
+                    },
+                    "observation_type": {
+                      "enum": [
+                        "P_VALUE",
+                        "CONFIDENCE_INTERVAL",
+                        "EFFECT_ESTIMATE",
+                        "NONE"
+                      ],
+                      "title": "Observation Type",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "observation_type",
+                    "exact_text"
+                  ],
+                  "title": "StatisticalObservation",
+                  "type": "object"
+                },
+                "V16EventArgument": {
+                  "additionalProperties": false,
+                  "description": "A V9 event argument with an optional source-grounded partitive.",
+                  "properties": {
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "partitive_scope": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/PartitiveScope"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "role": {
+                      "description": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+                      "enum": [
+                        "AFFECTED_ENTITY",
+                        "CAUSAL_AGENT",
+                        "STIMULUS_OR_OBJECT",
+                        "POPULATION",
+                        "COMPARATOR",
+                        "OUTCOME",
+                        "EXPOSURE",
+                        "MEASUREMENT",
+                        "CONTEXTUAL_PARTICIPANT",
+                        "EFFECT_EVENT"
+                      ],
+                      "title": "Role",
+                      "type": "string"
+                    },
+                    "target_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Target Id",
+                      "type": "string"
+                    },
+                    "target_kind": {
+                      "enum": [
+                        "PARTICIPANT",
+                        "EVENT"
+                      ],
+                      "title": "Target Kind",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "role",
+                    "target_kind",
+                    "target_id",
+                    "explanation",
+                    "partitive_scope"
+                  ],
+                  "title": "V16EventArgument",
+                  "type": "object"
+                },
+                "V16EventLinks": {
+                  "additionalProperties": false,
+                  "description": "V16 links whose existing arguments may carry a partitive qualifier.",
+                  "properties": {
+                    "arguments": {
+                      "items": {
+                        "$ref": "#/$defs/V16EventArgument"
+                      },
+                      "maxItems": 16,
+                      "title": "Arguments",
+                      "type": "array"
+                    },
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "arguments"
+                  ],
+                  "title": "V16EventLinks",
+                  "type": "object"
+                },
+                "V8SemanticAxes": {
+                  "additionalProperties": false,
+                  "description": "Semantic axes with the preregistered polarity boundary in the schema.",
+                  "properties": {
+                    "author_interpretation": {
+                      "enum": [
+                        "SIGNIFICANT",
+                        "NOT_SIGNIFICANT",
+                        "NOT_CLAIMED"
+                      ],
+                      "title": "Author Interpretation",
+                      "type": "string"
+                    },
+                    "comparison": {
+                      "enum": [
+                        "GREATER",
+                        "LESS",
+                        "NO_DIFFERENCE",
+                        "NOT_APPLICABLE"
+                      ],
+                      "title": "Comparison",
+                      "type": "string"
+                    },
+                    "direction": {
+                      "enum": [
+                        "INCREASED",
+                        "DECREASED",
+                        "NO_DIFFERENCE",
+                        "NO_ASSOCIATION",
+                        "ENABLES",
+                        "OBSERVED",
+                        "NOT_APPLICABLE"
+                      ],
+                      "title": "Direction",
+                      "type": "string"
+                    },
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    },
+                    "evidence_items": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "maxItems": 8,
+                      "minItems": 1,
+                      "title": "Evidence Items",
+                      "type": "array"
+                    },
+                    "explanation": {
+                      "maxLength": 1500,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "polarity": {
+                      "description": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+                      "enum": [
+                        "AFFIRMED",
+                        "NEGATED",
+                        "NULL_RESULT"
+                      ],
+                      "title": "Polarity",
+                      "type": "string"
+                    },
+                    "statistical_observations": {
+                      "items": {
+                        "$ref": "#/$defs/StatisticalObservation"
+                      },
+                      "maxItems": 8,
+                      "title": "Statistical Observations",
+                      "type": "array"
+                    },
+                    "uncertainty": {
+                      "enum": [
+                        "ASSERTED",
+                        "PROVISIONAL",
+                        "UNCERTAIN",
+                        "HYPOTHESIS"
+                      ],
+                      "title": "Uncertainty",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "direction",
+                    "comparison",
+                    "polarity",
+                    "uncertainty",
+                    "statistical_observations",
+                    "author_interpretation",
+                    "evidence_items",
+                    "explanation"
+                  ],
+                  "title": "V8SemanticAxes",
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false,
+              "description": "V9 output plus bounded, machine-readable participant scope.",
+              "properties": {
+                "case_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "title": "Case Id",
+                  "type": "string"
+                },
+                "completeness": {
+                  "enum": [
+                    "COMPLETE",
+                    "INCOMPLETE",
+                    "CONTRADICTED",
+                    "ABSTAIN"
+                  ],
+                  "title": "Completeness",
+                  "type": "string"
+                },
+                "inventory": {
+                  "items": {
+                    "$ref": "#/$defs/InventoryEvent"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Inventory",
+                  "type": "array"
+                },
+                "links": {
+                  "items": {
+                    "$ref": "#/$defs/V16EventLinks"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Links",
+                  "type": "array"
+                },
+                "participant_scope_links": {
+                  "default": [],
+                  "items": {
+                    "$ref": "#/$defs/ParticipantScopeLink"
+                  },
+                  "maxItems": 16,
+                  "title": "Participant Scope Links",
+                  "type": "array"
+                },
+                "participants": {
+                  "items": {
+                    "$ref": "#/$defs/ParticipantNode"
+                  },
+                  "maxItems": 32,
+                  "title": "Participants",
+                  "type": "array"
+                },
+                "root_event_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "title": "Root Event Id",
+                  "type": "string"
+                },
+                "semantic_axes": {
+                  "items": {
+                    "$ref": "#/$defs/V8SemanticAxes"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Semantic Axes",
+                  "type": "array"
+                },
+                "structure_explanation": {
+                  "maxLength": 2000,
+                  "minLength": 1,
+                  "title": "Structure Explanation",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "case_id",
+                "inventory",
+                "participants",
+                "links",
+                "semantic_axes",
+                "root_event_id",
+                "completeness",
+                "structure_explanation",
+                "participant_scope_links"
+              ],
+              "title": "V16StagedGeneralizationOutput",
+              "type": "object"
+            },
+            "strict": true,
+            "type": "json_schema"
+          },
+          "verbosity": "medium"
+        },
+        "tool_choice": "auto",
+        "tool_usage": {
+          "image_gen": {
+            "input_tokens": 0,
+            "input_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 0
+            },
+            "output_tokens": 0,
+            "output_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 0
+            },
+            "total_tokens": 0
+          },
+          "web_search": {
+            "num_requests": 0
+          }
+        },
+        "tools": [],
+        "top_logprobs": 0,
+        "top_p": 0.98,
+        "truncation": "disabled",
+        "usage": {
+          "input_tokens": 4865,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 3238,
+          "output_tokens_details": {
+            "reasoning_tokens": 2588
+          },
+          "total_tokens": 8103
+        },
+        "user": null
+      },
+      "creation_response": {
+        "background": false,
+        "billing": {
+          "payer": "openai"
+        },
+        "completed_at": 1784866491.0,
+        "created_at": 1784866469.0,
+        "error": null,
+        "frequency_penalty": 0.0,
+        "id": "resp_0a7e721d817c86c4006a62e6a51ecc819aba98d6cea8bf2681",
+        "incomplete_details": null,
+        "instructions": null,
+        "max_output_tokens": null,
+        "max_tool_calls": null,
+        "metadata": {
+          "artana_case_id": "generalization-drug-sensitivity",
+          "artana_evaluation_contract": "V17_LOCAL_SCOPE_EVALUATOR_WITH_V16_UNCERTAINTY_OVERLAY_AND_NO_INLINE_DECOMPOSITION",
+          "artana_experiment": "staged-generalization-v17-exposed-run-v1",
+          "artana_inline_scope_policy": "NO_INLINE_OPTIONAL_SCOPE_DECOMPOSITION",
+          "artana_operational_policy": "RECORD_ONLY_USAGE_CUMULATIVE_5_USD",
+          "artana_output_schema": "V16_REUSED_BYTE_IDENTICAL_NO_NEW_SCHEMA",
+          "artana_preregistration_sha256": "faaeb1eb35400d5913f9477125c470735bedec417468f4d514bf7ac7fcc60cef",
+          "artana_scientific_change": "INLINE_VERSUS_ANAPHORIC_SCOPE_BOUNDARY_V1",
+          "artana_transport_implementation": "V13_REUSED_BYTE_IDENTICAL"
+        },
+        "model": "gpt-5.6-luna",
+        "moderation": null,
+        "object": "response",
+        "output": [
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYua7FspYVPgmY8P40n6IMuPh2Wx1EG4whvkO6nvIaEQ-YPxtdRo_R8pfAQOdYeryS1ZHz6jy1L44sZzUMYOtgFwKb5laIFf-TxsQL4nSya0HM-xSWGKsLbX-5n0fmNJbQeTIYC-WN3i5s0ApL_QVV2veBTXQ_5eyackstA6_mOY1c6KZc1HudtRK-KgozS9JChw3qtqEYD6YyKITgtCDMeCYaWWheloi7zg7CxLhekBU7Ir_F64OZ2xY5K5fCxGxwu1DTSS9X-Jp5c0TDsknuMh0X9xPxR4oK4kSP1pOEpaG7WAdwSo-A2nRIg3vl2LPLeTG6DPYkWFhSPO5WEYlxq3uefIafIWu3WKny2GJ1h1zciB9hb5J2o1Cf1Rm3QJID7zNVe-JETb53o8Ulyl9icCqnfMKleQgciLPfp0VaThaS5hsvaW800WKWQy21NQa9_v8V4YCOuYeAXyOMwi-SuX5SlaG8QzbHJpS65foLR-4iGm9vi6FZ8GYm9W5E2JmOq_53DYBrA8oZEb-gUeogXoV9aaHaxw-gNGyeNiadHRJm-5zmTY9yGPjcepNkQcBtubgMOLKucvbPyImGNNK3-_XyGiYakn_thYG9pVGMtQiCasZTC_OMHL1CYxLMn3FAa5SmxYryPEVIeKOcJA4tlq_mdnBdq4pDZA6Qdukhemrt0oPhFlif2t4qSPJhjhqa4XBYjWGsyPIy_p3rzpcf2oIU8Qwak-OQTZjyfDM70L5UjmDj_6eMd89sUU7mM56JIWNUUG6OpAnnMFUVHV2CZCeMRgYk8MimCTngiaheAtiZWhEz8RMUH4WAzvx6cWA22vdoUKzqdmZpTD44BHQkhA4DUtz8vVjvxmQrfTYxTI4A14E0tDCN5pEoyvF9qsR2NKgrf6EqSQqTIXb0t8tzkjPS6TJA1tfi8HKqU6XxFoWqLsxl4xEymaYPoyHxFniXkn3C7QHjoK0m5rNUQoKR9maiH5Mce302BEOxCmG_vXUc4z1f6zwJri6Nof-WHg1wz0ykMyXxyF3tHdqVAlLD71KsP8963y1FfzTcvTfRO7eIPQOheG02WH8kZDFz-Lg4vUYJJuQSwKVSPoxU41-t-c-geJDb-4pjFPKnRzgLnEwbCLRZGRzREbFSDe0NEQgHZjne349TwI3xk4nbqa4F3-b1UFOLWZa7aQE7WT7Vk1Ciro_5wsMS43UEIFXfIijMWkA37-luRklEjIW0CgocIB3bpbLE6TGwqQQYW7VdWV9Hc9oi6ZvnGAmW-KQ5kpuJfVUGf3zYWFhdrda-Mo6kL0UkbD7pFZO2g4fXMtOZRPpjmJU2d5QHGthtJZYZZDM_7KLfNNz5Z0BJlEoe9acKuYDJpsdNltOUNiALbDWSW1QpGdDPD4kX5BHRmA8CQGDBpNTiPZE2DX3L9L1nSik7sr27k8dAD582Iby6JAhSseYYe7vPba-9p8nnqb1kmA3FKLEUmRHUEzG6GqxDv0eeXn63gecMFr7MKp3j4S8pX0G24vdMMHsfzSLFWsPd9SKogeJrRVr0sq-UE8jfGG_-QtNoMmgcL6_L7qIItTKlCJy3MAmIxnKDY4ppKjKHzS0lNO29V3iNxW_luA0OUTRqOrhC5cgBdV2ljTU4nXfiagLCUWAuQ6wRWpyOg_cMQ1NGZvhVE4un8Zp6ChN_jEirjl5ZlMBpHPCBld42MzAwuN5ebl1TMZCPEOJLuYUJlb9TMfRykFL4EoHGt9OGMfhbIOm9HVykW7fdiCo3hoFu2A0aRtcCaaCwVOj-Kt4Zyn5-BRz5DODi512_BqSVBbepgFryh0CBZwPyheg74Qc5nnOGHxD3eLlgbIlqbTipX9z3L5IQVmpxj3Q6uD3f13U5LD58VqENCkJWHmKd49jzPhuJGUHF3tN3TXNI5HnZZYjgAj2QXXqhuS-D0oQwePe0-XkBJHEHe3ZU8k6K2qPcqCyE-0dTHr1BgIb8QOL4a2Pd7G4CiXYZyy47uXOL9hBIL0SW9bKl7a2AWnjvZ60LGROPYfY0CkKewFYeVbTJWta_uPcpdlyvEWZEyjyYFvkzwsDMO5SzuK7vqq8DkMxAKRPwJPu9vNEvcwj7LfBMsskzyFmIpUj1huxMYXUUBy3vPxjduMhQlXdNBW7LYF7mw11fVUh69ULrbDiO3sXbciZI61M-R74rRIlgAGD_t0a2RTQdOCpke-dEy8Dm4FtYAwlD4M0tze3kjd0xO5zjLS867n4VP9BfyvFoo1EnFpFUxr5VuK9o30mROmN0ubflgPIdeAojGz3DfEZebvRVq5GHFL-2dv5sRSV6XV6IggZIKV95s8HY3V35n0HLX3oRM9OYqPOZJS0P02fDNgzON3b2ztrUezjbjZVR6iOGCZb9Mq-_frAp9zXmwptbvl2dVTfB-lPGpa4w_g_SvBMeN1sMjfIlMTusvuNsLmt2_YaXsxvyj9cY9YGJqLa9gSjGHRsmiJkDX6WiH1NJnBT2-7E09RDyt9nhREKZvOBNCvQgaywLLT2ps-AWjCFZ4orZcdQyXkt9ZueZTflunR8aYPiPcoTd3ET1gGDNf4ZA4IJG-Sl60hC92mOIhTYMWte2VkxiBizNxiy1kdEtSf1y-sEdHod3KNALN70HGm1Wg-ScFvZDy49exAlTfcg8_djqljt9fh93XKkuxKNKIca4yOD8Ddveel4SLXmSxi3B6hdWDBwsu5d0GKlKOupzPPauQAwF3ilE8d4n8wt74HLQOt1YVZU3nbZYDNkEjDwBPKbo2sy_mU9xYt9GttJD-DOIiHcX4Dgr6vAidBldtzb-n1v5aj31MxdzyI1_fyDf5sWeD74Q3-oaO35XIXphNn310h_LqT0FQJggNGmBMc--wvDl-L3OwREZr5xeMDa_fxyMFOtRttA9ep6MgyxbsHey8T9iMFFhryDlph0-niwt3YEsWaIgMpl4dCCmaHT_zeU5XHypSTSMJM7fG_feuAT1hMZ7bAVPJOd-amPy8IDdN7GpR0rnrCXF0lXsqZdppG0n7x9RyESe1hG8PjeSgnOjLXDJpHC8VpIBpa71U1h0Yu6ZSmXt4AxUehxDWBmeLc2FC8Vls4yYB-jKr2fNvPTRE2dtCYhSmlE0hchQLP6S0bVmj2Jb9di33dHIXS9gYoqc_Tvn0Mq9aZBzMzdRyWVf7KsRYi0AWmoEC48NR0XTl2AJJ00vvXH-UMan7h3suW0iPnDgjPpVQtqPZk13J-Ko59redENqqq0Yvfox3Ft3x4ivlEfFvjk-BktV46pNhp2mMwteN9A9mPdrlB7hvhta8nJ_G7PhULtLQMIbtgqLfCL8BmnUw25oxkdMOHAd6Uh_7Y-4n33J83JkLOhHoDKZF4JflIbo7B1KspZESTzr9NddgkTvvvEKBOjPR_kdcqk9jjmVJSJYMoyTRcXQUsZJMYe9x4Dj8NdgYQ8JxLEY9ztPgm3DwO7Dc0n_cENboUo7NZNHgAgbz6YXXWNMd-iW9AX_oJhXTkhFIOz1vyY2VyqRbdHmFCosV0RnaJZmglfJqQ4Z3lwnQEFGkMIKdzExqB8zJU6y9PuCfqI1uuU8eObsCWHKRJ0S9ps8WYkB3a-WCTNHdnYuBFhigHsTpiERwG0PvLtvWSkY-cQFvKb7Cf3kuYLo37G8WMVfQjmYdBetrJ2MtwNCFQ6T5N8aKACtZ5LRKdbY2x7Cj3n2RzZ__nvhGv1jHh5tmYp3sVXTH2hzbBnWfhNW4SgIrCkVHTZ30ZIv-NEVf6U27CYkLvnG_evQ8PyrUUPQWrhr66fJkV5V4AtulUkj--IhfkqDVx4LDw3tRwEXTXi2Pfum6szA44EgbGF6kdnWEwV1rcXZs6JrhA4URjzA341EogK3r3JSrzrSx5ZEvNvL-Pu0OQp7sXwbv2d1-kVn7tJsfCW30kbpQdlmXFzRHy_J50HkBQ_DhpDc6umLcDvEdiEeNXzOKxU6MlLGd5VTebPtPwk5B7HAbvgpUw2eHhv-dQ7T-61mVTFKNLi6UfjjzAHByddXmifRKoyBy9WQOOUvjB2IbRsJBNlraGUXwneTE8Y2juh1iFa39wX4HDWKIn_TKvAWXEr_xadh7tIB8M8bDwRO7yR_fZl345N8b8hFZIwsFwak4ezM2HbLrW7aqk_HGKb4R2xE_eF8j4kt8NMmLa1d2YqheVjTExKOrUdn8QkfcvtN7m7sFic5x-yN7nAiBL2gtBoho7VTzZCdL4UyvvtQq7TYcTbrc5BhQ_SVDF0W9g9ZZ159s1asatLnR8cJWcFMlxc7MZ0",
+            "id": "rs_0a7e721d817c86c4006a62e6a604a8819a9071ed9205abedc5",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYua7OwTff_pIWVko8Bu4kd5VBU2vCGG9UQgGjpGdxP64WUTpQxUVFgXS68JRzQ7rTmn2LcBEYvv8T7vqSPD00DbaJ0nriy7gPUk9Yx-nvI08p-sMz77FgGqr6R7zvK_cx_qXEyLzVBAKzS0kgDieUM0_u7fZBR_CxgjPKepirm8D8AlqHO_GY-4CpcpE6yhwPt8kbp33UXnvNiFZ59zfwI6Hf29KpYqPBFzt8RYqi6QWC0bXoP7SROkLRBhNRKDbeWs5BRAAlDvGu-H28THJTdS3ueFgFvjQyulWPh4AeOBVPa_LQRL7eEYkPBl1csEjXCdbzG1t7viqeZlt2OS-lxGWtkfkwlh_4WKDOu3q0hElUDOCnHx83AxsY5HGka_fizL0cXCS0uMldzs1Jb4G7oOCgip2tHRJiCbPq658FJ8Np2KXpI1ZzJlB96NIh_A1-l5VI9bI5b12aRD06OWuB-2KESmIGnEEOUlLUqThBAN7RH4sUMgqlWcrL62ZUohNHDITFp9JGxA-Rmesq-TSP7fn_E4gbW7-KXhOUfXsRlo5_yv55sW4LBeKgqufuh6oaiukjrpJokhrXpR6rQziqViZ4jwa2Cu0UlhCVLFCSXOu2-K4Z8lN8t0EeHQichKBh_FPe6k6pdpXoh47GTr-BH_AFth5Vv_UPeNSrtTkFtO3kxYCyQoeb-z75MfL-V-7OIWbwdvIrRFWlZIx-DcuBUfFNWc2HxKhmPpyp1H1LSxY4PPOLxnP0VumSW3eAuq51ITzKrOmnZu_T520HD8UG9htymd3bUM5Vtt8DCpXjC6tgnwbyVofyEqSABhWHbQxVTyMDuOmz3sPEWBhkG7_ZClhMIGdHJueQTX2GmodSXHOgf2DZPL6HsXwoqae4IWz2gKcRK-Gcq-7nIZ7fHw6ePWkEk59bCymxTjU1Y3XrguA3PLBjXpZnnLfeg_N6VzoZ2Eukg_wHXLFdfDSJuINPQ_FClwMwHO9un7CUMqy7XLrJEHriBtmWHKfYFwrlZACOYCKzuRKU5LlrSHdvqscEN4bZrIhJLk3BiybV_LCIlOLTmIEZPEYt8drzxIdAOzVkHmMQGKhB1_IXz4L9TelnwIvu-jAvh97ZUlLHKqZsiEqvTiy9CVpIIiFknjYUP-8hAXesO3w4Llq9m7BstTJ0LXAs57GPL5J5Y1aJvi1qiG3n9Of5c99gnBqYLe7tMB_8tY75FpuxUkQSkZ3Pm90SLUSb9uDbM96-PQlHXrRGee3udLFclLL93XhtjQZwSdJczVETwD-_sD_97xCDuvUdROzl0Yy9uMM14dI9dDyNJGqx-I1hPIBOEvuT4SR0W16esOon7VuqOjPhUJCm0h8eK6o_h45L3O3wmUzyLb6Bhq1ua1BAlZCWItrpsrYcWQ1ZGGM9scS_we6n4UrVyYecIN2CdRxHpR8EHOXsms1yfivNinuihQuZHWIBM35KpaAMghysqBS3h6sTw-6Zov59TeKnraE0orZqftW7qtOzmROhcsRikDVHh3IrAfcXn2jscTEWpT6YP5JWePNAip2Xfgh-iHwW0LoCuGb693M4OVfmL-eOIjGpeYuM4XzL5iWLbT5gyAZNbpuqoyXH-KX5kcsjyDRxhkVvulX2W1V-vJaHsbhwAjsczrZeBCP-AsClwA7NDCGtbtqNIID9DBxQcs-CtueafM6rnmbD-wh9YtlA3YGUtuw24Ue7KF86BGKlzyCHvxWiKJZq3T3KPR0DyIiMNGRG3KI3a4GYZ51mzJYoNVA-GUH47sxmC8JnXfoY9TAaAxR1IcbShXafIavVfHkQWbE0h9fSbTdqDd2gWSttLhZeki3MfpRD5vF6DFJsW7_tlOaEFKshNRqqPLl3WPSW3OcgWaLQ4uvFOgsAMJJ8plukOdoW0Q8LYKNLgvyPsbc8AdYTL1OC1OX6ojQaXtl5lk1GA2FGW1NXGRLHKJRn1hXBaPMJK-uPJVE_cT9EEr3COvz4rhGQZoEdil1cAuO9DuKeWNwTVdOzba2rdhnIOCjJsuaN5BEw7VuSSbaQ45DzjTFtXjT1PMdJdyNfBCApd4vDh0_OFQ7vOwApB9fw-WdGzl3-ZCNfQdhAADJkv9KyQi28HHQVj53GrAACFF6VwllCu3SVOY9s9TojR92CupYX_E-_0Mrl4obsulD9QTCqP3iptOzvJ0B7dQg98aUpFmIlDl9QN-wsjaqIEQrQYszfItasHNOvTnnaZhKi4pD2kBKY4muooWkVQss53hEcecyTUPwz_k63X-OKOjrNBjXbT8b6Hfejjww2hnGLLbbO5OcC9dh01pFo-pZ9G5_T0ecpgq5W_ot8PrDC2OKPVyqNDIo5a10R45f-qaWVwhhXxH5NLtvikThOKsprbmEDvQRxp9eedo3o7CXnZa6EXZPP1N-f8rhqam4F9IqHsFTtIixqkJiZ7PR8y8OqsYqBh6ulz82q1gD-co4-9AXDWhWLtf5AZUIFN4Rwt5PcZFVa8XnsUSFVpoMm9BOY6_E9qb-B8QKmpWm6N_zpI9XcXkqEvnj5JweRMo5zbVvdy6CUv24Wp6VfTT_f4fHGSfSjgKkwVXDuUQy17aaR3EfVAnD_dlCBX9swy1g3pniedbwmUYoFtNFX0PgG-b3kQepRyZLLAtnqyD7elm1xjD_HR22UwngN1xslZkqN1h9QlWxROh1dvME9REtWTP_q-TTtNFGEQBkvf1a2FAE9Ufg2tXXKGAAyi94z0bYZsp4AM3HN3AnPK09cldh_bW48SssQmEQ00EXZQqKSnNIlZAX-vy7vdMJrxbZ0XhknlmgDi3RAbigSdq69hmWyRYpjlatVEcao0JFdUVKZ_4n6Zzs-SDNUO56IQed94qvnO4AuXM1RUPD1OozwfST5JDUWltovDrJCLPvF2r7AAZKKmIdVtwAK-WxMiGD5ZyWxpCERRJzB2rN27Qx6_Cro5dQc-uqaySz6UhCuN0QEXTBN1K9cbwOOyHGt0vHET_IeMMSF_zsE7xClan0CWvUla0HoaJZ4k3qZikpUMoLQdGYMRRfvgoN__Q_ncOhOVgyrqo7tveF-eOeMTwITksgSneo01qMOYNO1VBKpjR0hWdcazKHWzTDP6E16diXec5Fc377AYfKRpF5rmXt2LXXf9s-yOQjVGsElMIBCPgHjqeDUZPxsFQd-1gArwAi1B-iK8QCC60Y7m7UNjzuV-49MwhTUlPL6vYcWVDUl9R9TlhmOhn_WBHxcNAk8giv0yNM2_Kn27upPzdp4Vv-x3BOAeVJW02qhl1F7SIGdM7e_qygfNwRxw5w757V13lgSfqSrFDz2jx9f1OoWSR7tgbDgiAcPOVlllJ18ho7UN-eqOHCHaxlghNbXMPURprh3Gfa8hPkv7ryyjdmZ8ZDD-FjnulOYLUZCBw8uFeWaShQCd14VcpzaTkITblOguNMLWKx9qOK1dFTsa35Bb7i8aK7adtoPS5QORA4NrHALn7-p3Fv8QKXv-Z8sSFvKUcK-GkV-CB1zNOYofMlAL71Mc2S8qcts4foKqI9UrSjFdy1Cnq_Qwxb7YqL3n-sh6bN7iitwSmNFXrjjcovhLv7a5ysAUx4LItrehOZMjbm9tKKE2mVafbJ01Nkj_6uwFs1TAvv9zWC3RZ7EyuYN-DYXqy3eIThMRoxa0VjN3GZk3qEsNCqXczW6z2HgzIDm4Ni7G-8whpNUAL9dxnImwPXbTxdPCl--tSV3MeKc86GELA4IqsaEEFcVz8j8x96WAhEH36LbpOBB8WWepZrcRzzyLvrOnF7U--TmT7ZUHZ93QaaLt_WSMSHNIuwIKQh3obgpl-SeVKEizQgP4aUZ5N0mH4Tjj2rlLt6jtURTaeJdlc83LKxSx7857uJtb5ucKV33cxF4Ky1iov9BL6gfrkw53UjZVPUr4ISRrEn1MCAw2Gr7cD4aEGisHFsCRBHvz8knZ8UIL85RRGwfF4XqpT7yWX8Ra3Q8G66Z8zUv4poTNggotGZ4OktEDfI38hUO-zGKSbc2f6n3ysNaVBsMci6ok-yIh7RUfCX_uIHTWg3wNIfMWjk6JreVEsudYNFNnyAbb4ag6Iy_lQT_Mp_HIcI4ge6Wgo88T-mi38l1m2jJ-PQk7_mMA9ckRCbksSCKDWdlMfxMYG-k9uKcqYTOjpMdZmWovH7aC2Flpj8oaM3HtGaKhL0TAoJUL2LaeHVKFn2ML5WkXWmIz5wlHLUNmUPRJz109DlM4mV5je3j12kewq296sbuyFkH8wrwh9VbZgx6V9Opbv-b0XY5fy7MDPi9AO6GzB_LvSv3PtDPWimbdO3yNf6msmjDM3YdN0wIYVpoxsFg0KlMCfKC-mhEluKj-RiLmfCgNZCqNgLbXiMeXVTKpZEw68Qp1perVrj7Q2KpsQbBJBQfISG",
+            "id": "rs_0a7e721d817c86c4006a62e6a9d810819a8d3e978ec41f0bc5",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYua7aHXWCY2H3KCVoEW0MEBG6OqhHLFWhZrH9sGvZpa6npwji0dTTBF9wiTfBMDS7h8GzJ0-q9aDdzp2sGPvjWunKVjVBOvFXmn8ZJ13jZsXzgBAoa6bHJZxdfbeDgrJtjtY8CSe1HI2V0OhArEXNPDH_O3Ie6LVd3l4VABJBvu7IUFusM3fL7zfplUnDPRv5eR4CwMle-gLM2m3tUlpsez0zgAIhnQZD0BJ9fLMc8zB1SQId0IncU5jFyE7U3Q6lmUXRCEnIWidNoOjltUoISzIANZMrP_KhsLNVc97q4IAekjIgdjDKqJRHnrQMhNaq6bxqTpK202hGsQyPwXMnWxeQ3gAzjgY1ITa190BpiS0U1rwFPZVethMLD30LSZ_z8Ur00nOrNfw2R3aADrk9vQq-g0rwn4oo6PCgOIvd4PrKv7CiuR_dil-y6QvDoI0FSA9N8fxJmxhcRnWwbhVazFPOPvm1btaoS67t20t2Z5B6IHYXccq2s6dd4_TqEN2fbG64qWjENCZsCxl7FIhS2r6s90deTU91krFvKQ6EYLDWJFPwEdaQHBizqEgQRoos6uS2FUKElo2YPPimefD0S2QA2Aj64HU3Uhu7Eo4htvvN4FHETqQXiAceSJCAUc6t6DB0splOJZpm0emevb55DCYSkryRZ_S9PUvvz0QJhXM9q6yl24EmCVFXsF9iUW3TarbTleVZwbjmYdMR5a5qYkkgnZIJfQnAvPoiR5J3PqSSO9Ux8ZxZfv27YWqcFbJ1wWD6raOPVQX-qwOLSIpii9B9lU_a4U_9dyKxOBIdJPGIBpmsxB-J2__IYKtYr3gvJl5gDv523VGab0t9Ie5xRHUhjASTP2fnqhrrms-8UHT7bqAhKdyN3Ec9h36oserC0ALwXDlfOJw7TIA7VdALIrSQdyEICwnMBAjCMUb9wHcUXS6zIxgbbWShmzlUevXygGiyiSAMEBGzR4VjGcyZcdGvqyFpJBRr_DnVtNRpkmLnstOXz2l95kUrL84i7pL3O215yxBtwuZcL_pV-NQda05jo3XwjbfoaRpUM89tTdT4ncu56YdO4P7WYvUVV3wqmmCeMhdf5xXQX14BRA_J6_5xrpWEYVCRuC9ZETMxsh08PGHKGSri0s-YTjS8jVAejf4eqfPch9NgbZvWbsoYi_V0tirm9wbaUhZt0nx_85UZnFgcL-Q1AmS00CP6RbUOMZo5kNbxCmSqhzFY37O2golsidLM1hsLYzyuqjVZ2LSA84sbmtxKO_7zsZWFg6Gggo-rhN_rIST-k3X5mE_TDzsdSUSLG2OdOgg1YlDSLwDOOPPyvtGJieM_pJlvyAXEdlHpZlVY2dxgVQdc--FzswnuSP7qFNcH7H2U9elzozkHKU4jLDRydWYbu0Sa7rvE3TetN4M_ceRBqvHDawO468VsMs5xZQ8Odl6MJ9XzRfcHbC-ZAZ3vKX0fJD3y99IYW_KbdxTqblq9YP4HaD2lWK-ThZyjtmoU4pbMdemuxCOtrPulRJlL4Ace5b_QFPEQvJ4MV8JfmyY7RAwJlGj8z_-BAIi6YCx3V8k946LFGiEe4WUaqCas1WB12w8u5J0YjicmzBPONOdtJ0xrA4fs6qPAbFzMufxf3sP63wkINbVnC3JJlSb9q9AD1kcjGXs7PFIoKGIiDXv0mFMmZ7o-H_fzBImfTTUuPWg0pzVLrREqx6lgTL2tD_fvfEvJJuQKInhfiXrQ8XQTsjJdJurx9y3Vu_perDnDCc4k4GoFURJPzxX99HYYIVvWK1jJZgEEMFzjISVsuYDFfmu-MBEYLtxoHmFAgr-sL7rsrkLNYGdfqQey714P6C7n_yifH23kEaX8zX0I3bqOKn7MFKizQZaZM5KxyWlCV0xeaoaWUgUoQ22Z6bs6ZpLuitbXXTKpqyVtCb5XlG12jQd3qTS94EPHYR4jJekGJXcAMmwWXE3xXrtUsSa7dgDDDYXuJqPN9_SzWJG4fVN3cMsyg-U31jbpMTJs2ztUBR7JuVs5DyZeWIPV9BB5dYpmUO5tqBRG0OhG2AXVl9urtjL66_Z2NKuHfD8HKw5nrRGlRPeNh9-0dYRykSSCaCyrrGD1p_I33usaepS8X67HtqJHZVbSVFS2wecowqOQL6HSGbE_OQ5RDjYuPQoFBqaCZoBVurQs6SiweV6htLo4xqA8gYb5GE5UTi9iX3TT82Z_5QN-5mU1moSSGy_vJA_TgIS0pMeaiih9NwbkuDM_pD-c-jeX-E1z94tenFw9kd-XWEJcTNNEvH6E6TRD24QFU2WkJ2M5IU9RZrH9k8Nk0yD291SxfUC4xnpiVwoJzZaFjWMwTyxS9RTbvDNr87cRhyGzo8hpvnDSBUqyHaJHm7fTwEySflBNCRvWn979a0ykBTd-Rw4jL-dvNDcy3d3sVFF-N-ff3Xp3_Wd1iRWDJvnECga0eGzHfKgZ9VAzMfOHptZYFMk31V81D_59LVwGNKnsoAtQcO3o2Q7Qc_nj-6x7gEGtLVBOa5wFogPhag6VsfRaJKIY6_pL0nhk5Sz-F3XuYYm9ydJoIic9tXK4ZQYTCCGPpkefoF9gg0EEWc9fqiNNn3SCHi5F5otBcETX75P7DB_jTqUEuvMZG2vB76W_KBfKEOyCORt78-JrNQWqAGvJJG2t6n5ALOHoiF_kuF39PlZVT6XbquH4LFLrfprEAfRSr7t-BTNwL5RNm0jLf9hFi5iynidPdBlKxpRQJ48Cazv_vKiu7NMvNI0j_FJn1soydAoJhJnlHf4fDkjmk8l6ZFZ7MZOW2YGU8ZW6X5OWuaULek8NR1U_KoZafPInMY_YZMSFKSqBbmwC38P8W3Rsg7yQIJMX7cUhWS3yD2sgNJynGsPSkvczWeBdSHcPXrDoFOndDOegD5mxSP7k8-oMcbhbLGAg_Iill8WG848Xm3dg-jNF6DGPmGd_bCwMc4qZNraQJiudovWuxoqWGM3rIKBwNyN0mPjN6Q76o1Ys93WQ0QTPpAx6T8xw1_l9_Wn_NZjJFeb5VzOhTbwVEwJYptzDGVjsASj9swTbWhcb-nSep0YU1HAuw8Z0IFJDVdpA-DMoJ_mvjB7kITi_IKaTjj_CTiGoYOtki8QxFGdUmeL3eOyRqkYO-jn6P0WlMqwaeAAH33iNjiqt-uq4tI4PvZFTap-GEe1-WiSkIFkfLq-BSORbkGAg-NONaUKLkyVJInIO12y4RSEZDj8lRI2w1RpbCAF4VL2QROLdYit166n4IWBt7TtSNIqNmnqIxw8Hp4XrRrD7whJx6In2gYW8XmYM_e37udGKpk30vsryWReexsvii-cGP6ilYvy-uq4lR21vcGVdyXzoOPWerQw_eXhs8go8OwLxMvYHGcS6jZichUcgzVHFrXmwiUJJSiFi2RO-7mFSnAg1uz5nNJyVr_rkpLzjXqkmSwEYR4NsIgSVUGuaHhuQh4C2wNECHHOhe9KeXWVnzkHb0qPUzAzLPPaeCoZat8pVfQo7TUMKrD8M1_lc-cuRKedFblIW79JrSUD6QtGV7xAyq4BOnyN0_cAH6_iYfQ78G134cgVsJJTngCpgVpRJWRIwycC8_8P4-gFC_CoK1W9S-Kbpv2Mq-Ah9tEmwFxIIsspAUQ87s5wkFsE9lNejfigAr3oAXVXz7At3vm7a2SVvZ2AJJPcmfBKuteEcGGw3tbfQoxNOdWpcpsrHU32IyIVIvYhC0Xhcfm7XY8jQiwDb_m6munqSxnZEenk-kqVWU7Dy66PfhzoZwejQFJF5e6yur_mZrof6fslnDdkLrRDOC33gj_E6B_mduZbBV8oFlBlTEJV4sMidkIk3DAsLVsl8XPrXbK1woqNXI4m2pkbpIGx4C25hXMi6QfrPo7EddAqFmKdWDyaCntCuPlep4nd2zXq2xexqkyGMSoakqK70c_M_PkeQbC_syzXAfM9z2AsF6sTq3k0WxxLH-5sZ8x-kQe_uCTcnI_VSeAmzxRyiJ582xehXwJUs6aEg7F0jSoMDBnEVAGms6g-mmx555k-m8hklkeB_TvKmtBe_HOaoeVeC36SYKhKbW89l1QOoLmoDMZRjsIzD9DpW04XdidUpWw8O5zCoV05lCqzt-xp0GnmdbEdL8VaavlzqYUJ2HNsK-6PbTHPtn9CamJ6fjqQ3NxgYOZI1pgxQq4AWkFqG5AN8XLuQ5Ji56JsyBMVrWReqmc2xfGM8owJzvs5cY217ygQia3nzYZayp2JjOxMmUpz8h2QnpPmgWqWnm2UmwGV-Fjcbf-6TZB3-tPRaQWByKMyK1hkbr_kmKhkwu-AWB9a10p38KEVj8DIcFn8X3njSaEencWVN9IHHtMzYPwr3PznOW1jA4abUxNsWJ0If1S9UvukNmQE97XsHA1DZ3Mik4n32G5VHeUX-1yY-tOObUJXrb1bjmJSF95w6IULK5DjWcBB-L70ksDtif5vYULSShTRlUenOY6IGZk1woA674IxYLtntgntycnmQonwumkRb_Oja_Al86t4-1nD0laytv_MMMq0Z0bj",
+            "id": "rs_0a7e721d817c86c4006a62e6ad9764819a8f16471a2796b242",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYua7Kt_Hd7aCQoWBXQ8lAPQ0B-HLGqIxEwovRT9togSvv2mAA7-DZdu1Z8DtPk17G_G9n5Q1zt83iTYyJj_12lwMQk5DmSuoHgO58TA1LrvJUb-hFKf_mMkdd_V5kKiFqyMFin4dAIiqaAkHvNnMI07FjmrA_bxkVAq8n1LXF_cuYDYEBOFhj1HLR8oSjCNaq9ZfZqIT7ObGSeZpLwnnXl6imppJ7n77wKtTSbkO4pMqRVBqWI-GdtJ2HJZo16EaV9j5vY6jECSVsvRuvPpn-nd2JrFFz88-oZAk04dJ6NR4-CESP3Yc1bHYoI8_LCrvVKh-utOU627AcgGh1mCEpdg6NdEqVzEKWDzYRhNojzI9bkUIONJbfbyIwik5pxR2YRjm8IhhNK44ASp4W4zWVFDRPKBi7rZclAR166sEfM6nFrB72XlGT_hN7men2lBmMdju8fqDwuVr_YHLImJCCKvg_KE6ccNQkUUM--DtXWe_nFqrsxhTFHEldNiIoN3l1k_IDGWVP8ysgeXGDPJDLXYtCqRXi48TTszjtAi4P937wbmMBlkmXc3wxJf_Ty4V4bzfTsQnfZyYcoYJ4qZCFZ59EjQhJiWjSVBGlWeSCz32ZyF_mbXVspC1Nz4UScnIpymdvkcAoHuFQbBU6ryn8jDXvJtDxKKTBxOUuj9vV4OnNrMGFNvhjs65poJT2ydH1mYTq3wHtwD_SkNy0uPWQxuzNX4hSRh_QYUirZGOGvi3u-USfRFb1v7WrcZgqDTkDzVS1ORZ-a-RyFoEqBYUnY8ESKYKfn7VY9vtPWuAgKqW1PrxSmvN8B-uZ6_j8a77p7giaEUVHuaUaRcDJwgRa_a_TLeQ-YTOxXErSlQo7QzFBwrGP_J9bP5hxuaGu1NnKSNwZuSGBq71ZrDnhLjVfZ-sXo7wktW2AHRJmF0bL3V1uvVkDJ9VNSJeS5X7OJlnucrMATcvsCgdjhLyXeQe2wqilwzaqxFgmyShPREAVyRPRD_xpCPoZKJ86epNt4r0iuC534uIYNKDTXGueH9RvGaPiwgVegN2vroNn_suocEpyfQFYveARjw797FTANhN8Ui4iA3DoG7W1epFIfGwqLQOhthywsWfHl4ynpTRUNAsg7hGvkNGQ6g2BmtQfycKS2s4FghyyFEKJzqdxyPVzNhYitrnx80Gp9TsOK5fcep-iDhk4XoM-yDJco5VVRHMU_Ir0DZkBHlQ_QakSqkGCd3ZAdL83OYv_ZFOWMY9Zx94c7auNZ3MZtA9cF87PAtyljyJbNuPJ0ePK0GK3Dr1yloQqz0Zk9Ed0OMm-ZZzgx8PaPnUXjPN29Bj-tL9Z7BzNjS8UmUKNToJWKc8cZ1I-_S_9PozoVjdGaEjcj6DNkomkFLw-e1sBFqZzM8QtC1lm3wVSg0kfN8PjPEV-qeSRpyKkm_S5eNFZ8CFR8QZHlARF-aNGzIhv7-uPRQriU6TfjX1CQWOjCl8EAl2Sbyo20XAwGyEU3NJhtjHkSSZvC8qvMa-aoLOomDRplRz695OuK1N_TgdGEe6Itb0T1LkQcRJM7ddvfzyq38K0j2TzrMbL8S-jUh48Qj1L6A7Tp8ljhDfCiR2SIkFqAY5SLW6tlgo34cP26pc1iFiDwhzzw2V_noHCu-QSF7X9Rm9XnuoYI-TGl6VzL2q0h3KbiKuqtSSUK-H5NmrhONignoliH4USX9-0l2ZduvfOKhKtifnhUtIoFkBNZEliMpI4VGrYySHOEGHnFl9Imlt8TfpCqPUQhCqSSms4XDbSA-Zwexu8z78YQCIXxdW6wYbkI2Dr9MyBh2ogrQHbJdfEKRRo5j7jWHCFf9s4Es-ZXYM3TavUHGxvzqudprq3SxTZBaJA49kFpVN164DEbnk3nw9tpQ_MO5po3IJ8Qg4mj0brtqaMfQCG9HpaXCPO-22bB_TlsD6EuZO1VoD8FJ2_byo7lmvssGnqZ-HonjIauS-au98Bko1vkHoo6arajaBoaTeiGBLMOKLhKMfC7SvWYp57baCp3QrtGu0V4r1MSQfnLQ1yiysFH0oSDlKrTeYK9fFMTa1TsSQuyzM_22nmNpPl65Xg34YuxVf93HVg1USshM4UXRXKzyu5TwSdDwecQZLcs0UI5u3OgcIqbImnYI_Ccrd4aOZ4YCGbskUpXau_Dy-DNefhKRVI7PCRe_FwwESB3ES0ZzEO8mzz5K4KdDiWJn50w3IaXkbn4LX65YfbpTXCDk5h854gp8PErtGgCeWQIHpZnzSV7uZY95wId1WeOUKVdF6wzgIv1hQXSLyiyonKfQ4nyZbDD5RjFcuSbjNYtpPYSqxjAGQvJb1qwvF1rDhTD3HYof87er2woe008QbW7nIifpm7pofE6wW4MqV3PndnHRM12_kifXEAFKLneBsL7lNAzC-ddCpsvNdX-izdtVj2UcxyHZb8nqOoFuaHmcYfQQJBfG7fYzMhajBQx83RSpzHZD7ucE8B-LJscYFRL3fVa6Rbacp30SO4MEjsdA5OymOi-HXI4nqaBNXv9EXL2IvX8Hlbd9IGOBWyOWiSXyzKlHg_LN009uaJ7h3pzgZMalLhZTpFReoTilolZU7WsJtQaT1ftjsplkXhCvsxyz4GB0UB9OXTp7KeeVFlEZrtxZY0HN4T3275ApwIWxdOF519kN6FmAuypWRPK3rFbNIQxNBSxAO2B3UGFh7n-KVGU5TRmRd6ikM5mmZteqfEH7011kJEY774fnAMaTYL55D4jtCu0GQG_FVJAATcm7w9-bX7eKsexDYCbW2HTysBftcnFx_-CAyv86-Tf2BN3_TeDeLm7xuJnbhkBBx-RbtycNS_9J2qTlIpzbjUoLTjQjC8GLDx8WW2GEhwDzYVgfzG-QCaZr-Btw4wRNXJ6McaInn1qrvs2GBkdawSNSFv_b6OuOvbGsKzaSpqsBDF2nCy5nxKdI6o1MVdNYzo3REwQbNREVFNIw-FDUapocQd0HNRtqhG8Y7FHs5a3DhME4V0k28b2PtGdEWYoVICWT-Sl19RRCE4aoBp6wtUrOConCvTgouqFkyLGTg-65R59J8D6GBAYgCT_VIR14uC0btDRK9mtzEpd6eW5BSavkBj284mIQjHHOxZbE-RDUAXyBwwOh1NyxYVj6FJnkLbE3y7EpkDQVh-nCISDBdyjfyq9FtxTRQ3JLSMcowcelNj2VAPlNrOGWFDcmjciAwy6dCgx4u7_qftQbkdGTgQlLXvzu-kWZIACamf7kdd993Ai0rkdq4qQZHAREQR6SUto1xqaw9CBGsjCzhL_NUjVpkRGVlr_as0wcjLjDKscNfO5NKTlkvpSqdY5-0LsGfYv20JcHYIisbLMxSHq7Cr8aMtwgXsS9Rd7SjUgTusGJd5qwgSB-cFlysHPeel6AXqiUq9luC4ZhG9zZT6DegJCd9QKZcaP-4KGhpOXyAh8jvasT6jTFjxdBJKsFabrTBwUkJ9IVijK4ELtkx_XFCdpSB1JD_aXIQnZrp34HxRzULUDnUGgGan1bO6l-fP0cC9Fsy_ntOXURyNOqa1QAURbLZj5XzLtmfgZwLtvHCN5NqUXaUz4JUHkvrGOquaVXZ5KwkrUsFpoLD53z0kx0-a6VBscKFduAHkFjVTK-A057hfDvd_75MJBIoXsLY1UPlNwvQ7wnIDtHki4a3KtV-X1bypQh6oXb9nYtQh3xIrdr57kBPYTHhfkQca8M1OXCIePUK2QWJ2hRwb1RQFiOqkwraqhhVDdfSuEAqbCdTuKaDiV82hFpGJlDhXsNuecVCHQ13AjrU3h2hkF2dqM9fth2aqKF77xspxpvQQ54n0_mzrWVfgwiQ14aUEbNhdyzu29ixMYce-FhiBPUNkBIcl_OsowboDl0RAMSRW2zKTkRNPWT6UhGM47_ms2pKDu5oRWAWYNPi-diN8qj39C8TzPVLgpgNM-Ml5bQiD7pSdvy4l5GPOre4mF3E_RkMt2L4Q_BpdhBln9gMDvWEWbJDKmR1isKBYxae-4h2kYhy9cDcziSr8Vytkd73rdDjo43ulE9RGOA-cq79PBwCNVyRg-DGi9or1po7u57cDRNZC2JnAzDN8XfbXnmVoaFHd4QHIimE84g7XyQ_lzo8gcsfBskjplF2QmR1PJJbLaSTLRTaLCxKaQJ_XsN5nJzBXkLYhNPwtehHM4TkTD-w0zPyLG_Nxaf-NBYaSURQzKmLwlhp2C_YUfX6iM4IfLFfjQvZON8eSA==",
+            "id": "rs_0a7e721d817c86c4006a62e6b1744c819a90499f0e5149bf3c",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [],
+            "encrypted_content": "gAAAAABqYua7oYUhQvgAoTaxJQ0Aj3KEklGiouataUznRAffyhzMJWu438k1cBSz6U5VOBB8AEhP0fGoek_tUtLwwQw09JWSkDKFHuN2hWlaaCXGWav-miriO8kt7L91BrV3ME9KZgIcqC37Kn8NY-1nmlGVzSYkpUKmG4S7rPx8x25VD1TwQWxe1s9eKqrFDqFE_0t924V7rrP_97seVl7j0YFANI8T-_KeA7woySDdLx4uozqFmYNDGco3DiZ2Rt6qQQ3ESvvQELCANVwvbzLakQ95gy2rqdKm9FK_jUQzx5e8_yjzgBa9ClsdHwjfNTic3Y2A-9AHRMookwNJ6U4d6EeYKbvU47AMhkUdVNorol_lC7ocG6KQYI4I-L0rKvgA1TiEuhmKgOBtuXF0XbRDk2RQnHgz62gmdY24CJSbolL61JCEPe6h1yDJEyPkwQboHgVd4RLzbXQ7RS-GUyVtzXdZxoeVX3093mbmxPIjMmIAnknyDpdxsxtYHwDKv-qLXQorNzD3afs7amoJbokvrgcdYFTmMP6VOaatuKSFgTxvQFIca8UwWgK6BMszlIT4L0PywJPNtQDawksNls3rrMk0GrowWNlR8V3F8w3uFMZLz3x_gMBqQXs4vJGxXq76BOIZzuVW9qt_UZRsiavxqvp-rGVWOqhkGNwAcfprR-F2tKPYOgqB5Tf07b3qVhHRra2AlMhE-_2klfI_XwV3Xw1Gxw_CenePsEpqMctDVIdXrXurKb60tqhTRU3ukHhYKZQHltMwMxeh8Tn0gwOfXAXy_dXyv4_cBiAE54Ej7cxtGDMea9vR5kwOeK1PPN13-GVvr2pIGSX90Pek_8ze9hFLJ29OpG_dXJNLAv7o4r27hPHXDj5DtnER9ao0xQB_Y9OvfhkvLa7SCRjH1rTsNLjTuvneFSdN5VJ0_02BbrVyE8jEKw3KsafNLXc2VnWVZzK54Gzj41jB3KDxCJp46JmCtu5CrZ2YE_KpkORup_SMFn_2hLTwIMrGRXfg-oAjj_Y1zD_gdMaRTcPLGK-vevKHFsTnLOq8_tRHbeb78G9HK1gT41LuIoHH_CDm_tx25ITaBCvcPIDlu_7ztwIe5gDmHDJaLFkbh5jz8X5_Jwb7zr2Un6o3d4Gr7QLKOk_fVRs2og88Z_VF-wyjSIIdAhxLkwSSLLi1t6iE6GbD9-FtFpn00sGSEF_8WNHbwsPmsyDmwBdSqo8J-N_87ZjlJCL7tRZclRwJGrSZbz850KH49oUO9X010YUuK0HdkhiXIDnsR2-FUIt5oZSZCp1XD7f9-jUI8gAE8tK_IhNytypeUIuF1IA4V1KfNopf2BBXI5KXodMTMtBJkIm0QqiThb21EyWad6rExcVijIAo5WFfC_4pShZBBmnIoLESfQt34a6GcImi0o_L1E52Yc4GvvLk-ZBizPGYOFaiLUqMnagCIY8i1d3s4xUNj_-QHXnTH0RlJX33F3nZyqvRdDu-vo4cRmlzoeVBgiXvdaawgNQPuvFb4IqQtXj2_STSuz1PxFaO2IMfZdeuUPiOqoHiw4cnJaBKt2aZaiWXedXu6pk3XVrWy2uWESnoyprCZ_STZAUcXSwH00gDd6gd_WgMyzwiiDns57pD0CWC70Yj7kcAyUXVG5AlhTv6ONovyb3tXEvtDrC0Pb0vurNd4gzHRjs2SWzHilDSjIA6JTVhgLcJi_5Zs8AaBMWJn_AObT4apbUYhvyeLgh61o_fo8pGKw968BM7Hu5_3L41p1EkY69inKmVGkGF8LVSdku6QXKOkrhSa6YLpy-RYtI4Fe4zX3aLs0-td6gUi0lN2WbcfGfb9pe_jU3FNyPrO4nRY1pPdfdpwS180ARmdKADDGO_qTIhdBo0UJ_h3V6CBxtRIko2FZTuirwwaTfIQV5G9n0Hu-wFq4bxA47rCfThKXj_obYPDBXdgbANbtjmbRF-MygCTEphk9AoxBjkvWN6N2WmTStBpeWBO8lA-SeYUXAoGTFA-n6Dy9t9lERv2RoP3Kzn1l7kP3mlEryCPi96Ye4rYPdtZztpQudnIIsjT0Jx0kDb4gYvPnKDiwboZpnCeqLCEyIccBeOwC9ROuN8qsDdS7NxWvht87ho5XfraF1_Pt_zs8oCfJ8mACynaX3VqceEeOrjl4fKT6VGRWmXGM8B1PhI8nC76th8mzbREjwVY4F_ckF6sHT-Qw9_LQspJXH46FWmUILWDVKl3EMEYjctwCPn8kXfuMpvO6zC2_YnjXb6L8YSgYoH6MuHKcp0bfo6usB9aUpI_6hYVDqJMI_JTLCFWkJ1LhBZf1Wbd0Q0nhfXGNc20LOtDqb-kq2uLP3akVo73Wbs8E7VMi9BrXJ1PUChqgzwWn6z1lNTYsxArH1GKjvDSxE3j3r9NVD1OGpbWUD64yB8zKgxBtDr0myyal5w5LtC3AyYstPdcQzPY1MFak1jsbFPPyfzCsj7W-8VAJpTYbDgT7T3TaklQfByNuYSrsfr53g65LmPyr2nKr_QejdgqTVY7mssEDGAm3BuhkxFEC-e_RrtKoXN_KsLYAZGHvdMG-z1oOtpN40mHp6qgNCfCAWEjAXzoQq1VkLn7jCU-KRtR1QyXdHevBBF474UTrgP1OlzQY_BE8Nlf_6GB7zIc40wDMkDh9Xo-iV_pswfy4USqEBhpIZTD-T1x2uHRdsxhcGW86W_w-8-Xpl__IbCybAHrAJZ5EIS0jPG4G5ULceE_N2tnpNaNRMP4cUzKont7LIv3XcpGkl8GxjX5KxOB1Ypu-zWu6FvWFe0GeUBvAHwDTgPe_DdY4ccGQnVh3VHNU0Z6FqA0jP9g0kBMmD3ubh7RH2HRu8GId8ozfU6jmN3hnDiIB67-w4yUGlXjCV1BhYXO9Ub1w74J9Po5ZYGRMBGECHFOw8UGMdKxcO7MmqsZpWpiEGvSYvEdTaEn4Uvo7mWrLxLvcCwa5Ah1amt7PMD0BPFim8V1I5W8h4820qKDfEAC6x90LcJyvJVYg7MyT6rNQ8OzZdcZi0cmuWZL0vj0Usmj50uWbtsI0iv02nBg20-uQ74lgTG0AInHis3NVLzkwVMw2o6WbV0uUtOKiZXGO_poAdzfcBl8s-V1exQ1d_VnvaF-8o7idacWw1HarE_mgqQjawoTQNss7akSEXYshFrx7bSg0UocQNdZ3ZxmJZQanMvBvAq89MtOwUkYnktjFR5XPQEluXTkwzMtJMQaesVxmsnHT7yMY8m706HexziJL7oRxUT1vWwMzyIh42esHvFSLgB93MWukCiUz6DaEu4_iMePXBLnpP-hthJ8OQhUGYxRw3z4BAQitVLhOpWce2qFVRe7Gr6NaKa2vva_fJb-s9MMOpByacrZFHnWYRGIc8EDr_eBIodYEXEAX0eCSTtXM3zZhBoBo9NqpoCeSQYatS3IBtF7sj0RI90lY2vhHVMTV_S29f8yTKMbFrmrNEdv1Cej9idBdt8B2_HYN4faO2O63bY6vgXpbfCnu-4XOqfrmiGccYkNPh80wgYRUd8V9flwqiUnf7RM973X5Qr-U2UBzE55TuWT74MgVgSTUg5FgW3IP3_xtpiyvjo1y1N3-4kY240eIDtVHcrDuFcJvws4p8YH-bZ9U8Ii-1_HtN96moz_LZs9fIcBf2nCUr77QJQWlQkW3i2PAUNw6sCCF8k5ajLDgyO3FZeu7hDvjZ98WAo11A5VpBvaP2bZP5f3JUfG4_EvBHWN2ANLlXID984d9S1gmLNN2D0DkDgfMct-FOWADtPRWprDFE-Qs11LZLv3fmLg50y1Evxj5ZXbSUwoM6FYVsuDQ60EVNJtDsq_V6WbJDtYfUe9HF0F5L6wTngsc9Yu3bFfn5RJ4qsvEGZgWPNP-WV-YHfW0mnexlZKefnuVd1a59VgO6UqiFrVjmIRiUOAJpGgWwUTQJv1iMWQMBAX63DxgaBT-PnaB6ICRzxa3rtRNniia0cjbk26vpSp819irVn2gSSo1pySnGhy9amoPnduDphnRUcyWnB8F0wxcOXlmTKz9mVlidrbJwfz8lE4j8LYl6auIqaCFPpyAFfqhrwpHa4z4KqcQDJoUhvU6wygPoR7507nmpMkIuMzyIB92uFzVT-a4v-Iap0n6iflc0L0Wg-mEVas8Xm_q-S415402bGvIiONw-KWNUZ6dJKGvuZp5LP4wZOEDtWP_jzBlYL1CkfuDWdpF26DYelkWK_wIhOT5Z9cDAMSmyoq4agrMZ3E1ft_OqK6C14kO7xQwM_t8FzDyA5hzou9lDWIgxMKWOG8pocOhsnciPdPpEaYlW87g==",
+            "id": "rs_0a7e721d817c86c4006a62e6b517f4819aa9320deaa8b455a5",
+            "summary": [],
+            "type": "reasoning"
+          },
+          {
+            "content": [
+              {
+                "annotations": [],
+                "logprobs": [],
+                "text": "{\"case_id\":\"generalization-drug-sensitivity\",\"inventory\":[{\"event_id\":\"E1\",\"event_type\":\"ASSOCIATION\",\"trigger_text\":\"sensitivity\",\"exact_evidence\":\"Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.\",\"explanation\":\"The highlighted finding denotes the sensitivity relationship between carcinoma patients and 5-FU. The surrounding predicate is outside the highlighted focus.\"}],\"participants\":[{\"participant_id\":\"P1\",\"entity_type\":\"POPULATION\",\"exact_text\":\"carcinoma patients\",\"exact_evidence\":\"Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.\",\"explanation\":\"Carcinoma patients are the population whose sensitivity is described.\"},{\"participant_id\":\"P2\",\"entity_type\":\"SIMPLE_CHEMICAL\",\"exact_text\":\"5-FU\",\"exact_evidence\":\"Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.\",\"explanation\":\"5-FU is the chemical stimulus or object to which sensitivity is described.\"}],\"links\":[{\"event_id\":\"E1\",\"arguments\":[{\"role\":\"AFFECTED_ENTITY\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P1\",\"explanation\":\"The population has the described sensitivity.\",\"partitive_scope\":null},{\"role\":\"STIMULUS_OR_OBJECT\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"P2\",\"explanation\":\"Sensitivity is described toward 5-FU without an explicit causal claim in the highlighted finding.\",\"partitive_scope\":null}]}],\"semantic_axes\":[{\"event_id\":\"E1\",\"direction\":\"OBSERVED\",\"comparison\":\"NOT_APPLICABLE\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"ASSERTED\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.\"],\"explanation\":\"The source presents the sensitivity relation as an asserted finding, without a direction of change, comparison, statistical result, or explicit significance interpretation.\"}],\"root_event_id\":\"E1\",\"completeness\":\"COMPLETE\",\"structure_explanation\":\"The focused finding contains one explicit sensitivity event with both role-bearing participants directly expressed, so the focused graph is complete.\",\"participant_scope_links\":[]}",
+                "type": "output_text"
+              }
+            ],
+            "id": "msg_0a7e721d817c86c4006a62e6b89158819a9365a6e238705c9e",
+            "phase": "final_answer",
+            "role": "assistant",
+            "status": "completed",
+            "type": "message"
+          }
+        ],
+        "parallel_tool_calls": true,
+        "presence_penalty": 0.0,
+        "previous_response_id": null,
+        "prompt_cache_key": null,
+        "prompt_cache_retention": "24h",
+        "reasoning": {
+          "context": "all_turns",
+          "effort": "high",
+          "mode": "standard",
+          "summary": null
+        },
+        "safety_identifier": null,
+        "service_tier": "default",
+        "status": "completed",
+        "store": true,
+        "temperature": 1.0,
+        "text": {
+          "format": {
+            "description": "Source-grounded staged biomedical event output using the immutable V16 schema. Retain a material inline restriction inside its complete participant span; separately represent scope only when an independently grounded non-inline anaphoric or aggregate relation requires it.",
+            "name": "V16StagedGeneralizationOutput",
+            "schema": {
+              "$defs": {
+                "InventoryEvent": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    },
+                    "event_type": {
+                      "enum": [
+                        "REGULATION",
+                        "POSITIVE_REGULATION",
+                        "NEGATIVE_REGULATION",
+                        "GENE_EXPRESSION",
+                        "COMPARISON",
+                        "ASSOCIATION",
+                        "CLASSIFICATION",
+                        "OBSERVATION"
+                      ],
+                      "title": "Event Type",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "description": "Complete exact source sentence containing trigger_text.",
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "trigger_text": {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "title": "Trigger Text",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "event_type",
+                    "trigger_text",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "InventoryEvent",
+                  "type": "object"
+                },
+                "ParticipantNode": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_type": {
+                      "enum": [
+                        "POPULATION",
+                        "OUTCOME",
+                        "EXPOSURE",
+                        "VARIANT",
+                        "GENE_OR_PROTEIN",
+                        "CANCER",
+                        "SIMPLE_CHEMICAL",
+                        "MEASUREMENT"
+                      ],
+                      "title": "Entity Type",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "description": "Complete exact source sentence containing exact_text.",
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "exact_text": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Exact Text",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "participant_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Participant Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "participant_id",
+                    "entity_type",
+                    "exact_text",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "ParticipantNode",
+                  "type": "object"
+                },
+                "ParticipantScopeLink": {
+                  "additionalProperties": false,
+                  "description": "A directed restriction from a participant set to its named restrictor.",
+                  "properties": {
+                    "exact_evidence": {
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "relation_type": {
+                      "const": "IDENTITY_OR_SCOPE_RESTRICTION",
+                      "title": "Relation Type",
+                      "type": "string"
+                    },
+                    "restricted_participant_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Restricted Participant Id",
+                      "type": "string"
+                    },
+                    "restrictor_participant_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Restrictor Participant Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "restricted_participant_id",
+                    "restrictor_participant_id",
+                    "relation_type",
+                    "exact_evidence",
+                    "explanation"
+                  ],
+                  "title": "ParticipantScopeLink",
+                  "type": "object"
+                },
+                "PartitiveScope": {
+                  "additionalProperties": false,
+                  "description": "A source-stated partitive whose antecedent is an existing participant.",
+                  "properties": {
+                    "antecedent_participant_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Antecedent Participant Id",
+                      "type": "string"
+                    },
+                    "exact_evidence": {
+                      "maxLength": 4000,
+                      "minLength": 1,
+                      "title": "Exact Evidence",
+                      "type": "string"
+                    },
+                    "exact_text": {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "title": "Exact Text",
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "kind": {
+                      "const": "MAJORITY",
+                      "title": "Kind",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "exact_text",
+                    "exact_evidence",
+                    "antecedent_participant_id",
+                    "explanation"
+                  ],
+                  "title": "PartitiveScope",
+                  "type": "object"
+                },
+                "StatisticalObservation": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "exact_text": {
+                      "anyOf": [
+                        {
+                          "maxLength": 1000,
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Exact Text"
+                    },
+                    "observation_type": {
+                      "enum": [
+                        "P_VALUE",
+                        "CONFIDENCE_INTERVAL",
+                        "EFFECT_ESTIMATE",
+                        "NONE"
+                      ],
+                      "title": "Observation Type",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "observation_type",
+                    "exact_text"
+                  ],
+                  "title": "StatisticalObservation",
+                  "type": "object"
+                },
+                "V16EventArgument": {
+                  "additionalProperties": false,
+                  "description": "A V9 event argument with an optional source-grounded partitive.",
+                  "properties": {
+                    "explanation": {
+                      "maxLength": 1000,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "partitive_scope": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/PartitiveScope"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "role": {
+                      "description": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+                      "enum": [
+                        "AFFECTED_ENTITY",
+                        "CAUSAL_AGENT",
+                        "STIMULUS_OR_OBJECT",
+                        "POPULATION",
+                        "COMPARATOR",
+                        "OUTCOME",
+                        "EXPOSURE",
+                        "MEASUREMENT",
+                        "CONTEXTUAL_PARTICIPANT",
+                        "EFFECT_EVENT"
+                      ],
+                      "title": "Role",
+                      "type": "string"
+                    },
+                    "target_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Target Id",
+                      "type": "string"
+                    },
+                    "target_kind": {
+                      "enum": [
+                        "PARTICIPANT",
+                        "EVENT"
+                      ],
+                      "title": "Target Kind",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "role",
+                    "target_kind",
+                    "target_id",
+                    "explanation",
+                    "partitive_scope"
+                  ],
+                  "title": "V16EventArgument",
+                  "type": "object"
+                },
+                "V16EventLinks": {
+                  "additionalProperties": false,
+                  "description": "V16 links whose existing arguments may carry a partitive qualifier.",
+                  "properties": {
+                    "arguments": {
+                      "items": {
+                        "$ref": "#/$defs/V16EventArgument"
+                      },
+                      "maxItems": 16,
+                      "title": "Arguments",
+                      "type": "array"
+                    },
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "arguments"
+                  ],
+                  "title": "V16EventLinks",
+                  "type": "object"
+                },
+                "V8SemanticAxes": {
+                  "additionalProperties": false,
+                  "description": "Semantic axes with the preregistered polarity boundary in the schema.",
+                  "properties": {
+                    "author_interpretation": {
+                      "enum": [
+                        "SIGNIFICANT",
+                        "NOT_SIGNIFICANT",
+                        "NOT_CLAIMED"
+                      ],
+                      "title": "Author Interpretation",
+                      "type": "string"
+                    },
+                    "comparison": {
+                      "enum": [
+                        "GREATER",
+                        "LESS",
+                        "NO_DIFFERENCE",
+                        "NOT_APPLICABLE"
+                      ],
+                      "title": "Comparison",
+                      "type": "string"
+                    },
+                    "direction": {
+                      "enum": [
+                        "INCREASED",
+                        "DECREASED",
+                        "NO_DIFFERENCE",
+                        "NO_ASSOCIATION",
+                        "ENABLES",
+                        "OBSERVED",
+                        "NOT_APPLICABLE"
+                      ],
+                      "title": "Direction",
+                      "type": "string"
+                    },
+                    "event_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "title": "Event Id",
+                      "type": "string"
+                    },
+                    "evidence_items": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "maxItems": 8,
+                      "minItems": 1,
+                      "title": "Evidence Items",
+                      "type": "array"
+                    },
+                    "explanation": {
+                      "maxLength": 1500,
+                      "minLength": 1,
+                      "title": "Explanation",
+                      "type": "string"
+                    },
+                    "polarity": {
+                      "description": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+                      "enum": [
+                        "AFFIRMED",
+                        "NEGATED",
+                        "NULL_RESULT"
+                      ],
+                      "title": "Polarity",
+                      "type": "string"
+                    },
+                    "statistical_observations": {
+                      "items": {
+                        "$ref": "#/$defs/StatisticalObservation"
+                      },
+                      "maxItems": 8,
+                      "title": "Statistical Observations",
+                      "type": "array"
+                    },
+                    "uncertainty": {
+                      "enum": [
+                        "ASSERTED",
+                        "PROVISIONAL",
+                        "UNCERTAIN",
+                        "HYPOTHESIS"
+                      ],
+                      "title": "Uncertainty",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event_id",
+                    "direction",
+                    "comparison",
+                    "polarity",
+                    "uncertainty",
+                    "statistical_observations",
+                    "author_interpretation",
+                    "evidence_items",
+                    "explanation"
+                  ],
+                  "title": "V8SemanticAxes",
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false,
+              "description": "V9 output plus bounded, machine-readable participant scope.",
+              "properties": {
+                "case_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "title": "Case Id",
+                  "type": "string"
+                },
+                "completeness": {
+                  "enum": [
+                    "COMPLETE",
+                    "INCOMPLETE",
+                    "CONTRADICTED",
+                    "ABSTAIN"
+                  ],
+                  "title": "Completeness",
+                  "type": "string"
+                },
+                "inventory": {
+                  "items": {
+                    "$ref": "#/$defs/InventoryEvent"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Inventory",
+                  "type": "array"
+                },
+                "links": {
+                  "items": {
+                    "$ref": "#/$defs/V16EventLinks"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Links",
+                  "type": "array"
+                },
+                "participant_scope_links": {
+                  "default": [],
+                  "items": {
+                    "$ref": "#/$defs/ParticipantScopeLink"
+                  },
+                  "maxItems": 16,
+                  "title": "Participant Scope Links",
+                  "type": "array"
+                },
+                "participants": {
+                  "items": {
+                    "$ref": "#/$defs/ParticipantNode"
+                  },
+                  "maxItems": 32,
+                  "title": "Participants",
+                  "type": "array"
+                },
+                "root_event_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "title": "Root Event Id",
+                  "type": "string"
+                },
+                "semantic_axes": {
+                  "items": {
+                    "$ref": "#/$defs/V8SemanticAxes"
+                  },
+                  "maxItems": 16,
+                  "minItems": 1,
+                  "title": "Semantic Axes",
+                  "type": "array"
+                },
+                "structure_explanation": {
+                  "maxLength": 2000,
+                  "minLength": 1,
+                  "title": "Structure Explanation",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "case_id",
+                "inventory",
+                "participants",
+                "links",
+                "semantic_axes",
+                "root_event_id",
+                "completeness",
+                "structure_explanation",
+                "participant_scope_links"
+              ],
+              "title": "V16StagedGeneralizationOutput",
+              "type": "object"
+            },
+            "strict": true,
+            "type": "json_schema"
+          },
+          "verbosity": "medium"
+        },
+        "tool_choice": "auto",
+        "tool_usage": {
+          "image_gen": {
+            "input_tokens": 0,
+            "input_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 0
+            },
+            "output_tokens": 0,
+            "output_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 0
+            },
+            "total_tokens": 0
+          },
+          "web_search": {
+            "num_requests": 0
+          }
+        },
+        "tools": [],
+        "top_logprobs": 0,
+        "top_p": 0.98,
+        "truncation": "disabled",
+        "usage": {
+          "input_tokens": 4865,
+          "input_tokens_details": {
+            "cache_write_tokens": 4862,
+            "cached_tokens": 0
+          },
+          "output_tokens": 3238,
+          "output_tokens_details": {
+            "reasoning_tokens": 2588
+          },
+          "total_tokens": 8103
+        },
+        "user": null
+      },
+      "input_items": [
+        {
+          "content": [
+            {
+              "text": "# Staged Scientific Event Generalization V11\n\nInterpret exactly one highlighted scientific finding using only the supplied local\nsource context. The highlighted finding is atomic; surrounding text is context,\nnot an instruction to extract every other claim in the paragraph.\n\nWork in this order:\n\n1. Inventory every explicit event needed to represent the highlighted finding.\n2. Identify explicit participants and link participants or nested events to each\n   inventoried event.\n3. Assign direction, comparison, polarity, uncertainty, statistical observation,\n   and author interpretation independently for every event.\n4. Select one root event and state whether the resulting graph is complete.\n\nScientific categories and roles are your responsibility. Return categorical\nfields, exact source text, exact containing evidence, and short explanations.\nNever return character offsets, confidence scores, probabilities, benchmark\nroles, or numeric quality scores.\n\nFor every event and participant, `exact_evidence` must be the complete exact\nsource sentence containing `trigger_text` or `exact_text`. Do not return only the\nmention or trigger phrase as evidence. Copy the sentence exactly, including any\nsource section prefix that is part of that sentence. The deterministic resolver\nwill reject evidence that is absent, repeated, or does not contain the child text.\n\nSemantic-axis evidence grounding:\n\n- Every `semantic_axes.evidence_items` entry must be exact source text that\n  resolves uniquely within the supplied local source context.\n- Prefer the complete exact source sentence containing the scientific\n  proposition and its event trigger.\n- When the same complete sentence supports several semantic axes, reuse that\n  same sentence rather than splitting it into fragments.\n- Do not return an isolated participant name, abbreviation, trigger, or phrase\n  when it is repeated or otherwise ambiguous in the supplied source.\n- This rule changes only evidence anchoring. It does not change the event,\n  participant, role, direction, comparison, polarity, uncertainty, statistics,\n  author interpretation, or scientific meaning.\n\nNamed biomedical occurrence boundary:\n\n- For a named gene or protein participant, use the exact lexicalized name that\n  identifies the entity occurrence. Do not expand that name merely to include an\n  adjacent generic entity-type word such as `gene` or `protein`.\n- Include an adjacent generic word only when it is part of the lexicalized name\n  or is required to distinguish the occurrence in the supplied sentence.\n- This boundary rule changes only participant occurrence text. It does not\n  change entity type, event role, scientific meaning, or the requirement that\n  every returned span be exact contiguous source text.\n\nFocus-gated referential grounding:\n\n- Apply antecedent resolution only when the highlighted finding contains a\n  referring expression that cannot identify its entity or event without earlier\n  words in the supplied local context.\n- For such an expression, resolve one unique explicit antecedent and ground the\n  participant to the antecedent's exact contiguous source text. Do not use the\n  pronoun, relative phrase, demonstrative, ellipsis, or partitive grammar itself\n  as `exact_text`.\n- Preserve an explicitly named entity that restricts the antecedent only when\n  that relation is necessary to identify or interpret the focused event. Do not\n  add general paragraph context or participants from neighboring findings.\n- A source subspan already contained in a complete participant mention is not a\n  separate contextual participant unless it has an independent role in the\n  focused event.\n- An analytic method, model, curve, assay, or representation is not an event\n  participant merely because the finding was measured or displayed through it.\n  Include it only when the focused event independently predicates a state,\n  relation, or value about that item.\n- If no unique explicit antecedent can be resolved from the supplied context,\n  return `INCOMPLETE` or `ABSTAIN`; do not invent or guess an entity.\n\nRole guidance:\n\n- `POPULATION`: the focal cohort or group in a population comparison.\n- `COMPARATOR`: the cohort or group against which the focal population is compared.\n- In a `COMPARISON` event between cohorts, use `POPULATION` and `COMPARATOR` for\n  those cohorts. Do not use `AFFECTED_ENTITY` merely because one cohort has the\n  compared outcome.\n- `AFFECTED_ENTITY`: the entity whose state or behavior is described in a\n  non-comparative state, classification, or regulation event.\n- `CAUSAL_AGENT`: an explicitly causal actor.\n- `STIMULUS_OR_OBJECT`: the treatment, stimulus, or object to which sensitivity\n  or response is described when the source does not explicitly claim causation.\n- `EFFECT_EVENT`: an event whose occurrence or state is affected by another\n  event. Preserve nested events; do not replace them with their participants.\n- `OUTCOME`, `EXPOSURE`, and `MEASUREMENT`: use only for their literal source roles.\n- `CONTEXTUAL_PARTICIPANT`: an explicit participant whose narrower role is not\n  stated.\n\nClassification argument boundary:\n\n- In a `CLASSIFICATION` event, link the classified entity as `AFFECTED_ENTITY`.\n- If a named entity explicitly restricts the identity or scope of that\n  classified entity set, link the restricting entity as\n  `CONTEXTUAL_PARTICIPANT`.\n- A classification label or value belongs in the classification event trigger\n  and semantic axes. Do not duplicate it as `OUTCOME` unless it independently\n  participates in another event.\n\nSemantic guidance:\n\n- A null result is not an affirmative harmful or beneficial association.\n- A numeric P value is a `P_VALUE` observation. It does not by itself mean that\n  the authors claimed `SIGNIFICANT` or `NOT_SIGNIFICANT`.\n- Use `NOT_CLAIMED` unless the source explicitly interprets significance.\n- The `uncertainty` axis describes uncertainty conveyed by the scientific\n  proposition, status, or classification value. It is independent of whether\n  the sentence grammatically asserts that proposition.\n- Use `UNCERTAIN` when the event explicitly assigns an uncertain, unknown,\n  indeterminate, or unresolved scientific status. Use `PROVISIONAL` or\n  `HYPOTHESIS` only when that corresponding status is explicit. Use `ASSERTED`\n  for an unqualified event, not merely because uncertain content is stated\n  declaratively.\n- Polarity records scientific result status, not surface grammar, and is\n  independent of direction and uncertainty. Use `NULL_RESULT` when a study or\n  analysis reports absence of an association, difference, or effect, regardless\n  of negative grammatical form. Use `NEGATED` only for direct denial or\n  non-occurrence outside an analytic null finding. Use `AFFIRMED` for other\n  non-null findings.\n- Preserve scientific negation and uncertainty exactly.\n- Trigger and participant text must be exact contiguous source text. A trigger\n  may include adjacent grammatical words when needed to preserve source meaning.\n- Return `INCOMPLETE` or `ABSTAIN` when the highlighted finding cannot be\n  represented without guessing.\n\nThe output must conform exactly to the supplied strict schema.\n\n\n--- V12 PRESERVED SCIENTIFIC CHANGE ---\n# V12 Focus Event Anchoring\n\nFocus-event anchoring:\n\n- When the highlighted finding contains an explicit event-denoting noun or\n  phrase, inventory that highlighted event and keep it as the root event.\n- A surrounding predicate such as `associated with`, `involved in`, or\n  `related to` must not replace the highlighted event merely because it connects\n  contextual entities.\n- This rule changes only focus-event inventory and root selection. Preserve\n  every nested event required by the highlighted finding, and apply the existing\n  participant, link, role, and semantic-axis rules unchanged.\n- The rule does not prescribe an event type, participant identity,\n  semantic-axis value, benchmark label, or expected answer.\n--- END V12 PRESERVED SCIENTIFIC CHANGE ---\n\n--- V13 PRESERVED SCIENTIFIC CHANGE ---\n# V13 Compositional Focus Root Selection\n\nCompositional focus root selection:\n\n- Select the root only after constructing event links.\n- In the focus-internal event subgraph, when exactly one inventoried event is\n  not the target of another focus-internal inventoried event, choose it as root.\n- Predicates outside the highlighted finding cannot disqualify or replace that\n  root, and a nested effect cannot replace its explicit focus-internal parent.\n- Otherwise apply the existing root and completeness rules unchanged; do not\n  alter inventory or links to force uniqueness.\n- This rule changes root selection only. Preserve inventory, trigger\n  boundaries, participants, links, roles, semantic axes, evidence, and\n  completeness rules unchanged.\n- The rule does not prescribe an event count, event type, participant, role,\n  semantic-axis value, benchmark label, or expected answer.\n\nNon-scientific transport clarification for this exposed V13:\n\n- Every preregistered focus is upstream-eligible because it contains at least\n  one explicit source-supported event. An input with no such event is outside\n  this experiment and must not be sent to the provider.\n- When `completeness` is not `COMPLETE`, `root_event_id` is a required transport\n  anchor, not an asserted scientific root. Set it to the earliest\n  source-supported focus-internal inventoried event in source order.\n- Do not add, delete, relabel, or link events to create that transport anchor.\n  The universal schema still cannot represent a truly eventless abstention;\n  V13 does not claim to solve that residual limitation.\n--- END V13 PRESERVED SCIENTIFIC CHANGE ---\n\n--- V14 SINGLE SCIENTIFIC CHANGE ---\n# V14 Complete Biomedical Participant Denotation\n\nThis rule clarifies the existing named-biomedical occurrence boundary. It does\nnot replace any event, evidence, or semantic rule.\n\n- Select the smallest exact contiguous source span that independently denotes\n  the same biomedical participant occurrence while preserving its\n  scientifically restrictive identity and scope.\n- An adjacent entity-type noun may be omitted only when the retained text is an\n  independently referential lexicalized biomedical identifier that denotes the\n  same participant in that occurrence.\n- Retain the semantic noun head when removing it would leave only modifiers,\n  classifiers, stages, taxonomic restrictions, or other attributive text. Do\n  not reconstruct an omitted head from `entity_type`, the explanation, or\n  surrounding evidence.\n- Retain nonredundant restrictive modifiers unless the same output explicitly\n  represents and links an equivalent restriction. If the schema cannot\n  represent that relation, retain the modifier in the participant span.\n- If either denotation or restrictive scope would be lost, fail closed with\n  `INCOMPLETE` or `ABSTAIN`; do not shorten the participant.\n\nThis rule changes only participant occurrence text. It cannot create or remove\nevents, participants, entity types, roles, links, root choices, semantic axes,\nstatistics, evidence, completeness states, or scientific claims.\n--- END V14 SINGLE SCIENTIFIC CHANGE ---\n\n--- V15 SINGLE SCIENTIFIC CHANGE ---\n# V15 Focus Closure and Role-Bearing Occurrence Custody\n\nThis rule clarifies two boundaries of the existing focused graph.\n\n1. Focus closure. Construct the mandatory event graph from events denoted by the highlighted finding and the complete focus-internal dependency closure of nested events needed to represent that finding. Follow a dependency inward when a nested event is an argument of a focus-internal event. Do not traverse outward to inventory a predicate outside the highlighted finding merely because it governs, embeds, relates to, or takes the focused event as an argument. A genuinely dependent focus-internal referring expression may resolve under the existing unique-antecedent and ellipsis rules; that resolution does not authorize a neighboring or governing predicate as an event.\n\n2. Occurrence custody. For each participant role, bind the role-bearing source occurrence before minimizing its text. If the highlighted finding contains an explicit self-denoting name, symbol, abbreviation, independently referential lexicalized biomedical identifier, or head-complete nominal bearing that role, bind that exact focus-local occurrence. A definition, synonym, long form, abbreviation expansion, canonical alias, or repeated mention outside the highlighted finding may establish identity but cannot replace the bound occurrence. Only when no independently denoting focus-local occurrence bears the role may a genuinely non-self-denoting pronoun, relative phrase, demonstrative, ellipsis, partitive, or implicit argument resolve to one unique explicit antecedent in the supplied context; ground the participant to that antecedent\u2019s exact occurrence, or fail closed under the existing rules if no unique source-supported resolution exists. Within the bound occurrence, apply the existing complete participant denotation rule unchanged: select the smallest exact contiguous span that independently denotes the participant while retaining its semantic noun head and nonredundant restrictive identity.\n\nExisting source-supported optional contextual participants and optional edges remain permitted only where the frozen rules permit them, and they remain optional; this rule authorizes no new optional context. Optional material cannot add an outside event, compensate for a missing mandatory participant or link, change the root, or change semantic axes, evidence, or completeness.\n\nThis rule changes only the outward focus-closure boundary and participant occurrence custody. It does not prescribe or alter event types, entity types, mandatory participants or links, roles, root-selection rules, semantic axes, statistics, evidence grounding, completeness rules, or projection policy.\n--- END V15 SINGLE SCIENTIFIC CHANGE ---\n\n--- V17 SINGLE SCIENTIFIC CHANGE ---\n# V17 Inline Participant Spans and Anaphoric Scope\n\nThis rule resolves only the boundary between a complete role-bearing participant\nspan and a separately represented source scope. It does not authorize new\nevents, participant types, event arguments, event links, or source claims.\n\n- First bind the smallest complete participant span that bears the event role.\n  Retain its noun head and every restrictive modifier needed to identify that\n  participant. A restrictive modifier already retained inside that complete\n  role-bearing span is represented by the parent participant itself. Do not\n  split that inline modifier into another participant or a\n  `participant_scope_links` item merely to restate information already present\n  in the parent span.\n- Preserve the existing separately represented scope only when an explicit\n  restriction is needed to resolve a downstream anaphoric aggregate or partitive\n  whose antecedent is an existing event argument and the restriction is not\n  already retained in that argument's complete role-bearing span. In that\n  setting, use the existing participant-scope link and attach an explicit\n  `MAJORITY` partitive only when the source states one. The scope link preserves\n  identity; it is not an event argument and cannot replace the antecedent's\n  ordinary event argument.\n- Never remove a restrictive modifier from the complete parent span in order to\n  create a separate scope participant. Do not infer a separate scope, a\n  partitive, or a new direct event argument from surrounding context alone.\n\nThis rule is additive to the frozen occurrence, focus, and source-grounding\nrules. It changes only whether an already-retained inline modifier is\nredundantly decomposed. It does not change event inventory, entity types,\nmandatory event arguments, root selection, semantic axes, evidence grounding,\ncompleteness, historical graders, or BioNLP-CG projection policy.\n--- END V17 SINGLE SCIENTIFIC CHANGE ---\n\n--- FROZEN EXPOSED CASE ---\n{\n  \"case_id\": \"generalization-drug-sensitivity\",\n  \"focus_passage\": \"the sensitivity of carcinoma patients to 5-FU\",\n  \"local_context\": \"\\nThymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.\",\n  \"source_id\": \"PMID-21965773\",\n  \"source_sha256\": \"0bba2db9971b512abac2bf0a0c40627432b9f63fc8f090cc4d3590b08df52880\"\n}\n--- END FROZEN EXPOSED CASE ---\n",
+              "type": "input_text"
+            }
+          ],
+          "id": "msg_0a7e721d817c86c4006a62e6a52634819a8645f036ce813a46",
+          "role": "user",
+          "status": "completed",
+          "type": "message"
+        }
+      ]
+    }
+  },
+  "receipt_sha256": "3761941af02e8a9a6de2ee5729e4bfd89d0275572ed6555fe32fe73912534bbe",
+  "requested_and_observed_budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.024293000000000002,
+    "observed_latency_seconds": 23.495943917005206,
+    "observed_output_tokens": 3238,
+    "observed_total_tokens": 8103,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "response_id": "resp_0a7e721d817c86c4006a62e6a51ecc819aba98d6cea8bf2681",
+  "schema_sha256": "0b645097208b1f82b0cbd0f72e1702ff4457902a0005c924e716904e4e81f973",
+  "stage": "GENERALIZATION_V17_EXPOSED:generalization-drug-sensitivity",
+  "typed_output": {
+    "case_id": "generalization-drug-sensitivity",
+    "completeness": "COMPLETE",
+    "inventory": [
+      {
+        "event_id": "E1",
+        "event_type": "ASSOCIATION",
+        "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+        "explanation": "The highlighted finding denotes the sensitivity relationship between carcinoma patients and 5-FU. The surrounding predicate is outside the highlighted focus.",
+        "trigger_text": "sensitivity"
+      }
+    ],
+    "links": [
+      {
+        "arguments": [
+          {
+            "explanation": "The population has the described sensitivity.",
+            "partitive_scope": null,
+            "role": "AFFECTED_ENTITY",
+            "target_id": "P1",
+            "target_kind": "PARTICIPANT"
+          },
+          {
+            "explanation": "Sensitivity is described toward 5-FU without an explicit causal claim in the highlighted finding.",
+            "partitive_scope": null,
+            "role": "STIMULUS_OR_OBJECT",
+            "target_id": "P2",
+            "target_kind": "PARTICIPANT"
+          }
+        ],
+        "event_id": "E1"
+      }
+    ],
+    "participant_scope_links": [],
+    "participants": [
+      {
+        "entity_type": "POPULATION",
+        "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+        "exact_text": "carcinoma patients",
+        "explanation": "Carcinoma patients are the population whose sensitivity is described.",
+        "participant_id": "P1"
+      },
+      {
+        "entity_type": "SIMPLE_CHEMICAL",
+        "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+        "exact_text": "5-FU",
+        "explanation": "5-FU is the chemical stimulus or object to which sensitivity is described.",
+        "participant_id": "P2"
+      }
+    ],
+    "root_event_id": "E1",
+    "semantic_axes": [
+      {
+        "author_interpretation": "NOT_CLAIMED",
+        "comparison": "NOT_APPLICABLE",
+        "direction": "OBSERVED",
+        "event_id": "E1",
+        "evidence_items": [
+          "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU."
+        ],
+        "explanation": "The source presents the sensitivity relation as an asserted finding, without a direction of change, comparison, statistical result, or explicit significance interpretation.",
+        "polarity": "AFFIRMED",
+        "statistical_observations": [
+          {
+            "exact_text": null,
+            "observation_type": "NONE"
+          }
+        ],
+        "uncertainty": "ASSERTED"
+      }
+    ],
+    "structure_explanation": "The focused finding contains one explicit sensitivity event with both role-bearing participants directly expressed, so the focused graph is complete."
+  }
+}

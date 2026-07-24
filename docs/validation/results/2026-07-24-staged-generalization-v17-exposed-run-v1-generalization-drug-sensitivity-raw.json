@@ -1,0 +1,73 @@
+{
+  "case_id": "generalization-drug-sensitivity",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "E1",
+      "event_type": "ASSOCIATION",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "explanation": "The highlighted finding denotes the sensitivity relationship between carcinoma patients and 5-FU. The surrounding predicate is outside the highlighted focus.",
+      "trigger_text": "sensitivity"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "The population has the described sensitivity.",
+          "partitive_scope": null,
+          "role": "AFFECTED_ENTITY",
+          "target_id": "P1",
+          "target_kind": "PARTICIPANT"
+        },
+        {
+          "explanation": "Sensitivity is described toward 5-FU without an explicit causal claim in the highlighted finding.",
+          "partitive_scope": null,
+          "role": "STIMULUS_OR_OBJECT",
+          "target_id": "P2",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "E1"
+    }
+  ],
+  "participant_scope_links": [],
+  "participants": [
+    {
+      "entity_type": "POPULATION",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "exact_text": "carcinoma patients",
+      "explanation": "Carcinoma patients are the population whose sensitivity is described.",
+      "participant_id": "P1"
+    },
+    {
+      "entity_type": "SIMPLE_CHEMICAL",
+      "exact_evidence": "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU.",
+      "exact_text": "5-FU",
+      "explanation": "5-FU is the chemical stimulus or object to which sensitivity is described.",
+      "participant_id": "P2"
+    }
+  ],
+  "root_event_id": "E1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "OBSERVED",
+      "event_id": "E1",
+      "evidence_items": [
+        "Thymidylate synthase (TS) and dihydropyrimidine dehydrogenase (DPD) are 5-fluorouracil (5-FU) metabolizing enzymes and are involved in the sensitivity of carcinoma patients to 5-FU."
+      ],
+      "explanation": "The source presents the sensitivity relation as an asserted finding, without a direction of change, comparison, statistical result, or explicit significance interpretation.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "ASSERTED"
+    }
+  ],
+  "structure_explanation": "The focused finding contains one explicit sensitivity event with both role-bearing participants directly expressed, so the focused graph is complete."
+}

@@ -1,0 +1,65 @@
+{
+  "case_id": "generalization-uncertainty",
+  "completeness": "COMPLETE",
+  "inventory": [
+    {
+      "event_id": "E1",
+      "event_type": "CLASSIFICATION",
+      "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+      "explanation": "The highlighted finding explicitly classifies the majority of the variants as being of uncertain significance.",
+      "trigger_text": "classified as of uncertain significance"
+    }
+  ],
+  "links": [
+    {
+      "arguments": [
+        {
+          "explanation": "The variants are the entities classified in the highlighted finding.",
+          "partitive_scope": {
+            "antecedent_participant_id": "P1",
+            "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+            "exact_text": "the majority of which",
+            "explanation": "The source explicitly states that the classification applies to the majority of the antecedent variants.",
+            "kind": "MAJORITY"
+          },
+          "role": "AFFECTED_ENTITY",
+          "target_id": "P1",
+          "target_kind": "PARTICIPANT"
+        }
+      ],
+      "event_id": "E1"
+    }
+  ],
+  "participant_scope_links": [],
+  "participants": [
+    {
+      "entity_type": "VARIANT",
+      "exact_evidence": "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+      "exact_text": "A total of 947 variants",
+      "explanation": "The relative expression 'which' refers to the explicitly stated variants antecedent; the participant is grounded to the complete antecedent occurrence.",
+      "participant_id": "P1"
+    }
+  ],
+  "root_event_id": "E1",
+  "semantic_axes": [
+    {
+      "author_interpretation": "NOT_CLAIMED",
+      "comparison": "NOT_APPLICABLE",
+      "direction": "NOT_APPLICABLE",
+      "event_id": "E1",
+      "evidence_items": [
+        "RESULTS: A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance."
+      ],
+      "explanation": "The classification is explicitly asserted, while its assigned significance is explicitly uncertain; no statistical significance interpretation is reported.",
+      "polarity": "AFFIRMED",
+      "statistical_observations": [
+        {
+          "exact_text": null,
+          "observation_type": "NONE"
+        }
+      ],
+      "uncertainty": "UNCERTAIN"
+    }
+  ],
+  "structure_explanation": "The graph contains the focused classification event, its classified variant participant, and the explicitly stated majority partitive scope."
+}

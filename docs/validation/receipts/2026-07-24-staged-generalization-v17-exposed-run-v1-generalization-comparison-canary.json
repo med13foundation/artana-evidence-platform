@@ -1,0 +1,1418 @@
+{
+  "budgets": {
+    "cost": "RECORD_ONLY",
+    "latency": "RECORD_ONLY",
+    "observed_cost_usd": 0.019902,
+    "observed_latency_seconds": 19.59030808400712,
+    "observed_output_tokens": 2504,
+    "observed_total_tokens": 7382,
+    "output_tokens": "RECORD_ONLY",
+    "policy": "RECORD_ONLY_NOT_PER_CALL_VALIDATION",
+    "requested_max_cost_usd": null,
+    "requested_max_latency_seconds": null,
+    "requested_max_output_tokens": null,
+    "requested_max_total_tokens": null,
+    "total_tokens": "RECORD_ONLY"
+  },
+  "completed_provider_calls": 1,
+  "confirmation_retrieval_requests": 1,
+  "creation_envelope_sha256": "858af8fd43e07211f540e4ed1493a267acfc7ae8ae0ad6202e976c470e137793",
+  "differences": [
+    {
+      "allowlisted": true,
+      "creation_sha256": "9c01827125ba6af39f5bf9afabccaed404233e4fdb86b2b2925926f8ceec515e",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[0].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "01557265d0434a66ffc20f668bf693e8213caad82ede155b93f75e53b4fbfae1",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[1].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "1c1224eb0b09a0942dd830e7b69e4e2466138da2d2290c3ae715b264162dee9d",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[2].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "9d36d548943d9c97361bd759fc6346dc3366dbb7b71fcc087e6464f9c59d3a32",
+      "difference": "OMITTED_ON_CONFIRMATION_RETRIEVAL",
+      "path": "$.output[3].encrypted_content",
+      "rationale": "foreground creation may include opaque encrypted reasoning transport content that confirmation retrieval omits; the reasoning item identity and scientific payload remain exact",
+      "retrieval_sha256": "03fd13e6a949d36ab7b4121c577068dde29655577ba3237e39e8ae1b938fdaca"
+    },
+    {
+      "allowlisted": true,
+      "creation_sha256": "e940165f9b1456dd9bb46e370070dd4761e6c3d7a78496149fdc8f52154393cb",
+      "difference": "FOREGROUND_USAGE_SNAPSHOT_CHANGED",
+      "path": "$.usage",
+      "rationale": "usage is record-only telemetry and confirmation is the authoritative completed snapshot",
+      "retrieval_sha256": "a59f4a758d219925fc890936776955566ee4da2a5b08e580ce8b85c6a7cf1a03"
+    }
+  ],
+  "duplicate_creation_calls": 0,
+  "foreground_request_timeout_seconds": 1800.0,
+  "foreground_usage_policy": {
+    "authoritative_snapshot": "CONFIRMATION_RETRIEVAL",
+    "confirmation_usage_sha256": "a59f4a758d219925fc890936776955566ee4da2a5b08e580ce8b85c6a7cf1a03",
+    "creation_usage_sha256": "e940165f9b1456dd9bb46e370070dd4761e6c3d7a78496149fdc8f52154393cb",
+    "scientific_validity_dependency": false,
+    "snapshots_differ": true
+  },
+  "identity": {
+    "created_at": 1784866450.0,
+    "model": "gpt-5.6-luna",
+    "object_type": "response",
+    "output_items": [
+      [
+        "reasoning",
+        "rs_0ad0d3f92541e60d006a62e692ef208199bb1dbe558602debe"
+      ],
+      [
+        "reasoning",
+        "rs_0ad0d3f92541e60d006a62e69673888199b0a61898f20f3489"
+      ],
+      [
+        "reasoning",
+        "rs_0ad0d3f92541e60d006a62e69a7628819985166315ad455e08"
+      ],
+      [
+        "reasoning",
+        "rs_0ad0d3f92541e60d006a62e69e654081998b4bbfd9a454ba92"
+      ],
+      [
+        "message",
+        "msg_0ad0d3f92541e60d006a62e6a2a56c8199bec6a6993cca66fd"
+      ]
+    ],
+    "response_id": "resp_0ad0d3f92541e60d006a62e69227a08199b20dc9084b25da5f",
+    "status": "completed"
+  },
+  "input_item_retrieval_requests": 1,
+  "provider_creation_calls": 1,
+  "provider_input_sha256": "c66a1dda145b90dafc305cc2b7b288d7cdfdc0bb6b6487cc754eb049ca4cad75",
+  "provider_retries": 0,
+  "provider_schema_sha256": "a184e7a0ac12a8c9e17dc633ea61165d6cdc0ac43c016996842f11210c4257cd",
+  "retrieval_envelope_sha256": "869732ba128517fe56e8a08093db7a7ba2f6fa4cad0f4c807ef1c9389994940e",
+  "schema_version": "artana.provider_receipt_boundary.foreground_telemetry.v3",
+  "scientific_payload_sha256": "ca0e999beb1d3e03457c62d574cfee12589f980d38df2f73dfc42f2b51332d59",
+  "status": "VERIFIED_LIVE",
+  "token_and_cost_policy": "RECORD_ONLY_NOT_SCIENTIFIC_VALIDITY",
+  "transport": "DIRECT_OPENAI_FOREGROUND_RESPONSES",
+  "usage": {
+    "cached_input_tokens": 0,
+    "cost_usd": 0.019902,
+    "input_tokens": 4878,
+    "latency_seconds": 19.59030808400712,
+    "output_tokens": 2504,
+    "reasoning_tokens": 1914,
+    "total_tokens": 7382
+  },
+  "v13_transport_custody": {
+    "confirmation_response": {
+      "background": false,
+      "billing": {
+        "payer": "openai"
+      },
+      "completed_at": 1784866467.0,
+      "created_at": 1784866450.0,
+      "error": null,
+      "frequency_penalty": 0.0,
+      "id": "resp_0ad0d3f92541e60d006a62e69227a08199b20dc9084b25da5f",
+      "incomplete_details": null,
+      "instructions": null,
+      "max_output_tokens": null,
+      "max_tool_calls": null,
+      "metadata": {
+        "artana_case_id": "generalization-comparison-canary",
+        "artana_evaluation_contract": "V17_LOCAL_SCOPE_EVALUATOR_WITH_V16_UNCERTAINTY_OVERLAY_AND_NO_INLINE_DECOMPOSITION",
+        "artana_experiment": "staged-generalization-v17-exposed-run-v1",
+        "artana_inline_scope_policy": "NO_INLINE_OPTIONAL_SCOPE_DECOMPOSITION",
+        "artana_operational_policy": "RECORD_ONLY_USAGE_CUMULATIVE_5_USD",
+        "artana_output_schema": "V16_REUSED_BYTE_IDENTICAL_NO_NEW_SCHEMA",
+        "artana_preregistration_sha256": "faaeb1eb35400d5913f9477125c470735bedec417468f4d514bf7ac7fcc60cef",
+        "artana_scientific_change": "INLINE_VERSUS_ANAPHORIC_SCOPE_BOUNDARY_V1",
+        "artana_transport_implementation": "V13_REUSED_BYTE_IDENTICAL"
+      },
+      "model": "gpt-5.6-luna",
+      "moderation": null,
+      "object": "response",
+      "output": [
+        {
+          "content": [],
+          "id": "rs_0ad0d3f92541e60d006a62e692ef208199bb1dbe558602debe",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0ad0d3f92541e60d006a62e69673888199b0a61898f20f3489",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0ad0d3f92541e60d006a62e69a7628819985166315ad455e08",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "id": "rs_0ad0d3f92541e60d006a62e69e654081998b4bbfd9a454ba92",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [
+            {
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"case_id\":\"generalization-comparison-canary\",\"inventory\":[{\"event_id\":\"evt1\",\"event_type\":\"COMPARISON\",\"trigger_text\":\"had more comorbidities than\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"The highlighted finding explicitly compares the number of comorbidities between patients with RA and patients without RA.\"}],\"participants\":[{\"participant_id\":\"p1\",\"entity_type\":\"POPULATION\",\"exact_text\":\"Patients with RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"This is the focal patient population whose comorbidity burden is compared.\"},{\"participant_id\":\"p2\",\"entity_type\":\"POPULATION\",\"exact_text\":\"patients without RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"This is the comparator patient population.\"},{\"participant_id\":\"p3\",\"entity_type\":\"OUTCOME\",\"exact_text\":\"comorbidities\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"This is the outcome being compared between the two patient populations.\"}],\"links\":[{\"event_id\":\"evt1\",\"arguments\":[{\"role\":\"POPULATION\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"p1\",\"explanation\":\"Patients with RA are the focal population in the comparison.\",\"partitive_scope\":null},{\"role\":\"COMPARATOR\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"p2\",\"explanation\":\"Patients without RA are the comparison group.\",\"partitive_scope\":null},{\"role\":\"OUTCOME\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"p3\",\"explanation\":\"Comorbidities are the compared outcome.\",\"partitive_scope\":null}]}],\"semantic_axes\":[{\"event_id\":\"evt1\",\"direction\":\"INCREASED\",\"comparison\":\"GREATER\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"ASSERTED\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\"],\"explanation\":\"The source affirms that the focal population had a greater comorbidity burden than the comparator, without reporting or interpreting statistical significance.\"}],\"root_event_id\":\"evt1\",\"completeness\":\"COMPLETE\",\"structure_explanation\":\"The focused finding is fully represented by one comparison event with its focal population, comparator, and compared outcome. The RA restrictions remain inline within the complete patient participant spans.\",\"participant_scope_links\":[]}",
+              "type": "output_text"
+            }
+          ],
+          "id": "msg_0ad0d3f92541e60d006a62e6a2a56c8199bec6a6993cca66fd",
+          "phase": "final_answer",
+          "role": "assistant",
+          "status": "completed",
+          "type": "message"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0.0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "high",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "status": "completed",
+      "store": true,
+      "temperature": 1.0,
+      "text": {
+        "format": {
+          "description": "Source-grounded staged biomedical event output using the immutable V16 schema. Retain a material inline restriction inside its complete participant span; separately represent scope only when an independently grounded non-inline anaphoric or aggregate relation requires it.",
+          "name": "V16StagedGeneralizationOutput",
+          "schema": {
+            "$defs": {
+              "InventoryEvent": {
+                "additionalProperties": false,
+                "properties": {
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  },
+                  "event_type": {
+                    "enum": [
+                      "REGULATION",
+                      "POSITIVE_REGULATION",
+                      "NEGATIVE_REGULATION",
+                      "GENE_EXPRESSION",
+                      "COMPARISON",
+                      "ASSOCIATION",
+                      "CLASSIFICATION",
+                      "OBSERVATION"
+                    ],
+                    "title": "Event Type",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "description": "Complete exact source sentence containing trigger_text.",
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "trigger_text": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "title": "Trigger Text",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "event_type",
+                  "trigger_text",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "InventoryEvent",
+                "type": "object"
+              },
+              "ParticipantNode": {
+                "additionalProperties": false,
+                "properties": {
+                  "entity_type": {
+                    "enum": [
+                      "POPULATION",
+                      "OUTCOME",
+                      "EXPOSURE",
+                      "VARIANT",
+                      "GENE_OR_PROTEIN",
+                      "CANCER",
+                      "SIMPLE_CHEMICAL",
+                      "MEASUREMENT"
+                    ],
+                    "title": "Entity Type",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "description": "Complete exact source sentence containing exact_text.",
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "exact_text": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Exact Text",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Participant Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "participant_id",
+                  "entity_type",
+                  "exact_text",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "ParticipantNode",
+                "type": "object"
+              },
+              "ParticipantScopeLink": {
+                "additionalProperties": false,
+                "description": "A directed restriction from a participant set to its named restrictor.",
+                "properties": {
+                  "exact_evidence": {
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "relation_type": {
+                    "const": "IDENTITY_OR_SCOPE_RESTRICTION",
+                    "title": "Relation Type",
+                    "type": "string"
+                  },
+                  "restricted_participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Restricted Participant Id",
+                    "type": "string"
+                  },
+                  "restrictor_participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Restrictor Participant Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "restricted_participant_id",
+                  "restrictor_participant_id",
+                  "relation_type",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "ParticipantScopeLink",
+                "type": "object"
+              },
+              "PartitiveScope": {
+                "additionalProperties": false,
+                "description": "A source-stated partitive whose antecedent is an existing participant.",
+                "properties": {
+                  "antecedent_participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Antecedent Participant Id",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "exact_text": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "title": "Exact Text",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "kind": {
+                    "const": "MAJORITY",
+                    "title": "Kind",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "exact_text",
+                  "exact_evidence",
+                  "antecedent_participant_id",
+                  "explanation"
+                ],
+                "title": "PartitiveScope",
+                "type": "object"
+              },
+              "StatisticalObservation": {
+                "additionalProperties": false,
+                "properties": {
+                  "exact_text": {
+                    "anyOf": [
+                      {
+                        "maxLength": 1000,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Exact Text"
+                  },
+                  "observation_type": {
+                    "enum": [
+                      "P_VALUE",
+                      "CONFIDENCE_INTERVAL",
+                      "EFFECT_ESTIMATE",
+                      "NONE"
+                    ],
+                    "title": "Observation Type",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "observation_type",
+                  "exact_text"
+                ],
+                "title": "StatisticalObservation",
+                "type": "object"
+              },
+              "V16EventArgument": {
+                "additionalProperties": false,
+                "description": "A V9 event argument with an optional source-grounded partitive.",
+                "properties": {
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "partitive_scope": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/PartitiveScope"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "role": {
+                    "description": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+                    "enum": [
+                      "AFFECTED_ENTITY",
+                      "CAUSAL_AGENT",
+                      "STIMULUS_OR_OBJECT",
+                      "POPULATION",
+                      "COMPARATOR",
+                      "OUTCOME",
+                      "EXPOSURE",
+                      "MEASUREMENT",
+                      "CONTEXTUAL_PARTICIPANT",
+                      "EFFECT_EVENT"
+                    ],
+                    "title": "Role",
+                    "type": "string"
+                  },
+                  "target_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Target Id",
+                    "type": "string"
+                  },
+                  "target_kind": {
+                    "enum": [
+                      "PARTICIPANT",
+                      "EVENT"
+                    ],
+                    "title": "Target Kind",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "role",
+                  "target_kind",
+                  "target_id",
+                  "explanation",
+                  "partitive_scope"
+                ],
+                "title": "V16EventArgument",
+                "type": "object"
+              },
+              "V16EventLinks": {
+                "additionalProperties": false,
+                "description": "V16 links whose existing arguments may carry a partitive qualifier.",
+                "properties": {
+                  "arguments": {
+                    "items": {
+                      "$ref": "#/$defs/V16EventArgument"
+                    },
+                    "maxItems": 16,
+                    "title": "Arguments",
+                    "type": "array"
+                  },
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "arguments"
+                ],
+                "title": "V16EventLinks",
+                "type": "object"
+              },
+              "V8SemanticAxes": {
+                "additionalProperties": false,
+                "description": "Semantic axes with the preregistered polarity boundary in the schema.",
+                "properties": {
+                  "author_interpretation": {
+                    "enum": [
+                      "SIGNIFICANT",
+                      "NOT_SIGNIFICANT",
+                      "NOT_CLAIMED"
+                    ],
+                    "title": "Author Interpretation",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "enum": [
+                      "GREATER",
+                      "LESS",
+                      "NO_DIFFERENCE",
+                      "NOT_APPLICABLE"
+                    ],
+                    "title": "Comparison",
+                    "type": "string"
+                  },
+                  "direction": {
+                    "enum": [
+                      "INCREASED",
+                      "DECREASED",
+                      "NO_DIFFERENCE",
+                      "NO_ASSOCIATION",
+                      "ENABLES",
+                      "OBSERVED",
+                      "NOT_APPLICABLE"
+                    ],
+                    "title": "Direction",
+                    "type": "string"
+                  },
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  },
+                  "evidence_items": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 8,
+                    "minItems": 1,
+                    "title": "Evidence Items",
+                    "type": "array"
+                  },
+                  "explanation": {
+                    "maxLength": 1500,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "polarity": {
+                    "description": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+                    "enum": [
+                      "AFFIRMED",
+                      "NEGATED",
+                      "NULL_RESULT"
+                    ],
+                    "title": "Polarity",
+                    "type": "string"
+                  },
+                  "statistical_observations": {
+                    "items": {
+                      "$ref": "#/$defs/StatisticalObservation"
+                    },
+                    "maxItems": 8,
+                    "title": "Statistical Observations",
+                    "type": "array"
+                  },
+                  "uncertainty": {
+                    "enum": [
+                      "ASSERTED",
+                      "PROVISIONAL",
+                      "UNCERTAIN",
+                      "HYPOTHESIS"
+                    ],
+                    "title": "Uncertainty",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "direction",
+                  "comparison",
+                  "polarity",
+                  "uncertainty",
+                  "statistical_observations",
+                  "author_interpretation",
+                  "evidence_items",
+                  "explanation"
+                ],
+                "title": "V8SemanticAxes",
+                "type": "object"
+              }
+            },
+            "additionalProperties": false,
+            "description": "V9 output plus bounded, machine-readable participant scope.",
+            "properties": {
+              "case_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "title": "Case Id",
+                "type": "string"
+              },
+              "completeness": {
+                "enum": [
+                  "COMPLETE",
+                  "INCOMPLETE",
+                  "CONTRADICTED",
+                  "ABSTAIN"
+                ],
+                "title": "Completeness",
+                "type": "string"
+              },
+              "inventory": {
+                "items": {
+                  "$ref": "#/$defs/InventoryEvent"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Inventory",
+                "type": "array"
+              },
+              "links": {
+                "items": {
+                  "$ref": "#/$defs/V16EventLinks"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Links",
+                "type": "array"
+              },
+              "participant_scope_links": {
+                "default": [],
+                "items": {
+                  "$ref": "#/$defs/ParticipantScopeLink"
+                },
+                "maxItems": 16,
+                "title": "Participant Scope Links",
+                "type": "array"
+              },
+              "participants": {
+                "items": {
+                  "$ref": "#/$defs/ParticipantNode"
+                },
+                "maxItems": 32,
+                "title": "Participants",
+                "type": "array"
+              },
+              "root_event_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "title": "Root Event Id",
+                "type": "string"
+              },
+              "semantic_axes": {
+                "items": {
+                  "$ref": "#/$defs/V8SemanticAxes"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Semantic Axes",
+                "type": "array"
+              },
+              "structure_explanation": {
+                "maxLength": 2000,
+                "minLength": 1,
+                "title": "Structure Explanation",
+                "type": "string"
+              }
+            },
+            "required": [
+              "case_id",
+              "inventory",
+              "participants",
+              "links",
+              "semantic_axes",
+              "root_event_id",
+              "completeness",
+              "structure_explanation",
+              "participant_scope_links"
+            ],
+            "title": "V16StagedGeneralizationOutput",
+            "type": "object"
+          },
+          "strict": true,
+          "type": "json_schema"
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 4878,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 2504,
+        "output_tokens_details": {
+          "reasoning_tokens": 1914
+        },
+        "total_tokens": 7382
+      },
+      "user": null
+    },
+    "creation_response": {
+      "background": false,
+      "billing": {
+        "payer": "openai"
+      },
+      "completed_at": 1784866467.0,
+      "created_at": 1784866450.0,
+      "error": null,
+      "frequency_penalty": 0.0,
+      "id": "resp_0ad0d3f92541e60d006a62e69227a08199b20dc9084b25da5f",
+      "incomplete_details": null,
+      "instructions": null,
+      "max_output_tokens": null,
+      "max_tool_calls": null,
+      "metadata": {
+        "artana_case_id": "generalization-comparison-canary",
+        "artana_evaluation_contract": "V17_LOCAL_SCOPE_EVALUATOR_WITH_V16_UNCERTAINTY_OVERLAY_AND_NO_INLINE_DECOMPOSITION",
+        "artana_experiment": "staged-generalization-v17-exposed-run-v1",
+        "artana_inline_scope_policy": "NO_INLINE_OPTIONAL_SCOPE_DECOMPOSITION",
+        "artana_operational_policy": "RECORD_ONLY_USAGE_CUMULATIVE_5_USD",
+        "artana_output_schema": "V16_REUSED_BYTE_IDENTICAL_NO_NEW_SCHEMA",
+        "artana_preregistration_sha256": "faaeb1eb35400d5913f9477125c470735bedec417468f4d514bf7ac7fcc60cef",
+        "artana_scientific_change": "INLINE_VERSUS_ANAPHORIC_SCOPE_BOUNDARY_V1",
+        "artana_transport_implementation": "V13_REUSED_BYTE_IDENTICAL"
+      },
+      "model": "gpt-5.6-luna",
+      "moderation": null,
+      "object": "response",
+      "output": [
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYuaj8G6vMixHJ95sebBAnMjpLD2pHretAm6qREVTFsau8sLEv5rg_zqt54FbaQ6As9xuby74xbYAvCrRdd-0FzhQ-xcqSVk1RK8ocDfYGALdJkXPl6N2ATj8MELYOB3MnU1uz13ntglIvTjZnfwzWFO1CojsCKQ-OtHlYXKGLnX1IMHdWyZ2lq6GT0FywTsSljsMCW86flQz16Geq3cziv61a0tfAOQr__-pEaMmIz85e99Tz_2Dw1Gvgb1V6KOjHf3DEdebYO12UPm3lW0-XUxp9sktEE2i7YuehXRcpnAz1VQU5Tbgwzp97szRhOvURUPmB33OEQkBYiz4ENIO0ZaM0O8FrAI-AbE4IEQ9Ox2Z7cyMKsrU2GT3T7htHNdLMakJFgJuX7nOmUhNOqUICF9CHH_-3_Eomu9QvTar9MLEeI4mVC4pPahby_KF6ChGmhEjfNuqfdlWa1LgME0KPkCiOBFbae9LvwriCCYEGWFGJNWGNoTaPRPozcMQXoIOtIrOtSQYZ2qFdquc8_b2LLBPHtzAvske3zTYeiqDhS4qrc6kbii8tE8wnOC4K12a21zBnFXGJctMKN506mYmR1Xi8MGFucjUun0gI4XO5cdNMyL2ilsdlsaSnL1isqtEIMypGlCjF7qGhYRYhmhs4ns_F_c5NxNP09cpXk9ZCgZYBo6CFh3qPqq1FT686NWxQ10div_ac8WpSrkUarLPXXkrzI-kJ8PTcHeFb3nU7eWH0b2tFBPDzJSZKXrmahXdNDaKa9j4HR52_Gdaa-m51EI9KZzgcXxg9LHYm-o9aGTyJVRvwOgeCK5sRRfZDGgST5whd9KwLEW6aOR_RszRel6eqEMDgOQ1ws5EXvnXQwWHLY-2DmTwZWq2L9o4ZJXwmfgBKc_rQKP5U2RQveXcr9AiN3wzFjML2C9QdC69q4n7MRicOKls7SCP8YCZjwk7kKNoYv1z9hLJqttBOaDhQisfWNqBT0n6_Fogu6A1uDOzpHQgOeYs8dnRbB9BWQ2MgDhwqQhh-rVAQUayYWoiTZTdUwxTa68q4UHQ0rJ6aFMJHTsVUZqY3zoMfTtcir05lTwhMvJcgeAS-ekUXPzXVRzPlSVv10sOLXcg-Km7U8lRxJt34znrwKenWRe9JzG-OFSZyZdmuU8RE3S3X9TCO_BjZVxoSOXRIVGfiLI-Sx56eSl98hZhQAgK1UMeGraM8GRknNM7sQnPCNWDQfFbGnsm6oIy8szS8ZJ19z4poYHUMAbDdqYi9ZSkQoKstKg7_kbDWJKMhuZiBd9jELPX0IwaaFOVbXIN78BwmIN_NlX2b19qd-c6hQQn9__pfQ6HacDTCus08At00hhcBBER7O5xLhMv9YxuehAw0eScWaEd1qjaAOCSaHosxW1SKvL3JUxrSNhP_DEFFAXC426Y8yHwlRzBwRGmdMWXdKWPqy7ilXsfO614Brt3XpzSmJoHYVodnuUET_xBRjcfjZN3xxZ_zPoTrMdfAhF5gX_ylU6faLhRMBrnDyKmJRUaZtgtgrGMauMCeSHGd4Nw66dyvXlP-YG-BAdwc4GMCQRaa2CN-7_BrprLNKKW4HraAZ6T805boTRCWmv9eIkkJHVpGp-AFuM9gkLRiGZzPHWuMg_3hDAzStvQVUXfvUyO-fCfJLQK2p59SX1duXj_bj36V94O5QsLSXsnsQyfxYHm0gdr6-TUmYJwugLeZyqhSYPdWCzrGVNpNK5bDSa8EUCTDd_Fj0F8GsHpV-ojOn_XU-xXu8fy4XL79Zul8A7ih-eysEmzaLdtn-2NXx4-IVYO2Qwo5cu5pPP6Vl-VZ5uaNTrAT893306-opuryyn9UH9tyccLnffokGY8Ofn4WufEjD1XIUvYxlrulqZrioCkoQjN2eNiZgQkWSJHqPXGR89X6uYNXZTIuCnfKJPcgqfpHAcheYzcbAAfo6WDtbZXcIrevQsuxNucrGKxo430tHpH400o9C2l2NS_iP3qpvOiUimjkxtztT45GtEoojyDHsfAAuPkF-k56GcdLZRw7lGW9lAbaEzuI4Fkm0r5nirKBTDsRQXHXzehyimoiap5kmn1yhHHW2tZ_HqjVSGMbWj56bXNo6yUr-wmLKorzKQVKJe8g6fhbrFeBxq55Zw4onNJu79GzS1ouR8_ktVSRotpbrZRsFJrjF7i_gpvn2wIp1vzYKoq6brCxfn6bKm2gSyRCf1vBEb5CFm9MD8dCclX1EIvrn25d6xEgQeeGeIz1GbFk6O591G43_wX7jUT5jjunOTwfy_Yn7TmLwkM41d19azOcnv3Niwki7SKtlfZ-HFDEEnV7qGv1XUO47oL6VENqNmKsWwmttjpgdfUWNbi7WtRZQwlBJG6ewmKorpGmWdbX4MjVPgdHCCbO5FY2vw9Q4ScG-74n3mlgrAsJmf8Sv1_fb_ltqFTN7wXHRZB564yo1eJ3YlWKkYFnfRiMmL_9b46FfT3ECWkbEGm8j2Ydg9Moai12DPreta3P1TraeZw8Ja9a3vBJwcTSzcOm5kWDZoA0rtUWvqS8eEBH2DRsEpvvPUdnVF_BhZvHXpc7CR-w7E0EKsO2tdGbEOcQhKxAqax3qJ5doS2kSJLutptjx6AFDpQJ7E8INCcnAVFV0K6YflXenZ8MwbrkbnZJHWlFceNRYDpTkhfbkfJ0_2CpQIh2pBqhwBQLWZCF0Vp36IRxxKektV0WZEYKgeaGkVSZNhO-AmdEfwn_BDPYrTHRrwK6sxUFHIDoNLnyRUhvr-Z3zOAkamB-cPV2ErbC1vAKzQkmc4xAPXhJ3A5pUGy2Vv7tVIO7qZlie2CDcdy2PDV5Bo4OhzoZX5BUkRsQ2Rz2Y_O87VX6OnHSsjG6cH4-A2V9NN5EzvxaS7t1zlvHrRXTyYhsysun-eEXKK2nrBbN0HoNDEvByNUVrn3BxcM8GHbT6TjercTOjhsfIUbTqUyYGMKlzZg5tvpmvkls5ogQ0Rv7Wdrz4yQS0Vtvd_1Y_wQ_3BOrDpO8F5kkHmGqVJktOjMaXGzO3Pp4pXQLTwUFA8K6LuRC2qRIZa6vAvpOz_03an5eF7r5n6d07id9Yo3PWxUXiEu69tumqfq125a2b7xzlLEecrc0wEsMBUpjRQaIQC6yYlf0uMejm0kcIYn9TMoq6ncFbum9B7x1iiB5k53m7WGVdj3uVvSlDDpDIX1CPSRsqP-xATwG8zvWxrZ88FjDsi635a0sFutejfSjKzl64iDHUZ-m_UCf3gIyEnVo3JYtyWfXyUxNowE-nJnv6Vm-OfaQ102rmf7z9zx72azj_VPoTgw_L4Sv4EC4TXf8AmY_V6K6qXaem5_9q-nbJagrKiKJd6oGwRYkWyhzUKlssXSC0CmB0_bfxuiP0oXDIJ7XT8156JOzuCQF_2MGEexQNHMHLDhJ35jUSV6x7deLOJOHqeTfdMJYzrN4O_4-fL2DfCsZRRQyRvM304_sZ0v9Oqu7YiiCRKpz_GhjrcxuruZwv8a2wBIkY76qr5IG1Cm0Ygn1zryoNxjvXVu9hvkxsL3psf_9caXGZb6yOidCkBQRC1NqU9jVTz3HdSCrKqMi5KZOPEjXFskRMQRtM2B9NNkonzlGOpIxFmfMPOrUwa09OLA7HNLgqy_lxVp9HE3yAkkwIIk8HS-Srd1qxO7_aTDkx943-31GmWdVo-q4u1Ns0Yz2_hkZdyBJKq4BdlbdCgH_wRW4P9K8mS_YnR5bG7o83n5UPBrLh9talomO4qB6MWSFt-RM7qNEqBaRJ9MSzMAD3vPmtyC2xsnsfSmM9hRif6gTLrWkWMf2KoJzuyW9Sc6kaJgDmo5xXvQY6Ig-_B0as6sjtdn9cvJRkQFYHjPJVXnnqMfl-oBT8HY1_WJmyzERZtIHc2juzQMsg8uPZR8sVkX-qN_2GW64FExXNvODhA0_8xfljKuLtC8cqHOKH-N0GSpKdCmXAu99bQUjDkFeby-lMzwenv-Ij68X7XTTuUFG24vMmWSNRlYUzhCpVnSRHgQBmbPejaNCnKaqEwLbqTbxfiSs6FT5GAiJFZ3tKYs-qNrjqo2Pyw5qjFqxDrP16ouiVP-EiEyAYb0Mew8xL4sujvZi6kkdq-DI-kIGBWC0ySGrzsTUjMH-iHdC0KcZYRufuAELnZ3n8J2ZTPQReJP3jZTfyEQSG3WdOJtEu3GjobSUX-bbl8NY360p4C6ddwZ1qJP6Sp414qgYycbzq9bNPRdYbivElOuGR_KA6IftZjeod5qI0g2p0I_vq7nCEobMz7-YEwH1vJnumKx3rW9gmCMaX8YCeRZ5k5MtZEt6UrIskRsm2CpMFlFkTQMD7Ep6p7ro63_QJJOmh3K3C2CaCubazD7VBfGiDr3Dq5IJshWQk2rgGBBQtNYUDGwZmyqHRkibVjN2l9T3JqNXGXOnVhPW7S05Y41MkPdxRXP46rX4Z0h5_M=",
+          "id": "rs_0ad0d3f92541e60d006a62e692ef208199bb1dbe558602debe",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYuajUpuB9Jg1_HT6Z2FW_Jk7UL66DekDN-eNyLP25n_16e1Vafx87EpiOXsjaueg8WEuzw17P7eG-JBYfUFfdF_y1vBnqXgYweuIGj0m7Z2QJ8A-LFv6Ur5McABqSFYyGoM7wgEWNLRSDOPWzu6fgoRRjx9Rn8luY_H4cr_P8ylICqGSnBodgKu-fD1oiOuyxK_Y51bugAgqLQWsNV6tw0vE-HmmlOujEwK5oARsYETfh7B27rb7zK34sA7jgIFTVEOXZXK9_tM--NWarTvQa4SsQGaguBPYSO5NUvxKJieIXDYNp3jfw0Kv2i_G3UpvPO2oGSCwNhv_XAqoSdbS_Qzg2AQKGu0SrOf_zOrEWmuASaVgv54s5uxeISRl3KEloNy3_1CxmirjUGl_wFuBJwRkMPoyhxGUYV1FMyjcQukQapCFeAmKn1GnEO0J0WficrL2yR4pHlEUx_aVaEqK4fIsj2EhOyChDrfgPyWlyRc_tK130zzz9gO35n9WqA3jezz2n8-_skqqaqOo3BzNuNdkMYeIGGVwWQnMRr9SMaXh1QY5-kyzXMLx-otFG4MTbEYbdNPgJzvsekmRefLwn0cqtjUJgk4F9qiimCvD7rm5usyk_JtlAp8PL4tNn_KjpwUsBOYq9Y9KNDlQoPW2FMGe8A4uVjqrvSSpCoqmSkf6mwGBzyvGyoO9aY7eYjEmDnPppLuZxmQizrHdSD8VLokkB9oPaNvWQ0HtoZUmfxMJSpELfm6iqS3OfwWUU0evIGPKtkzTikQKDgg64UXRvm0TmAnbTEAjwnckoU3Ey9CCgA5VrTos6c1ufxiXrryFX1yWIw5tgRDWPoRWDMERKuXueG1rU7bHK1I5s7FxJapI0wdH-1lutKR8TS5Mx45w-iAcg3JSOIf-YnHV6jDDddd426ACEeqim_5kiZY7VoYrWJSOVQD1xRjRP0BJaFhsiOwefRgk4sLwzmrFF7l9bTaLLpZGPCEjCJ0IWzkS0xWXTLEE9SwmSdqa0TM3IzfnosMZ-EnmmLeXrsayQ2QpKuGAafAb_dUPwoP0GaQOZmTyiaNNzLiS9wq8842eDVrTBmTnSr_DCRsdiVaql9ZJbn84KUC-D50rwgpM-iiKWYuberXKaKe-AX5nMqcO9kTwM0Uty1ErjXAcvHGn6bkMDHZgpe6tLMB6mexgyB5Gs4RIwz2CiKCpLUO1XZ28e1zY2r0O3j7PgL3093TVycBaKEONNrMEwhe9ZCgz7DYpDm3e-PJ8IOsjCJSYzIMYe_rXPSyxxoOcMgWrFynK0Ngv_az0V9jEM0B8d3IstWtt_ZgpirqZCQuOSIV6PWMMPS7-Z2L-_Bg54wv8GmGVKCfsRSzz_2_iqO2Kikwx9hm0JBL5YuSZeTTaUzszeqVBshi43iOejnj5-9IOLlyy-YikGS3FUO8Z9A9ValszbTkOvziy_1x502Ok85kG8mAoUm93dGy4EuNdXbdiNbGOBqnZNI_7R8FPi0Nqzf-oRk6NpWrb-0_194S41xZfeQAYbdUqqRP3r14mjqE9L7HKivWySt3KNRbKH74Xm2FY_AhoFLcOJBeMxKFR0Fvbnke70nfm_o6UEruK41E1jVq0s1OXqXGtJ3Ds3oc1Yhmj1vIot6sl11kGkP8bFT4DDP2KF_11n5KV-ECex8CjowsiJtHC6mj7MjsF_PATCq7J0C63hMbp5rAv4BnbUj58Jx5XOOXywVH4IVfNPV8KiD5B_CbLXBrWglzy9aUzBZZZM4eUBJsCrdSRP1pobfraxJyi9fkq37jQpXeWRKM-w58WW3DzDAqBhBZJKUWyQWNpRnr3TLnxgdFXXuhG64Fqos2EQN2kQXjW-HdaJRkM62ZNZmXMwtI6EcN47zmfw1lpj90LEOfAICqmfK-mBAdGVHxJ1Sa0my3YdJrL_US7DDHZ7BXbBpYu_bv3Q4XDbkB2Qi3lKlzDg-rTvBtx7nfyvjH4GgUrS7krQVPreUUowDOdXdVqjkgmiQ9qXt0k0aduSRACIH9sxZc5313c6FTdCekAhJurxCyNxTEb5vdSgUl7HdfBOsjgXpcuP6UK2u5ysLLNwyIld63pqjd7RhToEHqVB3NKrUWGhvpS8HCvbvxGaOUpDNLDNlWk0Aa0nTIEYFoen6-5mvXXV3mjWsmUMljVXU9NRaD_WznETUbGlKU7_Kw1HdAjYkvOIYg5XX7Gwcg9GBMIiq1jbAYONAk8YZYRyAofByv7dYL313HNMcSJwdapIlH2Y6YoBf7wNy72ihNVDb3fmQJhrEgjU_3LKm0KwettmhbY7ktRk3IEORH3ICbztzYoAoWCT9SIAcAZgpr0jVOhJhCEJrFGmumkFb1HJVpWvJY7cgXNXHxNhh_ZHeBxI5Oprqqk05S8WX46J7U4OgTl_DF4eldCjGbH3DBgIIMcaeaQA5_GA845P_Cg_2tmI8ES4569lPZd8JRQmAAAKC2aLE5k5lBzrV0W73Ggd51To2yf3enakzLu8hB-mVgpILtTOpR2xoS_Hd60btYAriXAGJZUgswQ66b4hAH4FWxNd8QCQ0FQUsW2hg6TQ1mXrygZFyKu712gIDfn-yCnEHkJBaArh5cOipu_BY0Z8qoak8Iqjk7-Cywq2shZhvE42ICSx8eti-NAJi4ADdyObSZa27hF6PL6FUlrFEuDoADSDznr3by1ZQd197qYOwWVpdLlM9KXnEfKD1FYfqHdRsq9rcqeJprUZheWvbLKxDQeZPzz-W438XzDcw0ttwQVgPcwkSBgWtm2zoxb4vplQd9YzqCJJQ5aIYKTaIuuQMrgiDFmIb9o_jImMG93ozcUTHdZIoSUfHY_NrZ1kUnIWURiNz_vKZlZfROqpX9ESS3nlLd7HZcnIsAinhH2oWUfILz1fkVUzkaYl_owYEn-KncjCM0MW1uqyxQrQvcgWhnYxhOJVeA0q9j1LLIdDsJ6d5b9pBozJ4BrzguM9aYwyO0iVO2imJwGfijw_dxN48DUGkk-d9Heu2gwdyWiojKGjg05k3ewRFx64VsfyVzCfKkkEMfkXh-4P0QGrbNSmF0BKbnDNXmc79V9SM__TUYQvTXZz3fsm1BwN7gl9EtdEfuV3I2jbVb85PK-UxeBeeyQFiK0h4lXfqu5OvhPw-g3uPfaXweasML8EFBL0oenMuDFKTCbS6Gndo75fPhV9PId5WVc8_zEKLT2qk4fXtCOgNd_dx90_5ACG7ZhvX9yXVsQEYT96eXK3KgXvhNll9oAWslRHJrWQLNm1PswLTeCYly-_meJ-5LH4Xv9fbvnY67QAY9WRTPzJbLt40yeG_vy5UPCNbtDb4vxA1Isr02EUK6mqMHbgVaELtXpzfNz41HWbZ36kmJW0xihEra1p-RoSTZnB7ek-9Z4AAn2vC4_Yn_W4KpDKNWIEYkQ0-nvzijGiNJJLufHh6qxUHvr52aLjKBhVS6QKAcwgIyXl0Uh5AulzBvZ16_aTwkN1zpEPMg65Toux4Wfy10T9uZD8LI-M_nILJtWIBhl2lGzf6htpjgZi2Q_05O7Yps33TwIC0Fs1jZagk2NMoB97gNnBWUo7TkkJjt_yiYcimVQr0VmmiY_cbZyefFu55VKiccrYIXhoThdA4yzx4d13EfSdXmmv5ggLHR6HoffQwL-OgcuFT8WvtGf2Eo1f6-1Xe4i4r83ZLQkN_xRebUEkit10Gazn8bYMoQ29wBKFD5UI3dNvUVDIF2WtAhs_RaWzxf9KqqLNcpoNNqGQs97K4MHvx3tH_J_lwfJMnnQPXqvIGb1dojiU8AGB9Sg2-IFN5lvkCjnAeQVP8Imu0riKTVynPr0T3DYs75lweJG_vOz5ZLs11pmNKIcO8J60vUzUfKsK2oyBX3L10xAtelmOqFXFfV53h8P7WJL4Zt7ZcJgHOF_lBP3qUzNh1RygOJ4tN0ZzC_3UrIlAkrzkCEzgwU6XtpzrgmqRnK5Tj1gGi0FLH8rRLdWZayPQowjAd6MQOXeecx6EVor_hz0KKM0HnuMzBazfX09FRtKqmKBQEe5RUTeSZarPAI-ZwH708sJkXjHUbMTmXjtWFMFIxUKrRKJQXU5VD6XczExM4SI7Mz2Cpck1ANaowK95Bmpx7cF2iyeKLqVMwqkL8TJB2F3xXY8DqRBsTTn7VXdJ6n0cc54WdZylpFgBd5Pez-ZUNC6wUPFIWFOT2Q7mEkPUJf0n8YPoH_zVL9a9_uB6Pbr79-YRrtiL9HFhCN9Hhrqt3wkYhRvrOuSw3qIcrW7em7PCzevXq1PQL2ocgcrfhsHgy9aC6woT4JmmQ==",
+          "id": "rs_0ad0d3f92541e60d006a62e69673888199b0a61898f20f3489",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYuajxJkK7ycnQvz0QjLwMVZ4TFPvZehA2t0gW-PTZFQbPX237j48ccnkDFlDvYaS6jY1uLqF6_Fh19mLmHv-wRL7YunQ-Q8fgaktDeZUSiUTtouAnLVeAXj209qvxmqmVGV4FTRfqVnLmxhqnDmyt_Tf7IFIONIhsNiMjbYCsPWhp2OUJ5mVu5Pv0kYrZOcIAftPGjCdwJX_rGN1AmCC09_N0aFdFLjV5XC5Amv53n1vV2wHs-fHlDWwaYJ4dvxQ_Fon6Om5_5RjyGhu82L_0IF-yPcqwcyOFAzCOD4qSZ2X2pMMQk0T-xI9S_uM_TxzqyiW8rxEBWcr7gjeOuQNHChgpxog7t-e77ug72twX_UtaTfNz4jsyCh58ck06BBImAPfJrxc346uBqjh36Nl0H-bQS127XbDPNjGteHLloENncAnhSYEMAnhjHRTvs32M8kVyp0lyvAStyWrpGudH5SjAn_3wn75PAd97nEZ8AwimfmhH1bx2IpzXpqZ2loVQyHKdbEW4nTZGT5Y-SERnYUxZvlm9qQucav6Ij-xaLpRb7T7LQ_EDy2-0qVUnodmEkKvzojSn_Grczm-HJyw5xjfTybVo89SXchwPXILboSHINL0mvh2danJIdUP5idBkFBmNvWpbguwJX_pS2Xypn_7ccO0jHw9WNBqPARqZfsn81Ez8qfTnsmebTKx4KlaE_V-LIa5nX_TE99DdQyW-AViD498XGtYT_XUvPLFwcz_GT3RU6fJrDnKhZ5oIT06vejaDOnuke8JhWONincpM65KsKYPVBLx_3xRtvxxNu3WNBWgMk4d0C5eihBUCz1ba4p3SawI1_h_tKzja5d-BnyqEXHthc6Lnz9x-iDELU4C19tZHlcHhzrk6w9fyQgEGgNQ7eOq-pJM_RhZgAMZweQuy0dEg3f0L65NIQQJY2Yp-tgw0ojuqDivCJy2zmVFiT5YIKDtiW1kj0PEmrs5j6S_PkrjwTxTOPrbTtGPgH44bDSwvbREwMMmW9cK9Fd16IZVg-HSVMxPo6ZrL7BFcYNVVhHFno5p2z2N_hedQVigygcU1YUO7MbFlF9ziawtS9GhZdw5xfrS5sRUC16GvgcLLCEKhCN5JxJTur26rUJnW2wvM8KYCB7UlAsnV2Y2i83rMywu7M3bfwT7jvvIHw-YcKAnG6yi23UNQ0qEy20_1nVx3s1R_co6kCJFTD3wgSqPgl3t3vY9OMEBU0c_IDDTuWrR5IaYrKVuGrwZdXuzxvKEabT1SAn2uLnuA4ZSB35jKwcr0XXDOGRLz1exnzZiQRYBPigTH8czDv1I9-HBGURN1eBJn9bXplsIWT5vXO6EQHcubDOEukfVOU4KoFjRRQXJlXcqwHOpOkXbDZ5-59di_vLsKOW_aCtWno3VbhnM3XAx-h8HzvSgs1DtkWbMGxjUm2rdep5VX36a6uUNjQgEXlneX6oPF9rRvE_BCIDnJQ_2UF-CRq6MurQ_yIK781fOZVkYIChS4dmaTvCH-igolvyBnyPf5q3r0WimljjBsyAcmvP8BWGiSADP7aPv4WWu0_PByiK_xEbHb0wBJ1l05xwF3VnOxXZsbbfucE2j6hIAps9-YorH7p_xzXsxw9suDxCVO4FRAv4NBBDRL_QjlCuHIXpQ8hdn36yKsVKetiXWC63sgfW4GFaiZff3zGTHTrVAdmgFZjk9t8BGppYTStKHJqcdF2B619ONlVYel52vLTGiITM89oo7EIbWyI611U_F4UYTWFjm6VVl3Mes6dwPZAEiQKBNh9SopoY20rYYZNLY2cbVSUWT_JFMTbjPiTbocoPRcMpAIgQjND6Xexa3yS4Z7PRobhDPS-iHzSjr__Mxxsu46M9mjepwtp9V23gpGvyIGhUXOFnZQYxdFg6FunaJq3eZqRNL9vTYaJ0Jf6npCr5b0IZZotCwv0cblRlhBxnniIOv1Eo-JRrlNyXiaTb0GEId9GqgOlMzsxsSOMPX2DGvOAI1w8T3eP-MQRcPRVwbRiYPRzbidEjTFvrt-c_KvpO2OUX3N9ycb9G_6X-QAZ7KmvjnIQFI6S-vnrktLD7AzsJUaN4FSm1sLrRHOpPCJKWjjWS0vP4kLrR3naNBe4fsl7TZ0iw1SJCI3DcTpHFb0JWPZ58YX28tS09c3LxtzOHdJIJk7y6xqerNtxbmYwEYgAc20OvfvV-b_fic5-6BG1lOcPWdtFIjeMo59EpOgI_5IPE8SGzEKbV8UW5FakMnUIgt4SlHNwerTt3L88XgXDIrudiZGqnhXtq42KxlHaaC6p65FNAPaO6Z6d6A26oymmDvUgZMLj6QzAjY_i7frg3dGb2SPvi2GT-HL7Doryj8OG25pLw30yIZN8-h2zlsq_dzkfLqwXhAzY5MLH78vG_i6zHCHmqfYFsyAg4wOqZvL_l54IuVuWHwTHIj7FiRoKOIsCPcGdJiivkJxYuUDz3kVdVHa20HYhDO8M37GvSFl2ekM5w6JsRFVH3j-X0LCi0kGx9RH3CyHvuUYuZTwBSVJmGTTU-WDqsWMqut73uS9HmphCW26k5SWeTId3TuqqUDo4jJJV6KLiZc_-zFiSJRzHNnm-OhsixkwLOJKHwkVHeDk6gYosPWL4-bT0tv45APlaAstPmeCUJd-mlct-aTj83WMX18ABfLG9bYT7eY2GzNG127nYpYthXPKtoMzFt6hy8yfxqzqtK7e3XMI90vyIuPz6ZBWMZQ82EmqpXRaLECwGo0UxMkJ6w2aRCI4XfbY5bDpwZpy5T30XHp3zXoG1FUyht4caTzyMnk7Lknpk0coQOX40mOJXuEjQ6acjewjJ--4MNmSmpbpi98uUMqP-RWrDDcjvCOXxewCttN7E1LV3hC8Wh-8Yn93lUOq8kjBVkz307szZ_EqAgGmbgdA3DBtWnnB5cilUI-4vGEjqF5h5IzsyptUm0quNR6-s5QqoDUKEvBqLUx2Bici3PMn-iNMTAduXEE4YE6tmPS1B4KwqY3-vOjfuFwImYbs02nruT9wfFFkr9hFhqFl3XS3dB0Q5PsWGnIsBUWmx2kLz529c6RwarSBj-4wtPqwvivVhAw67ySXDPGh5ryOFeiVuzGr6CF2dDYwV_M1aGWwg_J8oE3F75-j4M0a2rBgMjs6ZpeR8DlEUo4uesSbZ-v34QwXiuycF8W4HFi1mfWDH8AWvvjKKcR3u5aBzzjR8gcy0hYRgYADQq3ELreb4qsxLFV5NW5BKugsTMakJKzVDDlzAuVqDSuVCgPimLiQ_puFXw3I2mM3UTMoEnUQv9Tx3U1K_tospftzS4fsi8eFeTkA4uTDxYqihpjUWzFDE51IKc2OYWfqkuDy1kYuAly6LpXyK7nIQA8jFG-NWeKhsBowpRsvIADcCO0LlosK8eBQGTr7ubUuOi7m7IWHl_g1i3UC6bWG30hY3UpxDl1afn-MF8XtSaWteqgf6S2Uwcai7ZkwuzPy8mUTEXLS6EM1a-0XwFBKiYRzrScVzC752J4zXyxTtZYauUJAuO64qEFUNrY1722U0HYzPAd-cDhvgv0u5SdwNJ7ZUOrzburXeagWORqTOr7YugMJZva5wERAiLeLNwiBRjQNhOlvzT23N4asB0B71ZLeTyptNQjEH1JU3_xWSjle2vAADGEBnSy-UXZpOVNpY9DUI_1xyqzLhk7knqkrZlIiBXnQ_tcjWY2MCIpzKOqjkbsxH1e3cE9YGM7Eg6ek1bqy38JO7wkbqH_C-U1g15QikPIbgSderwZt4qQIQHoV3EBPlTA6Xwl3Glf6fPLZIPwoqDiddCXGmbQCIXrX9Qq8a0vuYKW-TCbZZLTjSGJDJ-bJTHuBXmS_mCZ0QNjSmTidTLk2Fe1zmnGWI5jw8rQoMKSBMJ04t-EBAGNQC1TZ0-6EE_gdJAGRPIokHwcYwzY0LMz8-j7fdT4QNbu13dYZYXmkmWMKJn6XEe_4j79jiotN0hELoG7OTGKKlTSfCMMziwkJw0Y3btyEi-6QNCAkCJpsu5vnJ79-J_27FVMyXD3aaD47eEB1xFpfiIyOHfjh9wTSGq-edHpkMwfrOED6DKWR4tZteBw7Avj0cFA5vYqVOrv432rFe8B6aNXwwfXR4RbPis3AS0lNSZi5cWjGr4Q73q8_wKdl1TJT3pGxfDMKfFbbyni-UFZgyhxyfti2mvK9w8aBEocvCZMujQRXjHkoNZa_RdFbw5Sgnr3PnTlPBgnDAU8pNr-ea2Q6kJFON6WL31A2ZJzKKTqJ6yv2aBuEcgtun900LR6rtQfMI1JPvxnD7-GGb2pMwOkj_kZDHEDUgn6XN-WHjoAIRYYerpINzcFxFwd6j-1Z5HMewwAHTJ1q-lRLup6_rl3eECpI_dvPcd2w8LoQU78qwqT_GO1Z5iRm845b1ASw_lvC4Py2XizDZqUIar6O4Ai1hVm9Atga_Cg9S10XOVupZdo0-K3tRGmhmbxuST7",
+          "id": "rs_0ad0d3f92541e60d006a62e69a7628819985166315ad455e08",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [],
+          "encrypted_content": "gAAAAABqYuajXCFN_SyV9SVd0UaEgEV4Ons7gXmuJiNDtLu4IYqPqpxXN6kyNk5wz2svw0w_WlmDjTzVOduYAgdlajg_XmiOInxV7-V-_GfYzD7roh07fNlfwAHooa5k0h72zjMWJ_Bs_IVsHGfg4xdwmt5dbRBiJo93tAMNSQ4gbDgtjTtf9nyQORdGS4S6qJHA3zIY-Rj-ALp5jfVIUsu2I5oo7ReovaFkokd_zMyFkZpxgtcLjq8QtgqJrtvkwTliDjqqgRiC4seEVoZUn1M2ONFuC98HnqdaEOTfaq7ljfpa1fCgMz4zQYxIIn5YRfdnUF0KCwgou3fdvV78tYD7q2_o_vvThuE--NVMjn_5yqsRC1Lr-1-TbmudUTOBPZcqwqapHFisetbWc_6SFhd7-cYJ3aum1HEDX2wiKTQcAjBYtaKatx8Q-ihT7zoHijx5qkZY-p7vy5fgddCojjs5olM9OLyOHoZNziASPtxcRj0058yNTa9MdP1qnuoFV6k5ZujhZlpF6U7bc3Go9BwXiAmcP2ReHDNMq0JtANHhW2nv76Wx5UIqCp7P1ipWrURiJOTEhUm2hRHxRhemvBsWBHxXLdFqM5bpRQZQt1funrZIohlZsDvWMTjdkKOr5mOD7KPOYnSnp28IkVoAS1NNEoYtjuSFvbt4bgsJHcXG4NewqlK2dhaXAgHx0nIXpfUmBDEG19p4wdguLPHSdq2ZBs7PoS-U3G2E7mwlTe6nqxLvVvdvXRG9gf7UuZZPkTayedak4iA0aAnCnB556CQ26InRiKGbechvu2hAF1wl7EITnJrYu6qRaAXkbwCji8Ufs1MuTleKx9zdp-vclLXX_5n2ewT7KqrKQ2eke-TwQrbWDx2sjnHka26dMzZJmnldzDnCHYSRdB-5StWVD23PkXATrsOn6Nog3Sqr9qtix3WYNoIOtieBXmHuvES7eXwhU5Ai0n8HUNgCWGn3SyJ9Sw8WyzZ6QrhqzhX8bjvATiUhuLxG7xT5REcEcMbtXmOyMzk3r9Zx0XR5XGJDuS0vSIv8hK95zeaf6XKSBstlA2eLNGLUQgQC1ctQfATYrLt6WsKAT29hOjJD1MXBkDXgy3TkyjfUIjGhhYBnw_ksnEGh9b5SaYhfILwvT9ApA9zFme1h7i490Qa0qNebi53dNSSl5U4wOCYwav9mcVQ4Wgpc4P4Pm21zVMl_mpBdrcx3qvfK5pMw6q1fkrnfWjVdWzXvk1gqbn_qJcixTJssNoU5B3-0roS-pzuijNVk2Ib5Q1rpL-XIGa_HAs0nocieSfoIfv2h-_tGUfRunfOov3cIrGo3m6CKe8iaqdQ9JdGidb47gXQPL3oX0XmBhopNVW85NEGw6PlxknYigIQN8sOKM4B1MCIQV2lSINO8XfN4XvsJ9QhJYIQC3rB6BePe_7LTkfmO_1z8q-9bsKmZ8rku3c238Uy2PO-IP802jRbJhenv8Vvg7s8QOqJon8RbPRoLOaszzX4EoHMMwSC08lGHY_GloddcDAeyUR-1z6uAtiludu4nwzvbjaSixMTRNsQ22QGxwU5GQmqDIAhvVaJMeJsrq53MjbWP4NrDWAg7YKFwfDmml0SnRsxt_A2ivxM0Q0VO9SJmrj4ph1iKOPOgtR6ME-of1TVB213-4tIJZXA5zVdLRQ-g_pPs-VdOgdNeY2iPQc4XvPnCnSEvrPWiEpcPKMyQtd9jiA8L93ZeZlJLhpNbjMlqB0EyYDh5k7if_QN9RG-SfNcoEJVE1lufnONF0IszyZDed-bPRIeN-0YwkdonqBgkL6JQ5D7M4SjIfuZagM_r1OYYpXgaX8gLATpkmT3xYN9eUPMofAGp7b1O5WXofTPmSLl4W4uccBd8zrswEvRgNNIhvdx6MTdXetE3uH5r7jn-PwQLPprhLPbXgg09HAxRxbTrqar5zw35yV9J4A5DRe5nQ5tTZyqWUhlztTZc9hLpOBWoKYvK2lW0kVz8gpwQ55wFS28AWXwogja6biMsFlq6yuLEu0FfEz8IXYf22KlrYrW_VFWX27XFOJIjztIDL9ON35yoTlVx1olVXFprGKP51cYkSnJoVr0IM9HlMT0TEqcZKn489k_1MOwhNG0wq2HhMz-G0LekLH30eYaps-Rh9u47oZuw9RSzfAKaFYDFgXmkvVgnu5Xqii77t3bc9uAMmAT3AHfx5kgikK8QXclpydw3uA3QzqB002-so1vPnfklU1m2wVsa9iZ7WB810gRGk6FhHA6lXdjRfmWnt5PG43BwKFvARGeNACGtH3NksNPi09_qzcYIA3IXOu30FrsiUybNzxEUApl9sGQLnn98OwmY_XatBVB_xrWHdnPtjrPxH18w1yXsRRl6oCyK_30NK3fJuguYdgsHvfmxKsGCnihKvltdyCiCMO8BVLXek_7yMpgImAVEgX24QIth6dNrvX_ZT1ygNpujqDz69L1lLT6TD56P77nLVgorXBigurmOORQV33KBQJcdjMO4vFDNlvn9TnHCF_K1lLCx10hwIO_wBytQ8v32DNcwwpOXWg8lS0FwT4dzsdZCTh2ETeZmk28On1WYHA5PLCV448W4_d_y-8zMdzjh9lmuCkXYBZSL_UD7Ec4QL16FuxaBizXksDlU5oGi5yhQl9xijrD8kEo8idAqUVbrlw2Gv0_8RqS_wiZI77u6fbu0Es4Cr81IGdPuRG94v2PR3KZKu6pBfnJQwbrMzF_vravlKkG1A8WQDQNuybMqT_WzzU7MrCtm7ULfylCn01-4WxTshDdKAPxIrYn1c7EDMdx_OE3CePIwmDVX5Zc8t1FiXQ1G15qAtNGc0DqmqbjRWyxOREsXItF2VQg_S_J4eFVASRhplXse5JRqxcL_sI1TuXX1sv3o6DxNx3BOwY8a945r0vysMDEwtiR-5EIeDE3v-173bVcwhlPqEpvYk3AUo4y8fU50eBkiYcgPmCQnIBh5t741o8MC3G7SxtJQtf1tcTC6H11KV-ma530KaX3QYKb_FTaC4lNRQTt1xHUD9zwXuUxG6tQ7mAY_pV1Cz-3PMtbIWDCHNfB3DbfyKuGNUO5Cq1e0c96LCDOk6AmqjjxB6jZlrc1HnrP3_oYRpDJB8XJC61uIEZknrf9MYd1tMf19RlIo1emNoDEyLxhS3G6LdZqqyfjBHaoo95165Zsp4T_2xTD48i1bxyqOfRlTq6wAnKgFKuhgi5KDIn214dv8Ckmw62pikufhsn7ig2akk2ZAyT6mk4Jt_fcqxEzt7u1R8TwIUjGlFK3JBVwOFjfJi4kIX0X0CXV6Nspo7F0=",
+          "id": "rs_0ad0d3f92541e60d006a62e69e654081998b4bbfd9a454ba92",
+          "summary": [],
+          "type": "reasoning"
+        },
+        {
+          "content": [
+            {
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"case_id\":\"generalization-comparison-canary\",\"inventory\":[{\"event_id\":\"evt1\",\"event_type\":\"COMPARISON\",\"trigger_text\":\"had more comorbidities than\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"The highlighted finding explicitly compares the number of comorbidities between patients with RA and patients without RA.\"}],\"participants\":[{\"participant_id\":\"p1\",\"entity_type\":\"POPULATION\",\"exact_text\":\"Patients with RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"This is the focal patient population whose comorbidity burden is compared.\"},{\"participant_id\":\"p2\",\"entity_type\":\"POPULATION\",\"exact_text\":\"patients without RA\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"This is the comparator patient population.\"},{\"participant_id\":\"p3\",\"entity_type\":\"OUTCOME\",\"exact_text\":\"comorbidities\",\"exact_evidence\":\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\",\"explanation\":\"This is the outcome being compared between the two patient populations.\"}],\"links\":[{\"event_id\":\"evt1\",\"arguments\":[{\"role\":\"POPULATION\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"p1\",\"explanation\":\"Patients with RA are the focal population in the comparison.\",\"partitive_scope\":null},{\"role\":\"COMPARATOR\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"p2\",\"explanation\":\"Patients without RA are the comparison group.\",\"partitive_scope\":null},{\"role\":\"OUTCOME\",\"target_kind\":\"PARTICIPANT\",\"target_id\":\"p3\",\"explanation\":\"Comorbidities are the compared outcome.\",\"partitive_scope\":null}]}],\"semantic_axes\":[{\"event_id\":\"evt1\",\"direction\":\"INCREASED\",\"comparison\":\"GREATER\",\"polarity\":\"AFFIRMED\",\"uncertainty\":\"ASSERTED\",\"statistical_observations\":[{\"observation_type\":\"NONE\",\"exact_text\":null}],\"author_interpretation\":\"NOT_CLAIMED\",\"evidence_items\":[\"Patients with RA were more likely to be female and had more comorbidities than patients without RA.\"],\"explanation\":\"The source affirms that the focal population had a greater comorbidity burden than the comparator, without reporting or interpreting statistical significance.\"}],\"root_event_id\":\"evt1\",\"completeness\":\"COMPLETE\",\"structure_explanation\":\"The focused finding is fully represented by one comparison event with its focal population, comparator, and compared outcome. The RA restrictions remain inline within the complete patient participant spans.\",\"participant_scope_links\":[]}",
+              "type": "output_text"
+            }
+          ],
+          "id": "msg_0ad0d3f92541e60d006a62e6a2a56c8199bec6a6993cca66fd",
+          "phase": "final_answer",
+          "role": "assistant",
+          "status": "completed",
+          "type": "message"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0.0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "high",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "status": "completed",
+      "store": true,
+      "temperature": 1.0,
+      "text": {
+        "format": {
+          "description": "Source-grounded staged biomedical event output using the immutable V16 schema. Retain a material inline restriction inside its complete participant span; separately represent scope only when an independently grounded non-inline anaphoric or aggregate relation requires it.",
+          "name": "V16StagedGeneralizationOutput",
+          "schema": {
+            "$defs": {
+              "InventoryEvent": {
+                "additionalProperties": false,
+                "properties": {
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  },
+                  "event_type": {
+                    "enum": [
+                      "REGULATION",
+                      "POSITIVE_REGULATION",
+                      "NEGATIVE_REGULATION",
+                      "GENE_EXPRESSION",
+                      "COMPARISON",
+                      "ASSOCIATION",
+                      "CLASSIFICATION",
+                      "OBSERVATION"
+                    ],
+                    "title": "Event Type",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "description": "Complete exact source sentence containing trigger_text.",
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "trigger_text": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "title": "Trigger Text",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "event_type",
+                  "trigger_text",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "InventoryEvent",
+                "type": "object"
+              },
+              "ParticipantNode": {
+                "additionalProperties": false,
+                "properties": {
+                  "entity_type": {
+                    "enum": [
+                      "POPULATION",
+                      "OUTCOME",
+                      "EXPOSURE",
+                      "VARIANT",
+                      "GENE_OR_PROTEIN",
+                      "CANCER",
+                      "SIMPLE_CHEMICAL",
+                      "MEASUREMENT"
+                    ],
+                    "title": "Entity Type",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "description": "Complete exact source sentence containing exact_text.",
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "exact_text": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Exact Text",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Participant Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "participant_id",
+                  "entity_type",
+                  "exact_text",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "ParticipantNode",
+                "type": "object"
+              },
+              "ParticipantScopeLink": {
+                "additionalProperties": false,
+                "description": "A directed restriction from a participant set to its named restrictor.",
+                "properties": {
+                  "exact_evidence": {
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "relation_type": {
+                    "const": "IDENTITY_OR_SCOPE_RESTRICTION",
+                    "title": "Relation Type",
+                    "type": "string"
+                  },
+                  "restricted_participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Restricted Participant Id",
+                    "type": "string"
+                  },
+                  "restrictor_participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Restrictor Participant Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "restricted_participant_id",
+                  "restrictor_participant_id",
+                  "relation_type",
+                  "exact_evidence",
+                  "explanation"
+                ],
+                "title": "ParticipantScopeLink",
+                "type": "object"
+              },
+              "PartitiveScope": {
+                "additionalProperties": false,
+                "description": "A source-stated partitive whose antecedent is an existing participant.",
+                "properties": {
+                  "antecedent_participant_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Antecedent Participant Id",
+                    "type": "string"
+                  },
+                  "exact_evidence": {
+                    "maxLength": 4000,
+                    "minLength": 1,
+                    "title": "Exact Evidence",
+                    "type": "string"
+                  },
+                  "exact_text": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "title": "Exact Text",
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "kind": {
+                    "const": "MAJORITY",
+                    "title": "Kind",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "exact_text",
+                  "exact_evidence",
+                  "antecedent_participant_id",
+                  "explanation"
+                ],
+                "title": "PartitiveScope",
+                "type": "object"
+              },
+              "StatisticalObservation": {
+                "additionalProperties": false,
+                "properties": {
+                  "exact_text": {
+                    "anyOf": [
+                      {
+                        "maxLength": 1000,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Exact Text"
+                  },
+                  "observation_type": {
+                    "enum": [
+                      "P_VALUE",
+                      "CONFIDENCE_INTERVAL",
+                      "EFFECT_ESTIMATE",
+                      "NONE"
+                    ],
+                    "title": "Observation Type",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "observation_type",
+                  "exact_text"
+                ],
+                "title": "StatisticalObservation",
+                "type": "object"
+              },
+              "V16EventArgument": {
+                "additionalProperties": false,
+                "description": "A V9 event argument with an optional source-grounded partitive.",
+                "properties": {
+                  "explanation": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "partitive_scope": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/PartitiveScope"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "role": {
+                    "description": "Argument roles must represent independent event participants. For a CLASSIFICATION event, link the classified entity as AFFECTED_ENTITY. If a named entity explicitly restricts the identity or scope of that classified entity set, link the restricting entity as CONTEXTUAL_PARTICIPANT. A classification label or value belongs in the classification event trigger and semantic axes; do not duplicate it as OUTCOME unless it independently participates in another event.",
+                    "enum": [
+                      "AFFECTED_ENTITY",
+                      "CAUSAL_AGENT",
+                      "STIMULUS_OR_OBJECT",
+                      "POPULATION",
+                      "COMPARATOR",
+                      "OUTCOME",
+                      "EXPOSURE",
+                      "MEASUREMENT",
+                      "CONTEXTUAL_PARTICIPANT",
+                      "EFFECT_EVENT"
+                    ],
+                    "title": "Role",
+                    "type": "string"
+                  },
+                  "target_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Target Id",
+                    "type": "string"
+                  },
+                  "target_kind": {
+                    "enum": [
+                      "PARTICIPANT",
+                      "EVENT"
+                    ],
+                    "title": "Target Kind",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "role",
+                  "target_kind",
+                  "target_id",
+                  "explanation",
+                  "partitive_scope"
+                ],
+                "title": "V16EventArgument",
+                "type": "object"
+              },
+              "V16EventLinks": {
+                "additionalProperties": false,
+                "description": "V16 links whose existing arguments may carry a partitive qualifier.",
+                "properties": {
+                  "arguments": {
+                    "items": {
+                      "$ref": "#/$defs/V16EventArgument"
+                    },
+                    "maxItems": 16,
+                    "title": "Arguments",
+                    "type": "array"
+                  },
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "arguments"
+                ],
+                "title": "V16EventLinks",
+                "type": "object"
+              },
+              "V8SemanticAxes": {
+                "additionalProperties": false,
+                "description": "Semantic axes with the preregistered polarity boundary in the schema.",
+                "properties": {
+                  "author_interpretation": {
+                    "enum": [
+                      "SIGNIFICANT",
+                      "NOT_SIGNIFICANT",
+                      "NOT_CLAIMED"
+                    ],
+                    "title": "Author Interpretation",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "enum": [
+                      "GREATER",
+                      "LESS",
+                      "NO_DIFFERENCE",
+                      "NOT_APPLICABLE"
+                    ],
+                    "title": "Comparison",
+                    "type": "string"
+                  },
+                  "direction": {
+                    "enum": [
+                      "INCREASED",
+                      "DECREASED",
+                      "NO_DIFFERENCE",
+                      "NO_ASSOCIATION",
+                      "ENABLES",
+                      "OBSERVED",
+                      "NOT_APPLICABLE"
+                    ],
+                    "title": "Direction",
+                    "type": "string"
+                  },
+                  "event_id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "title": "Event Id",
+                    "type": "string"
+                  },
+                  "evidence_items": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 8,
+                    "minItems": 1,
+                    "title": "Evidence Items",
+                    "type": "array"
+                  },
+                  "explanation": {
+                    "maxLength": 1500,
+                    "minLength": 1,
+                    "title": "Explanation",
+                    "type": "string"
+                  },
+                  "polarity": {
+                    "description": "Polarity records scientific result status, not surface grammar, and is independent of direction and uncertainty. Use NULL_RESULT when a study or analysis reports absence of an association, difference, or effect, regardless of negative grammatical form. Use NEGATED only for direct denial or non-occurrence outside an analytic null finding. Use AFFIRMED for other non-null findings.",
+                    "enum": [
+                      "AFFIRMED",
+                      "NEGATED",
+                      "NULL_RESULT"
+                    ],
+                    "title": "Polarity",
+                    "type": "string"
+                  },
+                  "statistical_observations": {
+                    "items": {
+                      "$ref": "#/$defs/StatisticalObservation"
+                    },
+                    "maxItems": 8,
+                    "title": "Statistical Observations",
+                    "type": "array"
+                  },
+                  "uncertainty": {
+                    "enum": [
+                      "ASSERTED",
+                      "PROVISIONAL",
+                      "UNCERTAIN",
+                      "HYPOTHESIS"
+                    ],
+                    "title": "Uncertainty",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "direction",
+                  "comparison",
+                  "polarity",
+                  "uncertainty",
+                  "statistical_observations",
+                  "author_interpretation",
+                  "evidence_items",
+                  "explanation"
+                ],
+                "title": "V8SemanticAxes",
+                "type": "object"
+              }
+            },
+            "additionalProperties": false,
+            "description": "V9 output plus bounded, machine-readable participant scope.",
+            "properties": {
+              "case_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "title": "Case Id",
+                "type": "string"
+              },
+              "completeness": {
+                "enum": [
+                  "COMPLETE",
+                  "INCOMPLETE",
+                  "CONTRADICTED",
+                  "ABSTAIN"
+                ],
+                "title": "Completeness",
+                "type": "string"
+              },
+              "inventory": {
+                "items": {
+                  "$ref": "#/$defs/InventoryEvent"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Inventory",
+                "type": "array"
+              },
+              "links": {
+                "items": {
+                  "$ref": "#/$defs/V16EventLinks"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Links",
+                "type": "array"
+              },
+              "participant_scope_links": {
+                "default": [],
+                "items": {
+                  "$ref": "#/$defs/ParticipantScopeLink"
+                },
+                "maxItems": 16,
+                "title": "Participant Scope Links",
+                "type": "array"
+              },
+              "participants": {
+                "items": {
+                  "$ref": "#/$defs/ParticipantNode"
+                },
+                "maxItems": 32,
+                "title": "Participants",
+                "type": "array"
+              },
+              "root_event_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "title": "Root Event Id",
+                "type": "string"
+              },
+              "semantic_axes": {
+                "items": {
+                  "$ref": "#/$defs/V8SemanticAxes"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "title": "Semantic Axes",
+                "type": "array"
+              },
+              "structure_explanation": {
+                "maxLength": 2000,
+                "minLength": 1,
+                "title": "Structure Explanation",
+                "type": "string"
+              }
+            },
+            "required": [
+              "case_id",
+              "inventory",
+              "participants",
+              "links",
+              "semantic_axes",
+              "root_event_id",
+              "completeness",
+              "structure_explanation",
+              "participant_scope_links"
+            ],
+            "title": "V16StagedGeneralizationOutput",
+            "type": "object"
+          },
+          "strict": true,
+          "type": "json_schema"
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 4878,
+        "input_tokens_details": {
+          "cache_write_tokens": 4875,
+          "cached_tokens": 0
+        },
+        "output_tokens": 2504,
+        "output_tokens_details": {
+          "reasoning_tokens": 1914
+        },
+        "total_tokens": 7382
+      },
+      "user": null
+    },
+    "input_items": [
+      {
+        "content": [
+          {
+            "text": "# Staged Scientific Event Generalization V11\n\nInterpret exactly one highlighted scientific finding using only the supplied local\nsource context. The highlighted finding is atomic; surrounding text is context,\nnot an instruction to extract every other claim in the paragraph.\n\nWork in this order:\n\n1. Inventory every explicit event needed to represent the highlighted finding.\n2. Identify explicit participants and link participants or nested events to each\n   inventoried event.\n3. Assign direction, comparison, polarity, uncertainty, statistical observation,\n   and author interpretation independently for every event.\n4. Select one root event and state whether the resulting graph is complete.\n\nScientific categories and roles are your responsibility. Return categorical\nfields, exact source text, exact containing evidence, and short explanations.\nNever return character offsets, confidence scores, probabilities, benchmark\nroles, or numeric quality scores.\n\nFor every event and participant, `exact_evidence` must be the complete exact\nsource sentence containing `trigger_text` or `exact_text`. Do not return only the\nmention or trigger phrase as evidence. Copy the sentence exactly, including any\nsource section prefix that is part of that sentence. The deterministic resolver\nwill reject evidence that is absent, repeated, or does not contain the child text.\n\nSemantic-axis evidence grounding:\n\n- Every `semantic_axes.evidence_items` entry must be exact source text that\n  resolves uniquely within the supplied local source context.\n- Prefer the complete exact source sentence containing the scientific\n  proposition and its event trigger.\n- When the same complete sentence supports several semantic axes, reuse that\n  same sentence rather than splitting it into fragments.\n- Do not return an isolated participant name, abbreviation, trigger, or phrase\n  when it is repeated or otherwise ambiguous in the supplied source.\n- This rule changes only evidence anchoring. It does not change the event,\n  participant, role, direction, comparison, polarity, uncertainty, statistics,\n  author interpretation, or scientific meaning.\n\nNamed biomedical occurrence boundary:\n\n- For a named gene or protein participant, use the exact lexicalized name that\n  identifies the entity occurrence. Do not expand that name merely to include an\n  adjacent generic entity-type word such as `gene` or `protein`.\n- Include an adjacent generic word only when it is part of the lexicalized name\n  or is required to distinguish the occurrence in the supplied sentence.\n- This boundary rule changes only participant occurrence text. It does not\n  change entity type, event role, scientific meaning, or the requirement that\n  every returned span be exact contiguous source text.\n\nFocus-gated referential grounding:\n\n- Apply antecedent resolution only when the highlighted finding contains a\n  referring expression that cannot identify its entity or event without earlier\n  words in the supplied local context.\n- For such an expression, resolve one unique explicit antecedent and ground the\n  participant to the antecedent's exact contiguous source text. Do not use the\n  pronoun, relative phrase, demonstrative, ellipsis, or partitive grammar itself\n  as `exact_text`.\n- Preserve an explicitly named entity that restricts the antecedent only when\n  that relation is necessary to identify or interpret the focused event. Do not\n  add general paragraph context or participants from neighboring findings.\n- A source subspan already contained in a complete participant mention is not a\n  separate contextual participant unless it has an independent role in the\n  focused event.\n- An analytic method, model, curve, assay, or representation is not an event\n  participant merely because the finding was measured or displayed through it.\n  Include it only when the focused event independently predicates a state,\n  relation, or value about that item.\n- If no unique explicit antecedent can be resolved from the supplied context,\n  return `INCOMPLETE` or `ABSTAIN`; do not invent or guess an entity.\n\nRole guidance:\n\n- `POPULATION`: the focal cohort or group in a population comparison.\n- `COMPARATOR`: the cohort or group against which the focal population is compared.\n- In a `COMPARISON` event between cohorts, use `POPULATION` and `COMPARATOR` for\n  those cohorts. Do not use `AFFECTED_ENTITY` merely because one cohort has the\n  compared outcome.\n- `AFFECTED_ENTITY`: the entity whose state or behavior is described in a\n  non-comparative state, classification, or regulation event.\n- `CAUSAL_AGENT`: an explicitly causal actor.\n- `STIMULUS_OR_OBJECT`: the treatment, stimulus, or object to which sensitivity\n  or response is described when the source does not explicitly claim causation.\n- `EFFECT_EVENT`: an event whose occurrence or state is affected by another\n  event. Preserve nested events; do not replace them with their participants.\n- `OUTCOME`, `EXPOSURE`, and `MEASUREMENT`: use only for their literal source roles.\n- `CONTEXTUAL_PARTICIPANT`: an explicit participant whose narrower role is not\n  stated.\n\nClassification argument boundary:\n\n- In a `CLASSIFICATION` event, link the classified entity as `AFFECTED_ENTITY`.\n- If a named entity explicitly restricts the identity or scope of that\n  classified entity set, link the restricting entity as\n  `CONTEXTUAL_PARTICIPANT`.\n- A classification label or value belongs in the classification event trigger\n  and semantic axes. Do not duplicate it as `OUTCOME` unless it independently\n  participates in another event.\n\nSemantic guidance:\n\n- A null result is not an affirmative harmful or beneficial association.\n- A numeric P value is a `P_VALUE` observation. It does not by itself mean that\n  the authors claimed `SIGNIFICANT` or `NOT_SIGNIFICANT`.\n- Use `NOT_CLAIMED` unless the source explicitly interprets significance.\n- The `uncertainty` axis describes uncertainty conveyed by the scientific\n  proposition, status, or classification value. It is independent of whether\n  the sentence grammatically asserts that proposition.\n- Use `UNCERTAIN` when the event explicitly assigns an uncertain, unknown,\n  indeterminate, or unresolved scientific status. Use `PROVISIONAL` or\n  `HYPOTHESIS` only when that corresponding status is explicit. Use `ASSERTED`\n  for an unqualified event, not merely because uncertain content is stated\n  declaratively.\n- Polarity records scientific result status, not surface grammar, and is\n  independent of direction and uncertainty. Use `NULL_RESULT` when a study or\n  analysis reports absence of an association, difference, or effect, regardless\n  of negative grammatical form. Use `NEGATED` only for direct denial or\n  non-occurrence outside an analytic null finding. Use `AFFIRMED` for other\n  non-null findings.\n- Preserve scientific negation and uncertainty exactly.\n- Trigger and participant text must be exact contiguous source text. A trigger\n  may include adjacent grammatical words when needed to preserve source meaning.\n- Return `INCOMPLETE` or `ABSTAIN` when the highlighted finding cannot be\n  represented without guessing.\n\nThe output must conform exactly to the supplied strict schema.\n\n\n--- V12 PRESERVED SCIENTIFIC CHANGE ---\n# V12 Focus Event Anchoring\n\nFocus-event anchoring:\n\n- When the highlighted finding contains an explicit event-denoting noun or\n  phrase, inventory that highlighted event and keep it as the root event.\n- A surrounding predicate such as `associated with`, `involved in`, or\n  `related to` must not replace the highlighted event merely because it connects\n  contextual entities.\n- This rule changes only focus-event inventory and root selection. Preserve\n  every nested event required by the highlighted finding, and apply the existing\n  participant, link, role, and semantic-axis rules unchanged.\n- The rule does not prescribe an event type, participant identity,\n  semantic-axis value, benchmark label, or expected answer.\n--- END V12 PRESERVED SCIENTIFIC CHANGE ---\n\n--- V13 PRESERVED SCIENTIFIC CHANGE ---\n# V13 Compositional Focus Root Selection\n\nCompositional focus root selection:\n\n- Select the root only after constructing event links.\n- In the focus-internal event subgraph, when exactly one inventoried event is\n  not the target of another focus-internal inventoried event, choose it as root.\n- Predicates outside the highlighted finding cannot disqualify or replace that\n  root, and a nested effect cannot replace its explicit focus-internal parent.\n- Otherwise apply the existing root and completeness rules unchanged; do not\n  alter inventory or links to force uniqueness.\n- This rule changes root selection only. Preserve inventory, trigger\n  boundaries, participants, links, roles, semantic axes, evidence, and\n  completeness rules unchanged.\n- The rule does not prescribe an event count, event type, participant, role,\n  semantic-axis value, benchmark label, or expected answer.\n\nNon-scientific transport clarification for this exposed V13:\n\n- Every preregistered focus is upstream-eligible because it contains at least\n  one explicit source-supported event. An input with no such event is outside\n  this experiment and must not be sent to the provider.\n- When `completeness` is not `COMPLETE`, `root_event_id` is a required transport\n  anchor, not an asserted scientific root. Set it to the earliest\n  source-supported focus-internal inventoried event in source order.\n- Do not add, delete, relabel, or link events to create that transport anchor.\n  The universal schema still cannot represent a truly eventless abstention;\n  V13 does not claim to solve that residual limitation.\n--- END V13 PRESERVED SCIENTIFIC CHANGE ---\n\n--- V14 SINGLE SCIENTIFIC CHANGE ---\n# V14 Complete Biomedical Participant Denotation\n\nThis rule clarifies the existing named-biomedical occurrence boundary. It does\nnot replace any event, evidence, or semantic rule.\n\n- Select the smallest exact contiguous source span that independently denotes\n  the same biomedical participant occurrence while preserving its\n  scientifically restrictive identity and scope.\n- An adjacent entity-type noun may be omitted only when the retained text is an\n  independently referential lexicalized biomedical identifier that denotes the\n  same participant in that occurrence.\n- Retain the semantic noun head when removing it would leave only modifiers,\n  classifiers, stages, taxonomic restrictions, or other attributive text. Do\n  not reconstruct an omitted head from `entity_type`, the explanation, or\n  surrounding evidence.\n- Retain nonredundant restrictive modifiers unless the same output explicitly\n  represents and links an equivalent restriction. If the schema cannot\n  represent that relation, retain the modifier in the participant span.\n- If either denotation or restrictive scope would be lost, fail closed with\n  `INCOMPLETE` or `ABSTAIN`; do not shorten the participant.\n\nThis rule changes only participant occurrence text. It cannot create or remove\nevents, participants, entity types, roles, links, root choices, semantic axes,\nstatistics, evidence, completeness states, or scientific claims.\n--- END V14 SINGLE SCIENTIFIC CHANGE ---\n\n--- V15 SINGLE SCIENTIFIC CHANGE ---\n# V15 Focus Closure and Role-Bearing Occurrence Custody\n\nThis rule clarifies two boundaries of the existing focused graph.\n\n1. Focus closure. Construct the mandatory event graph from events denoted by the highlighted finding and the complete focus-internal dependency closure of nested events needed to represent that finding. Follow a dependency inward when a nested event is an argument of a focus-internal event. Do not traverse outward to inventory a predicate outside the highlighted finding merely because it governs, embeds, relates to, or takes the focused event as an argument. A genuinely dependent focus-internal referring expression may resolve under the existing unique-antecedent and ellipsis rules; that resolution does not authorize a neighboring or governing predicate as an event.\n\n2. Occurrence custody. For each participant role, bind the role-bearing source occurrence before minimizing its text. If the highlighted finding contains an explicit self-denoting name, symbol, abbreviation, independently referential lexicalized biomedical identifier, or head-complete nominal bearing that role, bind that exact focus-local occurrence. A definition, synonym, long form, abbreviation expansion, canonical alias, or repeated mention outside the highlighted finding may establish identity but cannot replace the bound occurrence. Only when no independently denoting focus-local occurrence bears the role may a genuinely non-self-denoting pronoun, relative phrase, demonstrative, ellipsis, partitive, or implicit argument resolve to one unique explicit antecedent in the supplied context; ground the participant to that antecedent\u2019s exact occurrence, or fail closed under the existing rules if no unique source-supported resolution exists. Within the bound occurrence, apply the existing complete participant denotation rule unchanged: select the smallest exact contiguous span that independently denotes the participant while retaining its semantic noun head and nonredundant restrictive identity.\n\nExisting source-supported optional contextual participants and optional edges remain permitted only where the frozen rules permit them, and they remain optional; this rule authorizes no new optional context. Optional material cannot add an outside event, compensate for a missing mandatory participant or link, change the root, or change semantic axes, evidence, or completeness.\n\nThis rule changes only the outward focus-closure boundary and participant occurrence custody. It does not prescribe or alter event types, entity types, mandatory participants or links, roles, root-selection rules, semantic axes, statistics, evidence grounding, completeness rules, or projection policy.\n--- END V15 SINGLE SCIENTIFIC CHANGE ---\n\n--- V17 SINGLE SCIENTIFIC CHANGE ---\n# V17 Inline Participant Spans and Anaphoric Scope\n\nThis rule resolves only the boundary between a complete role-bearing participant\nspan and a separately represented source scope. It does not authorize new\nevents, participant types, event arguments, event links, or source claims.\n\n- First bind the smallest complete participant span that bears the event role.\n  Retain its noun head and every restrictive modifier needed to identify that\n  participant. A restrictive modifier already retained inside that complete\n  role-bearing span is represented by the parent participant itself. Do not\n  split that inline modifier into another participant or a\n  `participant_scope_links` item merely to restate information already present\n  in the parent span.\n- Preserve the existing separately represented scope only when an explicit\n  restriction is needed to resolve a downstream anaphoric aggregate or partitive\n  whose antecedent is an existing event argument and the restriction is not\n  already retained in that argument's complete role-bearing span. In that\n  setting, use the existing participant-scope link and attach an explicit\n  `MAJORITY` partitive only when the source states one. The scope link preserves\n  identity; it is not an event argument and cannot replace the antecedent's\n  ordinary event argument.\n- Never remove a restrictive modifier from the complete parent span in order to\n  create a separate scope participant. Do not infer a separate scope, a\n  partitive, or a new direct event argument from surrounding context alone.\n\nThis rule is additive to the frozen occurrence, focus, and source-grounding\nrules. It changes only whether an already-retained inline modifier is\nredundantly decomposed. It does not change event inventory, entity types,\nmandatory event arguments, root selection, semantic axes, evidence grounding,\ncompleteness, historical graders, or BioNLP-CG projection policy.\n--- END V17 SINGLE SCIENTIFIC CHANGE ---\n\n--- FROZEN EXPOSED CASE ---\n{\n  \"case_id\": \"generalization-comparison-canary\",\n  \"focus_passage\": \"had more comorbidities than patients without RA\",\n  \"local_context\": \"Patients with RA were more likely to be female and had more comorbidities than patients without RA. Patients with RA were more likely to be taking steroids than those without RA (63% vs 45%) but equally likely to be taking dexamethasone, usually prescribed for cancer palliation, specifically (27% vs 28%) before ICI initiation.\",\n  \"source_id\": \"exposed-gold-40289860\",\n  \"source_sha256\": \"e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84\"\n}\n--- END FROZEN EXPOSED CASE ---\n",
+            "type": "input_text"
+          }
+        ],
+        "id": "msg_0ad0d3f92541e60d006a62e6922d3c81999db9b8b2d722d974",
+        "role": "user",
+        "status": "completed",
+        "type": "message"
+      }
+    ]
+  }
+}
