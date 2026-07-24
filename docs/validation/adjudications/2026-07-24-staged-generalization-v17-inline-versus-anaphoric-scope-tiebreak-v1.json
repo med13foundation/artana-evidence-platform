@@ -1,0 +1,93 @@
+{
+  "schema_version": "artana.staged_generalization.v17_inline_versus_anaphoric_scope_adjudication.v1",
+  "review_kind": "TWO_BLINDED_SOURCE_ONLY_PRIMARIES_WITH_SOURCE_GENERAL_SYNTHESIS",
+  "review_inputs_excluded": [
+    "provider_raw_outputs",
+    "frozen_machine_reference",
+    "historical_evaluator_results",
+    "BioNLP_CG_projection",
+    "provider_prompt"
+  ],
+  "source_custody": {
+    "comparison": {
+      "case_id": "generalization-comparison-canary",
+      "source_id": "exposed-gold-40289860",
+      "source_sha256": "e933d6dbc1e7599e41e093c5ad321131572ccdaddf871c8b610749519fe5ef84",
+      "evidence_sentence": "Patients with RA were more likely to be female and had more comorbidities than patients without RA.",
+      "role_bearing_participant_spans": [
+        "Patients with RA",
+        "patients without RA"
+      ],
+      "inline_restrictors": [
+        "with RA",
+        "without RA"
+      ]
+    },
+    "uncertainty": {
+      "case_id": "generalization-uncertainty",
+      "source_id": "exposed-human-genetics",
+      "source_sha256": "91dc8584459752004de193cdaa40efd8024b943f8f841ca5653e42b8d535de5b",
+      "evidence_sentence": "A total of 947 variants were detected in the SLC12A3 gene, the majority of which were classified as of uncertain significance.",
+      "cohort": "947 variants",
+      "non_inline_locus_condition": "SLC12A3 gene",
+      "partitive": "the majority of which"
+    }
+  },
+  "blinded_source_only_reviews": [
+    {
+      "reviewer_id": "v17-inline-scope-primary-a",
+      "production_output_seen": false,
+      "frozen_reference_seen": false,
+      "prompt_seen": false,
+      "benchmark_labels_seen": false,
+      "comparison_verdict": "OPTIONAL_PERMITTED_SEPARATE_SCOPE_WITH_COMPLETE_PARENT_SPANS",
+      "rationale": "The explicit full cohort spans already preserve RA-positive and RA-negative membership. Separate links are a faithful projection, but not another asserted finding."
+    },
+    {
+      "reviewer_id": "v17-inline-scope-primary-b",
+      "production_output_seen": false,
+      "frozen_reference_seen": false,
+      "prompt_seen": false,
+      "benchmark_labels_seen": false,
+      "comparison_verdict": "OPTIONAL_PERMITTED_SEPARATE_SCOPE_WITH_COMPLETE_PARENT_SPANS",
+      "rationale": "The source truth is the comparison between explicitly named cohorts; requiring decomposed RA relations would be an evaluation or schema preference."
+    }
+  ],
+  "source_general_rule": "A restrictive condition must remain in the machine-readable representation when deleting or substituting it changes the extension, denominator, qualifier, or truth conditions of a role-bearing participant inherited by the focused event. A complete role-bearing participant span is itself the custody carrier when it already contains that restriction. Create a separate typed scope relation only when the valid participant occurrence does not contain a material condition needed to resolve an anaphor, aggregate, ellipsis, or downstream event argument; require exact, fail-closed occurrence custody and do not convert the relation into an event argument.",
+  "adjudicated_findings": {
+    "comparison_inline_scope": "PROHIBITED_WHEN_COMPLETE_PARENT_SPAN_RETAINS_RESTRICTION",
+    "comparison_inline_ra_restrictions": "MANDATORY_IN_COMPLETE_PARENT_SPANS",
+    "comparison_separate_ra_scope_links": "OPTIONAL_PERMITTED_CONTEXT_NOT_A_V17_CAPABILITY",
+    "comparison_new_ra_participant_nodes": "FORBIDDEN_IN_V17_WITHOUT_A_CLINICAL_CONDITION_TYPE_AND_PARENT_SCOPED_OCCURRENCE_CUSTODY",
+    "uncertainty_typed_scope": "MANDATORY",
+    "uncertainty_cohort_to_locus_scope": "MANDATORY",
+    "uncertainty_partitive_majority_of_cohort": "MANDATORY",
+    "uncertainty_direct_classification_to_locus_argument": "OPTIONAL_REDUNDANT_CONTEXT_ONLY",
+    "separate_detection_event": "NOT_REQUIRED",
+    "accepted_v17_uncertainty_representation": "One typed occurrence-bound cohort-to-locus participant scope link plus one MAJORITY qualifier on the existing affected event argument."
+  },
+  "reconciliation_of_sealed_history": {
+    "v15_post_run_classification": "The V15 source-only conclusion that a direct classification-to-gene argument is optional is preserved.",
+    "v16_source_scope_tiebreak": "The V16 conclusion that the cohort-to-locus scope link and the majority qualifier are mandatory for the anaphoric aggregate is preserved.",
+    "resolution": "These conclusions address different structures. A direct event argument is not required, but a non-inline condition needed to resolve the inherited variant cohort is required. Conversely, RA is already retained within both complete comparison-parent spans and must not be decomposed merely because it is named.",
+    "sealed_results_rescored": false,
+    "sealed_results_reinterpreted_as_pass": false
+  },
+  "minimum_fail_closed_matrix": [
+    "A shortened comparison parent that omits with RA or without RA fails complete participant denotation.",
+    "A comparison with complete parent spans and no RA child nodes or scope links passes the V17 inline-scope boundary.",
+    "A comparison RA node or link that treats RA as an ordinary OUTCOME participant fails; V17 has no optional inline-scope schema capability.",
+    "A bare 947-variant cohort with no locus scope link fails.",
+    "A direct classification-to-locus edge with no cohort scope link fails.",
+    "A classification of all 947 variants with no explicit majority qualifier fails.",
+    "An unanchored, method-occurrence, duplicate, reversed, wrong-role, or untypeable scope representation fails.",
+    "A correctly anchored locus scope link and majority qualifier pass without a direct classification-to-locus edge."
+  ],
+  "review_limits": {
+    "provider_calls": 0,
+    "fresh_cases_accessed": 0,
+    "graph_writes": 0,
+    "trusted_promotion": false,
+    "historical_artifacts_modified": false
+  }
+}

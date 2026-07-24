@@ -1,0 +1,121 @@
+{
+  "schema_version": "artana.staged_generalization.v17_complete_package_review.v1",
+  "reviewer_id": "v17_complete_package_reviewer_independent",
+  "review_kind": "INDEPENDENT_SCIENTIFIC_AND_CUSTODY_REVIEW_WITH_FINAL_RECONCILIATION",
+  "reviewed_complete_package": true,
+  "verdict": "HARD_PASS",
+  "review_scope": {
+    "single_scientific_hypothesis": "INLINE_VERSUS_ANAPHORIC_SCOPE_BOUNDARY_V1",
+    "reviewed_v17_logic": [
+      "The V17 prompt preserves restrictive text inside complete role-bearing participant spans and forbids redundant inline scope decomposition.",
+      "The V17 local evaluator retains the frozen V16 typed occurrence-bound anaphoric scope and MAJORITY path without introducing a general new scope schema.",
+      "The V17 evaluator cannot invent events, participants, event links, or semantic axes; it only rejects out-of-bound scope extensions and delegates ordinary outputs to frozen evaluation.",
+      "BioNLP-CG projection remains raw review only and cannot reverse source-semantic scoring."
+    ],
+    "custody_and_execution": [
+      "One exclusive attempt reservation precedes each provider creation; acknowledgement, confirmation retrieval, input-item retrieval, and admitted custody are required before scientific evaluation.",
+      "Zero provider retries and duplicate creations are required; rejected calls preserve available transport evidence and halt execution.",
+      "The cumulative 5 USD threshold is record-only telemetry and an operational next-call stop, not a scientific scoring condition or per-call token ceiling.",
+      "Remote-head equality, clean tracked state, expected-only validation debris, absent V17 outputs, and tracked hashed runtime dependencies are required before a call."
+    ],
+    "historical_and_qualification_boundaries": [
+      "The sealed V16 tree and all 32 critical V16 artifacts are hash-bound and unchanged.",
+      "No historical result is rescored or reinterpreted as a pass.",
+      "Fresh cases, graph writes, and trusted promotion remain zero and forbidden."
+    ]
+  },
+  "independent_review_evidence": [
+    {
+      "reviewer_id": "v17_complete_scientific_review",
+      "verdict": "HARD_PASS",
+      "scope": "source-general scientific boundary, frozen prompt/evaluator semantics, and source-versus-BioNLP separation"
+    },
+    {
+      "reviewer_id": "v17_complete_custody_review",
+      "verdict": "HARD_PASS",
+      "scope": "exactly-once transport custody, budget stopping, preflight, output isolation, and zero side effects"
+    }
+  ],
+  "validation": {
+    "focused_v17_tests": {
+      "command": "python -m pytest -q tests/unit/test_staged_generalization_v17_prompt.py tests/unit/test_staged_generalization_v17_evaluation.py tests/unit/test_staged_generalization_v17_preflight.py tests/unit/test_staged_generalization_v17_provider.py tests/unit/test_staged_generalization_v17_runtime.py",
+      "passed": 37,
+      "failed": 0
+    },
+    "historical_focused_regression_tests": {
+      "scope": "V10 through V17 staged-generalization, occurrence-aware evaluator, and frozen grading coverage; historical sealed preflights that require absent historical outputs were intentionally excluded.",
+      "passed": 248,
+      "failed": 0
+    },
+    "format": "ruff format --check: 15 V17 files already formatted",
+    "lint": "ruff check: all checks passed",
+    "compile": "python -m py_compile: passed",
+    "typing": {
+      "command": "python -m mypy --no-warn-unused-configs scripts/run_staged_generalization_v17_exposed.py scripts/validation/public_gold/staged_event/generalization/repair_v17",
+      "v17_attributed_errors": 0,
+      "known_preexisting_errors": 15,
+      "known_preexisting_file": "scripts/validation/public_gold/lossless_event_experiment_contracts.py",
+      "classification": "BASELINE_UNTYPED_IMPORT_ERRORS_OUTSIDE_V17_SCOPE"
+    }
+  },
+  "preregistration_sha256": "faaeb1eb35400d5913f9477125c470735bedec417468f4d514bf7ac7fcc60cef",
+  "runtime_dependency_manifest_sha256": "63c43091c4795c945b18dabe9e1d34fd50595c3d65e671bae92415de517cd406",
+  "sealed_v16_manifest_sha256": "664d684c70a13f61d5193890505ed4f0e21d9135e1613726efdb9fa142c634b3",
+  "provider_calls": 0,
+  "fresh_cases_accessed": 0,
+  "graph_writes": 0,
+  "trusted_promotion": false,
+  "reviewed_files_sha256": {
+    "docs/validation/adjudications/2026-07-23-staged-generalization-v16-source-scope-tiebreak-v1.json": "26f0cc28eaefa1ea10649664baf63656c240d6a2675a301f70b27bcdb5818ec1",
+    "docs/validation/adjudications/2026-07-24-staged-generalization-v17-inline-versus-anaphoric-scope-tiebreak-v1.json": "8833ca2de376dee282bfdf6ae7b17b2c9862f53ada9ff1792e88411621710fbf",
+    "docs/validation/evaluations/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary-evaluation.json": "5a9b4bbaaed0f3df1d6f55af083166a9131678e206b864a10dce0147943a68b0",
+    "docs/validation/manifests/2026-07-23-staged-generalization-v16-sealed-v15-manifest-v1.json": "eb20a566bdd4df4a58abb28b0c04a948c0d59fefe353db27d473674a751d8d33",
+    "docs/validation/manifests/2026-07-24-staged-generalization-v17-sealed-v16-manifest-v1.json": "664d684c70a13f61d5193890505ed4f0e21d9135e1613726efdb9fa142c634b3",
+    "docs/validation/preregistrations/2026-07-23-staged-generalization-v16-exposed-run-v1.json": "4a7e62c370ba6ef24e4fee7b4c32e460ecb544e18acc491b95950f547bafdd36",
+    "docs/validation/preregistrations/2026-07-24-staged-generalization-v17-exposed-run-v1.json": "faaeb1eb35400d5913f9477125c470735bedec417468f4d514bf7ac7fcc60cef",
+    "docs/validation/prompts/2026-07-23-staged-generalization-v16-participant-scope-and-partitive.md": "88a28282ec68377789f425b0181df868e22c021d9b91dd5b0c75cbc87f8cf900",
+    "docs/validation/prompts/2026-07-24-staged-generalization-v17-inline-versus-anaphoric-scope.md": "912c665237923a5ac0d11dc5f2437ed7eebccc0c1c93e0b7aadd6ebd1ed3d1a6",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary-attempt.json": "bb110960cfaa32a49d05626d0290c617f5e659e3dde2755bc18eb9f79586bdf2",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary-custody.json": "2a2adc40ea53e1eb8ea7a55fbe293b7e6a225ac66108962cf619a7c1b217ef45",
+    "docs/validation/receipts/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary.json": "f76fe8f87b73ba5d29ea76d062f205da3d417157f8f88979f3e83cbc5026d59b",
+    "docs/validation/reports/2026-07-23-staged-generalization-v16-exposed-run-v1-final.md": "b1b1ac7cd032bb72321935932860c70389345c7a6b4bc70376cc519539a5a8f6",
+    "docs/validation/results/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary-raw.json": "a37b88cee1d202b0bec324a7e71042e4cbe87f8e2777f0860b707ac5481f1002",
+    "docs/validation/results/2026-07-23-staged-generalization-v16-exposed-run-v1.json": "0175fef781e7471bec34a149a3a880151deaeacff34d38c5815bde689df237f5",
+    "docs/validation/reviews/2026-07-23-staged-generalization-v16-complete-package-review-v1.json": "4992a2a1bb98b2a307061ccfe13b32c6cf7bd76d26a52a0b3e56d2f3076c268b",
+    "docs/validation/reviews/2026-07-23-staged-generalization-v16-minimal-schema-review-v1.json": "d2cb6a40f447a98ff56b333c33869c4adfd9737ee9935863eebfd40068e92d16",
+    "docs/validation/reviews/2026-07-23-staged-generalization-v16-post-run-independent-classification-v1.json": "3d8dc05a2154faa63458a383c035534fcde236d4e255e558cc9917b6c783533b",
+    "scripts/run_staged_generalization_v16_exposed.py": "a148cdb48766b95fcd2b084b05c0ce98d560391a99883cce2880de7818e47905",
+    "scripts/run_staged_generalization_v17_exposed.py": "d3f91e5d968312c596c643159691e77271f94a1b74217b80c919b2d99f05f2da",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v16/__init__.py": "7352704c7a6e53926714988e697395998f5380a49a379ed41f5f069d0a32fac9",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v16/config.py": "ecc83c155cdc8f3e4023b87629da897592cc4c068c5b4bd312eb180a8519f85d",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v16/contracts.py": "314de20669764630deb0ae0a4086012857d6d254dbdc283719a5290ff268be5e",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v16/evaluation.py": "930b1af1aa58c1b9d396fc99adc093a725c54133d8bc2b468608a32dc9ff1679",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v16/preflight.py": "be096614c119859d4662718f34fe1dae0569b3b3710d551706b52316fdd27f47",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v16/prompt.py": "e104c3b28938c855428d63d1009d0cec12fe98f600bc9b2b2bb1a21f5c854f9c",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v16/provider.py": "f59651cf9e56c2a03cebb65efe9b0965ef4c0590865dd9dc8cdb4d3dc57a82a6",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v16/reference_policy.py": "e3ccdb822dc74e30524d4cfb81149f918b0ea5651e713e2dab1a98a4069dcd61",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v16/reporting.py": "3c45ccd5e861eced05f9c17e16a447b048d48f2488d3af88b81eca600ba50121",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v16/runner.py": "9aa740ac98ddc29e5316d97747bdd1a112fb3d36b54a86d3ffc540af60166a6e",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v16/terminal.py": "10ea1dfd6a48a5daa4177fa1b1f67250fd74fe0a3d719a670e81ff4c2329a804",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v17/__init__.py": "80a32fa189a480d53fd73b07f564b1205b0d155d8debac8895b38d7ae43e948d",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v17/config.py": "f37b5f13186c23979869e785fa4a41625b3f00a1c4de35d2e669c879d9168dd0",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v17/evaluation.py": "912255772cdcdd302f2f5f084130a31f588fc60ee769504669ab56d02333b3d6",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v17/preflight.py": "c1224ff5f5d660e9505d4325b6d6b2c73a4a66c0653dd4214d0d455c93c7ffb5",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v17/prompt.py": "e1fb1588554b07161811f20471db1140ef618e482a216a32f552ce15faa68f89",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v17/provider.py": "4eadd08aee7cc9e6715065523264821e7ce43f77a1157c08b44a16e82b9e2d78",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v17/reporting.py": "d9beac17a8ce0289c30e13fb5dfb3af50fbec308dd9cd59eb752a2d3034d3af7",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v17/runner.py": "49b983dd8dbb3a8f16908d82c0f1436a89d820128f718035983c11eae53cb14c",
+    "scripts/validation/public_gold/staged_event/generalization/repair_v17/terminal.py": "20b2b9135d6bbdd98073375d391f9e992a9a83ddcddc2d8870f300f11daed0fc",
+    "tests/unit/test_staged_generalization_v16_contracts.py": "ddfbb5ab7135c9114eaf8815c6fe99390431b9a23ba42ed7f07ed17a942f83c5",
+    "tests/unit/test_staged_generalization_v16_evaluation.py": "5ddcdc67a14a9a510c2f439aae9679247b434818ae85059e45a2bd0f8db8cc8e",
+    "tests/unit/test_staged_generalization_v16_preflight.py": "d0c09548756185f3be92929373fd7b6353292bf49b557edf932220239181150d",
+    "tests/unit/test_staged_generalization_v16_prompt.py": "ffa09f651e576e834f971bb603d1ff74010d7f6941fbb28c585b39d82f5f5eca",
+    "tests/unit/test_staged_generalization_v16_provider.py": "47cc27637296638b5c641ae0df8679f7bdf5e8b2610db3de2f1210b6c9339fdc",
+    "tests/unit/test_staged_generalization_v16_runtime.py": "8be836d23f3ef29e01ea86a1b90074cdf66935bf35369887f87896300bbc8010",
+    "tests/unit/test_staged_generalization_v17_evaluation.py": "acab8fab16597327830a19c20baca53866dbd4215a81af2532c52d4cd96a78c3",
+    "tests/unit/test_staged_generalization_v17_preflight.py": "8041691dcb9483d4ab3b79167b62cb74237c942d3fa230a9fb2a9f3d42d1e9f2",
+    "tests/unit/test_staged_generalization_v17_prompt.py": "1dbc4a505b7d7b10ba06f4776fc395cd17022a6240d9c80698e1695ff3ee3bb7",
+    "tests/unit/test_staged_generalization_v17_provider.py": "53fa8fc2182c5af077046ae9a9e539ac578005fed844a33732c08b96e8d85c0d",
+    "tests/unit/test_staged_generalization_v17_runtime.py": "3da1ec4496ceac1323cc00f73c83a450db46a40453b2c1805c8d5388f2bf1b9a"
+  }
+}

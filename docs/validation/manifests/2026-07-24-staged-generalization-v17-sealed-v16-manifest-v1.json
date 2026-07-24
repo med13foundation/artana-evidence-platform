@@ -1,0 +1,140 @@
+{
+  "all_sealed_tree_paths_current_bytes_equal": true,
+  "critical_file_count": 32,
+  "critical_files": [
+    {
+      "path": "docs/validation/adjudications/2026-07-23-staged-generalization-v16-source-scope-tiebreak-v1.json",
+      "sha256": "26f0cc28eaefa1ea10649664baf63656c240d6a2675a301f70b27bcdb5818ec1"
+    },
+    {
+      "path": "docs/validation/evaluations/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary-evaluation.json",
+      "sha256": "5a9b4bbaaed0f3df1d6f55af083166a9131678e206b864a10dce0147943a68b0"
+    },
+    {
+      "path": "docs/validation/manifests/2026-07-23-staged-generalization-v16-sealed-v15-manifest-v1.json",
+      "sha256": "eb20a566bdd4df4a58abb28b0c04a948c0d59fefe353db27d473674a751d8d33"
+    },
+    {
+      "path": "docs/validation/preregistrations/2026-07-23-staged-generalization-v16-exposed-run-v1.json",
+      "sha256": "4a7e62c370ba6ef24e4fee7b4c32e460ecb544e18acc491b95950f547bafdd36"
+    },
+    {
+      "path": "docs/validation/prompts/2026-07-23-staged-generalization-v16-participant-scope-and-partitive.md",
+      "sha256": "88a28282ec68377789f425b0181df868e22c021d9b91dd5b0c75cbc87f8cf900"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-23-staged-generalization-v16-complete-package-review-v1.json",
+      "sha256": "4992a2a1bb98b2a307061ccfe13b32c6cf7bd76d26a52a0b3e56d2f3076c268b"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-23-staged-generalization-v16-minimal-schema-review-v1.json",
+      "sha256": "d2cb6a40f447a98ff56b333c33869c4adfd9737ee9935863eebfd40068e92d16"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary-attempt.json",
+      "sha256": "bb110960cfaa32a49d05626d0290c617f5e659e3dde2755bc18eb9f79586bdf2"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary-custody.json",
+      "sha256": "2a2adc40ea53e1eb8ea7a55fbe293b7e6a225ac66108962cf619a7c1b217ef45"
+    },
+    {
+      "path": "docs/validation/receipts/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary.json",
+      "sha256": "f76fe8f87b73ba5d29ea76d062f205da3d417157f8f88979f3e83cbc5026d59b"
+    },
+    {
+      "path": "docs/validation/reports/2026-07-23-staged-generalization-v16-exposed-run-v1-final.md",
+      "sha256": "b1b1ac7cd032bb72321935932860c70389345c7a6b4bc70376cc519539a5a8f6"
+    },
+    {
+      "path": "docs/validation/results/2026-07-23-staged-generalization-v16-exposed-run-v1-generalization-comparison-canary-raw.json",
+      "sha256": "a37b88cee1d202b0bec324a7e71042e4cbe87f8e2777f0860b707ac5481f1002"
+    },
+    {
+      "path": "docs/validation/results/2026-07-23-staged-generalization-v16-exposed-run-v1.json",
+      "sha256": "0175fef781e7471bec34a149a3a880151deaeacff34d38c5815bde689df237f5"
+    },
+    {
+      "path": "docs/validation/reviews/2026-07-23-staged-generalization-v16-post-run-independent-classification-v1.json",
+      "sha256": "3d8dc05a2154faa63458a383c035534fcde236d4e255e558cc9917b6c783533b"
+    },
+    {
+      "path": "scripts/run_staged_generalization_v16_exposed.py",
+      "sha256": "a148cdb48766b95fcd2b084b05c0ce98d560391a99883cce2880de7818e47905"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/__init__.py",
+      "sha256": "7352704c7a6e53926714988e697395998f5380a49a379ed41f5f069d0a32fac9"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/config.py",
+      "sha256": "ecc83c155cdc8f3e4023b87629da897592cc4c068c5b4bd312eb180a8519f85d"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/contracts.py",
+      "sha256": "314de20669764630deb0ae0a4086012857d6d254dbdc283719a5290ff268be5e"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/evaluation.py",
+      "sha256": "930b1af1aa58c1b9d396fc99adc093a725c54133d8bc2b468608a32dc9ff1679"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/preflight.py",
+      "sha256": "be096614c119859d4662718f34fe1dae0569b3b3710d551706b52316fdd27f47"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/prompt.py",
+      "sha256": "e104c3b28938c855428d63d1009d0cec12fe98f600bc9b2b2bb1a21f5c854f9c"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/provider.py",
+      "sha256": "f59651cf9e56c2a03cebb65efe9b0965ef4c0590865dd9dc8cdb4d3dc57a82a6"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/reference_policy.py",
+      "sha256": "e3ccdb822dc74e30524d4cfb81149f918b0ea5651e713e2dab1a98a4069dcd61"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/reporting.py",
+      "sha256": "3c45ccd5e861eced05f9c17e16a447b048d48f2488d3af88b81eca600ba50121"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/runner.py",
+      "sha256": "9aa740ac98ddc29e5316d97747bdd1a112fb3d36b54a86d3ffc540af60166a6e"
+    },
+    {
+      "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/terminal.py",
+      "sha256": "10ea1dfd6a48a5daa4177fa1b1f67250fd74fe0a3d719a670e81ff4c2329a804"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v16_contracts.py",
+      "sha256": "ddfbb5ab7135c9114eaf8815c6fe99390431b9a23ba42ed7f07ed17a942f83c5"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v16_evaluation.py",
+      "sha256": "5ddcdc67a14a9a510c2f439aae9679247b434818ae85059e45a2bd0f8db8cc8e"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v16_preflight.py",
+      "sha256": "d0c09548756185f3be92929373fd7b6353292bf49b557edf932220239181150d"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v16_prompt.py",
+      "sha256": "ffa09f651e576e834f971bb603d1ff74010d7f6941fbb28c585b39d82f5f5eca"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v16_provider.py",
+      "sha256": "47cc27637296638b5c641ae0df8679f7bdf5e8b2610db3de2f1210b6c9339fdc"
+    },
+    {
+      "path": "tests/unit/test_staged_generalization_v16_runtime.py",
+      "sha256": "8be836d23f3ef29e01ea86a1b90074cdf66935bf35369887f87896300bbc8010"
+    }
+  ],
+  "historical_results_rescored": false,
+  "schema_version": "artana.staged_generalization.v17_sealed_v16_manifest.v1",
+  "sealed_tree_file_count": 2790,
+  "sealed_v16_head": "6184dc19c0cb53435919645b1c3aaf494e82d165",
+  "sealed_v16_tree": "472ed6b1c01270fdfa3e59e799b11dd14fa8bf49",
+  "v16_post_run_classification_sha256": "3d8dc05a2154faa63458a383c035534fcde236d4e255e558cc9917b6c783533b"
+}

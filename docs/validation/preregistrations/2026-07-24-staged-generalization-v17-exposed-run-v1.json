@@ -1,0 +1,650 @@
+{
+  "acceptance": {
+    "bionlp_lane": "Measured separately and never used to reverse source-semantic scoring.",
+    "comparison_inline_scope": "The comparison retains complete RA-restricted population spans and contains no V17 inline-scope child participant or link.",
+    "historical_regressions": "Comparison, null-result polarity, uncertainty axes, SLC12A3 occurrence boundaries, exact grounding, drug focus, and nested dependency closure remain passing.",
+    "source_semantic_pass": "Every exposed case passes the effective V17 source-semantic lane.",
+    "stop_conditions": [
+      "first scientific failure",
+      "schema, custody, receipt, or exactly-once failure",
+      "cumulative operational budget exhaustion",
+      "provider outage or absent required secret"
+    ],
+    "uncertainty_anaphoric_scope": "The uncertainty case has exactly one grounded cohort-to-locus typed scope link and one grounded MAJORITY qualifier; direct classification-to-locus context remains accepted zero or one time only after those mandatory structures pass."
+  },
+  "authorization": "PREREGISTERED_V17_EXPOSED_CASES_ONLY",
+  "experiment_id": "staged-generalization-v17-exposed-run-v1",
+  "forbidden_changes": {
+    "BioNLP_CG_projection": "UNCHANGED_RAW_REVIEW_ONLY",
+    "entity_types": "UNCHANGED",
+    "event_inventory": "UNCHANGED",
+    "evidence_grounding": "UNCHANGED",
+    "fresh_cases": "FORBIDDEN",
+    "graph_writes": "FORBIDDEN",
+    "historical_rescoring": "FORBIDDEN",
+    "legacy_event_argument_roles": "UNCHANGED",
+    "root_selection": "UNCHANGED",
+    "semantic_axes": "UNCHANGED",
+    "shared_grader": "FORBIDDEN",
+    "trusted_promotion": "FORBIDDEN"
+  },
+  "frozen_execution": {
+    "canary_case_id": "generalization-comparison-canary",
+    "case_order": [
+      "generalization-comparison-canary",
+      "generalization-drug-sensitivity",
+      "generalization-uncertainty",
+      "generalization-explicit-nested-cause",
+      "generalization-negated-association",
+      "generalization-null-statistics"
+    ],
+    "execution_order_hashes": {
+      "generalization-comparison-canary": "c66a1dda145b90dafc305cc2b7b288d7cdfdc0bb6b6487cc754eb049ca4cad75",
+      "generalization-drug-sensitivity": "a1e2e20b6a850e005db6e33b0ad9875526f58b8af89acbd2745601d3bcb59a07",
+      "generalization-explicit-nested-cause": "115c0244f24fe72186423fd1109bc83185be6ade4b1fb341dfd5b9a7ba626280",
+      "generalization-negated-association": "e85c555f2d7f285eb6f665fcdd4bdaa12335669693a7eea3dd544fba1adad23d",
+      "generalization-null-statistics": "2aa3b991ff13e833058c351174679d9f356274894dadf9db5a1bbf0c52c388ab",
+      "generalization-uncertainty": "ff3048a178331e59218d3d170e31a5df433574dc9ac51ee00e786dc3d54e275a"
+    },
+    "exposed_cases_only": true,
+    "fail_fast": true,
+    "fresh_cases_accessed": 0,
+    "global_max_calls": 6,
+    "global_max_cost_usd": 5.0,
+    "graph_writes": 0,
+    "provider_fallback_allowed": false,
+    "provider_retries_allowed": 0,
+    "token_ceiling_present": false,
+    "tokens_or_cost_affect_scientific_scoring": false,
+    "trusted_promotion": false
+  },
+  "frozen_state": {
+    "grading_policy_sha256": "da315ef20300e669fbbfb2565f26faad7ba2ba1336de5d7939a7b22b34a2420c",
+    "inline_versus_anaphoric_scope_tiebreak_sha256": "8833ca2de376dee282bfdf6ae7b17b2c9862f53ada9ff1792e88411621710fbf",
+    "model": "gpt-5.6-luna",
+    "nested_contract_sha256": "c792b8230c295b1c0e294a0c888254e5e62becf5fd20072389abbfa886192ff9",
+    "provider_request_sha256": "2cb5fb64c8f0b4f0bfec79f8be136e3048786c9ca9c62d383aa94e06e49e743f",
+    "reasoning_effort": "high",
+    "request_timeout_seconds": 1800.0,
+    "runtime_dependency_manifest": [
+      {
+        "path": "scripts/__init__.py",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "scripts/run_staged_generalization_v17_exposed.py",
+        "sha256": "d3f91e5d968312c596c643159691e77271f94a1b74217b80c919b2d99f05f2da"
+      },
+      {
+        "path": "scripts/validation/__init__.py",
+        "sha256": "a9c90e8911fdf79019a6a68c3f49d1a4ab981b8efd5579f3fd6a4b79aa328960"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/__init__.py",
+        "sha256": "8291018b46a4db88ac589a730f4dc247c2aeb7ede6d01f3aeca41f0c47668510"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/background/__init__.py",
+        "sha256": "a470723c7b480c591aa3fdcf3ca146fe308ea5ac55b0ec46c34632d75cc65338"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/background/contracts.py",
+        "sha256": "c2e48f3e77518f19b8c9e2c105b29e0fa98e0fda668228d460eb3452fa538d41"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/background/execution.py",
+        "sha256": "0b368364e20efa7ef675f310d030ad2ba01b81d624213a26829363955ca36693"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/background/polling.py",
+        "sha256": "3bd5f043c3e2f1be764b6d9e92dfff649e5ad8089aa8b2d1047c273e3cd06b90"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/background/states.py",
+        "sha256": "958a34fa0ab25fd7fb9f877c23bedbd83a1b00e59836b8799f3659b5fc60f2ba"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/canonical_payload.py",
+        "sha256": "61294b3278b3d7bb6c8ba9127404658ca4c24fe30234e46a989931206f50f908"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/contracts.py",
+        "sha256": "c3cb084c50d2faa654b0f37208786ae33d895fee2b74ef4c117c38e691f25087"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/foreground/__init__.py",
+        "sha256": "8a249844458010d9e7bafd76e8c6ab6b43840235db418986d7b733ce64eb58df"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/foreground/contracts.py",
+        "sha256": "990e6d8df267ae997344061e3e6fcccb0afc8ecb7edb19d668825b70eca86bc6"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/foreground/execution.py",
+        "sha256": "c02b775763baf65ecec3c154b077600aa98f8be190aa1a439f465346a84093b3"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/foreground/validation.py",
+        "sha256": "7311df1ed5e64693982ff875cb73d21412b37d5670fc114d5e68ea3edb6f0bdc"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/identity.py",
+        "sha256": "a07f468ae572ab07ef4b70e7661dcdb416860a71fc1be1b509518aeda1ad8d30"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/operational_accounting_v2.py",
+        "sha256": "83105757297d4797435b0f075287979caeba9458220c0079526c657133b0bfc7"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/structural_diff.py",
+        "sha256": "46e778decc1d15172cfaaa898ae53f693846b779bc9cf84a0ed2415cd2da2e55"
+      },
+      {
+        "path": "scripts/validation/provider_receipt_boundary/validation.py",
+        "sha256": "a4dfda3dbabb0383ef6087221f56cb9cc1ba547e876e5134e1099f6e4a3c5500"
+      },
+      {
+        "path": "scripts/validation/public_gold/__init__.py",
+        "sha256": "376acc9e6fd3466556df75c04d5df0d8b87c8a6048e27d983f8886c3d4f29ca6"
+      },
+      {
+        "path": "scripts/validation/public_gold/lossless_event_experiment_contracts.py",
+        "sha256": "94b11628ffe4a983023ab071e43f3294a530a4482df1d5932027705c857268e7"
+      },
+      {
+        "path": "scripts/validation/public_gold/lossless_event_provider.py",
+        "sha256": "3504289a8b225b44a11d95dbaa31ea517c50eb829f8732645400e7bad108db5a"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/__init__.py",
+        "sha256": "ff6c1c269a2063029a6a9b3ce3f7f1d102ac86c92da9c498c71be9e50ee1b1a3"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/context_experiment/__init__.py",
+        "sha256": "19c607c9a243be833a36c15303c196f96dbe9d7f4df0cc5229884ec391bcb6a6"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/__init__.py",
+        "sha256": "cab08bc6468996574b33cf39ef63d28df96160880a7a18983f34c89b16bfe385"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/contracts.py",
+        "sha256": "56797fbe4ec244d3a66f884e672cd8d22778ebb47a044c50d7f3b90cf2945c12"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/context_experiment/role_alignment/policy.py",
+        "sha256": "8d1ea3a8ea64f53f25e99d3130c13939931b620247d515944dabdb00e8c9bb62"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/context_experiment/source_first/__init__.py",
+        "sha256": "3f9b15ddcedd004d6db913f88494fb3ba2daa1568c5d08b701a265311513848d"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/context_experiment/source_first/attempts.py",
+        "sha256": "c579a40c0d6739a090e2ce673e5ffcb1c5833c97d36341f7ed310ad3c809f7de"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/context_experiment/source_first/custody.py",
+        "sha256": "8a569b13078af044fa7399c2f237c2a340e76553849d6c0d0fa38d3d6f8bcfb6"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/contracts.py",
+        "sha256": "c27d6b8b4627d8eb7f882701721547c9138573919c4308413323ae591fbbde94"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/__init__.py",
+        "sha256": "18b56a004d62cbbb1f1c846decc394e7518069cb57c94918945061f311ffc534"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/anchors.py",
+        "sha256": "abecbd8b816e0e927d0ce490a54066e42adff42666810294babf6d1adbd76ab6"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/contracts.py",
+        "sha256": "94127ba08dbc8d4efbb1d57ebfb90ba0e4f36c5a22369031ec903fa149431bac"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/evaluation.py",
+        "sha256": "a8d33dd3a220879e804c4e4b5084d1c1ee27dfc4ee9c6e1089305665848a52ef"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/grading/__init__.py",
+        "sha256": "6d3bd50e806e5546fdfe2ae34f88ad12c7da3f8df719bf9cbb98ad486fe6ce05"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/grading/agreement.py",
+        "sha256": "b0358f0d6b7a328cb17b6dc7d0482044b77650243136a9c01064f29494d76dda"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/grading/artifacts.py",
+        "sha256": "4bbd831cae66dafac9f0be32693edd393de76cefb72b487cd3b4ef6542240759"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/grading/config.py",
+        "sha256": "046176a558e96471bd2dc24bd4ddd151c16f0d38930ef40554a0dc4816d74e6c"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/grading/contracts.py",
+        "sha256": "24428bd5bf901712600912bcfc287edbc61ecff5c4d36aa8c3ba26ccfaff2faa"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/grading/evaluation.py",
+        "sha256": "6dc6186cb262d3494e3decc8143790bcbb1132ad62173b807155c5eb905dc1e9"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/grading/policy.py",
+        "sha256": "cd630f3c4dc8a7725a53ab0fec063413ec932fc39b4cc3dccf279a53da795e4b"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/panel.py",
+        "sha256": "299ab554981194720e7e86cb8a16688cfd7eaa180682d916a499324ee5f2dde2"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v10/__init__.py",
+        "sha256": "d7a6b57ebc425193d502a1054cb2555a47673504cfc3b611c68433952a2bc3ed"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v10/config.py",
+        "sha256": "ef79214734085f7b3dfc3b53f578498ae3c218bb6ec803b7b5987268dd987918"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v10/execution_config.py",
+        "sha256": "0354d220828bf9b31ddea22998b539c00dc810eccb31245676cc056e540f7f9c"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v10/preflight.py",
+        "sha256": "34418b6e0be2b87076e6d5482ec3668910775708cfd4486588e1fd5d8cb0e555"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/__init__.py",
+        "sha256": "26f17c72472a8468a9c86aa2de96e616a66530aa3b9773368a2ec6cd032543ce"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/contracts.py",
+        "sha256": "321e32c0a74cc889e08bf06f5320e0c8f7f560db1592b818e55317e9ddddda05"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v12/evaluation.py",
+        "sha256": "0dc2d8a0c20f681d868598822a090a42c5e96c4ccb3c44affa0cd244cecf8993"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/__init__.py",
+        "sha256": "d3300354857d1269d8879cc719f5e69979abe0987b9b79f22c284286c4531221"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/acceptance.py",
+        "sha256": "89c62c96fb5c2df02463aceeda0a4f871aa2c98fbf378ccf0a90b487c72cad98"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/accounting.py",
+        "sha256": "88567d6c4947014a65ce48daf2f3515fd4b706a8fd78f54fb9fb65ceb3ad71df"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/cg_projection.py",
+        "sha256": "65e341df8d5e66ccc6a6ddc2d6dab732686ccdea10e694c4efcd0b0bc2879f8e"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/config.py",
+        "sha256": "7290fcf7f4d5f81f00371ea54c83ebb9c4b256947ca575f71f282c29b5630d6d"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/contracts.py",
+        "sha256": "ae7488aebdb421c519d468a11794400560e85ddd4b7dd8baad6235ddb42bb7dd"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/dependency_manifest.py",
+        "sha256": "d70bc2875d5ed4a74f7683cff782bafbf2c14446e59d4ad4e246a2374d9b5307"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/evaluation.py",
+        "sha256": "11295ced343abc7eb6c92ed147dbb809e790eb33a314ff17c9c07cc19026afba"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/frozen_panel.py",
+        "sha256": "de50585ad9af73dbdfc04f09b586779f65c43795970dccb1d54be72776a8730f"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/frozen_policy.py",
+        "sha256": "325b53019282599436d2a91bfcd96ded093e4ca49cd56a04366dc19d0aa56fc4"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/provider.py",
+        "sha256": "0fbd11754b5c0e9127d5dfcdc5ff7617b25d57d79fc9dc020a839e1be1e24e9f"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/provider_execution.py",
+        "sha256": "10a77d437710ef680017632df72c44d1be6554b9be71e90f7f9a0283189d985c"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/rejected_custody.py",
+        "sha256": "cc9c860bb27c0dc1bd1d795dc390f1bcbe4da1b103ec473d2abd3991060e32eb"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v13/request_contract.py",
+        "sha256": "138e00b77248bcf42981c93869c9a307109a2c09d262c33f3fe1908a48e72f8e"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v14/__init__.py",
+        "sha256": "1b6ad3649d76dfad354f18dbd88f5070f5975d27e3c2490a1cd62b99c73d22f6"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v14/config.py",
+        "sha256": "495cb65c7adf6138d183783e4ec722c2d0ffae621236a4c2d82c61b13854ab31"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v14/evaluation.py",
+        "sha256": "28a6e6f7140bb5d240b34516afe52153d76753b5d6fc30d02ab44d59092811df"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v14/prompt.py",
+        "sha256": "5a2d1ebcd8939479f2f77795e1d82e80ff396fa8691fffcc3462f4a58b5e40a8"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v14/provider.py",
+        "sha256": "87b0a58e9fe0652fa4217387e7c97863ba9c2dd69e8aae8c8dea4eb97c177a04"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v15/__init__.py",
+        "sha256": "ea0d7b722766e87f92a78972cd372f19a78c84eb89f89666b16ed399ba921a84"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v15/config.py",
+        "sha256": "b41f50e03efdd7f44d2f7a8c5f2ea23f870ae08b49ef5a25c070fdb612fd6b08"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v15/prompt.py",
+        "sha256": "0d3b21f43af6a7484dd359adcc71f4cc8b29da79bd1fa71535711f1c4ad1d4a9"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v15/provider.py",
+        "sha256": "7de5095e066202644129a335cc58e057f0cc80f9bc6fd504295f135baf455d56"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/__init__.py",
+        "sha256": "7352704c7a6e53926714988e697395998f5380a49a379ed41f5f069d0a32fac9"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/config.py",
+        "sha256": "ecc83c155cdc8f3e4023b87629da897592cc4c068c5b4bd312eb180a8519f85d"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/contracts.py",
+        "sha256": "314de20669764630deb0ae0a4086012857d6d254dbdc283719a5290ff268be5e"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/evaluation.py",
+        "sha256": "930b1af1aa58c1b9d396fc99adc093a725c54133d8bc2b468608a32dc9ff1679"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/provider.py",
+        "sha256": "f59651cf9e56c2a03cebb65efe9b0965ef4c0590865dd9dc8cdb4d3dc57a82a6"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v16/reference_policy.py",
+        "sha256": "e3ccdb822dc74e30524d4cfb81149f918b0ea5651e713e2dab1a98a4069dcd61"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/__init__.py",
+        "sha256": "80a32fa189a480d53fd73b07f564b1205b0d155d8debac8895b38d7ae43e948d"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/config.py",
+        "sha256": "f37b5f13186c23979869e785fa4a41625b3f00a1c4de35d2e669c879d9168dd0"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/evaluation.py",
+        "sha256": "912255772cdcdd302f2f5f084130a31f588fc60ee769504669ab56d02333b3d6"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/preflight.py",
+        "sha256": "c1224ff5f5d660e9505d4325b6d6b2c73a4a66c0653dd4214d0d455c93c7ffb5"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/prompt.py",
+        "sha256": "e1fb1588554b07161811f20471db1140ef618e482a216a32f552ce15faa68f89"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/provider.py",
+        "sha256": "4eadd08aee7cc9e6715065523264821e7ce43f77a1157c08b44a16e82b9e2d78"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/reporting.py",
+        "sha256": "d9beac17a8ce0289c30e13fb5dfb3af50fbec308dd9cd59eb752a2d3034d3af7"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/runner.py",
+        "sha256": "49b983dd8dbb3a8f16908d82c0f1436a89d820128f718035983c11eae53cb14c"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v17/terminal.py",
+        "sha256": "20b2b9135d6bbdd98073375d391f9e992a9a83ddcddc2d8870f300f11daed0fc"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v8/__init__.py",
+        "sha256": "b22c75e31f87eb1c52225fe2f504a39a95e64da7bf5e5e21333d785f23e9882f"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v8/contracts.py",
+        "sha256": "3310c4f4434555c5da577a465848b67b27a2e4084a226a4bba2312f7abfaedd2"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v9/__init__.py",
+        "sha256": "a4e7e87c70a86cabe03757826b86451133f77e4795db6c23d4bed8a427ea7812"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/repair_v9/contracts.py",
+        "sha256": "7732a185d9796a15cd3986982eb46b0c40cba7ed2c19784802a92116a44f17ab"
+      },
+      {
+        "path": "scripts/validation/public_gold/staged_event/generalization/span_identity.py",
+        "sha256": "b9d21433557c763e8f905827e31f450e1141677d827384b532bd9b49940e541e"
+      },
+      {
+        "path": "services/artana_evidence_api/__init__.py",
+        "sha256": "0a6f46a150f19f2db4a9dd12aa6741370a8cddc2388756d8fef77048ec174fde"
+      },
+      {
+        "path": "services/artana_evidence_api/agent_contracts.py",
+        "sha256": "9445047140950d8e50d287f4e712a8643f5cb52ea46dcb6a39d3525935e3211e"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_relation_taxonomy.py",
+        "sha256": "c41e9bc5730298d8eab9e1a5b9c6e14b9b1710aa96dba3c58a5d1c394a5bd3f6"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/__init__.py",
+        "sha256": "50118405ac444d7029e2eb79c660d3ec7fb814adf49e197f60c815cf12d7371f"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_adjudication/__init__.py",
+        "sha256": "3ba136be011b84806260d50ca0fb9cfabb057c0029ecf3bcd8341f45d34f3bb8"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_adjudication/contracts.py",
+        "sha256": "ae1028e3df07c67290c9ec85bd1d370cdcb0ca919274694f3bfbe2f89d6f3b40"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_adjudication/metrics.py",
+        "sha256": "407e20eb3f78f7addf703b6268b08d3a499f1eea414b57e1560f824a9a9fff93"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_adjudication/service.py",
+        "sha256": "8743632ab28e8c444dd8be363902ccebe60974ee27003814be22c111f362a630"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_frames/__init__.py",
+        "sha256": "7bd4524329dff762fee479eaf8f4e4fbda32d49bc647ba7e764fb4116e3892b9"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_frames/arguments.py",
+        "sha256": "1c7360c304e6aa432e19a124cacb56f4a9c1257bfe5236762e2fa81211c62c13"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_frames/completeness.py",
+        "sha256": "4a23064c8cf6fc52e63378ab49043408062ee839b1590912596d3128b5ab5e30"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_frames/contracts.py",
+        "sha256": "bbd9d33336bb5317674e5081710ee89fc6b179879ea5e76608ed6d989946385a"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_frames/event_types.py",
+        "sha256": "afff3c0e58b1ee2241ba9177df8d6fed67ed991f7b917ea919ac5db3d99ce794"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_frames/inventory.py",
+        "sha256": "0c75d2feeec8bff91fec2be6ba1802849cc6609e1fb8ca37833a358139336397"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_frames/mentions.py",
+        "sha256": "f457a169ca6c2f09b4298ac693d3a249ce57318bf1f9c2e70b3b78a56bee702a"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_frames/normalization.py",
+        "sha256": "e55f8228745bb2849675de2879ea2077214193a476888924484b1dbec2d7b82a"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_frames/promotion_policy.py",
+        "sha256": "260e354e964102d2c9b4f92af27bee2324ebc113dae5e0aea1ebfdc6ed94454b"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_frames/semantics.py",
+        "sha256": "44fc6271d37ea73387beb7c8369b3c850e0ee661b4e3e1c2c791621ab39b835f"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/claim_frames/source_regions.py",
+        "sha256": "b0e72eedc2897cd5515cbf6bbc7ca87aef7e9bb6dc75b54abf80db7cb1b8a7a6"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/full_text_chunking.py",
+        "sha256": "e4fe4a0a6bdc91d1d3d7a70004167c77b174d56d426fc3496da29e245e3359a0"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/proposal_relation_type_guard.py",
+        "sha256": "e8c5dfddd9c1152887833e3c73aa4eeaa868cd5610d18125aff2d4781b2c860f"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/scientific_events/__init__.py",
+        "sha256": "9a8a46279cf20fb7d45d7763919de7cb8c6bd3304c407ddfff628520117a62b4"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/scientific_events/contracts.py",
+        "sha256": "3590fb5b5a3f7d05fb0632f01ea1e9be95264fad56826e29018e27644044805c"
+      },
+      {
+        "path": "services/artana_evidence_api/document_extraction_support/scientific_events/validation.py",
+        "sha256": "87fd91991ec432d9bb5367fd35efb9ce41c700c8a5d04fef492070394e5db2c5"
+      },
+      {
+        "path": "services/artana_evidence_api/document_store.py",
+        "sha256": "a7ddabc5fbe78a0d8d4f108387f42b8804c25691f7155a5e59942e2dc4363d1d"
+      },
+      {
+        "path": "services/artana_evidence_api/proposal_store.py",
+        "sha256": "3701fe2cc4311ff11dca462d497b8e91ccdcf7b9d79063c825ac6e4c53a6cb96"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/__init__.py",
+        "sha256": "9786fa42a5b446b660a2b54fcab814155ff282ce4c4a86ab728bb2f8c8af0d93"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/agent_output_manifest.py",
+        "sha256": "a7012b9e7751628e577319c30494e646f507920c000359ed0bebce37f15dd3b1"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/agent_output_schema.py",
+        "sha256": "2c91a53f6f2c9d9ee2bef735bcea9a8da225d2ce7b4bf939b96baffacd4dba02"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/artana_imports.py",
+        "sha256": "cca9f04164defb28ffcf0ca48486a8897b9b6420c223ace8c6ce260e5b38ad00"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/config.py",
+        "sha256": "899822b32c4389c1c99c1bb64b3adae15b1b6d1fe82ff0191947f642413bffe5"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/database_url_security.py",
+        "sha256": "f11d5e6443946a07dd46f177080de85eee85410bc387fda4572c1a8afff46da2"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/logging_support.py",
+        "sha256": "de7edd3380a507ef87b4e566194f7bbbb93fd5f2df8852d3f3523872faba05bf"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/manifests/__init__.py",
+        "sha256": "a60ee2ed9aa8b4273fa4e84d4fc4af87539151493a85d9059d16155c1148693f"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/manifests/claim_verification.py",
+        "sha256": "0d0420b0c3a22b3346ae267bf63616a5cf4c90150da779131fca3a6a448260e4"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/model_health.py",
+        "sha256": "0679a7e97492aa290259c9ea6a6f7128638b34353a40e685b5747eed52dfa55b"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/model_registry.py",
+        "sha256": "e1065119f9b8cd1969cdc31e225e0055ac4908c476ebe5de9226ddf1be37e4f7"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/policy.py",
+        "sha256": "375f8f7089bb1b7d6016d6affd528a95c4bc9c4187c4eef1697ec344dd6980f3"
+      },
+      {
+        "path": "services/artana_evidence_api/runtime/postgres_store.py",
+        "sha256": "cf5a54477699b68fda597e0efc10d6c965c4dce847ba9c10bd7006af5b381c1e"
+      },
+      {
+        "path": "services/artana_evidence_api/step_helpers.py",
+        "sha256": "483008b67783ab28b65884e42887782d0f21e36fb7d9f17d2e2d97875afe004a"
+      },
+      {
+        "path": "services/artana_evidence_api/types/__init__.py",
+        "sha256": "7b00fc8a59e972e9c379f640c1bd6f4c08954dbe695a4c6bc10707ae8352196d"
+      },
+      {
+        "path": "services/artana_evidence_api/types/common.py",
+        "sha256": "2f2ba1c074ea443ccc9f83ecb61b83c38734beebf19510e66a3c3894d83b0b55"
+      },
+      {
+        "path": "services/artana_evidence_api/types/evidence_grade.py",
+        "sha256": "b8683d5dd95cb5f70ab4c52602b78a7b8795fba3684407206fe66e1847e3e4b6"
+      },
+      {
+        "path": "services/artana_evidence_api/types/graph_fact_assessment.py",
+        "sha256": "df0b0eb39c40b2bade265457c3966eb2bc7af24f0936a8e26884ebca26a590b5"
+      },
+      {
+        "path": "services/artana_evidence_api/types/source_provenance.py",
+        "sha256": "a82387e075acc8578f6812d42f35d5808f330175d35881ca7d4346bf6988f29b"
+      },
+      {
+        "path": "services/artana_evidence_api/variant_extraction_contracts.py",
+        "sha256": "f7cbb06957e71dfd0b57bd782278c2f99313917d5ce30685f4d5ae94e9b5d5c8"
+      }
+    ],
+    "runtime_dependency_manifest_sha256": "63c43091c4795c945b18dabe9e1d34fd50595c3d65e671bae92415de517cd406",
+    "runtime_dependency_roots": [
+      "scripts/run_staged_generalization_v17_exposed.py"
+    ],
+    "sealed_v16_head": "6184dc19c0cb53435919645b1c3aaf494e82d165",
+    "sealed_v16_manifest_sha256": "664d684c70a13f61d5193890505ed4f0e21d9135e1613726efdb9fa142c634b3",
+    "v16_output_schema_sha256": "0b645097208b1f82b0cbd0f72e1702ff4457902a0005c924e716904e4e81f973",
+    "v16_post_run_classification_sha256": "3d8dc05a2154faa63458a383c035534fcde236d4e255e558cc9917b6c783533b",
+    "v16_scope_reference_sha256": "2a12e23f7543769ae6d0792ede97da2933f658e5704681d84f056b9baaf8028d",
+    "v17_rule_sha256": "912c665237923a5ac0d11dc5f2437ed7eebccc0c1c93e0b7aadd6ebd1ed3d1a6"
+  },
+  "schema_version": "artana.staged_generalization.v17_exposed_gate.v1",
+  "scientific_evidence_status_before_execution": "NOT_EMPIRICALLY_TESTED",
+  "scientific_hypothesis": {
+    "BioNLP_CG_projection_change": false,
+    "local_evaluator_change": "V17_INLINE_SCOPE_PROHIBITION_WITH_V16_ANAPHORIC_SCOPE_RETAINED",
+    "name": "INLINE_VERSUS_ANAPHORIC_SCOPE_BOUNDARY_V1",
+    "provider_prompt_change": "V17_INLINE_VERSUS_ANAPHORIC_SCOPE_ONLY",
+    "schema_change": "NONE_V16_TYPED_SCOPE_SCHEMA_RETAINED",
+    "shared_historical_grader_change": false,
+    "source_general": true,
+    "statement": "A restrictive condition already retained in a complete, role-bearing participant span is represented by that span and must not be decomposed into an untyped child participant. A non-inline condition required to resolve an inherited anaphoric cohort or aggregate remains mandatory only through the existing typed, occurrence-bound participant-scope and partitive structures."
+  }
+}
