@@ -19,7 +19,10 @@ REPO_CONTROL_FILES = {
     "tests/unit/test_agent_output_boundary_validator.py",
     "services/artana_evidence_api/tests/unit/test_agent_output_schema_registry.py",
 }
-QUALITY_GATE_PREFIXES = ("scripts/validation/relation_feasibility/",)
+QUALITY_GATE_PREFIXES = (
+    "scripts/validation/relation_feasibility/",
+    "scripts/validation/claim_events/",
+)
 QUALITY_GATE_FILES = {
     "scripts/run_relation_feasibility_audit.py",
     "tests/unit/test_relation_feasibility_audit.py",
