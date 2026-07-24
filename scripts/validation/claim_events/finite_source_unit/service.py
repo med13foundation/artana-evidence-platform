@@ -40,8 +40,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v5"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v5"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v10"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v9"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
 Return exactly one eligibility_category:
@@ -300,20 +300,47 @@ For each event, copy exact_span, relation_cue_span, and every argument span
 verbatim. Use normalized_extraction_text as source_locator. Keep claim_kind,
 event_type, polarity, and epistemic_status independent. Do not invent missing
 participants, normalize surface text, merge events, or return numeric scores.
+For every argument, at least one mention_anchor mention_span must exactly equal
+that argument's exact_span. Do not include a determiner or modifier in the
+argument exact_span when its canonical anchor omits it. When an argument span
+appears more than once anywhere in the frozen source unit, every intended anchor
+must include enough adjacent left_context and/or right_context to identify one
+occurrence exactly, even when the competing occurrence lies outside exact_span.
+Anchor context may extend immediately outside exact_span.
 Do not return source-unit identifiers or input hashes. The audited orchestrator
 binds transport identity outside the scientific output.
 
 CONTROLLED-EVENT DECOMPOSITION:
 When one source cue positively or negatively regulates another biological event,
 represent the outer event as POSITIVE_REGULATION, NEGATIVE_REGULATION, or
-REGULATION rather than collapsing it into the controlled event type. Preserve
-the controlled event or process as a BIOLOGICAL_PROCESS argument and preserve
-each material participant of that controlled event as its own correctly typed
-argument. A phrase such as "enhanced nuclear translocation of NF-kappa B" must
+REGULATION rather than collapsing it into the controlled event type. The outer
+event owns its outer CAUSE, the controlled BIOLOGICAL_PROCESS as THEME, and its
+outer context. When the controlled event is itself explicitly asserted,
+including an event nominalization such as "TGF-beta induction of Foxp3," return
+it as a separate sibling event whose own arguments carry the inner event roles.
+When one coordinated process explicitly contains multiple controlled sibling
+events, return each source-distinct inner event; deterministic source binding
+may link the outer process to each sibling.
+Do not duplicate an inner participant on the outer event unless the source
+independently assigns it an outer role. Deterministic source binding links a
+outer process spans to source-distinct sibling events after extraction. Do not invent an inner event
+when the text only names an assay, planned measurement, or hypothetical process.
+A phrase such as "enhanced nuclear translocation of NF-kappa B" must
 not become only a LOCALIZATION event that leaves "enhanced" unstructured. A
 process span such as "expression of MCP-1 and TNF-alpha" is BIOLOGICAL_PROCESS;
 the named genes or proteins are separate GENE_OR_PROTEIN arguments. Do not label
 a process as GENE_OR_PROTEIN merely because its span contains gene names.
+
+COMPOSITE EVIDENCE SPANS:
+An event exact_span must be the smallest contiguous source span containing every
+clause needed to justify its event type, direction, causal interpretation, and
+material arguments. When an earlier or later coordinated clause supplies the
+direction for a causal conclusion, include both clauses. Never assign positive
+or negative regulation from a neutral cue such as "affects" when exact_span
+omits the directional language. When an observed increase or decrease is
+explicitly linked to a concluding causal clause, encode the outer event with
+that direction and use a complete exact_span covering both clauses. Do not emit
+a generic REGULATION duplicate for the same directionally resolved outer event.
 
 CAUSAL EVENT AND ENTITY SEMANTICS:
 - Use POSITIVE_REGULATION or NEGATIVE_REGULATION when the source names a cause
@@ -358,6 +385,18 @@ categories are not scientific events. Map ABSTAIN to ABSTAIN. Review the unit
 even when no candidates were supplied. A false extracted candidate may be
 rejected while the unit is NO_EVENT_CONFIRMED.
 
+An explicitly asserted controlled event is a distinct event even when an outer
+regulation also carries that process as a THEME. The inner event owns its
+participants and their inner roles; the outer event owns its outer cause,
+process theme, and context. Do not require inner participants to be duplicated
+on the outer event unless the source independently assigns them an outer role.
+When one coordinated process explicitly contains multiple source-distinct inner
+events, require every sibling rather than merging them.
+Return MISSING_EVENT when the inner event or the outer event is absent. A directional causal candidate is
+complete only when its exact_span contains every coordinated clause needed to
+justify the direction; a neutral cue such as "affects" is insufficient when the
+directional language lies outside that span.
+
 For every supplied candidate, return exactly one categorical decision:
 ENTAILED, CONTRADICTED, INSUFFICIENT, or ABSTAIN.
 Return decisions in exactly the same order as the supplied candidate list.
@@ -373,8 +412,8 @@ Do not return source-unit identifiers, candidate identifiers, or input hashes.
 The audited orchestrator binds transport identity outside scientific output.
 
 For every candidate, independently return these additional categorical findings:
-- structure_decision: COMPLETE only when the event type, controlled process,
-  cause, direction, and every material participant are structurally preserved;
+- structure_decision: COMPLETE only when the event type, event-local cause or
+  theme, direction, and every material event-local participant are structurally preserved;
   LOSSY when the text is entailed but material structure survives only in a cue
   or bundled span; INVALID for a wrong or contradictory structure; ABSTAIN when
   the source cannot resolve it;
@@ -399,6 +438,8 @@ For every candidate, independently return these additional categorical findings:
   REVIEW_ONLY for an entailed but lossy or unresolved candidate; REJECT for a
   contradiction, invalid event structure, direction conflict, or invalid
   argument type; ABSTAIN only when a categorical judgment is unresolved.
+  Specifically, INSUFFICIENT must use REJECT, never REVIEW_ONLY; REVIEW_ONLY
+  requires ENTAILED plus a non-invalid structural trust blocker.
 
 prompt_version: {_VERIFICATION_PROMPT_VERSION}
 

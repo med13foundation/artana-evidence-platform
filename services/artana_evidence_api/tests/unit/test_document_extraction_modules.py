@@ -162,6 +162,18 @@ def test_diagnostics_builders_normalize_candidate_and_review_status() -> None:
     )
     assert runtime_error_candidate_status("boom") == "fallback_error"
 
+    nested_ambiguity = DocumentCandidateExtractionDiagnostics(
+        llm_candidate_status="semantic_incomplete",
+        claim_extraction_routing_status="semantic_incomplete",
+        controlled_event_link_ambiguities=({"controller_inventory_id": "outer"},),
+    )
+    assert nested_ambiguity.semantic_incomplete_reason_codes == (
+        "controlled_event_link_ambiguous",
+    )
+    assert nested_ambiguity.as_metadata()["semantic_incomplete_reason_codes"] == [
+        "controlled_event_link_ambiguous"
+    ]
+
     assert proposal_review_not_needed() == DocumentProposalReviewDiagnostics(
         llm_review_status="not_needed",
     )

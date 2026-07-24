@@ -310,6 +310,8 @@ class DocumentCandidateExtractionDiagnostics:
     model_attempt_records: tuple[dict[str, object], ...] = ()
     inventory_binding_rejections: tuple[dict[str, object], ...] = ()
     inventory_incompleteness: tuple[dict[str, object], ...] = ()
+    controlled_event_links: tuple[dict[str, object], ...] = ()
+    controlled_event_link_ambiguities: tuple[dict[str, object], ...] = ()
 
     @property
     def agent_extraction_completed(self) -> bool:
@@ -339,6 +341,19 @@ class DocumentCandidateExtractionDiagnostics:
             and self.claim_extraction_routing_status in {"not_run", "complete"}
             and self.candidate_overflow_count == 0
         )
+
+    @property
+    def semantic_incomplete_reason_codes(self) -> tuple[str, ...]:
+        """Distinguish source inventory and nested-identity failure boundaries."""
+
+        if self.llm_candidate_status != "semantic_incomplete":
+            return ()
+        reasons: list[str] = []
+        if self.inventory_incompleteness:
+            reasons.append("inventory_incomplete")
+        if self.controlled_event_link_ambiguities:
+            reasons.append("controlled_event_link_ambiguous")
+        return tuple(reasons or ["semantic_incomplete_unspecified"])
 
     def as_metadata(self) -> JSONObject:
         """Serialize diagnostics into JSON-safe metadata."""
@@ -373,6 +388,10 @@ class DocumentCandidateExtractionDiagnostics:
             payload["claim_extraction_routing_status"] = (
                 self.claim_extraction_routing_status
             )
+        _add_semantic_incomplete_reasons(
+            payload,
+            self.semantic_incomplete_reason_codes,
+        )
         if self.candidate_overflow_count > 0:
             payload["candidate_overflow_count"] = self.candidate_overflow_count
         if self.claim_lineage:
@@ -393,9 +412,25 @@ class DocumentCandidateExtractionDiagnostics:
             payload["inventory_incompleteness"] = json_value(
                 self.inventory_incompleteness,
             )
+        if self.controlled_event_links:
+            payload["controlled_event_links"] = json_value(
+                self.controlled_event_links,
+            )
+        if self.controlled_event_link_ambiguities:
+            payload["controlled_event_link_ambiguities"] = json_value(
+                self.controlled_event_link_ambiguities,
+            )
         if self.llm_candidate_error is not None:
             payload["llm_candidate_error"] = self.llm_candidate_error
         return payload
+
+
+def _add_semantic_incomplete_reasons(
+    payload: JSONObject,
+    reasons: tuple[str, ...],
+) -> None:
+    if reasons:
+        payload["semantic_incomplete_reason_codes"] = list(reasons)
 
 
 __all__ = [

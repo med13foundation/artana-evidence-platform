@@ -33,6 +33,8 @@ def candidate_completed(
     raw_agent_outputs: tuple[dict[str, object], ...] = (),
     model_attempt_records: tuple[dict[str, object], ...] = (),
     inventory_binding_rejections: tuple[dict[str, object], ...] = (),
+    controlled_event_links: tuple[dict[str, object], ...] = (),
+    controlled_event_link_ambiguities: tuple[dict[str, object], ...] = (),
 ) -> DocumentCandidateExtractionDiagnostics:
     """Return diagnostics for a successful LLM candidate extraction."""
 
@@ -49,6 +51,8 @@ def candidate_completed(
         raw_agent_outputs=raw_agent_outputs,
         model_attempt_records=model_attempt_records,
         inventory_binding_rejections=inventory_binding_rejections,
+        controlled_event_links=controlled_event_links,
+        controlled_event_link_ambiguities=controlled_event_link_ambiguities,
     )
 
 
@@ -64,6 +68,8 @@ def candidate_llm_empty(
     raw_agent_outputs: tuple[dict[str, object], ...] = (),
     model_attempt_records: tuple[dict[str, object], ...] = (),
     inventory_binding_rejections: tuple[dict[str, object], ...] = (),
+    controlled_event_links: tuple[dict[str, object], ...] = (),
+    controlled_event_link_ambiguities: tuple[dict[str, object], ...] = (),
 ) -> DocumentCandidateExtractionDiagnostics:
     """Return diagnostics when the LLM succeeded but produced no usable claims."""
 
@@ -80,6 +86,8 @@ def candidate_llm_empty(
         raw_agent_outputs=raw_agent_outputs,
         model_attempt_records=model_attempt_records,
         inventory_binding_rejections=inventory_binding_rejections,
+        controlled_event_links=controlled_event_links,
+        controlled_event_link_ambiguities=controlled_event_link_ambiguities,
     )
 
 
@@ -91,6 +99,8 @@ def candidate_semantic_incomplete(
     model_attempt_records: tuple[dict[str, object], ...],
     inventory_binding_rejections: tuple[dict[str, object], ...],
     inventory_incompleteness: tuple[dict[str, object], ...],
+    controlled_event_links: tuple[dict[str, object], ...] = (),
+    controlled_event_link_ambiguities: tuple[dict[str, object], ...] = (),
     llm_extraction_chunk_count: int,
     llm_extraction_text_char_count: int,
 ) -> DocumentCandidateExtractionDiagnostics:
@@ -99,7 +109,9 @@ def candidate_semantic_incomplete(
     return DocumentCandidateExtractionDiagnostics(
         llm_candidate_status="semantic_incomplete",
         llm_candidate_error=(
-            "Inventory completeness remained INCOMPLETE after one agent recovery pass"
+            "Controlled event identity remained ambiguous after source binding"
+            if controlled_event_link_ambiguities
+            else "Inventory completeness remained INCOMPLETE after agent recovery"
         ),
         llm_extraction_chunk_count=llm_extraction_chunk_count,
         llm_extraction_text_char_count=llm_extraction_text_char_count,
@@ -110,6 +122,8 @@ def candidate_semantic_incomplete(
         model_attempt_records=model_attempt_records,
         inventory_binding_rejections=inventory_binding_rejections,
         inventory_incompleteness=inventory_incompleteness,
+        controlled_event_links=controlled_event_links,
+        controlled_event_link_ambiguities=controlled_event_link_ambiguities,
     )
 
 

@@ -7,6 +7,9 @@ import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    link_controlled_events,
+)
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     start_model_attempt_audit,
     stop_model_attempt_audit,
@@ -24,6 +27,8 @@ from scripts.validation.claim_events.finite_source_unit.service import (
 if TYPE_CHECKING:
     from artana_evidence_api.document_extraction_support.claim_frames import (
         BoundClaimInventoryItem,
+        BoundControlledEventLink,
+        ControlledEventLinkAmbiguity,
     )
     from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
         ModelAttemptAuditRecord,
@@ -50,6 +55,8 @@ class SingleUnitAgentRunEvidence:
     verified: tuple[VerifiedEventCandidate, ...]
     entailed: tuple[BoundClaimInventoryItem, ...]
     trusted: tuple[BoundClaimInventoryItem, ...]
+    controlled_event_links: tuple[BoundControlledEventLink, ...]
+    controlled_event_link_ambiguities: tuple[ControlledEventLinkAmbiguity, ...]
     extracted_candidate_count: int
     binding_rejection_count: int
     records: tuple[ModelAttemptAuditRecord, ...]
@@ -72,6 +79,8 @@ async def execute_source_unit_agents(
     verified: tuple[VerifiedEventCandidate, ...] = ()
     entailed: tuple[BoundClaimInventoryItem, ...] = ()
     trusted: tuple[BoundClaimInventoryItem, ...] = ()
+    controlled_event_links: tuple[BoundControlledEventLink, ...] = ()
+    controlled_event_link_ambiguities: tuple[ControlledEventLinkAmbiguity, ...] = ()
     extracted_candidate_count = binding_rejection_count = 0
     error_type: str | None = None
     try:
@@ -85,6 +94,9 @@ async def execute_source_unit_agents(
         extraction_output = extraction.value.output
         extracted_candidate_count = len(extraction.value.accepted)
         binding_rejection_count = len(extraction.value.rejected)
+        link_result = link_controlled_events(extraction.value.accepted)
+        controlled_event_links = link_result.links
+        controlled_event_link_ambiguities = link_result.ambiguities
         verification = await verify_source_unit_candidates(
             client=client,
             tenant=tenant,
@@ -115,6 +127,8 @@ async def execute_source_unit_agents(
         verified=verified,
         entailed=entailed,
         trusted=trusted,
+        controlled_event_links=controlled_event_links,
+        controlled_event_link_ambiguities=controlled_event_link_ambiguities,
         extracted_candidate_count=extracted_candidate_count,
         binding_rejection_count=binding_rejection_count,
         records=tuple(audit.records),
