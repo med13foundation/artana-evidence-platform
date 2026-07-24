@@ -95,6 +95,8 @@ class ModelAttemptAuditRecord:
     model_id: str
     step_key: str
     prompt_sha256: str
+    content_prompt_sha256: str
+    request_digest: str
     source_sha256: str
     input_sha256: str
     evidence_unit_sha256: str
@@ -136,6 +138,8 @@ class ModelAttemptAuditRecord:
                 "model_id": self.model_id,
                 "step_key": self.step_key,
                 "prompt_sha256": self.prompt_sha256,
+                "content_prompt_sha256": self.content_prompt_sha256,
+                "request_digest": self.request_digest,
                 "source_sha256": self.source_sha256,
                 "input_sha256": self.input_sha256,
                 "evidence_unit_sha256": self.evidence_unit_sha256,
@@ -278,8 +282,15 @@ def record_model_attempt(
     validation_outcome: ModelAttemptValidationOutcome,
     error_type: str | None,
     latency_seconds: float | None = None,
+    content_prompt: str | None = None,
 ) -> ModelAttemptAuditRecord:
-    """Append one exact model-boundary outcome to the active audit session."""
+    """Append one exact model-boundary outcome to the active audit session.
+
+    ``prompt`` is the exact provider-visible text, including the invocation
+    binding envelope.  ``content_prompt`` is the same prompt before binding;
+    pass it whenever the two differ so the record carries a reproducible
+    request identity alongside the exact sent bytes.
+    """
 
     raw_model_payload = (
         freeze_model_boundary_output(raw_output) if raw_output is not None else None
@@ -296,6 +307,7 @@ def record_model_attempt(
         validation_outcome=validation_outcome,
         error_type=error_type,
         latency_seconds=latency_seconds,
+        content_prompt=content_prompt,
     )
     _append_model_attempt_record(record)
     return record
@@ -305,6 +317,46 @@ def _append_model_attempt_record(record: ModelAttemptAuditRecord) -> None:
     session = current_model_attempt_audit()
     if session is not None:
         session.records.append(record)
+
+
+def model_attempt_request_digest(
+    *,
+    model_id: str,
+    step_key: str,
+    content_prompt_sha256: str,
+    source_sha256: str,
+    input_sha256: str,
+    evidence_unit_sha256: str,
+    output_schema_sha256: str,
+    attempt_role: str,
+    pass_role: str,
+    retry_context: str | None,
+    semantic_unit_id: str | None,
+) -> str:
+    """Hash the reproducible identity of one model request.
+
+    This deliberately excludes the invocation binding envelope.  ``invocation_id``
+    is a per-call namespace and must stay unique, so ``prompt_sha256`` -- taken
+    over the bound prompt -- differs on every run by design.  This digest is
+    taken over content only, so identical inputs produce an identical value
+    across processes and runs, which is what makes two formal runs comparable.
+    """
+
+    parts = (
+        "artana.model_attempt_request_digest.v1",
+        model_id,
+        step_key,
+        content_prompt_sha256,
+        source_sha256,
+        input_sha256,
+        evidence_unit_sha256,
+        output_schema_sha256,
+        attempt_role,
+        pass_role,
+        retry_context or "",
+        semantic_unit_id or "",
+    )
+    return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
 
 
 def _build_model_attempt_record(
@@ -320,6 +372,7 @@ def _build_model_attempt_record(
     validation_outcome: ModelAttemptValidationOutcome,
     error_type: str | None,
     latency_seconds: float | None = None,
+    content_prompt: str | None = None,
 ) -> ModelAttemptAuditRecord:
     raw_model_payload_json = (
         _canonical_json(raw_model_payload) if raw_model_payload is not None else None
@@ -328,6 +381,13 @@ def _build_model_attempt_record(
         model_result,
         "response_id",
     )
+    content_prompt_sha256 = _sha256_text(
+        prompt if content_prompt is None else content_prompt,
+    )
+    evidence_unit_sha256 = model_attempt_evidence_unit_sha256(
+        default=audit_context.source_sha256,
+    )
+    output_schema_sha256 = _canonical_json_sha256(output_schema.model_json_schema())
     return ModelAttemptAuditRecord(
         invocation_id=invocation_id,
         attempt_role=audit_context.attempt_role,
@@ -336,16 +396,28 @@ def _build_model_attempt_record(
         model_id=model_id,
         step_key=step_key,
         prompt_sha256=_sha256_text(prompt),
+        content_prompt_sha256=content_prompt_sha256,
+        request_digest=model_attempt_request_digest(
+            model_id=model_id,
+            step_key=step_key,
+            content_prompt_sha256=content_prompt_sha256,
+            source_sha256=audit_context.source_sha256,
+            input_sha256=audit_context.input_sha256,
+            evidence_unit_sha256=evidence_unit_sha256,
+            output_schema_sha256=output_schema_sha256,
+            attempt_role=audit_context.attempt_role,
+            pass_role=audit_context.pass_role,
+            retry_context=audit_context.retry_context,
+            semantic_unit_id=audit_context.semantic_unit_id,
+        ),
         source_sha256=audit_context.source_sha256,
         input_sha256=audit_context.input_sha256,
-        evidence_unit_sha256=model_attempt_evidence_unit_sha256(
-            default=audit_context.source_sha256,
-        ),
+        evidence_unit_sha256=evidence_unit_sha256,
         semantic_unit_id=audit_context.semantic_unit_id,
         output_schema_identity=(
             f"{output_schema.__module__}.{output_schema.__qualname__}"
         ),
-        output_schema_sha256=_canonical_json_sha256(output_schema.model_json_schema()),
+        output_schema_sha256=output_schema_sha256,
         provider_execution_response_id=provider_execution_response_id,
         provider_response_id=_canonical_response_id_or_none(
             provider_execution_response_id,
