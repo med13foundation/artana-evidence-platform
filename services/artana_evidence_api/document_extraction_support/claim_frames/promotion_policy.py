@@ -9,15 +9,15 @@ from typing import Never
 from artana_evidence_api.document_extraction_support.claim_adjudication.contracts import (
     ClaimAdjudicationDecision,
 )
+from artana_evidence_api.document_extraction_support.claim_frames.claim_verification_expectation import (
+    claim_verification_is_required,
+)
 from artana_evidence_api.document_extraction_support.claim_frames.contracts import (
     ClaimFrame,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.normalization import (
     ClaimFrameNormalizationError,
     bind_claim_frame,
-)
-from artana_evidence_api.document_extraction_support.claim_verification_expectation import (
-    claim_verification_is_required,
 )
 from pydantic import ValidationError
 

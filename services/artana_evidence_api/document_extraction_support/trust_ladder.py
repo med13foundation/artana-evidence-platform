@@ -9,7 +9,7 @@ from typing import Literal
 from artana_evidence_api.document_extraction_relation_taxonomy import (
     canonicalize_extraction_relation_type,
 )
-from artana_evidence_api.document_extraction_support.claim_verification_expectation import (
+from artana_evidence_api.document_extraction_support.claim_frames.claim_verification_expectation import (
     claim_verification_is_required,
 )
 from artana_evidence_api.document_extraction_support.entity_grounding.identifier_authority import (
