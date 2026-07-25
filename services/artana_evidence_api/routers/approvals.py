@@ -16,6 +16,7 @@ from artana_evidence_api.artifact_store import (
 from artana_evidence_api.dependencies import (
     get_approval_store,
     get_artifact_store,
+    get_review_actor,
     get_run_registry,
     require_harness_space_read_access,
     require_harness_space_write_access,
@@ -24,7 +25,11 @@ from artana_evidence_api.run_registry import (  # noqa: TC001
     HarnessRunRecord,
     HarnessRunRegistry,
 )
-from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.common import (  # noqa: TC001
+    JSONObject,
+    serialize_timestamp,
+)
+from artana_evidence_api.types.review_actor import ReviewActor
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -36,6 +41,7 @@ router = APIRouter(
 _RUN_REGISTRY_DEPENDENCY = Depends(get_run_registry)
 _APPROVAL_STORE_DEPENDENCY = Depends(get_approval_store)
 _ARTIFACT_STORE_DEPENDENCY = Depends(get_artifact_store)
+_REVIEW_ACTOR_DEPENDENCY = Depends(get_review_actor)
 
 
 class HarnessIntentActionRequest(BaseModel):
@@ -145,6 +151,7 @@ class HarnessApprovalResponse(BaseModel):
     target_id: str | None
     status: str
     decision_reason: str | None
+    decided_by: ReviewActor | None
     metadata: JSONObject
     created_at: str
     updated_at: str
@@ -163,9 +170,10 @@ class HarnessApprovalResponse(BaseModel):
             target_id=record.target_id,
             status=record.status,
             decision_reason=record.decision_reason,
+            decided_by=record.decided_by,
             metadata=record.metadata,
-            created_at=record.created_at.isoformat(),
-            updated_at=record.updated_at.isoformat(),
+            created_at=serialize_timestamp(record.created_at),
+            updated_at=serialize_timestamp(record.updated_at),
         )
 
 
@@ -331,7 +339,6 @@ def list_approvals(
         "Set the approval decision for one gated run action. Use the unified "
         "review queue when you want the product-facing review surface."
     ),
-    dependencies=[Depends(require_harness_space_write_access)],
 )
 def decide_approval(  # noqa: PLR0913
     space_id: UUID,
@@ -339,6 +346,7 @@ def decide_approval(  # noqa: PLR0913
     approval_key: str,
     request: HarnessApprovalDecisionRequest,
     *,
+    decided_by: ReviewActor = _REVIEW_ACTOR_DEPENDENCY,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     approval_store: HarnessApprovalStore = _APPROVAL_STORE_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
@@ -352,6 +360,7 @@ def decide_approval(  # noqa: PLR0913
             approval_key=approval_key,
             status=request.decision,
             decision_reason=request.reason,
+            decided_by=decided_by,
         )
     except ValueError as exc:
         raise HTTPException(

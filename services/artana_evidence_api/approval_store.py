@@ -8,6 +8,7 @@ from threading import Lock
 from uuid import UUID  # noqa: TC003
 
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.review_actor import ReviewActor
 
 _MAX_APPROVAL_TITLE_LENGTH = 256
 _TITLE_ELLIPSIS = "..."
@@ -55,6 +56,7 @@ class HarnessApprovalRecord:
     metadata: JSONObject
     created_at: datetime
     updated_at: datetime
+    decided_by: ReviewActor | None = None
 
 
 class HarnessApprovalStore:
@@ -172,8 +174,13 @@ class HarnessApprovalStore:
         approval_key: str,
         status: str,
         decision_reason: str | None,
+        decided_by: ReviewActor | None,
     ) -> HarnessApprovalRecord | None:
-        """Set the decision for one approval record."""
+        """Set the decision for one approval record.
+
+        ``decided_by`` is required-but-nullable so that no caller can drop the
+        reviewer by omission; see :class:`ReviewActor`.
+        """
         normalized_status = status.strip().lower()
         if normalized_status not in {"approved", "rejected"}:
             msg = f"Unsupported approval status '{status}'"
@@ -203,6 +210,7 @@ class HarnessApprovalStore:
                 target_id=existing.target_id,
                 status=normalized_status,
                 decision_reason=normalized_reason,
+                decided_by=decided_by,
                 metadata=existing.metadata,
                 created_at=existing.created_at,
                 updated_at=datetime.now(UTC),

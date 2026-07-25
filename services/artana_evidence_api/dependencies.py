@@ -103,6 +103,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     SqlAlchemyHarnessScheduleStore,
 )
 from artana_evidence_api.study_outcomes import SqlAlchemyStudyOutcomeStore
+from artana_evidence_api.types.review_actor import ReviewActor
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import desc, select
 
@@ -404,6 +405,23 @@ def require_harness_space_owner_access(
     return current_user
 
 
+_SPACE_WRITE_ACCESS_DEPENDENCY = Depends(require_harness_space_write_access)
+
+
+def get_review_actor(
+    current_user: HarnessUser = _SPACE_WRITE_ACCESS_DEPENDENCY,
+) -> ReviewActor:
+    """Return the authenticated reviewer as an attributable decision actor.
+
+    Decision routes previously declared space write access as a route-level
+    dependency, which authorizes the request but throws the identity away.
+    Depending on this instead keeps the same authorization check -- FastAPI
+    caches it, so it still runs once -- while handing the handler the person
+    to record.
+    """
+    return ReviewActor(user_id=str(current_user.id), email=str(current_user.email))
+
+
 def get_research_state_store(
     session: Session = _SESSION_DEPENDENCY,
 ) -> HarnessResearchStateStore:
@@ -695,6 +713,7 @@ __all__ = [
     "get_proposal_store",
     "get_research_space_store",
     "get_research_state_store",
+    "get_review_actor",
     "get_run_registry",
     "get_schedule_store",
     "get_source_search_handoff_store",

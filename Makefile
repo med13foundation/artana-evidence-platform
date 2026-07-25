@@ -60,6 +60,12 @@ GRAPH_SERVICE_LINT_PATHS := \
 	 scripts/export_graph_openapi.py \
 	 tests/e2e/graph_service/test_user_flows.py
 
+# Contract exports import the service package to read its live schema. Without
+# this, the editable install resolves the import to whichever checkout was
+# `pip install -e`d, so running these from a git worktree silently exports the
+# OTHER tree's contract -- and --check then passes against code you did not write.
+SERVICE_PYTHONPATH := PYTHONPATH="$(CURDIR)/services"
+
 GRAPH_SERVICE_TYPE_EXCLUDE := artana_evidence_db/(tests|alembic)/
 ARTANA_EVIDENCE_API_TYPE_EXCLUDE := artana_evidence_api/(tests|alembic)/
 
@@ -233,11 +239,11 @@ setup-postgres: ## Start Postgres and apply required schemas/migrations
 
 graph-service-openapi: ## Export graph service OpenAPI
 	$(call check_venv)
-	$(USE_PYTHON) scripts/export_graph_openapi.py --output $(GRAPH_SERVICE_OPENAPI_OUTPUT)
+	$(SERVICE_PYTHONPATH) $(USE_PYTHON) scripts/export_graph_openapi.py --output $(GRAPH_SERVICE_OPENAPI_OUTPUT)
 
 graph-service-client-types: ## Generate graph service TypeScript contract types
 	$(call check_venv)
-	$(USE_PYTHON) scripts/generate_ts_types.py --module artana_evidence_db.service_contracts --output $(GRAPH_SERVICE_TS_TYPES_OUTPUT)
+	$(SERVICE_PYTHONPATH) $(USE_PYTHON) scripts/generate_ts_types.py --module artana_evidence_db.service_contracts --output $(GRAPH_SERVICE_TS_TYPES_OUTPUT)
 
 graph-service-sync-contracts: ## Regenerate graph service OpenAPI and types
 	@$(MAKE) -s graph-service-openapi
@@ -245,8 +251,8 @@ graph-service-sync-contracts: ## Regenerate graph service OpenAPI and types
 
 graph-service-contract-check: ## Verify graph service OpenAPI and types are current
 	$(call check_venv)
-	$(USE_PYTHON) scripts/export_graph_openapi.py --output $(GRAPH_SERVICE_OPENAPI_OUTPUT) --check
-	$(USE_PYTHON) scripts/generate_ts_types.py --module artana_evidence_db.service_contracts --output $(GRAPH_SERVICE_TS_TYPES_OUTPUT) --check
+	$(SERVICE_PYTHONPATH) $(USE_PYTHON) scripts/export_graph_openapi.py --output $(GRAPH_SERVICE_OPENAPI_OUTPUT) --check
+	$(SERVICE_PYTHONPATH) $(USE_PYTHON) scripts/generate_ts_types.py --module artana_evidence_db.service_contracts --output $(GRAPH_SERVICE_TS_TYPES_OUTPUT) --check
 
 graph-service-boundary-check: ## Validate graph service standalone boundary rules
 	$(call check_venv)
@@ -254,11 +260,11 @@ graph-service-boundary-check: ## Validate graph service standalone boundary rule
 
 artana-evidence-api-openapi: ## Export evidence API OpenAPI
 	$(call check_venv)
-	$(USE_PYTHON) scripts/export_artana_evidence_api_openapi.py --output $(ARTANA_EVIDENCE_API_OPENAPI_OUTPUT)
+	$(SERVICE_PYTHONPATH) $(USE_PYTHON) scripts/export_artana_evidence_api_openapi.py --output $(ARTANA_EVIDENCE_API_OPENAPI_OUTPUT)
 
 artana-evidence-api-contract-check: ## Verify evidence API OpenAPI is current
 	$(call check_venv)
-	$(USE_PYTHON) scripts/export_artana_evidence_api_openapi.py --output $(ARTANA_EVIDENCE_API_OPENAPI_OUTPUT) --check
+	$(SERVICE_PYTHONPATH) $(USE_PYTHON) scripts/export_artana_evidence_api_openapi.py --output $(ARTANA_EVIDENCE_API_OPENAPI_OUTPUT) --check
 
 artana-evidence-api-boundary-check: ## Validate evidence API service boundary rules
 	$(call check_venv)

@@ -155,6 +155,11 @@ class HarnessApprovalModel(Base):
     target_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    decided_by_user_id: Mapped[str | None] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=True,
+    )
+    decided_by_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     metadata_payload: Mapped[JSONObject] = mapped_column(
         JSON,
         nullable=False,
@@ -253,6 +258,11 @@ class HarnessProposalModel(Base):
     claim_fingerprint: Mapped[str | None] = mapped_column(String(32), nullable=True)
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
+    decided_by_user_id: Mapped[str | None] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=True,
+    )
+    decided_by_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
 
     run: Mapped[HarnessRunModel] = relationship(
         "HarnessRunModel",
@@ -363,6 +373,11 @@ class HarnessReviewItemModel(Base):
     review_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
+    decided_by_user_id: Mapped[str | None] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=True,
+    )
+    decided_by_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     linked_proposal_id: Mapped[str | None] = mapped_column(
         PGUUID(as_uuid=False),
         nullable=True,

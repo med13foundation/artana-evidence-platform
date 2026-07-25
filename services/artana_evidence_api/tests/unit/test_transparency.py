@@ -109,6 +109,7 @@ def test_policy_decisions_sync_includes_tool_and_manual_review_records() -> None
         tool_name="create_graph_claim",
         decision="promote",
         reason="Approved after review",
+        decided_by=None,
         artifact_key="graph_write_candidate_suggestions",
         metadata={"proposal_id": "proposal-1"},
         artifact_store=artifact_store,

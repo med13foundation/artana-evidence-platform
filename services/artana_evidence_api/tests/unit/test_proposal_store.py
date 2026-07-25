@@ -79,6 +79,7 @@ def test_decide_proposal_allows_only_one_concurrent_decision(
                 proposal_id=proposal_id,
                 status=status,
                 decision_reason=f"{status} from thread",
+                decided_by=None,
                 metadata={"decision": status},
             )
         except Exception as exc:  # noqa: BLE001

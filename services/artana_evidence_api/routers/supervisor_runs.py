@@ -28,6 +28,7 @@ from artana_evidence_api.dependencies import (
     get_harness_execution_services,
     get_proposal_store,
     get_research_state_store,
+    get_review_actor,
     get_run_registry,
     get_schedule_store,
     require_harness_space_read_access,
@@ -117,6 +118,7 @@ from artana_evidence_api.transparency import (
     ensure_run_transparency_seed,
 )
 from artana_evidence_api.types.common import JSONObject, json_value
+from artana_evidence_api.types.review_actor import ReviewActor
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from fastapi.responses import JSONResponse
 
@@ -140,6 +142,7 @@ _GRAPH_SNAPSHOT_STORE_DEPENDENCY = Depends(get_graph_snapshot_store)
 _SCHEDULE_STORE_DEPENDENCY = Depends(get_schedule_store)
 _GRAPH_CHAT_RUNNER_DEPENDENCY = Depends(get_graph_chat_runner)
 _HARNESS_EXECUTION_SERVICES_DEPENDENCY = Depends(get_harness_execution_services)
+_REVIEW_ACTOR_DEPENDENCY = Depends(get_review_actor)
 _PARENT_GRAPH_API_GATEWAY_DEPENDENCY = Depends(get_graph_api_gateway, use_cache=False)
 _BOOTSTRAP_GRAPH_API_GATEWAY_DEPENDENCY = Depends(
     get_graph_api_gateway,
@@ -441,7 +444,6 @@ def get_supervisor_run(
     "/{space_id}/agents/supervisor/runs/{run_id}/chat-graph-write-candidates/{candidate_index}/review",
     response_model=SupervisorChatGraphWriteCandidateDecisionResponse,
     summary="Promote or reject one supervisor briefing-chat graph-write candidate",
-    dependencies=[Depends(require_harness_space_write_access)],
 )
 def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
     space_id: UUID,
@@ -449,6 +451,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
     candidate_index: int,
     request: ChatGraphWriteCandidateDecisionRequest,
     *,
+    decided_by: ReviewActor = _REVIEW_ACTOR_DEPENDENCY,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
@@ -512,6 +515,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
                 proposal_id=proposal.id,
                 decision_status="promoted",
                 decision_reason=request.reason,
+                decided_by=decided_by,
                 request_metadata=request_metadata,
                 proposal_store=proposal_store,
                 run_registry=run_registry,
@@ -540,6 +544,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
                 tool_name="create_graph_claim",
                 decision="promote",
                 reason=request.reason,
+                decided_by=decided_by,
                 artifact_key="supervisor_chat_graph_write_review",
                 metadata={
                     "candidate_index": candidate_index,
@@ -559,6 +564,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
                 proposal_id=proposal.id,
                 decision_status="rejected",
                 decision_reason=request.reason,
+                decided_by=decided_by,
                 request_metadata=request_metadata,
                 proposal_store=proposal_store,
                 run_registry=run_registry,
@@ -574,6 +580,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
                 tool_name="supervisor_chat_graph_write_review",
                 decision="reject",
                 reason=request.reason,
+                decided_by=decided_by,
                 artifact_key="supervisor_chat_graph_write_review",
                 metadata={
                     "candidate_index": candidate_index,

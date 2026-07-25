@@ -186,6 +186,7 @@ def _seed_convergence_claims(
             proposal_id=proposal.id,
             status="promoted",
             decision_reason="seeded convergence claim",
+            decided_by=None,
         )
 
 

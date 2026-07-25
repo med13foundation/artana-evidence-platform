@@ -51,6 +51,7 @@ from artana_evidence_api.space_sync_types import (
 from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from artana_evidence_api.types.common import json_object_or_empty
 from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
+from artana_evidence_api.types.review_actor import ReviewActor
 from artana_evidence_api.types.source_provenance import ClaimSourceProvenance
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
@@ -268,9 +269,20 @@ def _approval_record_from_model(model: HarnessApprovalModel) -> HarnessApprovalR
         target_id=model.target_id,
         status=model.status,
         decision_reason=model.decision_reason,
+        decided_by=_decided_by_from_model(model),
         metadata=_json_object(model.metadata_payload),
         created_at=model.created_at,
         updated_at=model.updated_at,
+    )
+
+
+def _decided_by_from_model(
+    model: HarnessApprovalModel | HarnessProposalModel | HarnessReviewItemModel,
+) -> ReviewActor | None:
+    """Read the deciding actor off any decision-bearing row."""
+    return ReviewActor.from_stored(
+        user_id=model.decided_by_user_id,
+        email=model.decided_by_email,
     )
 
 
@@ -326,6 +338,7 @@ def _proposal_record_from_model(model: HarnessProposalModel) -> HarnessProposalR
         evidence_grade=model.evidence_grade,
         decision_reason=model.decision_reason,
         decided_at=model.decided_at,
+        decided_by=_decided_by_from_model(model),
         created_at=model.created_at,
         updated_at=model.updated_at,
         claim_fingerprint=getattr(model, "claim_fingerprint", None),
@@ -371,6 +384,7 @@ def _review_item_record_from_model(
         evidence_grade=model.evidence_grade,
         decision_reason=model.decision_reason,
         decided_at=model.decided_at,
+        decided_by=_decided_by_from_model(model),
         linked_proposal_id=model.linked_proposal_id,
         linked_approval_key=model.linked_approval_key,
         created_at=model.created_at,
@@ -623,6 +637,7 @@ class SqlAlchemyHarnessApprovalStore(HarnessApprovalStore, _SessionBackedStore):
         approval_key: str,
         status: str,
         decision_reason: str | None,
+        decided_by: ReviewActor | None,
     ) -> HarnessApprovalRecord | None:
         normalized_status = status.strip().lower()
         if normalized_status not in {"approved", "rejected"}:
@@ -660,6 +675,12 @@ class SqlAlchemyHarnessApprovalStore(HarnessApprovalStore, _SessionBackedStore):
             .values(
                 status=normalized_status,
                 decision_reason=normalized_reason,
+                decided_by_user_id=(
+                    decided_by.user_id if decided_by is not None else None
+                ),
+                decided_by_email=(
+                    decided_by.email if decided_by is not None else None
+                ),
             ),
         )
         if _result_rowcount(update_result) != 1:
@@ -948,6 +969,7 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         proposal_id: UUID | str,
         status: str,
         decision_reason: str | None,
+        decided_by: ReviewActor | None,
         metadata: JSONObject | None = None,
     ) -> HarnessProposalRecord | None:
         normalized_status = status.strip().lower()
@@ -990,6 +1012,12 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
                 status=normalized_status,
                 decision_reason=decision_reason_text,
                 decided_at=decision_timestamp,
+                decided_by_user_id=(
+                    decided_by.user_id if decided_by is not None else None
+                ),
+                decided_by_email=(
+                    decided_by.email if decided_by is not None else None
+                ),
                 metadata_payload={
                     **_json_object(status_row[1]),
                     **(metadata or {}),

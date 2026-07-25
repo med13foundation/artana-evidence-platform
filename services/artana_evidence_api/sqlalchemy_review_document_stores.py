@@ -23,6 +23,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     normalize_document_title,
 )
 from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
+from artana_evidence_api.types.review_actor import ReviewActor  # noqa: TC001
 from sqlalchemy import and_, delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 
@@ -225,6 +226,7 @@ class SqlAlchemyHarnessReviewItemStore(HarnessReviewItemStore, _SessionBackedSto
         review_item_id: UUID | str,
         status: str,
         decision_reason: str | None,
+        decided_by: ReviewActor | None,
         metadata: JSONObject | None = None,
         linked_proposal_id: str | None = None,
         linked_approval_key: str | None = None,
@@ -269,6 +271,12 @@ class SqlAlchemyHarnessReviewItemStore(HarnessReviewItemStore, _SessionBackedSto
                 status=normalized_status,
                 decision_reason=decision_reason_text,
                 decided_at=decision_timestamp,
+                decided_by_user_id=(
+                    decided_by.user_id if decided_by is not None else None
+                ),
+                decided_by_email=(
+                    decided_by.email if decided_by is not None else None
+                ),
                 linked_proposal_id=(
                     linked_proposal_id.strip()
                     if isinstance(linked_proposal_id, str)

@@ -308,4 +308,5 @@ def _seed_promoted_proposals(
             proposal_id=proposal.id,
             status="promoted",
             decision_reason="seeded promoted claim",
+            decided_by=None,
         )

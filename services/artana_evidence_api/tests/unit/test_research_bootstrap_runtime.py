@@ -1710,6 +1710,7 @@ async def test_execute_research_bootstrap_skips_claim_curation_without_orphan_ch
         proposal_id=promoted_record.id,
         status="promoted",
         decision_reason="Already accepted",
+        decided_by=None,
     )
     assert decided_promoted is not None
 

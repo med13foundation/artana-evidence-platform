@@ -284,6 +284,7 @@ def test_sqlalchemy_harness_approval_store_persists_intents_and_decisions(
         approval_key="promote-claim-1",
         status="approved",
         decision_reason="Evidence is sufficient",
+        decided_by=None,
     )
     assert decided is not None
     assert decided.status == "approved"
@@ -296,6 +297,7 @@ def test_sqlalchemy_harness_approval_store_persists_intents_and_decisions(
             approval_key="promote-claim-1",
             status="rejected",
             decision_reason="Trying to override the first decision",
+            decided_by=None,
         )
 
 
@@ -1062,6 +1064,7 @@ def test_sqlalchemy_harness_proposal_store_persists_and_decides_proposals(
         proposal_id=created[0].id,
         status="promoted",
         decision_reason="Evidence is strong",
+        decided_by=None,
         metadata={"reviewed_by": "tester"},
     )
     assert promoted is not None
@@ -1075,6 +1078,7 @@ def test_sqlalchemy_harness_proposal_store_persists_and_decides_proposals(
             proposal_id=created[0].id,
             status="rejected",
             decision_reason="Attempt to override the first decision",
+            decided_by=None,
             metadata={"reviewed_by": "reviewer-2"},
         )
 
@@ -1083,6 +1087,7 @@ def test_sqlalchemy_harness_proposal_store_persists_and_decides_proposals(
         proposal_id=created[1].id,
         status="rejected",
         decision_reason="Needs more support",
+        decided_by=None,
         metadata={"reviewed_by": "tester"},
     )
     assert rejected is not None
@@ -1629,6 +1634,7 @@ def test_sqlalchemy_harness_approval_store_rejects_stale_cross_session_override(
             approval_key="promote-cross-session",
             status="approved",
             decision_reason="Primary reviewer approved it.",
+            decided_by=None,
         )
         assert decided is not None
         assert decided.status == "approved"
@@ -1640,6 +1646,7 @@ def test_sqlalchemy_harness_approval_store_rejects_stale_cross_session_override(
                 approval_key="promote-cross-session",
                 status="rejected",
                 decision_reason="Secondary reviewer attempted an override.",
+                decided_by=None,
             )
 
         verified = approval_store_verifier.list_approvals(
@@ -1704,6 +1711,7 @@ def test_sqlalchemy_harness_proposal_store_rejects_stale_cross_session_override(
             proposal_id=proposal.id,
             status="promoted",
             decision_reason="Primary reviewer promoted it.",
+            decided_by=None,
             metadata={"reviewed_by": "primary"},
         )
         assert promoted is not None
@@ -1715,6 +1723,7 @@ def test_sqlalchemy_harness_proposal_store_rejects_stale_cross_session_override(
                 proposal_id=proposal.id,
                 status="rejected",
                 decision_reason="Secondary reviewer attempted an override.",
+                decided_by=None,
                 metadata={"reviewed_by": "secondary"},
             )
 
@@ -1918,6 +1927,7 @@ def test_sqlalchemy_harness_review_item_store_filters_counts_and_decides(
             review_item_id=created[0].id,
             status="needs_more_magic",
             decision_reason=None,
+            decided_by=None,
         )
 
     decided = review_store.decide_review_item(
@@ -1925,6 +1935,7 @@ def test_sqlalchemy_harness_review_item_store_filters_counts_and_decides(
         review_item_id=created[0].id,
         status="resolved",
         decision_reason=" accepted ",
+        decided_by=None,
         metadata={"reviewed_by": "unit-test"},
         linked_proposal_id=f" {uuid4()} ",
         linked_approval_key=" approval-1 ",
@@ -1942,6 +1953,7 @@ def test_sqlalchemy_harness_review_item_store_filters_counts_and_decides(
             review_item_id=created[0].id,
             status="dismissed",
             decision_reason="duplicate",
+            decided_by=None,
         )
     assert (
         review_store.decide_review_item(
@@ -1949,6 +1961,7 @@ def test_sqlalchemy_harness_review_item_store_filters_counts_and_decides(
             review_item_id=str(uuid4()),
             status="dismissed",
             decision_reason="missing",
+            decided_by=None,
         )
         is None
     )

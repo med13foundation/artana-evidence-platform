@@ -13,6 +13,7 @@ from artana_evidence_api.document_extraction_support.proposal_relation_type_guar
 )
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
+from artana_evidence_api.types.review_actor import ReviewActor
 from artana_evidence_api.types.source_provenance import ClaimSourceProvenance
 
 logger = logging.getLogger(__name__)
@@ -100,6 +101,7 @@ class HarnessProposalRecord:
     claim_fingerprint: str | None = None
     evidence_grade: str | None = None
     source_provenance: ClaimSourceProvenance | None = None
+    decided_by: ReviewActor | None = None
 
 
 class HarnessProposalStore:
@@ -373,9 +375,15 @@ class HarnessProposalStore:
         proposal_id: UUID | str,
         status: str,
         decision_reason: str | None,
+        decided_by: ReviewActor | None,
         metadata: JSONObject | None = None,
     ) -> HarnessProposalRecord | None:
-        """Promote or reject one proposal."""
+        """Promote or reject one proposal.
+
+        ``decided_by`` has no default so that every caller has to say who is
+        deciding.  Passing None is allowed -- some decisions really are made by
+        the system -- but it has to be said out loud rather than defaulted into.
+        """
         normalized_status = status.strip().lower()
         if normalized_status not in _DECISION_STATUSES:
             message = f"Unsupported proposal status '{status}'"
@@ -417,6 +425,8 @@ class HarnessProposalStore:
                     else None
                 ),
                 decided_at=decision_timestamp,
+                decided_by=decided_by,
+                source_provenance=proposal.source_provenance,
                 created_at=proposal.created_at,
                 updated_at=decision_timestamp,
             )
@@ -470,6 +480,7 @@ class HarnessProposalStore:
                         evidence_grade=p.evidence_grade,
                         decision_reason=reason,
                         decided_at=now,
+                        source_provenance=p.source_provenance,
                         created_at=p.created_at,
                         updated_at=now,
                     )
