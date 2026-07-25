@@ -9131,6 +9131,7 @@
               "cross_space_provenance",
               "insufficient_evidence",
               "invalid_source_provenance",
+              "invalid_source_evidence_binding",
               "permission_denied"
             ],
             "title": "Code",
