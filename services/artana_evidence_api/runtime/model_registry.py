@@ -42,6 +42,8 @@ class ArtanaModelRegistry:
         self._models: dict[str, ModelSpec] = {}
         self._defaults: dict[ModelCapability, str] = {}
         self._allow_runtime_model_overrides = False
+        self._formal_model_id: str | None = None
+        self._formal_snapshot_pinned = False
         self._load_configuration()
 
     def _load_configuration(self) -> None:
@@ -51,6 +53,16 @@ class ArtanaModelRegistry:
             return
         self._models = self._parse_models(models_section)
         self._defaults = self._parse_defaults(models_section)
+        formal_section = models_section.get("formal")
+        if isinstance(formal_section, dict):
+            raw_formal_model = formal_section.get("model")
+            self._formal_model_id = (
+                raw_formal_model if isinstance(raw_formal_model, str) else None
+            )
+            raw_pinned = formal_section.get("snapshot_pinned")
+            self._formal_snapshot_pinned = (
+                raw_pinned if isinstance(raw_pinned, bool) else False
+            )
         raw_allow_overrides = models_section.get("allow_runtime_model_overrides")
         self._allow_runtime_model_overrides = (
             raw_allow_overrides if isinstance(raw_allow_overrides, bool) else False
@@ -133,6 +145,44 @@ class ArtanaModelRegistry:
             return False
         model = self._models[model_id]
         return model.is_enabled and model.supports_capability(capability)
+
+    def formal_model(self) -> ModelSpec:
+        """Return the model formal runs must use, or refuse to guess.
+
+        Formal runs name their model explicitly rather than inheriting a
+        `default_*` entry, so editing the defaults cannot silently change what a
+        sealed result was produced with.  An unconfigured or unregistered value
+        raises instead of falling back: a formal run that quietly used some
+        other model is worse than one that refuses to start (D8).
+        """
+
+        if self._formal_model_id is None:
+            message = (
+                "artana.toml has no [models.formal] model. Formal runs must "
+                "name their model explicitly rather than inherit a default."
+            )
+            raise ValueError(message)
+        if self._formal_model_id not in self._models:
+            message = (
+                f"[models.formal] model {self._formal_model_id!r} is not in the "
+                f"registry. Available: {sorted(self._models)}"
+            )
+            raise ValueError(message)
+        model = self._models[self._formal_model_id]
+        if not model.is_enabled:
+            message = f"[models.formal] model {self._formal_model_id!r} is disabled."
+            raise ValueError(message)
+        return model
+
+    def formal_snapshot_is_pinned(self) -> bool:
+        """Return whether the formal model is pinned to an immutable snapshot.
+
+        False today for every model this project uses.  Comparability across
+        runs therefore rests on replication and on observing the model the
+        provider actually returned, not on the model being frozen -- see #206.
+        """
+
+        return self._formal_snapshot_pinned
 
     def allow_runtime_model_overrides(self) -> bool:
         """Return whether a caller may swap the configured model at runtime.
