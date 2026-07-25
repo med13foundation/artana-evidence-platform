@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from artana_evidence_db.common_types import JSONObject
-
 from artana_evidence_db.fact_assessment import (
     FactAssessment,
     assessment_confidence,
