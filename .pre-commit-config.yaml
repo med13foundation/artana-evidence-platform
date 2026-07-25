@@ -31,3 +31,20 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+
+      # CI enforces these and pre-commit did not, so a change that added a
+      # module passed locally and failed in CI. That happened twice, and the
+      # second time the failing branch was merged and broke main.
+      - id: architecture-structure-check
+        name: architecture structure
+        entry: make -s architecture-structure-check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: architecture-size-check
+        name: architecture size
+        entry: make -s architecture-size-check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
