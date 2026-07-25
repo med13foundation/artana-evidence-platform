@@ -61,8 +61,19 @@ class SqlAlchemyKernelRelationRepository(
         canonicalization_fingerprint: str = "",
         curation_status: str = "DRAFT",
         provenance_id: str | None = None,
+        reviewed_by: str | None = None,
     ) -> KernelRelation:
+        """Create or fetch the canonical edge for one triple.
+
+        `reviewed_by` records the human whose decision produced this
+        projection.  It is attribution only: it never changes
+        `curation_status`, and since the auto-promotion recheck now reads the
+        explicit `auto_promoted` flag, recording it no longer suppresses that
+        recheck (D7, ART-GOV-002).
+        """
+
         provenance_uuid = self._resolve_existing_provenance_uuid(provenance_id)
+        reviewer_uuid = _as_uuid(reviewed_by) if reviewed_by is not None else None
         canonical_stmt = select(RelationModel).where(
             RelationModel.research_space_id == _as_uuid(research_space_id),
             RelationModel.source_id == _as_uuid(source_id),
@@ -85,11 +96,15 @@ class SqlAlchemyKernelRelationRepository(
                 highest_evidence_tier=None,
                 curation_status=curation_status,
                 provenance_id=provenance_uuid,
+                reviewed_by=reviewer_uuid,
+                auto_promoted=False,
             )
             self._session.add(relation)
             self._session.flush()
         if provenance_uuid is not None and relation.provenance_id is None:
             relation.provenance_id = provenance_uuid
+        if reviewer_uuid is not None:
+            relation.reviewed_by = reviewer_uuid
         self._session.flush()
         return KernelRelation.model_validate(relation)
 
@@ -173,12 +188,17 @@ class SqlAlchemyKernelRelationRepository(
         self,
         relation: RelationModel,
     ) -> None:
+        # Reads the explicit flag, not `reviewed_by IS NULL`.  The old predicate
+        # meant a recorded reviewer would have silently switched the recheck
+        # off, which is why the reviewer could not be recorded at all
+        # (D7, ART-GOV-002).  A human approval is never demoted here.
         if (
             relation.curation_status.strip().upper() == "APPROVED"
-            and relation.reviewed_by is None
+            and relation.auto_promoted
         ):
             relation.curation_status = "UNDER_REVIEW"
             relation.reviewed_at = None
+            relation.auto_promoted = False
             self._session.flush()
 
     def list_evidence_for_relation(

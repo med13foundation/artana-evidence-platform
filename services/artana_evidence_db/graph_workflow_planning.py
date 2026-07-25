@@ -9,13 +9,13 @@ from artana_evidence_db.common_types import JSONObject, JSONValue
 from artana_evidence_db.decision_confidence import score_decision_confidence
 from artana_evidence_db.dictionary_models import DictionaryProposal
 from artana_evidence_db.fact_assessment_support import fact_assessment_metadata
+from artana_evidence_db.graph_api_schemas.governance.authorship import (
+    GraphWriteAuthorship,
+)
 from artana_evidence_db.graph_api_schemas.kernel_relation_schemas import (
     KernelRelationClaimCreateRequest,
 )
 from artana_evidence_db.graph_validation_service import GraphValidationService
-from artana_evidence_db.graph_api_schemas.governance.authorship import (
-    GraphWriteAuthorship,
-)
 from artana_evidence_db.graph_workflow_support import (
     _AUTO_CLAIM_MODES,
     _CLAIM_VALIDATION_STATE_MAP,

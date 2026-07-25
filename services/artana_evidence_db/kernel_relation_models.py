@@ -16,6 +16,7 @@ from artana_evidence_db.source_provenance import (
     snapshot_model as _source_evidence_snapshot_model,
 )
 from sqlalchemy import (
+    Boolean,
     Column,
     Float,
     ForeignKey,
@@ -26,6 +27,7 @@ from sqlalchemy import (
     Table,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
@@ -158,6 +160,20 @@ if _relations_table is None:
             "reviewed_at",
             TIMESTAMP(timezone=True),
             nullable=True,
+        ),
+        Column(
+            "auto_promoted",
+            Boolean(),
+            nullable=False,
+            server_default=text("false"),
+            default=False,
+            doc=(
+                "True when the current APPROVED status came from automated "
+                "promotion rather than a human decision. Previously inferred "
+                "from reviewed_by IS NULL, which conflated 'no human reviewed "
+                "this' with 'a machine approved this' and prevented the "
+                "reviewer from being recorded at all (D7, ART-GOV-002)."
+            ),
         ),
         Column(
             "created_at",
@@ -359,6 +375,7 @@ class GraphRelationModel(Base):
         provenance_id: Mapped[UUID | None]
         reviewed_by: Mapped[UUID | None]
         reviewed_at: Mapped[datetime | None]
+        auto_promoted: Mapped[bool]
         created_at: Mapped[datetime]
         updated_at: Mapped[datetime]
 

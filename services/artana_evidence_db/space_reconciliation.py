@@ -9,18 +9,18 @@ from artana_evidence_db.orm_base import Base
 from sqlalchemy import delete
 
 if TYPE_CHECKING:
-    from sqlalchemy.sql.schema import Column
     from sqlalchemy.orm import Session
+    from sqlalchemy.sql.schema import Column
 
 
-def _space_id_bind_value(column: "Column[object]", *, space_id: UUID) -> UUID | str:
+def _space_id_bind_value(column: Column[object], *, space_id: UUID) -> UUID | str:
     if getattr(column.type, "as_uuid", False):
         return space_id
     return str(space_id)
 
 
 def purge_graph_space_snapshot(
-    session: "Session",
+    session: Session,
     *,
     space_id: UUID,
 ) -> None:

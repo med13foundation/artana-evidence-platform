@@ -112,6 +112,7 @@ class RelationRepositoryLike(Protocol):
         canonicalization_fingerprint: str = "",
         curation_status: str = "DRAFT",
         provenance_id: str | None = None,
+        reviewed_by: str | None = None,
     ) -> KernelRelation: ...
 
     def delete(self, relation_id: str) -> bool: ...
@@ -312,7 +313,6 @@ class KernelRelationProjectionMaterializationService:
         projection_origin: RelationProjectionOrigin,
         reviewed_by: str | None = None,
     ) -> RelationProjectionMaterializationResult:
-        del reviewed_by
         claim = self._get_claim_or_raise(
             claim_id=claim_id,
             research_space_id=research_space_id,
@@ -346,6 +346,7 @@ class KernelRelationProjectionMaterializationService:
                 claim=claim,
                 evidences=claim_evidences,
             ),
+            reviewed_by=reviewed_by,
         )
         stale_relation_ids: list[str] = []
         for existing_row in self._projection_sources.find_by_claim_id(

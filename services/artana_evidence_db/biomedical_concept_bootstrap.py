@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING
 from uuid import NAMESPACE_URL, UUID, uuid5
 
 from artana_evidence_db.concept_repository import GraphConceptRepository
-from artana_evidence_db.dictionary_repository import GraphDictionaryRepository
 from artana_evidence_db.dictionary_management_service import (
     DictionaryManagementService,
 )
+from artana_evidence_db.dictionary_repository import GraphDictionaryRepository
 from artana_evidence_db.graph_domain_config import (
     GRAPH_SERVICE_DICTIONARY_LOADING_CONFIG,
 )

@@ -400,6 +400,10 @@ class _KernelRelationAutoPromotionMixin:
 
         relation_model.curation_status = "APPROVED"
         relation_model.reviewed_at = datetime.now(UTC)
+        # Say so explicitly rather than leaving reviewed_by NULL as the signal.
+        # The recheck predicate reads this flag, so a human reviewer can now be
+        # recorded on the same row without disabling it (D7, ART-GOV-002).
+        relation_model.auto_promoted = True
         return AutoPromotionDecision(
             outcome="promoted",
             reason="thresholds_met",
