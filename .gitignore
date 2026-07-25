@@ -74,3 +74,6 @@ data/transformed/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# fetched corpus cache (not vendored -- see scripts/fetch_bionlp_ge_corpus.py)
+.corpus-cache/
