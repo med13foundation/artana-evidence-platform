@@ -26,7 +26,7 @@ from artana_evidence_db.kernel_relation_models import (
     RelationEvidenceModel,
     RelationModel,
 )
-from artana_evidence_db.relation_aggregate_recompute import (
+from artana_evidence_db._relation_repository_shared import (
     recompute_relation_aggregate,
 )
 from sqlalchemy import and_, inspect, select, update
