@@ -10,10 +10,7 @@ from uuid import UUID
 from artana_evidence_db._relation_repository_shared import (
     _as_uuid,
     _clamp_confidence,
-    _diminishing_confidence,
-    _normalize_evidence_tier,
     _source_family_key,
-    _tier_rank,
 )
 from artana_evidence_db.graph_core_models import KernelRelation
 from artana_evidence_db.kernel_claim_models import (
@@ -23,6 +20,9 @@ from artana_evidence_db.kernel_claim_models import (
 from artana_evidence_db.kernel_relation_models import (
     RelationEvidenceModel,
     RelationModel,
+)
+from artana_evidence_db.relation_aggregate_recompute import (
+    recompute_relation_aggregate,
 )
 from artana_evidence_db.source_provenance.eligibility import (
     ClaimEvidenceEligibilityError,
@@ -135,87 +135,9 @@ class _KernelRelationCurationMixin:
         self,
         relation_id: UUID,
     ) -> None:
-        relation_model = self._session.get(RelationModel, relation_id)
-        if relation_model is None:
-            return
+        """Delegate to the one shared implementation (ART-DATA-003)."""
 
-        evidences = list(
-            self._session.scalars(
-                select(RelationEvidenceModel).where(
-                    RelationEvidenceModel.relation_id == relation_id,
-                ),
-            ).all(),
-        )
-        eligible_snapshot_ids = ClaimEvidenceEligibilityService(
-            self._session,
-        ).eligible_snapshot_ids_for_relation(
-            relation_id=relation_id,
-            research_space_id=relation_model.research_space_id,
-        )
-        evidences = [
-            evidence
-            for evidence in evidences
-            if evidence.source_snapshot_id in eligible_snapshot_ids
-        ]
-        if not evidences:
-            relation_model.aggregate_confidence = 0.0
-            relation_model.source_count = 0
-            relation_model.highest_evidence_tier = None
-            relation_model.support_confidence = 0.0
-            relation_model.refute_confidence = 0.0
-            relation_model.distinct_source_family_count = 0
-            relation_model.updated_at = datetime.now(UTC)
-            return
-
-        # Collapse support evidence into units keyed by source family.
-        # Multiple spans from the same source document collapse into one unit.
-        support_units: dict[str, float] = {}
-        source_families: set[str] = set()
-        highest_tier: str | None = None
-        highest_rank = -1
-
-        for evidence in evidences:
-            confidence = _clamp_confidence(float(evidence.confidence))
-            tier = _normalize_evidence_tier(evidence.evidence_tier)
-            rank = _tier_rank(tier)
-            if rank > highest_rank:
-                highest_rank = rank
-                highest_tier = tier
-
-            # Determine source family key for collapsing
-            family_key = _source_family_key(evidence)
-            if family_key is None:
-                continue
-            source_families.add(family_key)
-
-            # Computational evidence does not contribute to support confidence
-            if tier == "COMPUTATIONAL":
-                continue
-
-            # Relation evidence is supporting evidence. Low confidence weakens
-            # support; it does not become refutation without REFUTE polarity.
-            existing = support_units.get(family_key, 0.0)
-            support_units[family_key] = max(existing, confidence)
-
-        # Diminishing returns: aggregate = 1 - product(1 - unit_score)
-        support_conf = _diminishing_confidence(support_units.values())
-
-        refute_units = self._linked_refute_claim_units(relation_model)
-        refute_conf = _diminishing_confidence(refute_units.values())
-
-        # Backward-compatible aggregate uses all evidence
-        all_product = 1.0
-        for evidence in evidences:
-            confidence = _clamp_confidence(float(evidence.confidence))
-            all_product *= 1.0 - confidence
-
-        relation_model.aggregate_confidence = _clamp_confidence(1.0 - all_product)
-        relation_model.source_count = len(evidences)
-        relation_model.highest_evidence_tier = highest_tier
-        relation_model.support_confidence = support_conf
-        relation_model.refute_confidence = refute_conf
-        relation_model.distinct_source_family_count = len(source_families)
-        relation_model.updated_at = datetime.now(UTC)
+        recompute_relation_aggregate(self._session, relation_id)
 
     def _linked_refute_claim_units(
         self,

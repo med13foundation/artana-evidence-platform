@@ -26,6 +26,9 @@ from artana_evidence_db.kernel_relation_models import (
     RelationEvidenceModel,
     RelationModel,
 )
+from artana_evidence_db.relation_aggregate_recompute import (
+    recompute_relation_aggregate,
+)
 from sqlalchemy import and_, inspect, select, update
 from sqlalchemy.exc import IntegrityError
 
@@ -494,55 +497,14 @@ class GraphDictionaryRepositoryConstraintsMergeMixin:
         return DictionaryRelationType.model_validate(after_snapshot)
 
     def _recompute_relation_aggregate(self, relation_id: UUID) -> None:
-        relation_model = self._session.get(RelationModel, relation_id)
-        if relation_model is None:
-            return
+        """Delegate to the one shared implementation (ART-DATA-003).
 
-        evidences = list(
-            self._session.scalars(
-                select(RelationEvidenceModel).where(
-                    RelationEvidenceModel.relation_id == relation_id,
-                ),
-            ).all(),
-        )
-        if not evidences:
-            relation_model.aggregate_confidence = 0.0
-            relation_model.source_count = 0
-            relation_model.highest_evidence_tier = None
-            relation_model.updated_at = datetime.now(UTC)
-            return
+        This path previously wrote only three of the six derived fields, so a
+        relation-type merge left support_confidence, refute_confidence and
+        distinct_source_family_count holding their pre-merge values.
+        """
 
-        rank_by_tier = {
-            "EXPERT_CURATED": 6,
-            "CLINICAL": 5,
-            "EXPERIMENTAL": 4,
-            "LITERATURE": 3,
-            "STRUCTURED_DATA": 2,
-            "COMPUTATIONAL": 1,
-        }
-        product = 1.0
-        highest_tier: str | None = None
-        highest_rank = 0
-        for evidence in evidences:
-            confidence = float(evidence.confidence)
-            confidence = max(confidence, 0.0)
-            confidence = min(confidence, 1.0)
-            product *= 1.0 - confidence
-
-            tier = evidence.evidence_tier.strip().upper()
-            rank = rank_by_tier.get(tier, 0)
-            if rank > highest_rank:
-                highest_rank = rank
-                highest_tier = tier
-
-        aggregate_confidence = 1.0 - product
-        aggregate_confidence = max(aggregate_confidence, 0.0)
-        aggregate_confidence = min(aggregate_confidence, 1.0)
-
-        relation_model.aggregate_confidence = aggregate_confidence
-        relation_model.source_count = len(evidences)
-        relation_model.highest_evidence_tier = highest_tier
-        relation_model.updated_at = datetime.now(UTC)
+        recompute_relation_aggregate(self._session, relation_id)
 
 
 __all__ = ["GraphDictionaryRepositoryConstraintsMergeMixin"]
