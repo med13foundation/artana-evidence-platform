@@ -39,8 +39,14 @@ from artana_evidence_db.graph_api_schemas.ai_full_mode_schemas import (
     GraphChangeProposalResponse,
 )
 from artana_evidence_db.ports import SpaceAccessPort
+from artana_evidence_db.routers.claim_routes.write_quarantine import (
+    raise_ai_persistence_violation,
+)
 from artana_evidence_db.space_membership import MembershipRole
 from artana_evidence_db.user_models import User
+from artana_evidence_db.validation.ai_persistence_quarantine import (
+    AIPersistenceQuarantineError,
+)
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -629,6 +635,15 @@ def submit_ai_decision(
     except AIDecisionPolicyRejectedError as exc:
         session.commit()
         raise _http_phase9_error(exc) from exc
+    except AIPersistenceQuarantineError as exc:
+        # This path reaches relation_claim_service.create_claim, whose
+        # quarantine check raises AIPersistenceQuarantineError -- a RuntimeError,
+        # so it escaped the ValueError handler below and surfaced as an
+        # unhandled 500.  The write was already refused, so the data was never
+        # at risk; the status code simply lied about why.  Uses the same stable
+        # 409 envelope as the claims, hypotheses, and workflows routers (#185).
+        session.rollback()
+        raise_ai_persistence_violation(exc.violation)
     except ValueError as exc:
         session.rollback()
         raise _http_phase9_error(exc) from exc
