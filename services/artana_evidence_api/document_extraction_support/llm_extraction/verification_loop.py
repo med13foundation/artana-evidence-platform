@@ -701,7 +701,41 @@ def _environment_float(name: str, default: float) -> float:
 
 
 def _model_from_environment(name: str, default: str) -> str:
-    return normalize_litellm_model_id(os.getenv(name, default))
+    """Resolve one verifier model id, refusing an unknown override.
+
+    These four variables previously accepted any string with no registry check
+    at all, so a typo silently sent formal traffic to a model nobody chose and
+    a deliberate override bypassed `allow_runtime_model_overrides` entirely.
+    An override must name a model the registry knows; anything else is a
+    configuration error and fails closed rather than guessing
+    (D8, ART-MODEL-004).
+    """
+
+    raw = os.getenv(name)
+    if raw is None:
+        return normalize_litellm_model_id(default)
+    # Registry keys use the `provider:model` form; `normalize_litellm_model_id`
+    # rewrites that to `provider/model` for the client.  Look up the raw value
+    # and return the normalised one, or every valid override is rejected.
+    if not _is_registered_model(raw.strip()):
+        message = (
+            f"{name}={raw!r} is not a registered model. Add it to the model "
+            f"registry in artana.toml, or unset the variable to use {default!r}."
+        )
+        raise ValueError(message)
+    return normalize_litellm_model_id(raw)
+
+
+def _is_registered_model(model_id: str) -> bool:
+    """Return whether the registry knows this model id."""
+
+    from artana_evidence_api.runtime.model_registry import get_model_registry
+
+    try:
+        get_model_registry().get_model(model_id)
+    except KeyError:
+        return False
+    return True
 
 
 __all__ = [
