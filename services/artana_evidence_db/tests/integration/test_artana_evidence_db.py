@@ -754,7 +754,10 @@ def _create_claim_without_participants(
     claim = claim_repo.create(
         research_space_id=str(space_id),
         source_document_id=None,
-        agent_run_id="graph-service-backfill-test",
+        # Manual, deliberately: a non-empty agent_run_id makes the claim
+        # agent-authored, and the backfill now refuses those (#186). This
+        # fixture exercises backfill mechanics, not the quarantine.
+        agent_run_id=None,
         source_type="GENE",
         relation_type="ASSOCIATED_WITH",
         target_type="PHENOTYPE",

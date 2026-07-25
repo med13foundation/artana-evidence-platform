@@ -16,9 +16,15 @@ from artana_evidence_db.claim_participant_backfill_support import (
 from artana_evidence_db.claim_participant_service import KernelClaimParticipantService
 from artana_evidence_db.relation_claim_service import KernelRelationClaimService
 from artana_evidence_db.semantic_ports import ConceptPort
+from artana_evidence_db.validation.ai_persistence_quarantine import (
+    GraphAIPersistenceQuarantinePolicy,
+)
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
+
+
+_AI_PERSISTENCE_QUARANTINE = GraphAIPersistenceQuarantinePolicy()
 
 
 class ReasoningPathServiceLike(Protocol):
@@ -69,9 +75,18 @@ class KernelClaimParticipantBackfillService:
         created_participants = 0
         skipped_existing = 0
         unresolved_endpoints = 0
+        quarantined_claims = 0
         touched_claim_ids: list[str] = []
 
         for claim in claims:
+            # ART: the backfill wrote participant rows for every claim it
+            # scanned, including agent-authored ones the quarantine refuses at
+            # every other write boundary.  A backfill is still a write, so it
+            # is bound by the same rule; skipping is counted rather than silent
+            # so the quarantine's reach stays visible (#186).
+            if _AI_PERSISTENCE_QUARANTINE.violation_for_claim(claim) is not None:
+                quarantined_claims += 1
+                continue
             existing = self._participants.list_participants_for_claim(str(claim.id))
             existing_roles = {participant.role for participant in existing}
             source_anchor = resolve_claim_anchor(
@@ -135,6 +150,7 @@ class KernelClaimParticipantBackfillService:
         self._record_metrics(
             created_participants=created_participants,
             unresolved_endpoints=unresolved_endpoints,
+            quarantined_claims=quarantined_claims,
             tags={"research_space_id": research_space_id},
         )
         return ClaimParticipantBackfillSummary(
@@ -161,10 +177,19 @@ class KernelClaimParticipantBackfillService:
         created_participants = 0
         skipped_existing = 0
         unresolved_endpoints = 0
+        quarantined_claims = 0
         research_space_ids: set[str] = set()
         touched_claim_ids_by_space: dict[str, list[str]] = {}
 
         for claim in claims:
+            # ART: the backfill wrote participant rows for every claim it
+            # scanned, including agent-authored ones the quarantine refuses at
+            # every other write boundary.  A backfill is still a write, so it
+            # is bound by the same rule; skipping is counted rather than silent
+            # so the quarantine's reach stays visible (#186).
+            if _AI_PERSISTENCE_QUARANTINE.violation_for_claim(claim) is not None:
+                quarantined_claims += 1
+                continue
             research_space_id = str(claim.research_space_id)
             research_space_ids.add(research_space_id)
             existing = self._participants.list_participants_for_claim(str(claim.id))
@@ -237,6 +262,7 @@ class KernelClaimParticipantBackfillService:
         self._record_metrics(
             created_participants=created_participants,
             unresolved_endpoints=unresolved_endpoints,
+            quarantined_claims=quarantined_claims,
             tags={"scope": "global_projection_repair"},
         )
         return ClaimParticipantBackfillGlobalSummary(
@@ -294,6 +320,7 @@ class KernelClaimParticipantBackfillService:
         *,
         created_participants: int,
         unresolved_endpoints: int,
+        quarantined_claims: int,
         tags: dict[str, str],
     ) -> None:
         if created_participants > 0:
@@ -306,6 +333,12 @@ class KernelClaimParticipantBackfillService:
             increment_metric(
                 "claim_participants_backfill_unresolved_total",
                 delta=unresolved_endpoints,
+                tags=tags,
+            )
+        if quarantined_claims > 0:
+            increment_metric(
+                "claim_participants_backfill_quarantined_total",
+                delta=quarantined_claims,
                 tags=tags,
             )
 
