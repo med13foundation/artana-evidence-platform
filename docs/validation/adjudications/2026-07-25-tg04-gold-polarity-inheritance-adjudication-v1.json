@@ -1,0 +1,135 @@
+{
+  "schema_version": "artana.claim_events.gold_polarity_adjudication.v1",
+  "adjudication_id": "tg04-gold-polarity-inheritance-v1",
+  "date": "2026-07-25",
+  "corpus": "BioNLP-ST-2011-GE",
+  "corpus_archive_sha256": "f70e5f6d6e2a7f7fcdb5c8671715f3909a77662a6238015b2916ce939f2a890f",
+  "subject_fixture": "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json",
+  "defect": {
+    "summary": "Seven retained gold events state a polarity the source contradicts.",
+    "mechanism": "The importer derives polarity only from a Negation or Speculation modifier attached to the event itself. Each affected event is the argument of a nested parent that the nesting filter dropped, and the negation was annotated on that parent. The child is retained and keeps the default SUPPORT/ASSERTED, so the panel asserts an event the source denies.",
+    "severity": "Blocks Gate 1. An extractor that reads the sentence correctly is scored wrong on these records.",
+    "affected_gold_events": 7,
+    "gold_events_total": 53
+  },
+  "method": {
+    "population": "All 20 retained gold events that appear as an argument of any corpus event.",
+    "procedure": "Each candidate was read against its own source sentence in the fixture text, together with its parent event type, parent trigger, parent modifiers, and the child's argument role.",
+    "no_automated_rule": "Adjudication is per record. The obvious heuristic -- propagate negation from a dropped Negative_regulation parent -- was tested against the population and rejected: it corrupts two records whose gold polarity is correct. See rejected_candidates.",
+    "provider_calls": 0,
+    "gold_events_added_or_removed": 0
+  },
+  "corrections": [
+    {
+      "document_id": "PMID-9164948",
+      "event_annotation_id": "E2",
+      "trigger_span": "translocation",
+      "evidence": "alterations in NF kappaB family proteins, specifically the failure of p65 translocation to the nucleus, occur earlier and more frequently than the decrease in zeta-chain",
+      "parent": {"event_type": "Negative_regulation", "trigger": "failure", "child_role": "Theme"},
+      "from": {"polarity": "SUPPORT", "epistemic_status": "ASSERTED"},
+      "to": {"polarity": "REFUTE", "epistemic_status": "ASSERTED"},
+      "rationale": "The source names the failure of the translocation. The event did not occur."
+    },
+    {
+      "document_id": "PMID-10402173",
+      "event_annotation_id": "E9",
+      "trigger_span": "localization",
+      "evidence": "did suppress their nuclear localization",
+      "parent": {"event_type": "Negative_regulation", "trigger": "suppress", "child_role": "Theme"},
+      "from": {"polarity": "SUPPORT", "epistemic_status": "ASSERTED"},
+      "to": {"polarity": "REFUTE", "epistemic_status": "ASSERTED"},
+      "rationale": "The localization is the direct object of suppress. The source asserts it was prevented."
+    },
+    {
+      "document_id": "PMID-10402173",
+      "event_annotation_id": "E10",
+      "trigger_span": "localization",
+      "evidence": "did suppress their nuclear localization",
+      "parent": {"event_type": "Negative_regulation", "trigger": "suppress", "child_role": "Theme"},
+      "from": {"polarity": "SUPPORT", "epistemic_status": "ASSERTED"},
+      "to": {"polarity": "REFUTE", "epistemic_status": "ASSERTED"},
+      "rationale": "Second participant of the same suppressed localization; identical reasoning to E9."
+    },
+    {
+      "document_id": "PMID-10402173",
+      "event_annotation_id": "E2",
+      "trigger_span": "binding",
+      "evidence": "In some patients, no activation of RelA/NFkappaB1-binding activity was detectable",
+      "parent": {"event_type": "Positive_regulation", "trigger": "activation", "child_role": "Theme", "modifiers": ["Negation"]},
+      "from": {"polarity": "SUPPORT", "epistemic_status": "ASSERTED"},
+      "to": {"polarity": "REFUTE", "epistemic_status": "ASSERTED"},
+      "rationale": "The negation attaches to the parent activation, and no binding activity was detectable. The child event is denied, not merely unregulated."
+    },
+    {
+      "document_id": "PMC-2222968-05-Results-04",
+      "event_annotation_id": "E8",
+      "trigger_span": "induction",
+      "evidence": "IL-4 significantly inhibited TGF-beta-mediated induction of FOXP3 in naive T cells",
+      "parent": {"event_type": "Negative_regulation", "trigger": "inhibited", "child_role": "Theme"},
+      "from": {"polarity": "SUPPORT", "epistemic_status": "ASSERTED"},
+      "to": {"polarity": "REFUTE", "epistemic_status": "ASSERTED"},
+      "rationale": "The induction is the direct object of inhibited, with no contrasting condition in which it proceeds."
+    },
+    {
+      "document_id": "PMID-8134378",
+      "event_annotation_id": "E9",
+      "trigger_span": "inducibility",
+      "evidence": "Deletion of all three elements abolished inducibility of IL-6 promoter activity by both LAM and LPS",
+      "parent": {"event_type": "Negative_regulation", "trigger": "abolished", "child_role": "Theme"},
+      "from": {"polarity": "SUPPORT", "epistemic_status": "ASSERTED"},
+      "to": {"polarity": "REFUTE", "epistemic_status": "ASSERTED"},
+      "rationale": "Abolished is total negation of the inducibility under the stated deletion."
+    },
+    {
+      "document_id": "PMID-9234696",
+      "event_annotation_id": "E14",
+      "trigger_span": "induction",
+      "evidence": "Introduction of point mutations suppressing GABP binding to the DSE interfered with the induction of the distal enhancer",
+      "parent": {"event_type": "Negative_regulation", "trigger": "interfered", "child_role": "Theme"},
+      "from": {"polarity": "SUPPORT", "epistemic_status": "ASSERTED"},
+      "to": {"polarity": "REFUTE", "epistemic_status": "ASSERTED"},
+      "rationale": "Interfered with negates the induction under the stated mutation."
+    }
+  ],
+  "rejected_candidates": [
+    {
+      "document_id": "PMC-2806624-05-RESULTS-04",
+      "event_annotation_id": "E15",
+      "trigger_span": "induced",
+      "evidence": "TGF-beta induced Foxp3 in CbfbF/+ CD4-cre cells in a dose dependent manner, and this was significantly reduced in CbfbF/F CD4-cre cells",
+      "parent": {"event_type": "Negative_regulation", "trigger": "reduced", "child_role": "Theme"},
+      "verdict": "GOLD_IS_CORRECT_NO_CHANGE",
+      "rationale": "The reduction is a contrast across two cell genotypes, not a denial of the induction. The induction genuinely occurs in CbfbF/+ cells. A rule keying on a dropped Negative_regulation parent with a Theme child would have inverted this record incorrectly."
+    },
+    {
+      "document_id": "PMC-2222968-06-Results-05",
+      "event_annotation_id": "E16",
+      "trigger_span": "truncated",
+      "evidence": "a DNA-binding domain truncated version (TAT-DeltaDBD-GATA3) did not affect FOXP3 expression",
+      "parent": {"event_type": "Regulation", "trigger": "affect", "child_role": "Cause", "modifiers": ["Negation"]},
+      "verdict": "GOLD_IS_CORRECT_NO_CHANGE",
+      "rationale": "The child is the Cause of the parent, not its Theme. The truncated construct genuinely exists; the negation denies its effect on FOXP3 expression, not the truncation. A rule propagating parent negation to all children would have inverted this record incorrectly."
+    },
+    {
+      "document_id": "PMC-2222968-05-Results-04",
+      "event_annotation_id": "E28",
+      "trigger_span": "dependent",
+      "evidence": "probably acting at the level of transcription factors, and possibly by a GATA3-dependent mechanism",
+      "parent": {"event_type": "Positive_regulation", "trigger": "acting", "child_role": "Theme", "modifiers": ["Speculation"]},
+      "verdict": "GOLD_IS_ALREADY_CORRECT",
+      "rationale": "Gold already records UNCERTAIN/UNCERTAIN, matching the hedged source. No change required."
+    }
+  ],
+  "consequences": {
+    "polarity_distribution_before": {"SUPPORT": 40, "REFUTE": 5, "UNCERTAIN": 8},
+    "polarity_distribution_after": {"SUPPORT": 33, "REFUTE": 12, "UNCERTAIN": 8},
+    "note": "Negative-polarity coverage rises from 5 to 12 of 53. These are the records that test whether an extractor reads negation at all, so the repair strengthens the panel rather than merely correcting it."
+  },
+  "limits": {
+    "applies_to": "The 40 hash-selected documents in the frozen development panel only.",
+    "not_a_general_rule": "These corrections are hand-adjudicated per record. They do not license an automated polarity-inheritance rule; two candidates were rejected precisely because such a rule would misfire.",
+    "v1_fixture_unchanged": true,
+    "provider_calls": 0,
+    "graph_writes": 0
+  }
+}

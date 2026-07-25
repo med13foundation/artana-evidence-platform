@@ -45,6 +45,24 @@ DEFAULT_DEVELOPMENT_FIXTURE_PATH: Final = Path(
 FROZEN_DEVELOPMENT_FIXTURE_SHA256: Final = (
     "26d67408a7a2446de5d36fca3f8a80a732b6519afe00e303c893eef3c824268d"
 )
+#: v2 repairs seven gold events whose polarity contradicted their own source.
+#:
+#: Each is the argument of a nested parent the importer dropped, and the
+#: negation was annotated on that parent, so the retained child kept SUPPORT
+#: while its sentence denied it -- an extractor reading the paper correctly was
+#: scored wrong.  v1 stays sealed and byte-identical; only `polarity` differs,
+#: on exactly seven of the 53 events.  See
+#: `bionlp_import.POLARITY_ADJUDICATION_RECORD`.
+#:
+#: The gates still run on v1.  Moving them to v2 pins a different panel and
+#: belongs in the evaluation preregistration alongside the primary-matcher
+#: decision, not in the repair that produced it.
+DEVELOPMENT_FIXTURE_V2_PATH: Final = Path(
+    "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v2.json"
+)
+FROZEN_DEVELOPMENT_FIXTURE_V2_SHA256: Final = (
+    "9a1b8e671cbc1b8a4abe790d110a0ff0edc6af65e7c88a459d3224db46c17c26"
+)
 _REPO_ROOT: Final = Path(__file__).resolve().parents[3]
 _LOCATOR_RE: Final = re.compile(r"^char:(?P<start>\d+)-(?P<end>\d+)$")
 _EnumT = TypeVar("_EnumT", bound=StrEnum)
@@ -480,7 +498,9 @@ def _require_keys(record: dict[str, object], expected: set[str], label: str) -> 
 
 __all__ = [
     "DEFAULT_DEVELOPMENT_FIXTURE_PATH",
+    "DEVELOPMENT_FIXTURE_V2_PATH",
     "FROZEN_DEVELOPMENT_FIXTURE_SHA256",
+    "FROZEN_DEVELOPMENT_FIXTURE_V2_SHA256",
     "SCHEMA_VERSION",
     "load_fixture",
     "require_frozen_development_fixture",

@@ -32,6 +32,31 @@ _TEXT_BOUND_COLUMNS: Final = 3
 TG04_BIONLP_ARCHIVE_SHA256: Final = (
     "f70e5f6d6e2a7f7fcdb5c8671715f3909a77662a6238015b2916ce939f2a890f"
 )
+POLARITY_ADJUDICATION_RECORD: Final = (
+    "docs/validation/adjudications/"
+    "2026-07-25-tg04-gold-polarity-inheritance-adjudication-v1.json"
+)
+#: Hand-adjudicated polarity corrections, keyed by (document, event annotation).
+#:
+#: Every entry is an event whose dropped nested parent carried the negation.
+#: Each was read against its own source sentence; the rationale and the two
+#: rejected candidates are recorded in `POLARITY_ADJUDICATION_RECORD`.  This is
+#: deliberately a table and not a rule -- see `_adjudicated_epistemic_categories`.
+POLARITY_ADJUDICATIONS: Final[dict[tuple[str, str], tuple[str, str]]] = {
+    # "the failure of p65 translocation to the nucleus"
+    ("PMID-9164948", "E2"): ("REFUTE", "ASSERTED"),
+    # "did suppress their nuclear localization"
+    ("PMID-10402173", "E9"): ("REFUTE", "ASSERTED"),
+    ("PMID-10402173", "E10"): ("REFUTE", "ASSERTED"),
+    # "no activation of RelA/NFkappaB1-binding activity was detectable"
+    ("PMID-10402173", "E2"): ("REFUTE", "ASSERTED"),
+    # "IL-4 significantly inhibited TGF-beta-mediated induction of FOXP3"
+    ("PMC-2222968-05-Results-04", "E8"): ("REFUTE", "ASSERTED"),
+    # "Deletion of all three elements abolished inducibility"
+    ("PMID-8134378", "E9"): ("REFUTE", "ASSERTED"),
+    # "interfered with the induction of the distal enhancer"
+    ("PMID-9234696", "E14"): ("REFUTE", "ASSERTED"),
+}
 TG04_BIONLP_SOURCE_URL: Final = (
     "https://bionlp-st.dbcls.jp/GE/2011/downloads/"
     "BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
@@ -376,8 +401,10 @@ def _event_records_and_exclusions(
             )
             continue
         modifier = modifiers_by_event.get(event.event_id)
-        polarity, epistemic_status = _epistemic_categories(
-            modifier.modifier_type if modifier is not None else None,
+        polarity, epistemic_status = _adjudicated_epistemic_categories(
+            document_id=document.document_id,
+            event_annotation_id=event.event_id,
+            modifier=modifier.modifier_type if modifier is not None else None,
         )
         records.append(
             {
@@ -506,6 +533,34 @@ def _epistemic_categories(modifier: str | None) -> tuple[str, str]:
     if modifier == "Speculation":
         return "UNCERTAIN", "UNCERTAIN"
     return "SUPPORT", "ASSERTED"
+
+
+def _adjudicated_epistemic_categories(
+    *,
+    document_id: str,
+    event_annotation_id: str,
+    modifier: str | None,
+) -> tuple[str, str]:
+    """Apply the hand-adjudicated polarity corrections, then corpus modifiers.
+
+    Polarity is otherwise derived only from a modifier attached to the event
+    itself.  Each corrected event is the argument of a nested parent that the
+    nesting filter dropped, and the negation was annotated on that parent, so
+    the retained child silently kept SUPPORT while its source denies it.
+
+    The corrections are a reviewed table rather than an inheritance rule on
+    purpose.  Propagating negation from a dropped `Negative_regulation` parent
+    is the obvious rule and it is wrong: it inverts `PMC-2806624-05-RESULTS-04`
+    `E15`, where the reduction contrasts two cell genotypes rather than denying
+    the induction, and `PMC-2222968-06-Results-05` `E16`, where the child is the
+    parent's `Cause` and the negation denies its effect rather than its
+    existence.  Both were tested and rejected; see the adjudication record.
+    """
+
+    correction = POLARITY_ADJUDICATIONS.get((document_id, event_annotation_id))
+    if correction is not None:
+        return correction
+    return _epistemic_categories(modifier)
 
 
 def _parse_text_bounds(
