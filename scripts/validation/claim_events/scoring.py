@@ -712,7 +712,7 @@ def _gold_argument_key(argument: ArgumentContract) -> tuple[str, str, str, int]:
 
 def _argument_key(argument: Mapping[str, object]) -> tuple[str, str, str, int]:
     return (
-        _string(argument.get("role")) or "",
+        _string(argument.get("role") or argument.get("participant_role")) or "",
         _string(argument.get("event_role")) or "",
         _string(argument.get("exact_span")) or "",
         _nonnegative_integer(argument.get("source_start")),
