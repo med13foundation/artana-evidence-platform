@@ -187,6 +187,9 @@ GraphValidationCode = Literal[
     "cross_space_provenance",
     "insufficient_evidence",
     "invalid_source_provenance",
+    # Emitted by the source-evidence write gate, now also reachable from the
+    # advisory verdict so both paths report the same code (ART-VAL-006).
+    "invalid_source_evidence_binding",
     "permission_denied",
 ]
 GraphValidationSeverity = Literal["info", "warning", "blocking"]

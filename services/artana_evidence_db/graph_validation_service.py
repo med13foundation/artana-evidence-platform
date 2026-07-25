@@ -39,6 +39,11 @@ from artana_evidence_db.semantic_ports import DictionaryPort
 from artana_evidence_db.validation.claim_ai_evidence_validation import (
     validate_ai_claim_evidence,
 )
+from artana_evidence_db.validation.claim_evidence_binding import (
+    has_bound_evidence,
+    has_evidence,
+    source_evidence_binding_issue,
+)
 
 _VALIDATION_REASON_BY_CODE: dict[GraphValidationCode, str] = {
     "allowed": "created_via_claim_api",
@@ -177,11 +182,58 @@ class GraphValidationService:
         if resolved_entities is None:
             return triple_validation
 
+        binding_issue = (
+            source_evidence_binding_issue(
+                request=request,
+                source_entity=resolved_entities.source,
+                target_entity=resolved_entities.target,
+            )
+            # Only a permissive verdict is downgraded, so a specific blocking
+            # code is never replaced by this one.
+            if triple_validation.valid and triple_validation.code == "allowed"
+            else None
+        )
+        if binding_issue is not None:
+            return self._response(
+                valid=False,
+                code=binding_issue.code,
+                message=binding_issue.message,
+                severity="blocking",
+                normalized_relation_type=triple_validation.normalized_relation_type,
+                source_type=triple_validation.source_type,
+                target_type=triple_validation.target_type,
+                requires_evidence=triple_validation.requires_evidence,
+                profile=triple_validation.profile,
+                validation_state="INVALID_COMPONENTS",
+                persistability="NON_PERSISTABLE",
+            )
+
+        conflict = self._existing_claim_conflict(
+            space_id=space_id,
+            request=request,
+            resolved_entities=resolved_entities,
+            triple_validation=triple_validation,
+        )
+        return conflict if conflict is not None else triple_validation
+
+    def _existing_claim_conflict(
+        self,
+        *,
+        space_id: str,
+        request: KernelRelationClaimCreateRequest,
+        resolved_entities: _ResolvedClaimEntities,
+        triple_validation: KernelGraphValidationResponse,
+    ) -> KernelGraphValidationResponse | None:
+        """Return a duplicate or conflicting-claim verdict, if one applies."""
+
+        relation_type = triple_validation.normalized_relation_type
+        if relation_type is None:
+            return None
         duplicate_claim_ids, conflicting_claim_ids = self._find_claim_conflicts(
             research_space_id=space_id,
             source_entity_id=str(resolved_entities.source.id),
             target_entity_id=str(resolved_entities.target.id),
-            relation_type=triple_validation.normalized_relation_type,
+            relation_type=relation_type,
             polarity="SUPPORT",
             claim_text=_normalize_optional_text(request.claim_text),
             source_document_ref=_normalize_optional_text(request.source_document_ref),
@@ -216,7 +268,7 @@ class GraphValidationService:
                 validation_state=triple_validation.validation_state,
                 persistability=triple_validation.persistability,
             )
-        return triple_validation
+        return None
 
     def validate_triple(  # noqa: PLR0911
         self,
@@ -388,7 +440,7 @@ class GraphValidationService:
             normalized_relation_type,
             target_type,
         )
-        if requires_evidence and not self._has_evidence(request):
+        if requires_evidence and not has_evidence(request):
             return self._response(
                 valid=False,
                 code="insufficient_evidence",
@@ -430,6 +482,37 @@ class GraphValidationService:
                     GraphValidationNextAction(
                         action="manual_review_before_promotion",
                         reason="The matching constraint uses REVIEW_ONLY governance.",
+                    ),
+                ],
+            )
+
+        if requires_evidence and not has_bound_evidence(request):
+            # Allowed, but not persistable: the evidence is free text with
+            # nothing tying it to a source, so reporting PERSISTABLE would
+            # promise a write the graph should not accept.  `REVIEW_ONLY` above
+            # uses the same allowed-but-not-persistable shape.
+            return self._response(
+                valid=True,
+                code="allowed",
+                message=(
+                    "The triple is valid, but its evidence is not bound to a "
+                    "source and cannot be persisted yet."
+                ),
+                severity="warning",
+                validation_state="ALLOWED",
+                persistability="NON_PERSISTABLE",
+                normalized_relation_type=normalized_relation_type,
+                source_type=source_type,
+                target_type=target_type,
+                requires_evidence=requires_evidence,
+                profile=profile or "ALLOWED",
+                next_actions=[
+                    GraphValidationNextAction(
+                        action="attach_evidence",
+                        reason=(
+                            "Attach source_evidence or a source document "
+                            "reference so the claim can be traced to its source."
+                        ),
                     ),
                 ],
             )
@@ -1112,17 +1195,6 @@ class GraphValidationService:
             next_actions=list(issue.next_actions),
         )
 
-    @staticmethod
-    def _has_evidence(request: KernelRelationTripleValidationRequest) -> bool:
-        return any(
-            (
-                request.evidence_summary,
-                request.evidence_sentence,
-                request.source_document_id,
-                request.source_evidence,
-                request.source_document_ref,
-            ),
-        )
 
 
 __all__ = ["GraphValidationService"]
