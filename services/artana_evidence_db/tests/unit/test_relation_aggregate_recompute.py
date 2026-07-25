@@ -17,7 +17,7 @@ import inspect
 from dataclasses import dataclass
 
 import pytest
-from artana_evidence_db.relation_aggregate_recompute import distinct_document_count
+from artana_evidence_db._relation_repository_shared import distinct_document_count
 
 
 @dataclass
@@ -93,10 +93,10 @@ def test_both_write_paths_share_one_implementation() -> None:
 def test_the_shared_recompute_writes_every_derived_field() -> None:
     """A partial write is what produced stale confidence after a merge."""
 
-    from artana_evidence_db import relation_aggregate_recompute
+    from artana_evidence_db import _relation_repository_shared as shared
 
-    body = inspect.getsource(relation_aggregate_recompute.recompute_relation_aggregate)
-    reset = inspect.getsource(relation_aggregate_recompute._reset)  # noqa: SLF001
+    body = inspect.getsource(shared.recompute_relation_aggregate)
+    reset = inspect.getsource(shared._reset)  # noqa: SLF001
 
     for field in (
         "aggregate_confidence",
