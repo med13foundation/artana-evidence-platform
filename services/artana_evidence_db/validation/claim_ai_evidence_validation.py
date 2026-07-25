@@ -69,17 +69,15 @@ def validate_ai_claim_evidence(
             ),
         )
 
-    support_error = _claim_ai_support_error(
-        request,
-        requires_evidence=requires_evidence,
+    # The trusted-lane floors run before the support terminal.  The support
+    # terminal is now unconditional for AI-authored claims that require
+    # evidence, so evaluating it first would mask every specific trusted-lane
+    # diagnostic behind one generic message.
+    trusted_issue = trusted_evidence_floor_issue(
+        metadata=request.metadata,
+        evidence_tier=_request_evidence_tier(request),
     )
-    if support_error is None:
-        trusted_issue = trusted_evidence_floor_issue(
-            metadata=request.metadata,
-            evidence_tier=_request_evidence_tier(request),
-        )
-        if trusted_issue is None:
-            return None
+    if trusted_issue is not None:
         return ClaimAIEvidenceValidationIssue(
             code="insufficient_evidence",
             message=trusted_issue.message,
@@ -90,14 +88,22 @@ def validate_ai_claim_evidence(
                 ),
             ),
         )
+
+    support_error = _claim_ai_support_error(
+        request,
+        requires_evidence=requires_evidence,
+    )
+    if support_error is None:
+        return None
     return ClaimAIEvidenceValidationIssue(
         code="insufficient_evidence",
         message=support_error,
         next_actions=(
             GraphValidationNextAction(
-                action="attach_support_verification",
+                action="route_to_human_review",
                 reason=(
-                    "Provide metadata.support_verification with support=ENTAILS."
+                    "Caller-supplied verifier metadata cannot show that an "
+                    "independent agent performed support verification."
                 ),
             ),
         ),
@@ -156,16 +162,19 @@ def _claim_ai_support_error(
         return None
     if not is_ai_authored_claim(request):
         return None
-    support_verification = request.metadata.get("support_verification")
-    if not isinstance(support_verification, dict):
-        return _AI_SUPPORT_ERROR
-    if (
-        support_verification.get("support") != "ENTAILS"
-        or support_verification.get("verification_method") != "agent"
-        or _is_fallback_verifier_model(support_verification.get("model_id"))
-    ):
-        return _AI_SUPPORT_ERROR
-    return None
+    # ART-VAL-006: support is unsatisfiable from the request body.
+    #
+    # This service owns no artifact that can distinguish "the verification loop
+    # returned ENTAILS" from "a caller typed ENTAILS into a JSON field" -- both
+    # arrive as byte-identical payloads over the same authenticated route.
+    # Reading `metadata["support_verification"]` at all is what made forged and
+    # absent metadata produce different verdicts, which is the defect itself.
+    #
+    # Lifting this requires the server-owned support receipt (VS3 / D6), which
+    # does not exist yet.  Until it does, the honest answer is that support
+    # cannot be established here, not that a caller-supplied string establishes
+    # it.
+    return _AI_SUPPORT_ERROR
 
 
 def _request_evidence_tier(request: AIEvidenceValidationRequest) -> str | None:
@@ -176,13 +185,6 @@ def _request_evidence_tier(request: AIEvidenceValidationRequest) -> str | None:
 
 def is_ai_authored_claim(request: AIEvidenceValidationRequest) -> bool:
     return _AI_PERSISTENCE_QUARANTINE.is_agent_authored_request(request)
-
-
-def _is_fallback_verifier_model(model_id: object) -> bool:
-    if not isinstance(model_id, str) or not model_id.strip():
-        return True
-    normalized = model_id.casefold()
-    return any(marker in normalized for marker in _FORBIDDEN_VERIFIER_MODEL_MARKERS)
 
 
 def _normalize_optional_text(value: str | None) -> str | None:
@@ -197,19 +199,8 @@ _AI_GROUNDING_ERROR = (
     "subject and object present."
 )
 _AI_SUPPORT_ERROR = (
-    "AI-authored claims require independent agent support verification with "
-    "support=ENTAILS and verification_method=agent."
-)
-_FORBIDDEN_VERIFIER_MODEL_MARKERS = frozenset(
-    {
-        "deterministic",
-        "fallback",
-        "heuristic",
-        "regex",
-        "rule",
-        "symbolic",
-        "template",
-    },
+    "AI-authored claim promotion is quarantined until this service can verify "
+    "a server-owned agent-verification receipt."
 )
 
 

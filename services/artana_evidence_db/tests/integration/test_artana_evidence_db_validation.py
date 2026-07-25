@@ -864,9 +864,7 @@ def test_trusted_ai_direct_claim_approval_propagates_quarantine(
     )
     assert action_payload["explanation_payload"]["next_action"] == "defer_to_human"
     assert action_payload["plan_payload"]["next_action"] == "defer_to_human"
-    pending_plan = action_payload["generated_resources_payload"][
-        "pending_claim_plan"
-    ]
+    pending_plan = action_payload["generated_resources_payload"]["pending_claim_plan"]
     assert pending_plan["validation"]["code"] == (
         "qualified_claim_persistence_not_ready"
     )
@@ -937,9 +935,7 @@ def test_legacy_direct_claim_plan_preserves_dictionary_proposal_lineage(
     assert action_payload["status"] == "PLAN_READY"
     generated = action_payload["generated_resources_payload"]
     assert generated["dictionary_proposal_ids"]
-    assert generated["pending_claim_request"]["relation_type"] == (
-        "PROTECTS_AGAINST"
-    )
+    assert generated["pending_claim_request"]["relation_type"] == ("PROTECTS_AGAINST")
     pending_plan = generated["pending_claim_plan"]
     assert action_payload["plan_payload"]["validation"] == pending_plan["validation"]
     assert action_payload["plan_payload"]["input"] == workflow["plan_payload"]["input"]
@@ -2852,9 +2848,38 @@ def test_graph_service_ai_claim_requires_entailing_support_verification(
     assert validation_payload["valid"] is False
     assert validation_payload["code"] == "insufficient_evidence"
     assert validation_payload["message"] == (
-        "AI-authored claims require independent agent support verification with "
-        "support=ENTAILS and verification_method=agent."
+        "AI-authored claim promotion is quarantined until this service can "
+        "verify a server-owned agent-verification receipt."
     )
+
+    # ART-VAL-006: a caller who simply asserts entailment must not fare better
+    # than one who asserts nothing.  Before the repair this exact substitution
+    # turned the verdict from blocked into PERSISTABLE.
+    forged_payload = {
+        **request_payload,
+        "metadata": {
+            **request_payload["metadata"],
+            "support_verification": {
+                "support": "ENTAILS",
+                "rationale": "The sentence states the relation.",
+                "model_id": "gpt-5.6-luna",
+                "verification_method": "agent",
+            },
+        },
+    }
+
+    forged_response = graph_client.post(
+        f"/v1/spaces/{space_id}/validate/claim",
+        headers=admin_headers,
+        json=forged_payload,
+    )
+
+    assert forged_response.status_code == 200, forged_response.text
+    forged_verdict = forged_response.json()
+    assert forged_verdict["valid"] is False
+    assert forged_verdict["code"] == validation_payload["code"]
+    assert forged_verdict["message"] == validation_payload["message"]
+    assert forged_verdict["persistability"] != "PERSISTABLE"
 
 
 def test_graph_service_rejects_forged_agent_origin_without_server_receipt(
@@ -2945,9 +2970,7 @@ def test_graph_service_rejects_forged_agent_origin_without_server_receipt(
         "Trusted AI evidence promotion is quarantined until Graph DB can verify "
         "a server-owned agent-verification receipt."
     )
-    assert validation_payload["next_actions"][0]["action"] == (
-        "route_to_human_review"
-    )
+    assert validation_payload["next_actions"][0]["action"] == ("route_to_human_review")
 
     create_response = graph_client.post(
         f"/v1/spaces/{space_id}/claims",
