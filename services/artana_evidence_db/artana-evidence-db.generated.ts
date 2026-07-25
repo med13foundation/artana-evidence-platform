@@ -1106,7 +1106,7 @@ export interface KernelGraphSubgraphResponse {
 
 export interface KernelGraphValidationResponse {
   valid: boolean;
-  code: 'allowed' | 'conflicting_claim' | 'cross_space_provenance' | 'duplicate_claim' | 'duplicate_entity_candidate' | 'inactive_entity_type' | 'insufficient_evidence' | 'invalid_relation_type' | 'invalid_source_provenance' | 'invalid_value_for_variable' | 'missing_ai_provenance' | 'missing_provenance' | 'missing_required_identifier' | 'permission_denied' | 'relation_constraint_not_allowed' | 'relation_constraint_review_only' | 'unknown_entity' | 'unknown_entity_type' | 'unknown_provenance' | 'unknown_relation_type' | 'unknown_subject' | 'unknown_variable';
+  code: 'allowed' | 'conflicting_claim' | 'cross_space_provenance' | 'duplicate_claim' | 'duplicate_entity_candidate' | 'inactive_entity_type' | 'insufficient_evidence' | 'invalid_relation_type' | 'invalid_source_evidence_binding' | 'invalid_source_provenance' | 'invalid_value_for_variable' | 'missing_ai_provenance' | 'missing_provenance' | 'missing_required_identifier' | 'permission_denied' | 'relation_constraint_not_allowed' | 'relation_constraint_review_only' | 'unknown_entity' | 'unknown_entity_type' | 'unknown_provenance' | 'unknown_relation_type' | 'unknown_subject' | 'unknown_variable';
   message: string;
   severity: 'blocking' | 'info' | 'warning';
   next_actions?: GraphValidationNextAction[];
