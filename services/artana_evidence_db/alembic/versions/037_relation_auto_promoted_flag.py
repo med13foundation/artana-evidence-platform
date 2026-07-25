@@ -43,18 +43,41 @@ def _relations_table() -> str:
     return "relations" if schema is None else f"{schema}.relations"
 
 
-def upgrade() -> None:
-    schema = graph_schema_name()
-    op.add_column(
-        "relations",
-        sa.Column(
-            "auto_promoted",
-            sa.Boolean(),
-            nullable=False,
-            server_default=sa.text("false"),
-        ),
-        schema=schema,
+def _has_column(connection: sa.Connection, column: str, schema: str | None) -> bool:
+    inspector = sa.inspect(connection)
+    return any(
+        existing["name"] == column
+        for existing in inspector.get_columns("relations", schema=schema)
     )
+
+
+def _has_index(connection: sa.Connection, index: str, schema: str | None) -> bool:
+    inspector = sa.inspect(connection)
+    return any(
+        existing["name"] == index
+        for existing in inspector.get_indexes("relations", schema=schema)
+    )
+
+
+def upgrade() -> None:
+    # Guarded because migration 001 builds the baseline from live ORM metadata
+    # (`Base.metadata.create_all`), so a freshly created database already has
+    # every column the models declare -- including this one -- before the
+    # migration chain reaches this revision.  An existing database does not.
+    # Migration 026 carries the same guard for the same reason.
+    schema = graph_schema_name()
+    connection = op.get_bind()
+    if not _has_column(connection, "auto_promoted", schema):
+        op.add_column(
+            "relations",
+            sa.Column(
+                "auto_promoted",
+                sa.Boolean(),
+                nullable=False,
+                server_default=sa.text("false"),
+            ),
+            schema=schema,
+        )
     # An APPROVED row with no reviewer is precisely what auto-promotion left
     # behind; nothing else can be attributed to it from the schema alone.
     op.execute(
@@ -67,15 +90,23 @@ def upgrade() -> None:
             """,
         ),
     )
-    op.create_index(
-        "idx_relations_auto_promoted",
-        "relations",
-        ["auto_promoted"],
-        schema=schema,
-    )
+    if not _has_index(connection, "idx_relations_auto_promoted", schema):
+        op.create_index(
+            "idx_relations_auto_promoted",
+            "relations",
+            ["auto_promoted"],
+            schema=schema,
+        )
 
 
 def downgrade() -> None:
     schema = graph_schema_name()
-    op.drop_index("idx_relations_auto_promoted", table_name="relations", schema=schema)
-    op.drop_column("relations", "auto_promoted", schema=schema)
+    connection = op.get_bind()
+    if _has_index(connection, "idx_relations_auto_promoted", schema):
+        op.drop_index(
+            "idx_relations_auto_promoted",
+            table_name="relations",
+            schema=schema,
+        )
+    if _has_column(connection, "auto_promoted", schema):
+        op.drop_column("relations", "auto_promoted", schema=schema)
