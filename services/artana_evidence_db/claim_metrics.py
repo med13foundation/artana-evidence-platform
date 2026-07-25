@@ -36,6 +36,7 @@ MetricName = Literal[
     "hypotheses_generation_failed_total",
     "claim_participants_backfilled_total",
     "claim_participants_backfill_unresolved_total",
+    "claim_participants_backfill_quarantined_total",
 ]
 GraphTrustPreset = Literal[
     "ALL",
@@ -60,6 +61,7 @@ _METRIC_NAMES: tuple[MetricName, ...] = (
     "hypotheses_generation_failed_total",
     "claim_participants_backfilled_total",
     "claim_participants_backfill_unresolved_total",
+    "claim_participants_backfill_quarantined_total",
 )
 
 _logger = logging.getLogger("artana.metrics.claim_first")

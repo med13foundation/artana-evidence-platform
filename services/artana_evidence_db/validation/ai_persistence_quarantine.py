@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 from artana_evidence_db.claim_relation_models import KernelClaimRelation
 from artana_evidence_db.common_types import JSONObject
@@ -33,6 +33,13 @@ GraphAuthoredWriteRequest = (
     | KernelRelationCreateRequest
     | ClaimRelationCreateRequest
 )
+
+
+class AuthoredClaimLike(Protocol):
+    """Anything carrying the two fields that decide claim authorship."""
+
+    agent_run_id: str | None
+    metadata_payload: JSONObject
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,9 +127,17 @@ class GraphAIPersistenceQuarantinePolicy:
 
     def violation_for_claim(
         self,
-        claim: KernelRelationClaim,
+        claim: AuthoredClaimLike,
     ) -> AIPersistenceQuarantineViolation | None:
-        """Protect legacy claim update and materialization paths."""
+        """Protect legacy claim update and materialization paths.
+
+        Typed structurally: this reads two attributes, and callers legitimately
+        hold either the domain `KernelRelationClaim` or the ORM
+        `GraphRelationClaimModel` depending on how they loaded the claim.  The
+        per-space and global participant backfills are one such pair (#186), and
+        requiring the domain type there would mean converting rows purely to
+        satisfy a signature.
+        """
 
         if _has_text(claim.agent_run_id) or _metadata_is_agent_authored(
             claim.metadata_payload,
