@@ -32,6 +32,7 @@ from artana_evidence_api.proposal_actions import (
 from artana_evidence_api.proposal_store import (  # noqa: TC001
     HarnessProposalRecord,
     HarnessProposalStore,
+    undecidable_proposal_message,
 )
 from artana_evidence_api.run_registry import HarnessRunRegistry  # noqa: TC001
 from artana_evidence_api.transparency import append_manual_review_decision
@@ -256,9 +257,9 @@ def promote_proposal(  # noqa: PLR0913
     if proposal.status != "pending_review":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                f"Proposal '{proposal.id}' is already decided with status "
-                f"'{proposal.status}'"
+            detail=undecidable_proposal_message(
+                proposal_id=proposal.id,
+                status=proposal.status,
             ),
         )
     try:

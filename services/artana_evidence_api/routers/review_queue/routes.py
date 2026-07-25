@@ -124,14 +124,21 @@ _DECIDED_STATUSES = (
     "resolved",
     "dismissed",
 )
+#: Held back from review rather than pending or decided.
+#:
+#: A cross-document fingerprint collision is parked here (ART-DATA-001): a second
+#: independent observation whose identity has not been adjudicated against the
+#: first.  Nobody can act on it yet, but it is not nothing either, so it needs a
+#: name a reviewer can ask for.
+_PARKED_STATUSES = ("identity_pending",)
 _STATUS_GROUPS = {
     "pending": _PENDING_STATUSES,
     "decided": _DECIDED_STATUSES,
+    "parked": _PARKED_STATUSES,
 }
-#: Every status any queue-backing store can hold, including the parked
-#: identity_pending state that no group covers.
+#: Every status any queue-backing store can hold.
 _KNOWN_STATUSES = frozenset(
-    (*_PENDING_STATUSES, *_DECIDED_STATUSES, "identity_pending"),
+    (*_PENDING_STATUSES, *_DECIDED_STATUSES, *_PARKED_STATUSES),
 )
 _ORDER_BY_VALUES = frozenset({"ranking", "decided_at"})
 _MAX_STATUS_VALUES = 8

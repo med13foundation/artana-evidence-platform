@@ -76,6 +76,7 @@ from .proposal_store import (
     HarnessProposalRecord,
     HarnessProposalStore,
     _is_same_document_rederivation,
+    undecidable_proposal_message,
 )
 from .research_state import (
     HarnessResearchStateRecord,
@@ -1006,11 +1007,12 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
             return None
         current_status = status_row[0]
         if current_status != "pending_review":
-            message = (
-                f"Proposal '{proposal_id}' is already decided with status "
-                f"'{current_status}'"
+            raise ValueError(
+                undecidable_proposal_message(
+                    proposal_id=proposal_id,
+                    status=current_status,
+                ),
             )
-            raise ValueError(message)
         decision_reason_text = (
             decision_reason.strip()
             if isinstance(decision_reason, str) and decision_reason.strip() != ""
@@ -1044,11 +1046,12 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
             refreshed_status_row = self.session.execute(status_stmt).one_or_none()
             if refreshed_status_row is None:
                 return None
-            message = (
-                f"Proposal '{proposal_id}' is already decided with status "
-                f"'{refreshed_status_row[0]}'"
+            raise ValueError(
+                undecidable_proposal_message(
+                    proposal_id=proposal_id,
+                    status=refreshed_status_row[0],
+                ),
             )
-            raise ValueError(message)
         commit_or_flush(self.session)
         refreshed_stmt = select(HarnessProposalModel).where(
             HarnessProposalModel.id == normalized_proposal_id,

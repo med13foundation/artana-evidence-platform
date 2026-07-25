@@ -27,6 +27,36 @@ _PENDING_REVIEW_STATUS = "pending_review"
 #: on, and not something to discard.  See ART-DATA-001.
 IDENTITY_PENDING_STATUS = "identity_pending"
 _DECISION_STATUSES = frozenset({"promoted", "rejected"})
+
+
+def undecidable_proposal_message(*, proposal_id: object, status: str) -> str:
+    """Return an accurate reason one proposal cannot be decided right now.
+
+    A parked proposal used to report "is already decided with status
+    'identity_pending'", which is false in the way that matters: nobody decided
+    anything, and there is no decision for a reviewer to look up.  Both cases
+    are still a 409 -- they conflict with the record's current state -- but a
+    reviewer reading the message needs to be able to tell them apart.
+    """
+    if status == IDENTITY_PENDING_STATUS:
+        return (
+            f"Proposal '{proposal_id}' is parked awaiting identity adjudication "
+            "and cannot be decided. It is a second independent observation whose "
+            "identity has not been resolved against the existing one (ART-DATA-001); "
+            "no decision has been made about it."
+        )
+    return f"Proposal '{proposal_id}' is already decided with status '{status}'"
+
+
+def is_undecidable_proposal_error(exc: ValueError) -> bool:
+    """Return whether one store error means "conflicts with the current state".
+
+    The routers map store ValueErrors onto status codes by inspecting the text,
+    so the parked wording has to be recognized here or a parked proposal would
+    start reporting 400 instead of 409.
+    """
+    text = str(exc)
+    return "already decided" in text or "parked awaiting identity" in text
 _MAX_PROPOSAL_TITLE_LENGTH = 256
 _TITLE_ELLIPSIS = "..."
 
@@ -393,11 +423,12 @@ class HarnessProposalStore:
             if proposal is None or proposal.space_id != str(space_id):
                 return None
             if proposal.status != _PENDING_REVIEW_STATUS:
-                message = (
-                    f"Proposal '{proposal_id}' is already decided with status "
-                    f"'{proposal.status}'"
+                raise ValueError(
+                    undecidable_proposal_message(
+                        proposal_id=proposal_id,
+                        status=proposal.status,
+                    ),
                 )
-                raise ValueError(message)
             decision_timestamp = datetime.now(UTC)
             updated = HarnessProposalRecord(
                 id=proposal.id,

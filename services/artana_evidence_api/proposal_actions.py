@@ -64,6 +64,7 @@ from artana_evidence_api.proposal_entity_payloads import (
     resolve_entity_reference_value,
     resolve_existing_entity_from_candidate_payload,
 )
+from artana_evidence_api.proposal_store import is_undecidable_proposal_error
 from artana_evidence_api.run_registry import HarnessRunRegistry  # noqa: TC001
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 from artana_evidence_api.types.graph_contracts import (
@@ -1078,7 +1079,7 @@ def decide_proposal(  # noqa: PLR0913
         raise HTTPException(
             status_code=(
                 status.HTTP_409_CONFLICT
-                if "already decided" in str(exc)
+                if is_undecidable_proposal_error(exc)
                 else status.HTTP_400_BAD_REQUEST
             ),
             detail=str(exc),
