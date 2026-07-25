@@ -42,6 +42,7 @@ from artana_evidence_api.sqlalchemy_stores import (
 from artana_evidence_api.sqlalchemy_unit_of_work import session_unit_of_work
 from artana_evidence_api.study_outcomes import SqlAlchemyStudyOutcomeStore
 from artana_evidence_api.study_outcomes.contracts import StudyOutcomeDraft
+from artana_evidence_api.types.review_actor import ReviewActor
 from artana_evidence_api.types.source_provenance import (
     ClaimSourceProvenance,
     ExactEvidenceLocator,
@@ -225,6 +226,89 @@ def test_sqlalchemy_harness_proposal_store_retains_unique_conflict_race() -> Non
     assert created[0].decision_reason is not None
     assert session.added
     assert session.rolled_back is True
+
+
+def test_sqlalchemy_upsert_intent_preserves_decided_approvals(
+    session: Session,
+) -> None:
+    """Re-proposing a run's intent must not erase decisions already made.
+
+    upsert_intent deleted every approval for the run and recreated them all as
+    pending, so a second POST of the intent destroyed the written reason and the
+    reviewer identity on anything a person had already decided.
+    """
+    approval_store = SqlAlchemyHarnessApprovalStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="claim-curation",
+        title="Intent replay run",
+        input_payload={},
+    )
+    actions = (
+        HarnessApprovalAction(
+            approval_key="decided-key",
+            title="Promote candidate claim",
+            risk_level="high",
+            target_type="claim",
+            target_id="claim-1",
+            requires_approval=True,
+            metadata={},
+        ),
+        HarnessApprovalAction(
+            approval_key="pending-key",
+            title="Persist curation summary",
+            risk_level="low",
+            target_type="artifact",
+            target_id="summary-1",
+            requires_approval=True,
+            metadata={},
+        ),
+    )
+    reviewer = ReviewActor(
+        user_id="66666666-6666-6666-6666-666666666666",
+        email="intent-reviewer@example.com",
+    )
+
+    approval_store.upsert_intent(
+        space_id=space_id,
+        run_id=run.id,
+        summary="Review proposed graph updates",
+        proposed_actions=actions,
+        metadata={},
+    )
+    approval_store.decide_approval(
+        space_id=space_id,
+        run_id=run.id,
+        approval_key="decided-key",
+        status="approved",
+        decision_reason="Checked against the source; safe to write.",
+        decided_by=reviewer,
+    )
+
+    approval_store.upsert_intent(
+        space_id=space_id,
+        run_id=run.id,
+        summary="Review proposed graph updates",
+        proposed_actions=actions,
+        metadata={},
+    )
+
+    approvals = {
+        approval.approval_key: approval
+        for approval in approval_store.list_approvals(
+            space_id=space_id,
+            run_id=run.id,
+        )
+    }
+    assert approvals["decided-key"].status == "approved"
+    assert (
+        approvals["decided-key"].decision_reason
+        == "Checked against the source; safe to write."
+    )
+    assert approvals["decided-key"].decided_by == reviewer
+    assert approvals["pending-key"].status == "pending"
 
 
 def test_sqlalchemy_harness_approval_store_persists_intents_and_decisions(

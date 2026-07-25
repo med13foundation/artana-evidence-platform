@@ -92,9 +92,23 @@ class HarnessApprovalStore:
             created_at=now,
             updated_at=now,
         )
-        approval_records: dict[str, HarnessApprovalRecord] = {}
+        with self._lock:
+            existing = self._approvals.get(
+                (normalized_space_id, normalized_run_id),
+                {},
+            )
+            # Only pending approvals are replaced. A decided approval is a record
+            # of something a person did, with their written reason and their
+            # identity on it -- re-proposing the run's intent must not erase
+            # that, and decide_approval already treats a decision as final by
+            # refusing to decide twice.
+            approval_records: dict[str, HarnessApprovalRecord] = {
+                key: record
+                for key, record in existing.items()
+                if record.status != "pending"
+            }
         for action in normalized_actions:
-            if not action.requires_approval:
+            if not action.requires_approval or action.approval_key in approval_records:
                 continue
             approval_records[action.approval_key] = HarnessApprovalRecord(
                 space_id=normalized_space_id,

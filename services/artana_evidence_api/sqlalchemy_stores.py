@@ -556,13 +556,29 @@ class SqlAlchemyHarnessApprovalStore(HarnessApprovalStore, _SessionBackedStore):
             ]
             model.metadata_payload = metadata
 
+        # Only pending approvals are replaced. A decided approval is a record of
+        # something a person did, with their written reason and their identity on
+        # it -- re-proposing the run's intent must not erase that, and
+        # decide_approval already treats a decision as final by refusing to
+        # decide twice.
+        decided_keys = set(
+            self.session.execute(
+                select(HarnessApprovalModel.approval_key).where(
+                    HarnessApprovalModel.run_id == normalized_run_id,
+                    HarnessApprovalModel.status != "pending",
+                ),
+            )
+            .scalars()
+            .all(),
+        )
         self.session.execute(
             delete(HarnessApprovalModel).where(
                 HarnessApprovalModel.run_id == normalized_run_id,
+                HarnessApprovalModel.status == "pending",
             ),
         )
         for action in normalized_actions:
-            if not action.requires_approval:
+            if not action.requires_approval or action.approval_key in decided_keys:
                 continue
             self.session.add(
                 HarnessApprovalModel(
