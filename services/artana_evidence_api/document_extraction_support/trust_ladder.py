@@ -9,6 +9,9 @@ from typing import Literal
 from artana_evidence_api.document_extraction_relation_taxonomy import (
     canonicalize_extraction_relation_type,
 )
+from artana_evidence_api.document_extraction_support.claim_verification_expectation import (
+    claim_verification_is_required,
+)
 from artana_evidence_api.document_extraction_support.entity_grounding.identifier_authority import (
     has_authority_compatible_identifier_syntax,
 )
@@ -107,13 +110,7 @@ def assess_candidate_trust(
 def _claim_verification_floor_failures(
     metadata: Mapping[str, object],
 ) -> tuple[CandidateTrustFloorFailure, ...]:
-    marker_fields = (
-        "claim_verification",
-        "claim_verification_terminal",
-        "claim_verification_lineage_status",
-        "claim_verification_qualification_complete",
-    )
-    if not any(field in metadata for field in marker_fields):
+    if not claim_verification_is_required(metadata):
         return ()
     failures: list[CandidateTrustFloorFailure] = []
     verification = _object(metadata.get("claim_verification"))

@@ -16,6 +16,9 @@ from artana_evidence_api.document_extraction_support.claim_frames.normalization 
     ClaimFrameNormalizationError,
     bind_claim_frame,
 )
+from artana_evidence_api.document_extraction_support.claim_verification_expectation import (
+    claim_verification_is_required,
+)
 from pydantic import ValidationError
 
 
@@ -144,13 +147,7 @@ def require_claim_frame_promotion_preflight(
 def _require_completed_scientific_qualification(
     metadata: Mapping[str, object],
 ) -> None:
-    marker_fields = (
-        "claim_verification",
-        "claim_verification_terminal",
-        "claim_verification_lineage_status",
-        "claim_verification_qualification_complete",
-    )
-    if not any(field in metadata for field in marker_fields):
+    if not claim_verification_is_required(metadata):
         return
     verification = _mapping(metadata.get("claim_verification"))
     if not verification:
