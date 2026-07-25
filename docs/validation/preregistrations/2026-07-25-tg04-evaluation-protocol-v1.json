@@ -5,7 +5,6 @@
   "status": "PREREGISTERED_BEFORE_ANY_MODEL_RUN",
   "purpose": "Freeze the primary matcher, the metric definitions, the fixture, and the thresholds for the TG-04 source-semantic lane, so a later score means something fixed in advance.",
   "closes": "Gate 1 -- valid ruler.",
-
   "fixture": {
     "path": "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v2.json",
     "sha256": "9a1b8e671cbc1b8a4abe790d110a0ff0edc6af65e7c88a459d3224db46c17c26",
@@ -22,7 +21,6 @@
       "purpose": "Distinguishes a filtered-out corpus event from an invented one. Without it a corpus-faithful extractor and a hallucinator both score 0.1920."
     }
   },
-
   "primary_matcher": {
     "name": "BOUNDED_TRIGGER_TOLERANCE_WITH_EXACT_ARGUMENTS_V1",
     "trigger": "The gold trigger span must appear in the predicted span, and its offset within that prediction must land exactly on the gold start offset.",
@@ -47,7 +45,6 @@
     ],
     "retained_as_diagnostic": "Strict string-equality trigger matching remains reportable and is never a gate."
   },
-
   "precision_definition": {
     "name": "scope_aware_precision",
     "denominator": "gold matches + unattested predictions",
@@ -55,12 +52,11 @@
     "rationale": "The panel keeps 53 of 472 corpus events, so a prediction absent from gold is ambiguous between correct-but-filtered and invented. Measured, a corpus-faithful extractor and a pure hallucinator both scored 0.1920 under the previous definition -- the gate could not tell them apart, and no choice of denominator over gold alone can.",
     "supersedes": "whole_event_precision = matches / all predictions"
   },
-
   "thresholds": {
     "status": "CARRIED_FORWARD_PROVISIONAL",
     "values": {
-      "whole_event_precision": 0.90,
-      "whole_event_recall": 0.80,
+      "whole_event_precision": 0.9,
+      "whole_event_recall": 0.8,
       "trigger_precision": 0.95,
       "trigger_recall": 0.95,
       "event_type_fidelity": 0.95,
@@ -74,7 +70,6 @@
     "not_yet_authoritative": "A pass under these values is evidence the ruler works, not that the extractor qualifies. Qualification requires the Phase 4 replicate study.",
     "revision_rule": "Changing any value creates a new protocol version. Values are bound to code by test and cannot drift silently."
   },
-
   "calibration_required_before_any_model_score_is_read": [
     {
       "check": "gold-as-predictions",
@@ -93,20 +88,19 @@
       "observed": "whole-event recall 0.0000, polarity fidelity 0.0000, over 12 REFUTE records in v2 versus 5 in v1."
     }
   ],
-
   "lane_separation": {
     "source_semantic": "Governed by this protocol. The only lane that gates.",
     "bionlp_cg_projection": "Measured and reported separately. Never used to reverse a source-semantic result.",
     "note": "The 40 selected documents are a development panel. Results on them are never evidence of generalization; a sealed held-out set remains untouched."
   },
-
   "known_limits": {
     "panel_retention": "53 of 472 corpus events (11.2%). 237 events are dropped by an undocumented _MIN_EVENT_ARGUMENTS = 2 policy constant and 174 by a genuine schema limit on event-valued arguments; see the exclusion ledger.",
     "scored_documents": "Only the 17 EVENT_GOLD documents are scored. Predictions on the 18 representability-stress documents are discarded before scoring.",
     "development_only": "This protocol governs the development panel. It does not preregister a qualification run.",
-    "noise_floor": "Unmeasured. Run-to-run variance on the extraction model has not been established, so a single passing run is not a repeatable result."
+    "noise_floor": "Unmeasured. Run-to-run variance on the extraction model has not been established, so a single passing run is not a repeatable result.",
+    "model_snapshot": "Unavailable. No dated snapshot is published for gpt-5.6-luna -- the provider serves the whole 5.6 family as floating aliases, while 45 other models it offers do carry -YYYY-MM-DD suffixes. artana.toml [models.formal] therefore names the model explicitly, so a defaults edit cannot silently move it, but the alias itself can still move under a run. D8 cannot be satisfied for this model.",
+    "returned_model_unobserved": "The provider-returned model id is never read. The call is made inside the third-party artana kernel, which echoes back the requested id rather than reading it off the response, and no repository-side adapter sees the raw response. So alias drift is undetectable here; see issue #206."
   },
-
   "governance": {
     "provider_calls_to_produce_this_protocol": 0,
     "graph_writes": 0,

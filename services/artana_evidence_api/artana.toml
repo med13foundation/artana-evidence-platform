@@ -16,6 +16,21 @@ default_curation = "openai:gpt-5.4-mini"
 default_judge = "openai:gpt-5.4-mini"
 allow_runtime_model_overrides = false
 
+# Formal runs -- evaluation, verification feeding a trust decision, and any
+# extraction eligible for graph promotion -- name their model here rather than
+# inheriting a default_* entry, so a change to the defaults cannot silently
+# move what a sealed result was produced with (D8, ART-MODEL-004).
+#
+# snapshot_pinned is false because no dated snapshot exists for this model. The
+# provider publishes gpt-5.6-luna, -sol and -terra as floating aliases only,
+# while 45 other models it serves do carry -YYYY-MM-DD suffixes. Until one
+# appears, an alias can move underneath a run and nothing here would detect it;
+# see #206, which is blocked on the kernel never observing the returned model.
+[models.formal]
+model = "openai:gpt-5.6-luna"
+snapshot_pinned = false
+snapshot_unavailable_reason = "no dated snapshot is published for gpt-5.6-luna"
+
 [models.registry."openai:gpt-4o-mini"]
 display_name = "GPT-4o Mini"
 provider = "openai"
