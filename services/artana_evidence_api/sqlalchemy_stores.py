@@ -70,9 +70,11 @@ from .graph_snapshot import (
     HarnessGraphSnapshotStore,
 )
 from .proposal_store import (
+    IDENTITY_PENDING_STATUS,
     HarnessProposalDraft,
     HarnessProposalRecord,
     HarnessProposalStore,
+    _is_same_document_rederivation,
 )
 from .research_state import (
     HarnessResearchStateRecord,
@@ -687,6 +689,49 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
     def __init__(self, session: Session | None = None) -> None:
         _SessionBackedStore.__init__(self, session)
 
+    def _build_proposal_model(
+        self,
+        *,
+        space_id: str,
+        run_id: str,
+        normalized_proposal: HarnessProposalDraft,
+        status: str,
+        decision_reason: str | None,
+    ) -> HarnessProposalModel:
+        """Build one proposal row so both write paths stay identical."""
+
+        return HarnessProposalModel(
+            space_id=space_id,
+            run_id=run_id,
+            proposal_type=normalized_proposal.proposal_type,
+            source_kind=normalized_proposal.source_kind,
+            source_key=normalized_proposal.source_key,
+            document_id=normalized_proposal.document_id,
+            title=normalized_proposal.title,
+            summary=normalized_proposal.summary,
+            status=status,
+            confidence=normalized_proposal.confidence,
+            ranking_score=normalized_proposal.ranking_score,
+            reasoning_path=normalized_proposal.reasoning_path,
+            evidence_bundle_payload=normalized_proposal.evidence_bundle,
+            payload=normalized_proposal.payload,
+            metadata_payload=normalized_proposal.metadata,
+            source_provenance_payload=(
+                normalized_proposal.source_provenance.model_dump(mode="json")
+                if normalized_proposal.source_provenance is not None
+                else None
+            ),
+            source_provenance_status=(
+                normalized_proposal.source_provenance.status
+                if normalized_proposal.source_provenance is not None
+                else "unverified"
+            ),
+            evidence_grade=normalized_proposal.evidence_grade,
+            claim_fingerprint=normalized_proposal.claim_fingerprint,
+            decision_reason=decision_reason,
+            decided_at=None,
+        )
+
     def create_proposals(
         self,
         *,
@@ -699,11 +744,28 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         created_models: list[HarnessProposalModel] = []
         for proposal in proposals:
             normalized_proposal = self.normalize_proposal_draft(proposal)
-            # Fingerprint-based dedup: skip if an existing pending/promoted
-            # proposal has the same fingerprint in this space.
+            # ART-DATA-001: a fingerprint collision is retained, never dropped.
+            #
+            # Migration 024 makes (space_id, claim_fingerprint) unique while
+            # status is active, so the incoming proposal cannot also be
+            # `pending_review`.  It is persisted as IDENTITY_PENDING instead:
+            # outside that partial index, so it coexists; outside the review
+            # queue, so it is never acted on; and fully queryable, so the second
+            # independent observation survives with its own provenance.
+            #
+            # Retain first, merge later.  Deciding whether two proposals are the
+            # same assertion needs the identity model that does not exist yet,
+            # and a wrong merge is unrecoverable while a retained duplicate is
+            # not.
+            status = "pending_review"
+            decision_reason: str | None = None
             if normalized_proposal.claim_fingerprint:
                 dup_stmt = (
-                    select(HarnessProposalModel.id, HarnessProposalModel.status)
+                    select(
+                        HarnessProposalModel.id,
+                        HarnessProposalModel.status,
+                        HarnessProposalModel.document_id,
+                    )
                     .where(
                         HarnessProposalModel.space_id == normalized_space_id,
                         HarnessProposalModel.claim_fingerprint
@@ -714,38 +776,29 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
                 )
                 existing = self.session.execute(dup_stmt).first()
                 if existing is not None:
-                    continue  # skip duplicate
+                    if _is_same_document_rederivation(
+                        existing_document_id=existing[2],
+                        incoming_document_id=normalized_proposal.document_id,
+                    ):
+                        # Re-extracting one document is the same observation
+                        # arriving twice, not a second source.  Retaining it
+                        # would accumulate a row on every re-extraction.
+                        continue
+                    status = IDENTITY_PENDING_STATUS
+                    decision_reason = (
+                        "Retained by ART-DATA-001: claim fingerprint "
+                        f"{normalized_proposal.claim_fingerprint} already has an "
+                        f"active proposal {existing[0]} with status "
+                        f"'{existing[1]}' from a different document in this "
+                        "space. Awaiting identity adjudication; not auto-merged."
+                    )
 
-            model = HarnessProposalModel(
+            model = self._build_proposal_model(
                 space_id=normalized_space_id,
                 run_id=normalized_run_id,
-                proposal_type=normalized_proposal.proposal_type,
-                source_kind=normalized_proposal.source_kind,
-                source_key=normalized_proposal.source_key,
-                document_id=normalized_proposal.document_id,
-                title=normalized_proposal.title,
-                summary=normalized_proposal.summary,
-                status="pending_review",
-                confidence=normalized_proposal.confidence,
-                ranking_score=normalized_proposal.ranking_score,
-                reasoning_path=normalized_proposal.reasoning_path,
-                evidence_bundle_payload=normalized_proposal.evidence_bundle,
-                payload=normalized_proposal.payload,
-                metadata_payload=normalized_proposal.metadata,
-                source_provenance_payload=(
-                    normalized_proposal.source_provenance.model_dump(mode="json")
-                    if normalized_proposal.source_provenance is not None
-                    else None
-                ),
-                source_provenance_status=(
-                    normalized_proposal.source_provenance.status
-                    if normalized_proposal.source_provenance is not None
-                    else "unverified"
-                ),
-                evidence_grade=normalized_proposal.evidence_grade,
-                claim_fingerprint=normalized_proposal.claim_fingerprint,
-                decision_reason=None,
-                decided_at=None,
+                normalized_proposal=normalized_proposal,
+                status=status,
+                decision_reason=decision_reason,
             )
             self.session.add(model)
             created_models.append(model)
@@ -755,11 +808,58 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
             self.session.rollback()
             if not _is_active_proposal_fingerprint_conflict(exc):
                 raise
-            return []
+            # ART-DATA-001: a race lost this batch to a concurrent writer that
+            # inserted the same fingerprint between the pre-check above and this
+            # flush.  Returning an empty list here dropped the batch as silently
+            # as the pre-check used to.  Retry once with every proposal retained
+            # as IDENTITY_PENDING, which cannot collide because the index only
+            # covers active statuses.
+            return self._retain_conflicting_proposals(
+                space_id=normalized_space_id,
+                run_id=normalized_run_id,
+                proposals=proposals,
+            )
         for model in created_models:
             self.session.refresh(model)
         return sorted(
             [_proposal_record_from_model(model) for model in created_models],
+            key=lambda record: (-record.ranking_score, record.created_at),
+        )
+
+    def _retain_conflicting_proposals(
+        self,
+        *,
+        space_id: str,
+        run_id: str,
+        proposals: tuple[HarnessProposalDraft, ...],
+    ) -> list[HarnessProposalRecord]:
+        """Persist a lost-race batch as IDENTITY_PENDING rather than dropping it."""
+
+        models: list[HarnessProposalModel] = []
+        for proposal in proposals:
+            normalized_proposal = self.normalize_proposal_draft(proposal)
+            models.append(
+                self._build_proposal_model(
+                    space_id=space_id,
+                    run_id=run_id,
+                    normalized_proposal=normalized_proposal,
+                    status=IDENTITY_PENDING_STATUS,
+                    decision_reason=(
+                        "Retained by ART-DATA-001: a concurrent writer claimed "
+                        "claim fingerprint "
+                        f"{normalized_proposal.claim_fingerprint} for this space "
+                        "before this batch committed. Awaiting identity "
+                        "adjudication; not auto-merged."
+                    ),
+                ),
+            )
+        for model in models:
+            self.session.add(model)
+        commit_or_flush(self.session)
+        for model in models:
+            self.session.refresh(model)
+        return sorted(
+            [_proposal_record_from_model(model) for model in models],
             key=lambda record: (-record.ranking_score, record.created_at),
         )
 

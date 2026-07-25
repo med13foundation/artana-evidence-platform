@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from artana_evidence_api.claim_fingerprint import compute_claim_fingerprint
 from artana_evidence_api.proposal_store import (
+    IDENTITY_PENDING_STATUS,
     HarnessProposalDraft,
     HarnessProposalStore,
 )
@@ -43,10 +46,84 @@ RUN_A = "bbbbbbbb-0000-0000-0000-000000000001"
 RUN_B = "bbbbbbbb-0000-0000-0000-000000000002"
 
 
+class TestSameDocumentRederivation:
+    """A fingerprint collision means different things across and within documents.
+
+    Two documents asserting the same claim are two independent sources, and
+    losing either destroys evidence.  One document extracted twice is a single
+    observation arriving again, and retaining it would grow the table on every
+    re-extraction.  `document_id` is what separates the two cases.
+    """
+
+    def test_same_document_reextraction_is_deduplicated(self) -> None:
+        store = HarnessProposalStore()
+        draft = replace(_make_draft(), document_id="doc-abc")
+
+        first = store.create_proposals(
+            space_id=SPACE_ID,
+            run_id=RUN_A,
+            proposals=(draft,),
+        )
+        again = store.create_proposals(
+            space_id=SPACE_ID,
+            run_id=RUN_B,
+            proposals=(draft,),
+        )
+
+        assert len(first) == 1
+        assert again == [], "re-extracting one document must not accumulate rows"
+        assert len(store.list_proposals(space_id=SPACE_ID)) == 1
+
+    def test_second_document_with_the_same_claim_is_retained(self) -> None:
+        store = HarnessProposalStore()
+        first_document = replace(_make_draft(), document_id="doc-abc")
+        second_document = replace(_make_draft(), document_id="doc-xyz")
+
+        store.create_proposals(
+            space_id=SPACE_ID,
+            run_id=RUN_A,
+            proposals=(first_document,),
+        )
+        corroborating = store.create_proposals(
+            space_id=SPACE_ID,
+            run_id=RUN_B,
+            proposals=(second_document,),
+        )
+
+        assert len(corroborating) == 1, "a second source must never be dropped"
+        assert corroborating[0].status == IDENTITY_PENDING_STATUS
+        assert corroborating[0].document_id == "doc-xyz"
+        assert len(store.list_proposals(space_id=SPACE_ID)) == 2
+
+    def test_unknown_provenance_is_retained_rather_than_assumed_duplicate(
+        self,
+    ) -> None:
+        """Absent document ids could be one source or two; keep the record."""
+
+        store = HarnessProposalStore()
+        draft = _make_draft()
+
+        store.create_proposals(space_id=SPACE_ID, run_id=RUN_A, proposals=(draft,))
+        unknown = store.create_proposals(
+            space_id=SPACE_ID,
+            run_id=RUN_B,
+            proposals=(draft,),
+        )
+
+        assert len(unknown) == 1
+        assert unknown[0].status == IDENTITY_PENDING_STATUS
+
+
 class TestCreationTimeDedup:
     """Proposals with matching fingerprint are skipped at creation time."""
 
-    def test_duplicate_proposal_skipped_if_already_exists(self) -> None:
+    def test_duplicate_proposal_retained_as_identity_pending(self) -> None:
+        """ART-DATA-001: a collision is retained, not dropped.
+
+        The duplicate is a second independent observation. Whether it is the
+        same assertion needs an identity model that does not exist yet, so it
+        is held outside the review queue rather than discarded.
+        """
         store = HarnessProposalStore()
         draft = _make_draft()
         # Create first
@@ -56,18 +133,26 @@ class TestCreationTimeDedup:
             proposals=(draft,),
         )
         assert len(created) == 1
-        # Attempt identical — should be skipped
+        assert created[0].status == "pending_review"
+
         duplicates = store.create_proposals(
             space_id=SPACE_ID,
             run_id=RUN_A,
             proposals=(draft,),
         )
-        assert len(duplicates) == 0
-        # Only one proposal in the store
-        all_proposals = store.list_proposals(space_id=SPACE_ID)
-        assert len(all_proposals) == 1
 
-    def test_duplicate_proposal_skipped_if_promoted(self) -> None:
+        assert len(duplicates) == 1, "the second observation must survive"
+        assert duplicates[0].status == IDENTITY_PENDING_STATUS
+        assert duplicates[0].decision_reason is not None
+        assert created[0].id in duplicates[0].decision_reason
+
+        # Both are queryable; only the first is actionable.
+        all_proposals = store.list_proposals(space_id=SPACE_ID)
+        assert len(all_proposals) == 2
+        actionable = [p for p in all_proposals if p.status == "pending_review"]
+        assert len(actionable) == 1
+
+    def test_duplicate_proposal_retained_when_original_promoted(self) -> None:
         store = HarnessProposalStore()
         draft = _make_draft()
         created = store.create_proposals(
@@ -87,7 +172,8 @@ class TestCreationTimeDedup:
             run_id=RUN_B,
             proposals=(draft,),
         )
-        assert len(duplicates) == 0
+        assert len(duplicates) == 1
+        assert duplicates[0].status == IDENTITY_PENDING_STATUS
 
     def test_duplicate_proposal_allowed_if_rejected(self) -> None:
         store = HarnessProposalStore()
@@ -127,7 +213,7 @@ class TestCreationTimeDedup:
         )
         assert len(created) == 1  # Different claim, not blocked
 
-    def test_cross_run_dedup(self) -> None:
+    def test_cross_run_collision_is_retained(self) -> None:
         store = HarnessProposalStore()
         draft = _make_draft()
         # Run A creates proposal
@@ -142,7 +228,8 @@ class TestCreationTimeDedup:
             run_id=RUN_B,
             proposals=(draft,),
         )
-        assert len(duplicates) == 0
+        assert len(duplicates) == 1
+        assert duplicates[0].status == IDENTITY_PENDING_STATUS
 
     def test_no_fingerprint_skips_dedup(self) -> None:
         """Proposals without fingerprint bypass dedup (backward compat)."""

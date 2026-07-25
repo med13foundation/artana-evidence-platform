@@ -18,9 +18,38 @@ from artana_evidence_api.types.source_provenance import ClaimSourceProvenance
 logger = logging.getLogger(__name__)
 
 _PENDING_REVIEW_STATUS = "pending_review"
+#: Status for a proposal retained after a claim-fingerprint collision.
+#:
+#: Deliberately outside the review queue and outside migration 024's active
+#: unique index.  A proposal in this state is a second independent observation
+#: whose identity has not been adjudicated -- not something a reviewer can act
+#: on, and not something to discard.  See ART-DATA-001.
+IDENTITY_PENDING_STATUS = "identity_pending"
 _DECISION_STATUSES = frozenset({"promoted", "rejected"})
 _MAX_PROPOSAL_TITLE_LENGTH = 256
 _TITLE_ELLIPSIS = "..."
+
+
+def _is_same_document_rederivation(
+    *,
+    existing_document_id: str | None,
+    incoming_document_id: str | None,
+) -> bool:
+    """Return whether a fingerprint collision is one document seen twice.
+
+    Re-extracting a document reproduces its own claims, so a collision within a
+    single document is the same observation arriving again -- deduplicating it
+    loses nothing.  A collision across two documents is a genuine second
+    source and must be retained (ART-DATA-001).
+
+    Unknown provenance is treated as a distinct source: when either side has no
+    document, the safe reading is that evidence might be lost, so the record is
+    kept.
+    """
+
+    if existing_document_id is None or incoming_document_id is None:
+        return False
+    return str(existing_document_id) == str(incoming_document_id)
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,10 +171,15 @@ class HarnessProposalStore:
     ) -> list[HarnessProposalRecord]:
         """Persist a batch of proposals for one run.
 
-        Proposals whose ``claim_fingerprint`` matches an existing promoted
-        or pending proposal in the same space are silently skipped.
-        Proposals matching a *rejected* proposal are allowed through
-        (the user explicitly rejected, new evidence may change the decision).
+        A proposal whose ``claim_fingerprint`` matches an active proposal in the
+        same space is retained as ``IDENTITY_PENDING`` rather than dropped: it
+        is a second independent observation, and whether it is genuinely the
+        same assertion needs an identity model that does not exist yet.  A
+        proposal matching a *rejected* one is admitted normally, since the
+        rejection was an explicit human decision that new evidence may revisit.
+
+        See ART-DATA-001.  This mirrors the durable store so the two
+        implementations cannot diverge on whether data survives.
         """
         normalized_space_id = str(space_id)
         normalized_run_id = str(run_id)
@@ -154,7 +188,8 @@ class HarnessProposalStore:
         with self._lock:
             for proposal in proposals:
                 normalized_proposal = self.normalize_proposal_draft(proposal)
-                # --- fingerprint dedup ---
+                status = _PENDING_REVIEW_STATUS
+                decision_reason: str | None = None
                 if normalized_proposal.claim_fingerprint:
                     existing = self._fingerprint_exists(
                         normalized_space_id,
@@ -164,14 +199,34 @@ class HarnessProposalStore:
                         _PENDING_REVIEW_STATUS,
                         "promoted",
                     ):
+                        if _is_same_document_rederivation(
+                            existing_document_id=existing.document_id,
+                            incoming_document_id=normalized_proposal.document_id,
+                        ):
+                            logger.info(
+                                "Skipping re-derived proposal from the same "
+                                "document (fingerprint=%s, existing=%s)",
+                                normalized_proposal.claim_fingerprint[:12],
+                                existing.id,
+                            )
+                            continue
+                        status = IDENTITY_PENDING_STATUS
+                        decision_reason = (
+                            "Retained by ART-DATA-001: claim fingerprint "
+                            f"{normalized_proposal.claim_fingerprint} already "
+                            f"has an active proposal {existing.id} with status "
+                            f"'{existing.status}' from a different document in "
+                            "this space. Awaiting identity adjudication; not "
+                            "auto-merged."
+                        )
                         logger.info(
-                            "Skipping duplicate proposal (fingerprint=%s, "
-                            "existing=%s status=%s)",
+                            "Retaining cross-document duplicate proposal as %s "
+                            "(fingerprint=%s, existing=%s status=%s)",
+                            IDENTITY_PENDING_STATUS,
                             normalized_proposal.claim_fingerprint[:12],
                             existing.id,
                             existing.status,
                         )
-                        continue
 
                 record = HarnessProposalRecord(
                     id=str(uuid4()),
@@ -183,7 +238,7 @@ class HarnessProposalStore:
                     document_id=normalized_proposal.document_id,
                     title=normalized_proposal.title,
                     summary=normalized_proposal.summary,
-                    status=_PENDING_REVIEW_STATUS,
+                    status=status,
                     confidence=normalized_proposal.confidence,
                     ranking_score=normalized_proposal.ranking_score,
                     reasoning_path=normalized_proposal.reasoning_path,
@@ -193,7 +248,7 @@ class HarnessProposalStore:
                     claim_fingerprint=normalized_proposal.claim_fingerprint,
                     evidence_grade=normalized_proposal.evidence_grade,
                     source_provenance=normalized_proposal.source_provenance,
-                    decision_reason=None,
+                    decision_reason=decision_reason,
                     decided_at=None,
                     created_at=now,
                     updated_at=now,
@@ -295,7 +350,9 @@ class HarnessProposalStore:
             return 0
         deleted_count = 0
         with self._lock:
-            proposal_ids = list(self._proposal_ids_by_space.get(normalized_space_id, []))
+            proposal_ids = list(
+                self._proposal_ids_by_space.get(normalized_space_id, [])
+            )
             retained_ids: list[str] = []
             for proposal_id in proposal_ids:
                 proposal = self._proposals.get(proposal_id)
