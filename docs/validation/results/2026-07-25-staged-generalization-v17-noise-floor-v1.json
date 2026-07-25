@@ -1,0 +1,692 @@
+{
+  "any_case_unstable": true,
+  "generated_at": "2026-07-25T03:40:04.530592+00:00",
+  "model": "gpt-5.6-luna",
+  "observations": [
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.015906,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 0,
+      "response_id": "resp_013a1afc339fe318006a6424199e60819b83a97afb6f3e3bd1",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.021172999999999997,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 0,
+      "response_id": "resp_09d7dc8020d5565c006a642425f88c81989c60e46b3ac7611f",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.017428,
+      "failure": "SOURCE_SEMANTICS",
+      "failure_reasons": [
+        "V16 requires one occurrence-bound locus restrictor",
+        "V16 cohort-to-locus scope link is missing or invalid"
+      ],
+      "passed": false,
+      "replicate": 0,
+      "response_id": "resp_0fc01aaeb5649d27006a6424386ab0819bbb7e65569bd84920",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0082545,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 1,
+      "response_id": "resp_04f9f9b5894bdaeb006a6424472edc819989aff1949f4673c6",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0149192,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 1,
+      "response_id": "resp_066b6da54050d856006a64244f8950819a8e1cdd87529a8621",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.0199783,
+      "failure": "SOURCE_SEMANTICS",
+      "failure_reasons": [
+        "V16 requires one occurrence-bound locus restrictor",
+        "V16 cohort-to-locus scope link is missing or invalid"
+      ],
+      "passed": false,
+      "replicate": 1,
+      "response_id": "resp_0b77c306c4bee5ae006a64245f4cb88199babbe2b4024ba4f1",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0112905,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 2,
+      "response_id": "resp_0af5b1039a6e8db5006a6424783198819ba4c146b13dee5663",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0149432,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 2,
+      "response_id": "resp_026f53dfcd56e4d6006a642484dd3081998fff08320a4fb18e",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "detail": "V13ProviderExecutionError: FOREGROUND_CREATION: APITimeoutError",
+      "replicate": 2,
+      "verdict": "ERROR"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.01506,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 3,
+      "response_id": "resp_0edd11ab452fb01b006a642b9d10c8819baba6555db26de5e9",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.016288999999999998,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 3,
+      "response_id": "resp_05f611df47d5943f006a642ba93bc48199a355a2d1cf2babce",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.024292,
+      "failure": "SOURCE_SEMANTICS",
+      "failure_reasons": [
+        "V16 requires one occurrence-bound locus restrictor",
+        "V16 cohort-to-locus scope link is missing or invalid"
+      ],
+      "passed": false,
+      "replicate": 3,
+      "response_id": "resp_07ff96ccf7382d38006a642bb70bd0819b90d70f9ff734f1be",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.007036499999999999,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 4,
+      "response_id": "resp_02ca250853d33c7b006a642bcf8fe88198b55819ec8fcffc8c",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0148772,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 4,
+      "response_id": "resp_0a59e4494644b05e006a642bd7bfbc819b8152ee563c959b51",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.0204643,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 4,
+      "response_id": "resp_0cbd188ed6105b83006a642be89b548199827830935c224827",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0113805,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 5,
+      "response_id": "resp_060b6c41bdbb25a0006a642c01c69c8199bc1829ac54175768",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.014781200000000001,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 5,
+      "response_id": "resp_022881cacac73017006a642c0fc7f8819998409fad654d7649",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.0230803,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 5,
+      "response_id": "resp_05c386ce39a8241c006a642c2369e4819bb23093357b010fef",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.007036499999999999,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 6,
+      "response_id": "resp_0a6952e3003cedc0006a642c5ef80881988d4f21889c0e1053",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0209672,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 6,
+      "response_id": "resp_0bd307a1633bcf77006a642c6823d88199a5291f1a4d21da2b",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.0233023,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 6,
+      "response_id": "resp_0f7a189210eeefb2006a642c8541b4819981840af2d6d5a77f",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0082965,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 7,
+      "response_id": "resp_003cc66a7954d507006a642ca57fb08199b177bd3a39656af8",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0139472,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 7,
+      "response_id": "resp_0d335048349534b2006a642cafa054819989cdf0b7e013abb3",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.021802300000000004,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 7,
+      "response_id": "resp_0273a35c7f2d559a006a642cc3ae7c819b96fb3f0233dbcf0c",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0113565,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 8,
+      "response_id": "resp_04e889b2a483b7b2006a642ce2f5d8819a9b51d78092021732",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.017931199999999998,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 8,
+      "response_id": "resp_07e6a7494e1b079f006a642cf152688199851ed6d8890db1ca",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.023626300000000003,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 8,
+      "response_id": "resp_014a700ffb668b9a006a642d07d8d0819a82c424eabc23078d",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0094485,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 9,
+      "response_id": "resp_0a71c9984e378247006a642d2964bc819aadc8ec6b852ee5fd",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0211592,
+      "failure": "UNRELATED_REGRESSION",
+      "failure_reasons": [
+        "highlighted sensitivity event is not the source root"
+      ],
+      "passed": false,
+      "replicate": 9,
+      "response_id": "resp_057cf09875d17b41006a642d35db888199bc52df208e95ffdf",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.018484300000000002,
+      "failure": "SOURCE_SEMANTICS",
+      "failure_reasons": [
+        "V16 requires one occurrence-bound locus restrictor",
+        "V16 cohort-to-locus scope link is missing or invalid"
+      ],
+      "passed": false,
+      "replicate": 9,
+      "response_id": "resp_050346c3fef2e7b9006a642d51c3108198afff608e16ad9017",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0115365,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 10,
+      "response_id": "resp_0998a4597a0a7a36006a642d6cfdf48198acdc83dee1624ea3",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0146972,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 10,
+      "response_id": "resp_00487c3a34770c23006a642d7c36a0819a8ac0c94f4a6d63a0",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.029374300000000002,
+      "failure": "SOURCE_SEMANTICS",
+      "failure_reasons": [
+        "V16 requires one occurrence-bound locus restrictor",
+        "V16 cohort-to-locus scope link is missing or invalid"
+      ],
+      "passed": false,
+      "replicate": 10,
+      "response_id": "resp_0c96968e1c5c1c67006a642d919748819bbe32b820b4c44c06",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0084705,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 11,
+      "response_id": "resp_0f99b2dd9c86838d006a642dbc26608198bd475278682abccc",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.014781200000000001,
+      "failure": "UNRELATED_REGRESSION",
+      "failure_reasons": [
+        "highlighted sensitivity event is not the source root"
+      ],
+      "passed": false,
+      "replicate": 11,
+      "response_id": "resp_044567eb2a445353006a642dc8a308819b90d5c51b9fdc369a",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.024418300000000004,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 11,
+      "response_id": "resp_0983ed05d10da9a6006a642ddc0b14819994276871b93657cc",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0097665,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 12,
+      "response_id": "resp_0bb1ac6c716e09c5006a642dfeed488199a2313e322dbebb67",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0180392,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 12,
+      "response_id": "resp_00a0058648a31db3006a642e0c40dc819a9550c1b6e9599224",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.028180300000000002,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 12,
+      "response_id": "resp_0bdbde9295506b74006a642e23082c81998930b08d63ed68dd",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0116025,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 13,
+      "response_id": "resp_033da40095b0cb0d006a642e46ef2081988ede9f6d3e0e3cb8",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.009969200000000001,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 13,
+      "response_id": "resp_0438949cd337c65d006a642e54fc588199bbe62ff4c5c6af74",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.0203743,
+      "failure": "UNRELATED_REGRESSION",
+      "failure_reasons": [
+        "direction fidelity failed"
+      ],
+      "passed": false,
+      "replicate": 13,
+      "response_id": "resp_0d96aeb232cb98ed006a642e6123548198aa3324ec5ba93aeb",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0124665,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 14,
+      "response_id": "resp_09bc247041bbae7b006a642e7d8390819bb33965889431fe0b",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0228812,
+      "failure": "UNRELATED_REGRESSION",
+      "failure_reasons": [
+        "highlighted sensitivity event is not the source root"
+      ],
+      "passed": false,
+      "replicate": 14,
+      "response_id": "resp_0320dad10ec90ab4006a642e8d65108199aaf945e838db2280",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.023956300000000003,
+      "failure": "SOURCE_SEMANTICS",
+      "failure_reasons": [
+        "direction fidelity failed",
+        "V16 requires one occurrence-bound locus restrictor",
+        "V16 cohort-to-locus scope link is missing or invalid"
+      ],
+      "passed": false,
+      "replicate": 14,
+      "response_id": "resp_0d273639a7661105006a642eaa3d4c819ba4833139ec9fb106",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0070725,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 15,
+      "response_id": "resp_002e1480cf0ebaa8006a642ec9a62c819b839ec3c38c8df7a1",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0231572,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 15,
+      "response_id": "resp_0867cfeb0e0cb68e006a642ed6a214819899a98a5c26d735b6",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.0387223,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 15,
+      "response_id": "resp_0669314e57ae9216006a642ef33ca081989f05abaf8c06c769",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0071265,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 16,
+      "response_id": "resp_09c9baa72e304d51006a642f235888819b91ef38328f2b951e",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0149192,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 16,
+      "response_id": "resp_073ff43aadd3a3af006a642f2b82a4819992d3eee0fa25c484",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.0316423,
+      "failure": "SOURCE_SEMANTICS",
+      "failure_reasons": [
+        "V16 requires one occurrence-bound locus restrictor",
+        "V16 cohort-to-locus scope link is missing or invalid"
+      ],
+      "passed": false,
+      "replicate": 16,
+      "response_id": "resp_0b4d92d26ad05888006a642f3ce718819a88cfa7de828297bb",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0101865,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 17,
+      "response_id": "resp_05e290c9bb25ec8c006a642f62ae14819a83d2caa1cc0acc64",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0200972,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 17,
+      "response_id": "resp_04ee35bd0a39bd2e006a642f6f44188199b5bf2bba81e0da8d",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.023800300000000003,
+      "failure": "SOURCE_SEMANTICS",
+      "failure_reasons": [
+        "V16 requires one occurrence-bound locus restrictor",
+        "V16 cohort-to-locus scope link is missing or invalid"
+      ],
+      "passed": false,
+      "replicate": 17,
+      "response_id": "resp_0bb86d0bd7d945a5006a642f89a79c819a8ba0de5d416cb720",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0082785,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 18,
+      "response_id": "resp_05147b2e4f326e32006a642fa9388c8199b874fc47aa31c727",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.0161972,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 18,
+      "response_id": "resp_0f22dbc7d9b5fc3e006a642fb307ac819a924ca7488f96bb67",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.024850300000000002,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 18,
+      "response_id": "resp_0b02f94a3d7e4d46006a642fc5be988198bcafdb0121fe2471",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-comparison-canary",
+      "cost_usd": 0.0099105,
+      "failure": "UNRELATED_REGRESSION",
+      "failure_reasons": [
+        "evidence grounding failed: child text is absent or ambiguous in evidence",
+        "unsupported or duplicate event: COMPARISON/more",
+        "missing events: ['comparison']",
+        "required core event arguments are missing",
+        "typed event arguments exceed core-plus-context policy",
+        "root event differs from required core",
+        "semantic axes absent for comparison",
+        "direction fidelity failed",
+        "comparison fidelity failed",
+        "polarity fidelity failed",
+        "uncertainty fidelity failed",
+        "statistics fidelity failed"
+      ],
+      "passed": false,
+      "replicate": 19,
+      "response_id": "resp_0255e128e856fd8f006a642fe2eb1c819a995182411080d98f",
+      "verdict": "FAIL"
+    },
+    {
+      "case_id": "generalization-drug-sensitivity",
+      "cost_usd": 0.014883200000000001,
+      "failure": null,
+      "failure_reasons": [],
+      "passed": true,
+      "replicate": 19,
+      "response_id": "resp_0da377a34c04a140006a642fef29b8819bb941659291429142",
+      "verdict": "PASS"
+    },
+    {
+      "case_id": "generalization-uncertainty",
+      "cost_usd": 0.014920300000000001,
+      "failure": "SOURCE_SEMANTICS",
+      "failure_reasons": [
+        "V16 requires one occurrence-bound locus restrictor",
+        "V16 cohort-to-locus scope link is missing or invalid"
+      ],
+      "passed": false,
+      "replicate": 19,
+      "response_id": "resp_04d20163c47293a9006a64300222008199a0819270d4b1252e",
+      "verdict": "FAIL"
+    }
+  ],
+  "prompt_verified_against_sealed_digests": true,
+  "reasoning_effort": "high",
+  "replicates_requested": 20,
+  "schema_version": "artana.staged_generalization.v17_noise_floor.v1",
+  "sealed_verdicts": {
+    "generalization-comparison-canary": "PASS",
+    "generalization-drug-sensitivity": "PASS",
+    "generalization-uncertainty": "FAIL"
+  },
+  "summary": {
+    "generalization-comparison-canary": {
+      "counts": {
+        "FAIL": 1,
+        "PASS": 19
+      },
+      "reproduced": "19/20",
+      "sealed": "PASS",
+      "stable": false
+    },
+    "generalization-drug-sensitivity": {
+      "counts": {
+        "FAIL": 3,
+        "PASS": 17
+      },
+      "reproduced": "17/20",
+      "sealed": "PASS",
+      "stable": false
+    },
+    "generalization-uncertainty": {
+      "counts": {
+        "ERROR": 1,
+        "FAIL": 10,
+        "PASS": 9
+      },
+      "reproduced": "10/20",
+      "sealed": "FAIL",
+      "stable": false
+    }
+  },
+  "total_cost_usd": 0.99479
+}
