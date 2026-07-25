@@ -22,7 +22,10 @@ from artana_evidence_api.models.research_space import (
     ResearchSpaceMembershipModel,
     ResearchSpaceModel,
 )
-from artana_evidence_api.proposal_store import HarnessProposalDraft
+from artana_evidence_api.proposal_store import (
+    IDENTITY_PENDING_STATUS,
+    HarnessProposalDraft,
+)
 from artana_evidence_api.research_space_store import HarnessResearchSpaceRecord
 from artana_evidence_api.review_item_store import HarnessReviewItemDraft
 from artana_evidence_api.sqlalchemy_stores import (
@@ -146,7 +149,15 @@ def test_harness_proposal_model_has_unique_active_fingerprint_index() -> None:
     assert "promoted" in str(index.dialect_options["postgresql"]["where"])
 
 
-def test_sqlalchemy_harness_proposal_store_skips_unique_conflict_race() -> None:
+def test_sqlalchemy_harness_proposal_store_retains_unique_conflict_race() -> None:
+    """ART-DATA-001: losing the fingerprint race must not discard the batch.
+
+    A concurrent writer can claim the fingerprint between the pre-check and the
+    flush.  The batch is retried with every proposal retained as
+    IDENTITY_PENDING, which cannot collide because the unique index only covers
+    active statuses.
+    """
+
     class _NoDuplicateResult:
         def first(self) -> None:
             return None
@@ -154,10 +165,12 @@ def test_sqlalchemy_harness_proposal_store_skips_unique_conflict_race() -> None:
     class _UniqueConflictSession:
         added: list[HarnessProposalModel]
         rolled_back: bool
+        commits: int
 
         def __init__(self) -> None:
             self.added = []
             self.rolled_back = False
+            self.commits = 0
 
         def execute(self, _stmt) -> _NoDuplicateResult:
             return _NoDuplicateResult()
@@ -166,17 +179,23 @@ def test_sqlalchemy_harness_proposal_store_skips_unique_conflict_race() -> None:
             self.added.append(model)
 
         def commit(self) -> None:
-            raise IntegrityError(
-                statement="INSERT INTO harness_proposals",
-                params={},
-                orig=Exception("duplicate active fingerprint"),
-            )
+            self.commits += 1
+            if self.commits == 1:
+                raise IntegrityError(
+                    statement="INSERT INTO harness_proposals",
+                    params={},
+                    orig=Exception("duplicate active fingerprint"),
+                )
 
         def rollback(self) -> None:
             self.rolled_back = True
 
-        def refresh(self, _model: HarnessProposalModel) -> None:
-            raise AssertionError("duplicate conflict should not refresh models")
+        def refresh(self, model: HarnessProposalModel) -> None:
+            model.id = model.id or uuid4()
+            model.created_at = model.created_at or datetime.now(UTC).replace(
+                tzinfo=None
+            )
+            model.updated_at = model.updated_at or model.created_at
 
     session = _UniqueConflictSession()
     store = SqlAlchemyHarnessProposalStore(cast("Session", session))
@@ -201,7 +220,9 @@ def test_sqlalchemy_harness_proposal_store_skips_unique_conflict_race() -> None:
         ),
     )
 
-    assert created == []
+    assert len(created) == 1, "the lost-race batch must survive"
+    assert created[0].status == IDENTITY_PENDING_STATUS
+    assert created[0].decision_reason is not None
     assert session.added
     assert session.rolled_back is True
 
