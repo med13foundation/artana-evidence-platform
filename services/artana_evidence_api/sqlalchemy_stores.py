@@ -52,7 +52,11 @@ from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from artana_evidence_api.types.common import json_object_or_empty
 from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
 from artana_evidence_api.types.review_actor import ReviewActor
-from artana_evidence_api.types.source_provenance import ClaimSourceProvenance
+from artana_evidence_api.types.source_provenance import (
+    ClaimSourceProvenance,
+    SourceProvenanceStatus,
+    unrecorded_source_provenance,
+)
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 
@@ -343,15 +347,30 @@ def _proposal_record_from_model(model: HarnessProposalModel) -> HarnessProposalR
         created_at=model.created_at,
         updated_at=model.updated_at,
         claim_fingerprint=getattr(model, "claim_fingerprint", None),
-        source_provenance=_source_provenance_from_payload(
-            getattr(model, "source_provenance_payload", None),
-        ),
+        source_provenance=_source_provenance_from_model(model),
     )
 
 
-def _source_provenance_from_payload(payload: object) -> ClaimSourceProvenance | None:
+def _source_provenance_from_model(
+    model: HarnessProposalModel,
+) -> ClaimSourceProvenance:
+    """Read one proposal's provenance, honouring the persisted status column.
+
+    Migration 025 records source_provenance_status on every row even when no
+    envelope was written, but the read path only looked at the payload and
+    returned None -- so "we never checked" and "we checked and rejected it"
+    reached the reviewer as the same empty field. The status column is the
+    system's own statement about the claim in front of them; discarding it left
+    a reviewer no way to tell an unverified claim from an unexamined one.
+    """
+    payload = getattr(model, "source_provenance_payload", None)
+    persisted_status = getattr(model, "source_provenance_status", None)
     if not isinstance(payload, dict):
-        return None
+        return unrecorded_source_provenance(
+            cast("SourceProvenanceStatus", persisted_status)
+            if persisted_status in {"unverified", "invalid"}
+            else "unverified",
+        )
     try:
         return ClaimSourceProvenance.model_validate(payload)
     except ValueError:

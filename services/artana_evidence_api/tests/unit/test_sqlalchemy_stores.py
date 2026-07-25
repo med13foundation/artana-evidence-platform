@@ -44,6 +44,7 @@ from artana_evidence_api.study_outcomes import SqlAlchemyStudyOutcomeStore
 from artana_evidence_api.study_outcomes.contracts import StudyOutcomeDraft
 from artana_evidence_api.types.review_actor import ReviewActor
 from artana_evidence_api.types.source_provenance import (
+    UNRECORDED_PROVENANCE_REASON,
     ClaimSourceProvenance,
     ExactEvidenceLocator,
     SourceIdentity,
@@ -226,6 +227,61 @@ def test_sqlalchemy_harness_proposal_store_retains_unique_conflict_race() -> Non
     assert created[0].decision_reason is not None
     assert session.added
     assert session.rolled_back is True
+
+
+def test_a_proposal_without_provenance_reads_back_as_explicitly_unverified(
+    session: Session,
+) -> None:
+    """Absent provenance must not reach a reviewer as an empty field.
+
+    Migration 025 records source_provenance_status on every row even when no
+    envelope is written. The read path ignored it and returned None, so "never
+    computed" and "computed and rejected" looked identical next to a claim
+    someone is being asked to accept.
+    """
+    proposal_store = SqlAlchemyHarnessProposalStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="document-extraction",
+        title="Provenance-free run",
+        input_payload={},
+    )
+
+    created = proposal_store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="entity_candidate",
+                source_kind="document_extraction",
+                source_key="doc:entity:1",
+                title="Candidate entity",
+                summary="No provenance was computed for this type",
+                confidence=0.7,
+                ranking_score=0.7,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={},
+                metadata={},
+            ),
+        ),
+    )
+
+    provenance = created[0].source_provenance
+    assert provenance is not None, "absent provenance must not serialize as null"
+    assert provenance.status == "unverified"
+    assert provenance.reason_code == UNRECORDED_PROVENANCE_REASON
+    assert provenance.source_identity is None
+    assert provenance.evidence_locator is None
+
+    reloaded = proposal_store.get_proposal(
+        space_id=space_id,
+        proposal_id=created[0].id,
+    )
+    assert reloaded is not None
+    assert reloaded.source_provenance == provenance
 
 
 def test_sqlalchemy_upsert_intent_preserves_decided_approvals(
