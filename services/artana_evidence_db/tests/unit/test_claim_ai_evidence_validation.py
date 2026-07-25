@@ -87,7 +87,9 @@ def test_non_ai_claim_does_not_require_structured_grounding() -> None:
     assert issue is None
 
 
-def test_ai_claim_requires_structured_grounding_when_relation_requires_evidence() -> None:
+def test_ai_claim_requires_structured_grounding_when_relation_requires_evidence() -> (
+    None
+):
     issue = validate_ai_claim_evidence(
         _claim_request(
             agent_run_id="ai-run-1",
@@ -115,7 +117,16 @@ def test_ai_claim_requires_structured_grounding_when_relation_requires_evidence(
     assert issue.next_actions[0].action == "attach_grounded_evidence"
 
 
-def test_ai_claim_with_provenance_and_grounding_passes() -> None:
+def test_ai_claim_with_perfect_caller_metadata_is_still_blocked() -> None:
+    """ART-VAL-006: asserting support must not be the same as proving it.
+
+    This request is as good as a caller can make itself look -- real provenance,
+    valid grounding, and a `support_verification` block claiming ENTAILS from an
+    agent.  It used to pass.  It cannot, because every field it offers is
+    caller-controlled, so passing it makes a forged claim indistinguishable from
+    a verified one.
+    """
+
     issue = validate_ai_claim_evidence(
         _claim_request(
             agent_run_id="ai-run-1",
@@ -130,7 +141,44 @@ def test_ai_claim_with_provenance_and_grounding_passes() -> None:
         requires_evidence=True,
     )
 
-    assert issue is None
+    assert issue is not None
+    assert issue.code == "insufficient_evidence"
+    assert issue.message == (
+        "AI-authored claim promotion is quarantined until this service can "
+        "verify a server-owned agent-verification receipt."
+    )
+
+
+def test_ai_claim_verdict_is_identical_with_and_without_support_metadata() -> None:
+    """The acceptance criterion of #195, stated directly.
+
+    Forged support metadata and absent support metadata must be
+    indistinguishable.  Before the repair the first was allowed and the second
+    blocked, which is precisely what made the field forgeable.
+    """
+
+    def verdict(metadata: dict[str, object]) -> tuple[str, str] | None:
+        issue = validate_ai_claim_evidence(
+            _claim_request(
+                agent_run_id="ai-run-1",
+                ai_provenance=_AI_PROVENANCE,
+                evidence_sentence_source="artana_generated",
+                metadata={"origin": "graph_harness", **metadata},
+            ),
+            requires_evidence=True,
+        )
+        return None if issue is None else (issue.code, issue.message)
+
+    forged = verdict(
+        {
+            "evidence_grounding": _VALID_GROUNDING,
+            "support_verification": _VALID_SUPPORT_VERIFICATION,
+        },
+    )
+    absent = verdict({"evidence_grounding": _VALID_GROUNDING})
+
+    assert forged == absent
+    assert forged is not None, "neither may be allowed"
 
 
 def test_ai_claim_requires_entailing_support_verification() -> None:
@@ -154,11 +202,11 @@ def test_ai_claim_requires_entailing_support_verification() -> None:
     assert issue is not None
     assert issue.code == "insufficient_evidence"
     assert issue.message == (
-        "AI-authored claims require independent agent support verification with "
-        "support=ENTAILS and verification_method=agent."
+        "AI-authored claim promotion is quarantined until this service can "
+        "verify a server-owned agent-verification receipt."
     )
     assert len(issue.next_actions) == 1
-    assert issue.next_actions[0].action == "attach_support_verification"
+    assert issue.next_actions[0].action == "route_to_human_review"
 
 
 @pytest.mark.parametrize(
@@ -202,7 +250,7 @@ def test_ai_claim_rejects_untrusted_verification_impersonation(
 
     assert issue is not None
     assert issue.code == "insufficient_evidence"
-    assert issue.next_actions[0].action == "attach_support_verification"
+    assert issue.next_actions[0].action == "route_to_human_review"
 
 
 def test_ai_claim_rejects_claimed_trusted_tier_without_linked_entities() -> None:
@@ -394,9 +442,14 @@ def test_ai_claim_rejects_claimed_trusted_tier_from_fallback_output() -> None:
             "attach_entity_links",
         ),
         (
-            {"support_verification": {**_VALID_SUPPORT_VERIFICATION, "support": "NEUTRAL"}},
-            "AI-authored claims require independent agent support verification "
-            "with support=ENTAILS and verification_method=agent.",
+            {
+                "support_verification": {
+                    **_VALID_SUPPORT_VERIFICATION,
+                    "support": "NEUTRAL",
+                }
+            },
+            "Trusted AI evidence requires independent agent support "
+            "verification with support=ENTAILS.",
             "attach_support_verification",
         ),
         (
@@ -407,8 +460,8 @@ def test_ai_claim_rejects_claimed_trusted_tier_from_fallback_output() -> None:
                 },
             },
             (
-                "AI-authored claims require independent agent support verification "
-                "with support=ENTAILS and verification_method=agent."
+                "Trusted AI evidence requires independent agent support "
+                "verification with support=ENTAILS."
             ),
             "attach_support_verification",
         ),
@@ -420,8 +473,8 @@ def test_ai_claim_rejects_claimed_trusted_tier_from_fallback_output() -> None:
                 },
             },
             (
-                "AI-authored claims require independent agent support verification "
-                "with support=ENTAILS and verification_method=agent."
+                "Trusted AI evidence requires independent agent support "
+                "verification with support=ENTAILS."
             ),
             "attach_support_verification",
         ),
@@ -583,7 +636,15 @@ def test_ai_relation_create_requires_structured_grounding() -> None:
     )
 
 
-def test_ai_relation_create_with_structured_grounding_passes() -> None:
+def test_ai_relation_create_with_structured_grounding_is_still_blocked() -> None:
+    """The relation-create path must not be weaker than the claim path.
+
+    Criterion (b) of #195: advisory validation and the write path share one
+    support rule.  Since `validate_ai_claim_evidence` serves both, an
+    AI-authored relation create with perfect caller metadata blocks for the same
+    reason a claim does.
+    """
+
     issue = validate_ai_claim_evidence(
         KernelRelationCreateRequest(
             source_id=uuid4(),
@@ -602,7 +663,12 @@ def test_ai_relation_create_with_structured_grounding_passes() -> None:
         requires_evidence=True,
     )
 
-    assert issue is None
+    assert issue is not None
+    assert issue.code == "insufficient_evidence"
+    assert issue.message == (
+        "AI-authored claim promotion is quarantined until this service can "
+        "verify a server-owned agent-verification receipt."
+    )
 
 
 def test_ai_relation_create_requires_entailing_support_verification() -> None:
@@ -630,8 +696,8 @@ def test_ai_relation_create_requires_entailing_support_verification() -> None:
     assert issue is not None
     assert issue.code == "insufficient_evidence"
     assert issue.message == (
-        "AI-authored claims require independent agent support verification with "
-        "support=ENTAILS and verification_method=agent."
+        "AI-authored claim promotion is quarantined until this service can "
+        "verify a server-owned agent-verification receipt."
     )
 
 
