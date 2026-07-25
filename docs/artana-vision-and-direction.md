@@ -92,11 +92,39 @@ The asymmetry is decisive. Governance capability is the multiplier on extraction
 
 This is why we are stopping the sequential prompt-repair series (V6→V18) — **not** because extraction quality is unimportant, but because:
 
-- each version is a single sample per case (n=1), on a model already measured as run-to-run unstable in this repo (the one replicate study we ran returned `repeatability proof: FAIL`, 7 unstable records);
+- each version is a single sample per case (n=1), on a model since **measured** as run-to-run unstable — see below;
 - the panel it optimizes against sits outside the pilot scope, so even a clean sweep would unblock nothing;
 - and it consumes the attention that the substrate work needs.
 
 Extraction improves continuously, in the background, measured against a ruler we trust. It does not get to be the roadmap.
+
+### Replication is a precondition, not a later phase
+
+This was originally an argument from n=1. It is now a measurement. Replaying the
+sealed V17 prompt byte-identically, twenty times per case
+([full report](validation/reports/2026-07-25-staged-generalization-v17-noise-floor.md)):
+
+| Case | Sealed verdict | Reproduced |
+|---|---|---|
+| comparison-canary | PASS | 19/20 |
+| drug-sensitivity | PASS | 17/20 |
+| **uncertainty** | **FAIL** | **10/19 — CI [0.32, 0.73]** |
+
+The complete sealed panel verdict reproduces **42.5%** of the time, and the case
+that three versions of work were built around is statistically indistinguishable
+from a coin flip. Every version-to-version comparison in the series compared
+single draws from overlapping distributions.
+
+**So the noise floor moves out of Phase 4.** Measuring it is listed there as part
+of establishing repeatability, and that is too late: without it a comparison is
+not weak, it is *undefined*. Any experiment that compares two configurations must
+budget replicates up front. Against a floor this wide, detecting a real
+improvement needs roughly 22 runs per arm even if a fix lifts the pass rate from
+50% to 90%, and about 96 if it lifts it to 70%. Thirteen versions at that
+sampling would have cost around $17 — the information was always affordable.
+
+The rule: **a single run is a record of what happened, never evidence about a
+configuration.**
 
 **Corollary for how we talk about progress:** we do not report extraction scores as product progress. We report traceability, context preservation, review throughput, and disagreement surfaced. Those are the things the vision is made of.
 
@@ -188,7 +216,7 @@ Each phase below is named for the capability it delivers, not the work it contai
 
 **Phase 3 — "It scales past the demo."** Generalize layered identity, migrate existing data additively, dual-write and shadow-compare. The unglamorous phase that decides whether this is a prototype or a platform.
 
-**Phase 4 — "We can prove it works."** Sealed held-out evaluation, measured noise floor, replay. The point at which quality claims stop being assertions and become evidence.
+**Phase 4 — "We can prove it works."** Sealed held-out evaluation and replay. The point at which quality claims stop being assertions and become evidence. Note that the *noise floor* has been pulled forward out of this phase (§3): it is a precondition for any comparative claim, not a capstone.
 
 **Phase 5 — "It compounds."** More entity types, more relation families, disease-level synthesis, contradiction maps. Every addition inherits the governance guarantees instead of relitigating them — which is the entire return on the preceding work.
 
