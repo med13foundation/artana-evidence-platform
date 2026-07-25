@@ -135,14 +135,25 @@ class ArtanaModelRegistry:
         return model.is_enabled and model.supports_capability(capability)
 
     def allow_runtime_model_overrides(self) -> bool:
+        """Return whether a caller may swap the configured model at runtime.
+
+        The environment may only *tighten* this.  It used to be read first, so
+        `ARTANA_AI_ALLOW_RUNTIME_MODEL_OVERRIDES=true` re-opened model
+        substitution even where `artana.toml` had deliberately set
+        `allow_runtime_model_overrides = false`.  A setting whose purpose is to
+        lock model choice down cannot be unlockable by the environment, or the
+        configured value states an intent the deployment does not have
+        (D8, ART-MODEL-004).
+        """
+
+        if not self._allow_runtime_model_overrides:
+            return False
         raw_env = os.getenv("ARTANA_AI_ALLOW_RUNTIME_MODEL_OVERRIDES")
         if isinstance(raw_env, str):
             normalized = raw_env.strip().lower()
-            if normalized in {"1", "true", "yes", "on"}:
-                return True
             if normalized in {"0", "false", "no", "off"}:
                 return False
-        return self._allow_runtime_model_overrides
+        return True
 
 
 @lru_cache(maxsize=1)
