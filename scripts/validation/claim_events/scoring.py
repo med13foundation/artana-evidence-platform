@@ -217,8 +217,9 @@ def _score_case(
     actual = () if representability_stress else raw_actual
     alignment = _best_alignment(expected, actual)
 
+    canonical_actual = _canonicalize_preserved_triggers(expected, actual, alignment)
     expected_keys = Counter(_whole_event_key(event) for event in expected)
-    actual_keys = Counter(_whole_event_key(event) for event in actual)
+    actual_keys = Counter(_whole_event_key(event) for event in canonical_actual)
     whole_matches = sum((expected_keys & actual_keys).values())
     valuable_keys = Counter(
         _whole_event_key(event)
@@ -243,11 +244,7 @@ def _score_case(
     for expected_index, actual_index in alignment:
         gold = expected[expected_index]
         predicted = actual[actual_index]
-        trigger_matches += (
-            _string(predicted.get("trigger_span")) == gold.trigger_span
-            and _nonnegative_integer(predicted.get("trigger_source_start"))
-            == gold.trigger_source_start
-        )
+        trigger_matches += _trigger_preserved(gold, predicted)
         event_type_match = _string(predicted.get("event_type")) == gold.event_type
         event_type_matches += event_type_match
         if event_type_match:
@@ -479,14 +476,70 @@ def _best_alignment(
     return maximum_weight_pairs(scores)
 
 
+def _canonicalize_preserved_triggers(
+    expected: Sequence[EventContract],
+    actual: Sequence[Mapping[str, object]],
+    alignment: Sequence[tuple[int, int]],
+) -> tuple[Mapping[str, object], ...]:
+    """Rewrite a preserved trigger to its gold form before whole-event keying.
+
+    Whole-event matching compares independently computed keys, so it cannot
+    express a pairwise tolerance on its own.  Normalising an aligned prediction
+    whose trigger is preserved lets key equality carry the same boundary rule
+    the trigger metric uses, instead of the two disagreeing.
+
+    Only the trigger fields are rewritten, and only for a pair the alignment
+    already chose and `_trigger_preserved` already accepts.  Event type,
+    polarity, epistemic status, and the argument set are untouched, so this
+    cannot turn a wrong event into a match.
+    """
+
+    canonical = list(actual)
+    for expected_index, actual_index in alignment:
+        gold = expected[expected_index]
+        predicted = actual[actual_index]
+        if _string(predicted.get("trigger_span")) == gold.trigger_span:
+            continue
+        if not _trigger_preserved(gold, predicted):
+            continue
+        canonical[actual_index] = {
+            **predicted,
+            "trigger_span": gold.trigger_span,
+            "trigger_source_start": gold.trigger_source_start,
+        }
+    return tuple(canonical)
+
+
+def _trigger_preserved(gold: EventContract, predicted: Mapping[str, object]) -> bool:
+    """Accept a trigger that contains the gold span at the gold offset.
+
+    Exact string equality is the wrong test for a trigger.  Measured on the
+    frozen panel, widening every gold trigger by twelve characters while keeping
+    its true start offset takes whole-event recall from 1.0 to 0.0 under
+    equality, and leaves it at 53/53 under containment: "expression of BMP6" and
+    "expression" denote the same event, and penalising the first measures span
+    convention rather than reading.
+
+    Tolerance is bounded on both sides.  The gold span must appear in the
+    prediction, and its position within the prediction must land exactly on the
+    gold offset, so a prediction cannot drift onto a different occurrence of the
+    same word.  Argument sets remain exact set equality -- the superset rule
+    used elsewhere lets a model pad arguments for free, which is measurably
+    exploitable.
+    """
+
+    span = _string(predicted.get("trigger_span"))
+    start = _nonnegative_integer(predicted.get("trigger_source_start"))
+    if span is None or start is None:
+        return False
+    offset = span.find(gold.trigger_span)
+    return offset >= 0 and start + offset == gold.trigger_source_start
+
+
 def _alignment_score(gold: EventContract, predicted: Mapping[str, object]) -> int:
     predicted_id = _string(predicted.get("event_id"))
     id_match = predicted_id is not None and predicted_id == gold.event_id
-    trigger_match = (
-        _string(predicted.get("trigger_span")) == gold.trigger_span
-        and _nonnegative_integer(predicted.get("trigger_source_start"))
-        == gold.trigger_source_start
-    )
+    trigger_match = _trigger_preserved(gold, predicted)
     gold_spans = {argument.exact_span for argument in gold.arguments}
     predicted_spans = {
         _string(argument.get("exact_span"))
