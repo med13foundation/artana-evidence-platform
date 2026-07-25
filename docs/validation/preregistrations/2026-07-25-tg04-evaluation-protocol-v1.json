@@ -1,0 +1,117 @@
+{
+  "schema_version": "artana.claim_events.evaluation_protocol.v1",
+  "protocol_id": "tg04-evaluation-protocol-v1",
+  "date": "2026-07-25",
+  "status": "PREREGISTERED_BEFORE_ANY_MODEL_RUN",
+  "purpose": "Freeze the primary matcher, the metric definitions, the fixture, and the thresholds for the TG-04 source-semantic lane, so a later score means something fixed in advance.",
+  "closes": "Gate 1 -- valid ruler.",
+
+  "fixture": {
+    "path": "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v2.json",
+    "sha256": "9a1b8e671cbc1b8a4abe790d110a0ff0edc6af65e7c88a459d3224db46c17c26",
+    "gold_event_count": 53,
+    "supersedes": {
+      "path": "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json",
+      "sha256": "26d67408a7a2446de5d36fca3f8a80a732b6519afe00e303c893eef3c824268d",
+      "reason": "v1 asserts a polarity its own source denies on seven of 53 gold events, capping a source-faithful extractor at 0.8679 whole-event recall. v1 stays sealed and is not rescored.",
+      "record": "docs/validation/adjudications/2026-07-25-tg04-gold-polarity-inheritance-adjudication-v1.json"
+    },
+    "corpus_attestation_index": {
+      "path": "scripts/validation/claim_events/fixtures/tg04_corpus_attestation_v1.json",
+      "corpus_event_count": 472,
+      "purpose": "Distinguishes a filtered-out corpus event from an invented one. Without it a corpus-faithful extractor and a hallucinator both score 0.1920."
+    }
+  },
+
+  "primary_matcher": {
+    "name": "BOUNDED_TRIGGER_TOLERANCE_WITH_EXACT_ARGUMENTS_V1",
+    "trigger": "The gold trigger span must appear in the predicted span, and its offset within that prediction must land exactly on the gold start offset.",
+    "arguments": "Exact set equality on (role, event_role, exact_span, source_start).",
+    "event_type": "Exact.",
+    "polarity": "Exact.",
+    "epistemic_status": "Exact.",
+    "rationale": "Chosen from measurement, not preference. Neither pre-existing matcher was correct and each had one half right.",
+    "evidence": [
+      {
+        "observation": "Widening every gold trigger by twelve characters, keeping its true start offset, takes whole-event recall from 1.0000 to 0.0000 under string equality and holds 53/53 under containment.",
+        "conclusion": "String equality on a trigger measures span convention, not reading. Rejected."
+      },
+      {
+        "observation": "The tolerant matcher in finite_source_unit/controlled_event_trial accepts a superset of expected arguments, so a spurious extra argument on every event costs nothing.",
+        "conclusion": "Superset argument matching is exploitable by padding. Rejected."
+      },
+      {
+        "observation": "Under the chosen matcher: gold verbatim 1.0000; trigger widened 1.0000; spurious extra argument 0.0000; trigger offset shifted by three 0.0000; polarity flipped 0.0000; event type wrong 0.0000.",
+        "conclusion": "Tolerance is bounded on both sides. Every discrimination the exact matcher made is preserved."
+      }
+    ],
+    "retained_as_diagnostic": "Strict string-equality trigger matching remains reportable and is never a gate."
+  },
+
+  "precision_definition": {
+    "name": "scope_aware_precision",
+    "denominator": "gold matches + unattested predictions",
+    "excluded_from_denominator": "Predictions that match no gold event but are attested in the source corpus. They are real annotations the importer filtered out; they earn no credit and take no penalty.",
+    "rationale": "The panel keeps 53 of 472 corpus events, so a prediction absent from gold is ambiguous between correct-but-filtered and invented. Measured, a corpus-faithful extractor and a pure hallucinator both scored 0.1920 under the previous definition -- the gate could not tell them apart, and no choice of denominator over gold alone can.",
+    "supersedes": "whole_event_precision = matches / all predictions"
+  },
+
+  "thresholds": {
+    "status": "CARRIED_FORWARD_PROVISIONAL",
+    "values": {
+      "whole_event_precision": 0.90,
+      "whole_event_recall": 0.80,
+      "trigger_precision": 0.95,
+      "trigger_recall": 0.95,
+      "event_type_fidelity": 0.95,
+      "argument_precision": 0.95,
+      "argument_recall": 0.95,
+      "argument_set_fidelity": 0.95,
+      "polarity_fidelity": 0.95,
+      "epistemic_fidelity": 0.95
+    },
+    "why_unchanged": "These floors predate this protocol. No new numeric threshold is invented here: the direction adjustment holds that qualification thresholds become authoritative only after a noise floor is measured, and that measurement has not been run.",
+    "not_yet_authoritative": "A pass under these values is evidence the ruler works, not that the extractor qualifies. Qualification requires the Phase 4 replicate study.",
+    "revision_rule": "Changing any value creates a new protocol version. Values are bound to code by test and cannot drift silently."
+  },
+
+  "calibration_required_before_any_model_score_is_read": [
+    {
+      "check": "gold-as-predictions",
+      "requirement": "Every gated metric equals exactly 1.0 when the fixture's own gold is fed back as predictions.",
+      "observed": "PASS on v2 under this matcher.",
+      "on_failure": "The scorer is miscut. No model score may be interpreted."
+    },
+    {
+      "check": "corpus-as-predictions",
+      "requirement": "A corpus-faithful extractor must not be punished for events the importer filtered out.",
+      "observed": "Separated from a hallucinator by the attestation index."
+    },
+    {
+      "check": "negation sensitivity",
+      "requirement": "Flipping every gold polarity must fail the panel.",
+      "observed": "whole-event recall 0.0000, polarity fidelity 0.0000, over 12 REFUTE records in v2 versus 5 in v1."
+    }
+  ],
+
+  "lane_separation": {
+    "source_semantic": "Governed by this protocol. The only lane that gates.",
+    "bionlp_cg_projection": "Measured and reported separately. Never used to reverse a source-semantic result.",
+    "note": "The 40 selected documents are a development panel. Results on them are never evidence of generalization; a sealed held-out set remains untouched."
+  },
+
+  "known_limits": {
+    "panel_retention": "53 of 472 corpus events (11.2%). 237 events are dropped by an undocumented _MIN_EVENT_ARGUMENTS = 2 policy constant and 174 by a genuine schema limit on event-valued arguments; see the exclusion ledger.",
+    "scored_documents": "Only the 17 EVENT_GOLD documents are scored. Predictions on the 18 representability-stress documents are discarded before scoring.",
+    "development_only": "This protocol governs the development panel. It does not preregister a qualification run.",
+    "noise_floor": "Unmeasured. Run-to-run variance on the extraction model has not been established, so a single passing run is not a repeatable result."
+  },
+
+  "governance": {
+    "provider_calls_to_produce_this_protocol": 0,
+    "graph_writes": 0,
+    "historical_results_rescored": false,
+    "v1_fixture_modified": false,
+    "code_binding": "tests/unit/test_evaluation_protocol_preregistration.py fails if the code constants diverge from this document."
+  }
+}
