@@ -48,3 +48,23 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+
+      # Same story as the architecture checks above, one layer out: the
+      # contract checks were CI-only and cost two round-trips on #210, where
+      # adding a GraphValidationCode member needs BOTH openapi.json and the
+      # TypeScript client regenerated. They could not be added earlier without
+      # producing false greens -- the export targets had no PYTHONPATH, so from
+      # a git worktree they checked the primary checkout's contract instead.
+      - id: graph-service-contract-check
+        name: graph service contract
+        entry: make -s graph-service-contract-check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: evidence-api-contract-check
+        name: evidence API contract
+        entry: make -s artana-evidence-api-contract-check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
