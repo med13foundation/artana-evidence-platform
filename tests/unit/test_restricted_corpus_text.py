@@ -52,6 +52,10 @@ _COMMITTED = (
     (DEFAULT_DEVELOPMENT_FIXTURE_PATH, REDACTED_DEVELOPMENT_FIXTURE_SHA256),
     (DEVELOPMENT_FIXTURE_V2_PATH, REDACTED_DEVELOPMENT_FIXTURE_V2_SHA256),
 )
+_ADJUDICATION_PATH = Path(
+    "docs/validation/adjudications/"
+    "2026-07-25-tg04-gold-polarity-inheritance-adjudication-v1.json",
+)
 _DOCUMENT = "SYNTHETIC-0001"
 _SOURCE_TEXT = "Synthetic title.\n\nAlpha protein binds beta protein in vitro."
 
@@ -301,8 +305,11 @@ def test_offline_digest_set_matches_the_windows_it_declares() -> None:
     assert payload["runs"], "the digest set must pin at least one run"
     assert len(payload["window_digests"]) == len(set(payload["window_digests"]))
     for run in payload["runs"]:
-        assert len(run["sha256"]) == 64
-        assert run["length"] >= WINDOW
+        assert len(run["span_sha256"]) == 64
+        assert len(run["folded_sha256"]) == 64
+        assert run["span_length"] > 0
+        assert run["folded_length"] >= WINDOW
+        assert run["guaranteed"] == (run["folded_length"] >= WINDOW + STRIDE - 1)
         assert run["locator"].startswith("char:")
 
 
@@ -323,10 +330,67 @@ def test_offline_digest_set_carries_no_recoverable_text() -> None:
         assert set(run) == {
             "document_id",
             "locator",
-            "length",
-            "sha256",
+            "span_sha256",
+            "span_length",
+            "folded_sha256",
+            "folded_length",
             "guaranteed",
         }
+
+
+def test_artifact_and_records_agree_on_the_span_digest() -> None:
+    """A record and the artifact must cross-check, not look like corruption.
+
+    Both publish a SHA-256 for the same `document_id` and `char:` locator, but
+    over different forms of the span: the record digests the exact span, the
+    artifact also digests the guard's comparison form.  While the artifact
+    called its folded digest plain `sha256`, a reader who compared the two saw
+    two different values for one locator and had no way to tell an honest
+    difference of convention from a corrupted record.  The convention is now in
+    the field name, and this asserts the one that is meant to match does.
+    """
+
+    payload = json.loads(DIGEST_PATH.read_text(encoding="utf-8"))
+    indexed = {(run["document_id"], run["locator"]): run for run in payload["runs"]}
+    record = json.loads(_ADJUDICATION_PATH.read_text(encoding="utf-8"))
+
+    cited = [
+        entry
+        for key in ("corrections", "rejected_candidates")
+        for entry in record[key]
+        if "evidence_sha256" in entry
+    ]
+    assert cited, "the adjudication must still cite the text it no longer carries"
+    for entry in cited:
+        run = indexed.get((entry["document_id"], entry["evidence_locator"]))
+        assert run is not None, (
+            f"{entry['document_id']} {entry['evidence_locator']} is cited by a "
+            f"record but not indexed by the offline guard"
+        )
+        assert run["span_sha256"] == entry["evidence_sha256"]
+        assert run["span_length"] == entry["evidence_length"]
+
+    assert not any("sha256" in run and "span_sha256" not in run for run in indexed.values()), (
+        "an unqualified `sha256` is what made the two conventions confusable"
+    )
+
+
+def test_emphasis_inside_a_quotation_does_not_defeat_the_guard() -> None:
+    """Markdown markup inside a quote used to split one run into short ones.
+
+    The exclusion ledger quoted source sentences with a phrase bolded inside
+    the quotation, and the folded forms diverged at the asterisks, so the run
+    the guard had indexed was never seen whole and a revert of that file
+    passed.  Emphasis and code markers are now folded out.
+    """
+
+    sentence = "alpha protein represses the transcription of gamma factor here"
+
+    assert normalize("the **failure of** alpha protein") == normalize(
+        "the failure of alpha protein",
+    )
+    assert normalize(f"> ...**{sentence}**...") == f"> ...{sentence}..."
+    assert normalize("`inline` _code_ *markers*") == "inline code markers"
 
 
 def test_offline_guard_detects_a_reintroduced_run(tmp_path: Path) -> None:

@@ -48,8 +48,9 @@ labeled `REPRESENTABILITY_STRESS` and is excluded from qualification precision,
 leakage, and repeatability.
 
 The initial inventory response contained four source-binding defects. The one
-allowed agent repair corrected three of them. Its remaining claim used one
-complete source span, a single sentence of `267` characters:
+allowed agent repair corrected three of them. Its remaining claim used this
+complete source span of `267` characters, which begins at a sentence boundary
+but stops before the end of that sentence:
 
 > **Restricted corpus text, not republished here.** The span is
 > `bionlp-ge-2011:PMID-9361029` at `char:823-1090` of the normalized corpus

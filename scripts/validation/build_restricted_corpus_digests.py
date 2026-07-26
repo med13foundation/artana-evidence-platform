@@ -13,8 +13,17 @@ it does not let anyone recover text they do not already have.
 
 The `runs` list is the manifest and the input: each entry names a document and a
 character range in the *normalized* document text, which is exactly what the
-redacted records under `docs/validation/` publish.  To retire or add a span, edit
-`runs` and re-run this script with the corpus fetched:
+redacted records under `docs/validation/` publish.
+
+Each emitted run carries two digests over two forms of that same span, named so
+that a reader cross-checking a record against this artifact cannot mistake one
+for the other: `span_sha256` over the exact span (equal to the record's
+`evidence_sha256`), and `folded_sha256` over the guard's comparison form, which
+is what the window digests are cut from.  Recording only one of them is what
+made a matching record and artifact look like a corruption.
+
+To retire or add a span, edit `runs` and re-run this script with the corpus
+fetched:
 
     python3 scripts/fetch_bionlp_ge_corpus.py
     python3 scripts/validation/build_restricted_corpus_digests.py
@@ -91,10 +100,11 @@ def main() -> int:
         start, end = int(entry["start"]), int(entry["end"])  # type: ignore[call-overload]
         if document_id not in cache:
             cache[document_id] = document_text(root, document_id)
-        span = normalize(cache[document_id][start:end])
+        exact = cache[document_id][start:end]
+        span = normalize(exact)
         if len(span) < WINDOW:
             print(
-                f"error: {document_id} char:{start}-{end} normalizes to "
+                f"error: {document_id} char:{start}-{end} folds to "
                 f"{len(span)} characters, below the {WINDOW}-character window",
                 file=sys.stderr,
             )
@@ -103,8 +113,10 @@ def main() -> int:
             {
                 "document_id": document_id,
                 "locator": f"char:{start}-{end}",
-                "length": len(span),
-                "sha256": hashlib.sha256(span.encode("utf-8")).hexdigest(),
+                "span_sha256": hashlib.sha256(exact.encode("utf-8")).hexdigest(),
+                "span_length": len(exact),
+                "folded_sha256": hashlib.sha256(span.encode("utf-8")).hexdigest(),
+                "folded_length": len(span),
                 "guaranteed": len(span) >= WINDOW + STRIDE - 1,
             },
         )
@@ -112,7 +124,7 @@ def main() -> int:
             windows.add(window_digest(span[index : index + WINDOW]))
 
     payload = {
-        "schema_version": "artana.restricted_corpus_digests.v1",
+        "schema_version": "artana.restricted_corpus_digests.v2",
         "corpus": "BioNLP-ST-2011-GE",
         "generated_by": "scripts/validation/build_restricted_corpus_digests.py",
         "window": WINDOW,
@@ -129,6 +141,24 @@ def main() -> int:
             "text we have already removed; it cannot catch corpus text we have "
             "never seen. Only the corpus-backed scan does that: "
             "scripts/validation/check_restricted_corpus_text.py."
+        ),
+        "digest_conventions": (
+            "Two digests per run, over two different forms of the same span, "
+            "named so they cannot be swapped. `span_sha256`/`span_length` are "
+            "over the exact span the locator addresses in the normalized "
+            "corpus document -- byte-for-byte the same convention as the "
+            "`evidence_sha256`/`evidence_length` the redacted records under "
+            "docs/validation/ publish, so a reader can cross-check a record "
+            "against this artifact and get equality. "
+            "`folded_sha256`/`folded_length` are over the guard's comparison "
+            "form of that span (case, typographic punctuation, accents, inline "
+            "Markdown markers and whitespace folded, see "
+            "scripts/validation/restricted_corpus_normalization.py). That is "
+            "the form the window digests below are cut from, and the length "
+            "that decides `guaranteed`, so it is recorded rather than left "
+            "implicit. The two lengths coincide for every span here; they are "
+            "not the same quantity and must not be compared across "
+            "conventions."
         ),
         "removed_from": _REMOVED_FROM,
         "runs": runs,

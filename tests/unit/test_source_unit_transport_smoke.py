@@ -72,9 +72,17 @@ def test_transport_identity_gate_requires_complete_nonqualifying_replay() -> Non
 
 
 def test_prior_failure_report_is_hash_pinned(tmp_path: Path) -> None:
+    """The pin moved when the report was redacted; see `transport_smoke`.
+
+    Same report, same authorization: a quoted source sentence became a locator
+    and a digest, and no finding, count or verdict in it changed.  The reason
+    and the superseded digest are recorded beside the constant, because a pin
+    that can be bumped without explanation pins nothing.
+    """
+
     report_sha256 = verify_prior_failure_report()
     assert report_sha256 == (
-        "fb77b85369c17adcd98c6d99a927ddcabe10b9e4ef9aa22c33299ea0f8a4a34a"
+        "0f9792b8d11ae9a86bc57c8ea8e3c4522f081b7810bab705c5238ce81a8c508b"
     )
 
     changed = tmp_path / "changed.md"

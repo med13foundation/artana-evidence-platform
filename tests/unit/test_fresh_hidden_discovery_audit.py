@@ -151,13 +151,30 @@ def test_fresh_unit_is_frozen_unexposed_and_has_no_local_gold() -> None:
 
 
 def test_target_requires_both_specific_material_arguments() -> None:
+    """The matcher keys on entity names, so the inputs here are entity names.
+
+    This case used to paste the argument surface exactly as the source document
+    writes it -- name, space, parenthesised abbreviation.  That is a quoted span
+    rather than the name of a thing, and the rule in
+    `scripts/validation/RESTRICTED_CORPORA.md` covers a test input as squarely
+    as it covers a fixture field.  The bare names exercise the same two
+    branches, and the third case keeps the substring branch honest with a
+    surface the corpus does not contain.
+    """
+
     complete = (
         {"exact_span": "P-selectin"},
-        {"exact_span": "nuclear factor-kappa B (NF-kappa B)"},
+        {"exact_span": "nuclear factor-kappa B"},
     )
     assert _target_arguments_preserved(complete)
     assert _target_arguments_preserved(
         ({"exact_span": "P-selectin"}, {"exact_span": "NF-kappa B"}),
+    )
+    assert _target_arguments_preserved(
+        (
+            {"exact_span": "P-selectin"},
+            {"exact_span": "synthetic nuclear factor-kappa B surface"},
+        ),
     )
     assert not _target_arguments_preserved(complete[:1])
     assert not _target_arguments_preserved(
@@ -166,8 +183,17 @@ def test_target_requires_both_specific_material_arguments() -> None:
 
 
 def test_fresh_authorization_report_is_hash_pinned(tmp_path: Path) -> None:
+    """The pin moved when the report was redacted; see `fresh_authorization`.
+
+    It is the same report and the same authorization -- two clauses that quoted
+    restricted corpus prose were reworded, and no requirement, count or verdict
+    in it changed.  The superseded digest and the reason are recorded next to
+    the constant, because a pin that can be bumped without explanation pins
+    nothing.
+    """
+
     assert verify_fresh_discovery_authorization() == (
-        "61b5ca507a26b6cfe20f02c28b29b71ac09ffcff2a58c056d149a18286823978"
+        "00968ba249fbffc85f016953ba762108042eabd77ef7d0653c3acc8f921ba568"
     )
 
     changed = tmp_path / "changed.md"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import shutil
@@ -490,3 +491,34 @@ def test_validate_architecture_structure_script_exists_and_is_executable_module(
     text = script_path.read_text(encoding="utf-8")
     assert text.startswith("#!/usr/bin/env python3")
     assert "raise SystemExit(main())" in text
+
+
+def test_frozen_report_pins_match_the_reports_they_name() -> None:
+    """Regression: a pin over a validation record must not rot in silence.
+
+    Three of these went stale at once when the 2026-07-25 redaction rewrote the
+    reports underneath them, and each failure surfaced only in a test outside
+    the gate.  A pin exists to prove a record has not moved; a stale one proves
+    nothing and reads as tampering.  So every constant that pairs a `docs/`
+    path with a SHA-256 is checked against the file it names, and a pin that is
+    deliberately moved has to be moved here too.
+    """
+
+    pinned_path = re.compile(r'_REPO_ROOT\s*/\s*"(docs/[^"]+\.md)"')
+    checked = 0
+    for module in (REPO_ROOT / "scripts").rglob("*.py"):
+        source = module.read_text(encoding="utf-8")
+        if "SHA256" not in source:
+            continue
+        for relative in pinned_path.findall(source):
+            target = REPO_ROOT / relative
+            assert target.exists(), (module.name, relative)
+            digest = hashlib.sha256(target.read_bytes()).hexdigest()
+            assert digest in source, (
+                f"{module.relative_to(REPO_ROOT)} pins {relative}, which now "
+                f"hashes to {digest[:12]}... and matches no digest in that "
+                f"module; move the pin deliberately and say why, or restore "
+                f"the file"
+            )
+            checked += 1
+    assert checked >= 3, "the pins this guards stopped being discoverable"

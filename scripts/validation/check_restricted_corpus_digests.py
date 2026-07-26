@@ -8,11 +8,18 @@ therefore cannot sit in a gate that has to run on any machine.  This one carries
 a committed set of opaque window digests instead, so it runs everywhere.
 
     What it catches: the exact runs we have already removed, coming back --
-    a revert, a resurrected paragraph, a paste out of published history.
+    a revert, a resurrected paragraph, a paste out of published history --
+    provided the run folds to 40 characters or more, which is where the window
+    and stride make detection certain.
 
     What it does not catch: any corpus text we have never removed before.
     A fresh sentence from a document nobody has quoted yet is invisible here.
-    Only the corpus-backed scan sees that, and it only runs where the corpus is.
+    Nor a removed run that folds below the 32-character window: two of the runs
+    taken out on 2026-07-25 are that short and are not in the digest set at all.
+    Only the corpus-backed scan sees either, and it only runs where the corpus
+    is.  `RESTRICTED_CORPORA.md` records which reverts this half was measured to
+    catch, one file at a time, rather than leaving "catches a revert" to stand
+    as a claim about all of them.
 
 Do not read a pass here as "no restricted text in the tree". It means "none of
 the restricted text we know about". Run `make restricted-corpus-scan` with the

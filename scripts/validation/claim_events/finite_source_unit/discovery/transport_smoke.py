@@ -51,8 +51,17 @@ _MODEL_ID: Final = "openai:gpt-5.6-luna"
 _PR175_REPORT_PATH: Final = (
     _REPO_ROOT / "docs/validation/reports/2026-07-18-tg04-hidden-discovery-unit.md"
 )
+#: Moved once, by the 2026-07-25 redaction, which replaced a quoted source
+#: sentence in the report with a locator and a digest and changed no finding,
+#: count or verdict in it.  The redaction did not update this pin, so the check
+#: raised on every run afterwards.  Superseded digest:
+#: `fb77b85369c17adcd98c6d99a927ddcabe10b9e4ef9aa22c33299ea0f8a4a34a` -- which
+#: is also the value recorded in the #176 transport-identity report, correctly
+#: and permanently, because that report is an account of a run that consumed
+#: those exact bytes.  A record of the past does not follow a later redaction;
+#: a live pin over the current file does.
 _PR175_REPORT_SHA256: Final = (
-    "fb77b85369c17adcd98c6d99a927ddcabe10b9e4ef9aa22c33299ea0f8a4a34a"
+    "0f9792b8d11ae9a86bc57c8ea8e3c4522f081b7810bab705c5238ce81a8c508b"
 )
 
 
