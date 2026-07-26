@@ -362,6 +362,46 @@ def test_every_character_the_map_claims_to_fold_really_folds(
     assert normalize(f"alpha{character}beta") == expected
 
 
+def test_no_invisible_character_survives_normalization() -> None:
+    """An invisible splitter is the one nobody can catch in review.
+
+    A soft hyphen is the sharp case: extracting text from a PDF inserts one at
+    every hyphenated line break, which is exactly how a quotation leaves a paper.
+    It renders as nothing, so a reader comparing the two strings sees a match
+    while the matcher sees two fragments -- and a quotation carrying one sat
+    below the floor undetected until this was written. Claiming the whole `Cf`
+    category rather than the characters we happened to think of is what keeps
+    the next one from being silent too.
+    """
+
+    invisible = {
+        chr(codepoint)
+        for codepoint in range(sys.maxunicode + 1)
+        if unicodedata.category(chr(codepoint)) == "Cf"
+    }
+    assert "\u00ad" in invisible, "soft hyphen must be in the swept category"
+
+    survivors = sorted(
+        f"U+{ord(character):04X} {unicodedata.name(character, '?')}"
+        for character in invisible
+        if character in normalize(f"alpha{character}beta")
+    )
+
+    assert survivors == [], (
+        f"{len(survivors)} invisible character(s) survive normalization and can "
+        f"split a run below the threshold: {survivors[:8]}"
+    )
+
+
+def test_a_soft_hyphen_inside_a_quotation_does_not_hide_it() -> None:
+    """The end-to-end shape of the defect, not just the codepoint."""
+
+    quotation = "the addition of interleukin four to the culture medium"
+    mangled = quotation[:26] + "\u00ad" + quotation[26:]
+
+    assert normalize(mangled) == normalize(quotation)
+
+
 def test_no_unicode_dash_is_left_unfolded() -> None:
     """The next confusable must be a test failure, not another silent split.
 

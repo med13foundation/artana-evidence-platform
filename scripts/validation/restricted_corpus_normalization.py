@@ -16,6 +16,13 @@ and so shortens it below a threshold: a footnote or link inserted mid-sentence,
 an HTML tag, a comment prefix repeated on every line of a wrapped quote, and an
 ellipsis standing in for elided words.  Those leave a quotation looking
 continuous to a reader while the comparison sees fragments.
+
+Two classes of splitter are handled rather than named, because both are
+invisible and so could never be caught in review: every `Pd` dash plus the minus
+sign folds to `-`, and every `Cf` format character is dropped outright.  The
+fraction and division slashes (U+2044, U+2215) and the middle dot are
+deliberately left alone -- unlike those two they are characters a reader can
+see, so folding them would change what a comparison means.
 """
 
 from __future__ import annotations
@@ -147,7 +154,15 @@ def normalize(text: str) -> str:
 
     folded = unicodedata.normalize("NFKD", text.translate(_PUNCTUATION).lower())
     stripped = "".join(
-        character for character in folded if not unicodedata.combining(character)
+        character
+        for character in folded
+        # Cf is dropped, not folded: a soft hyphen, a zero-width joiner or a byte
+        # order mark renders as nothing, so a reader comparing two strings sees a
+        # match while the matcher sees two fragments.  SOFT HYPHEN is the likely
+        # one -- extracting text from a PDF inserts it at every hyphenated line
+        # break, which is exactly how a quotation leaves a paper.
+        if not unicodedata.combining(character)
+        and unicodedata.category(character) != "Cf"
     )
     return _WHITESPACE.sub(" ", _MARKDOWN.sub("", stripped))
 
