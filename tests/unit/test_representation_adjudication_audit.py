@@ -35,6 +35,19 @@ from scripts.validation.claim_events.finite_source_unit.representation_service i
     validate_representation_adjudication,
 )
 from scripts.validation.claim_events.fixture import load_fixture
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
+
+
+#: These checks read the corpus text itself, which this public repository does
+#: not carry.  They are skipped, never deleted: the reason names the licence and
+#: the exact command that restores them.
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
+)
 
 _FIXTURE_PATH = Path(
     "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json",
@@ -42,10 +55,11 @@ _FIXTURE_PATH = Path(
 _UNIT_ID = (
     "source-unit-e14e44064324af2f721a3d02d2caf44c00218a0ab6c4afc58e9bace413c9d46c"
 )
-_SOURCE = (
-    "Interestingly, we observed a specific four-fold upregulation of Id1 mRNA "
-    "in BMP-6-treated B cells (Figure 7)."
-)
+#: Stands in for the corpus sentence this unit selects.  It carries the same
+#: material surfaces the adjudicator must cover, but is written here rather
+#: than quoted, because the corpus text is licence-restricted and this
+#: repository is public.  See scripts/validation/RESTRICTED_CORPORA.md.
+_SOURCE = "Across BMP-6-treated B cells, Id1 mRNA showed a four-fold upregulation."
 
 
 def _candidate_event() -> dict[str, object]:
@@ -132,6 +146,7 @@ def test_partial_and_contradiction_require_specific_failure_axes() -> None:
         RepresentationAdjudicationOutput.model_validate(payload)
 
 
+@requires_corpus
 def test_semantic_validation_requires_source_and_complete_surface_coverage() -> None:
     fixture = load_fixture(_FIXTURE_PATH)
     _, expert_event = select_known_expert_unit(fixture)
@@ -147,7 +162,7 @@ def test_semantic_validation_requires_source_and_complete_surface_coverage() -> 
     )
 
     partial = _acceptable_output().model_copy(
-        update={"evidence_spans": ("four-fold upregulation of Id1 mRNA",)},
+        update={"evidence_spans": ("four-fold upregulation",)},
     )
     with pytest.raises(StructuredModelSemanticError, match="material surfaces"):
         validate_representation_adjudication(

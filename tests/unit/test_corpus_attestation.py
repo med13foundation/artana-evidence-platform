@@ -24,6 +24,16 @@ from scripts.validation.claim_events.corpus_attestation import (
     prediction_digest,
     scope_aware_precision,
 )
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
+from scripts.validation.claim_events.fixture import load_fixture_payload
+
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
+)
 
 _INDEX = Path(
     "scripts/validation/claim_events/fixtures/tg04_corpus_attestation_v1.json"
@@ -69,10 +79,11 @@ def test_index_covers_the_whole_selected_corpus() -> None:
     assert record["corpus_event_count"] == 472
 
 
+@requires_corpus
 def test_retained_gold_events_are_all_attested(attested: frozenset[str]) -> None:
     """Gold is a subset of the corpus, so every gold event must be attested."""
 
-    fixture: dict[str, Any] = json.loads(_FIXTURE.read_text(encoding="utf-8"))
+    fixture: dict[str, Any] = load_fixture_payload(_FIXTURE)
     unattested = [
         (case["title"], event.get("trigger_span"))
         for case in fixture["cases"]
@@ -83,6 +94,7 @@ def test_retained_gold_events_are_all_attested(attested: frozenset[str]) -> None
     assert unattested == [], f"gold events missing from the corpus index: {unattested}"
 
 
+@requires_corpus
 def test_attestation_separates_out_of_scope_truth_from_invention(
     attested: frozenset[str],
 ) -> None:
@@ -93,7 +105,7 @@ def test_attestation_separates_out_of_scope_truth_from_invention(
     same number of fabricated events is still punished.
     """
 
-    fixture: dict[str, Any] = json.loads(_FIXTURE.read_text(encoding="utf-8"))
+    fixture: dict[str, Any] = load_fixture_payload(_FIXTURE)
     case = next(item for item in fixture["cases"] if item["events"])
     document = case["title"]
     gold = list(case["events"])

@@ -13,6 +13,7 @@ were rejected precisely because such a rule misfires.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -23,12 +24,27 @@ from scripts.validation.claim_events.bionlp_import import (
     POLARITY_ADJUDICATION_RECORD,
     POLARITY_ADJUDICATIONS,
 )
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
 from scripts.validation.claim_events.fixture import (
     DEFAULT_DEVELOPMENT_FIXTURE_PATH,
     DEVELOPMENT_FIXTURE_V2_PATH,
     FROZEN_DEVELOPMENT_FIXTURE_SHA256,
     FROZEN_DEVELOPMENT_FIXTURE_V2_SHA256,
+    REDACTED_DEVELOPMENT_FIXTURE_SHA256,
+    REDACTED_DEVELOPMENT_FIXTURE_V2_SHA256,
     load_fixture,
+)
+
+
+#: These checks read the corpus text itself, which this public repository does
+#: not carry.  They are skipped, never deleted: the reason names the licence and
+#: the exact command that restores them.
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
 )
 
 _REJECTED = {
@@ -50,6 +66,23 @@ def _events(path: Path) -> dict[tuple[str, str], dict[str, Any]]:
     }
 
 
+def test_committed_panels_remain_sealed() -> None:
+    """Both panels are pinned on their committed bytes, corpus or no corpus.
+
+    This is the half of the seal that survives without the corpus: it fixes our
+    offsets, labels and exclusion ledger.  The companions below add the other
+    half -- that the text those offsets address is also the frozen revision.
+    """
+
+    assert hashlib.sha256(
+        DEFAULT_DEVELOPMENT_FIXTURE_PATH.read_bytes(),
+    ).hexdigest() == (REDACTED_DEVELOPMENT_FIXTURE_SHA256)
+    assert hashlib.sha256(
+        DEVELOPMENT_FIXTURE_V2_PATH.read_bytes(),
+    ).hexdigest() == (REDACTED_DEVELOPMENT_FIXTURE_V2_SHA256)
+
+
+@requires_corpus
 def test_v1_remains_sealed() -> None:
     """The superseded panel is history and must not move."""
 
@@ -58,6 +91,7 @@ def test_v1_remains_sealed() -> None:
     )
 
 
+@requires_corpus
 def test_v2_is_frozen_at_its_recorded_hash() -> None:
     assert load_fixture(DEVELOPMENT_FIXTURE_V2_PATH).sha256 == (
         FROZEN_DEVELOPMENT_FIXTURE_V2_SHA256

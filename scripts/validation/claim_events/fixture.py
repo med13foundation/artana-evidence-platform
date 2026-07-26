@@ -37,13 +37,29 @@ from scripts.validation.claim_events.contracts import (
     ValueAnnotation,
     ValueStatus,
 )
+from scripts.validation.claim_events.corpus_text import (
+    canonical_fixture_bytes,
+    is_redacted,
+    rehydrate_fixture_payload,
+)
 
 SCHEMA_VERSION: Final = "tg04_nary_claim_benchmark.v1"
 DEFAULT_DEVELOPMENT_FIXTURE_PATH: Final = Path(
     "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json"
 )
+#: The digest of the *rehydrated* panel -- unchanged since the fixture was
+#: frozen, and unchanged by the removal of its corpus text.  Rehydration is
+#: exact, so this still pins the same 40 documents, 53 events and 419 exclusions
+#: it always pinned, including the text the offsets address.
 FROZEN_DEVELOPMENT_FIXTURE_SHA256: Final = (
     "26d67408a7a2446de5d36fca3f8a80a732b6519afe00e303c893eef3c824268d"
+)
+#: The digest of the bytes actually committed, which carry no corpus text.
+#: Pinning both ends means neither our annotations nor the corpus revision they
+#: describe can drift: the committed digest fixes the offsets and labels, and
+#: the frozen digest above fixes the text those offsets resolve to.
+REDACTED_DEVELOPMENT_FIXTURE_SHA256: Final = (
+    "b13e9f83d2feddada80b121aa1dbf57ea9ff7991d4c3bb8001e1e6ab9d240026"
 )
 #: v2 repairs seven gold events whose polarity contradicted their own source.
 #:
@@ -63,16 +79,30 @@ DEVELOPMENT_FIXTURE_V2_PATH: Final = Path(
 FROZEN_DEVELOPMENT_FIXTURE_V2_SHA256: Final = (
     "9a1b8e671cbc1b8a4abe790d110a0ff0edc6af65e7c88a459d3224db46c17c26"
 )
+REDACTED_DEVELOPMENT_FIXTURE_V2_SHA256: Final = (
+    "d123860658b55ecab4cdbe7261bfb5b995bec1295c794f2a689264f975bbacce"
+)
 _REPO_ROOT: Final = Path(__file__).resolve().parents[3]
 _LOCATOR_RE: Final = re.compile(r"^char:(?P<start>\d+)-(?P<end>\d+)$")
 _EnumT = TypeVar("_EnumT", bound=StrEnum)
 
 
 def load_fixture(path: Path) -> NaryClaimFixture:
-    """Load and validate one fixture from its exact raw bytes."""
+    """Load and validate one fixture, rehydrating restricted text if needed.
+
+    A committed fixture carries no corpus text, so it is rejoined with the
+    fetched corpus first.  `sha256` is always the digest of the text-bearing
+    fixture, redacted or not, so a gate pinning the panel keeps pinning the
+    same bytes it pinned before the text was removed.
+    """
 
     raw_bytes = path.read_bytes()
     payload = _object(_decode_json(raw_bytes), "fixture")
+    if is_redacted(payload):
+        # Hash the rehydrated panel, not the committed bytes, so digests pinned
+        # before the corpus text was removed keep pinning the same panel.
+        payload = _object(rehydrate_fixture_payload(payload), "fixture")
+        raw_bytes = canonical_fixture_bytes(payload)
     _require_keys(payload, {"schema_version", "metadata", "cases"}, "fixture")
     schema_version = _string(payload, "schema_version")
     if schema_version != SCHEMA_VERSION:
@@ -96,6 +126,19 @@ def load_fixture(path: Path) -> NaryClaimFixture:
     return fixture
 
 
+def load_fixture_payload(path: Path) -> dict[str, object]:
+    """Return the text-bearing fixture JSON, rehydrating a committed fixture.
+
+    For callers that work on the raw payload rather than the parsed contracts.
+    Raises `RestrictedCorpusUnavailableError` if the corpus is not present.
+    """
+
+    payload = _object(_decode_json(path.read_bytes()), "fixture")
+    if is_redacted(payload):
+        return _object(rehydrate_fixture_payload(payload), "fixture")
+    return payload
+
+
 def require_frozen_development_fixture(fixture: NaryClaimFixture) -> None:
     """Require the exact expert corpus panel used for model/task development."""
 
@@ -105,6 +148,9 @@ def require_frozen_development_fixture(fixture: NaryClaimFixture) -> None:
         raise ValueError("TG-04 development gates require the frozen fixture path")
     if fixture.sha256 != FROZEN_DEVELOPMENT_FIXTURE_SHA256:
         raise ValueError("TG-04 development gates require the frozen fixture hash")
+    committed = hashlib.sha256(expected_path.read_bytes()).hexdigest()
+    if committed != REDACTED_DEVELOPMENT_FIXTURE_SHA256:
+        raise ValueError("TG-04 development gates require the committed fixture hash")
     if fixture.metadata.purpose != "frozen_expert_event_development_panel":
         raise ValueError("TG-04 development gates require development panel metadata")
 
@@ -501,7 +547,10 @@ __all__ = [
     "DEVELOPMENT_FIXTURE_V2_PATH",
     "FROZEN_DEVELOPMENT_FIXTURE_SHA256",
     "FROZEN_DEVELOPMENT_FIXTURE_V2_SHA256",
+    "REDACTED_DEVELOPMENT_FIXTURE_SHA256",
+    "REDACTED_DEVELOPMENT_FIXTURE_V2_SHA256",
     "SCHEMA_VERSION",
     "load_fixture",
+    "load_fixture_payload",
     "require_frozen_development_fixture",
 ]

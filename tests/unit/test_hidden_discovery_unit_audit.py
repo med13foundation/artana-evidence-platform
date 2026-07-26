@@ -26,6 +26,19 @@ from scripts.validation.claim_events.finite_source_unit.discovery.runner import 
     select_hidden_discovery_unit,
 )
 from scripts.validation.claim_events.fixture import load_fixture
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
+
+
+#: These checks read the corpus text itself, which this public repository does
+#: not carry.  They are skipped, never deleted: the reason names the licence and
+#: the exact command that restores them.
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
+)
 
 _FIXTURE_PATH = Path(
     "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json",
@@ -97,6 +110,7 @@ def test_hidden_discovery_gate_requires_specific_reviewable_event() -> None:
         )
 
 
+@requires_corpus
 def test_hidden_discovery_unit_is_identity_frozen_and_has_no_local_gold() -> None:
     fixture = load_fixture(_FIXTURE_PATH)
 
@@ -109,9 +123,10 @@ def test_hidden_discovery_unit_is_identity_frozen_and_has_no_local_gold() -> Non
     assert unit.input_sha256 == (
         "5461f6bf2aa1e22bd9d6e292ca3e6e21e896d898c4b194229aebe6ace6c3ad0a"
     )
-    assert unit.text == (
-        "The addition of IL-4 to iTreg-driving conditions decreased the number "
-        "of FOXP3+ cells (Figure 6B)."
+    # The corpus sentence is licence-restricted, so it is pinned by digest
+    # rather than quoted.  See scripts/validation/RESTRICTED_CORPORA.md.
+    assert hashlib.sha256(unit.text.encode("utf-8")).hexdigest() == (
+        "14f2c9cb89a1d4091b51c8b96e4fc3cf51bd83088003913da44f345a58fd9928"
     )
 
 

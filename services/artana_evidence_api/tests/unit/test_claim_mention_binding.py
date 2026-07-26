@@ -369,8 +369,8 @@ def test_exact_span_binding_rejects_overlapping_occurrences() -> None:
 
 def test_argument_anchor_context_may_extend_outside_claim_boundary() -> None:
     source = (
-        "Therefore, iTreg induction has to occur before "
-        "effector T cell differentiation occurs."
+        "Therefore, scaffold assembly has to occur before "
+        "vesicle docking proceeds."
     )
     claim = source.removeprefix("Therefore, ")
     item = _inventory_item(
@@ -379,17 +379,17 @@ def test_argument_anchor_context_may_extend_outside_claim_boundary() -> None:
         first_argument={
             "role": "BIOLOGICAL_PROCESS",
             "event_role": "CAUSE",
-            "exact_span": "iTreg induction",
+            "exact_span": "scaffold assembly",
             "mention_anchors": [
                 {
-                    "mention_span": "iTreg induction",
+                    "mention_span": "scaffold assembly",
                     "left_context": "Therefore, ",
                     "right_context": " has to occur before",
                 },
             ],
             "role_rationale": "The source names the preceding process.",
         },
-        second_span="effector T cell differentiation",
+        second_span="vesicle docking",
     )
 
     bound = bind_claim_inventory(
@@ -405,17 +405,17 @@ def test_argument_anchor_context_may_extend_outside_claim_boundary() -> None:
 
 def test_trigger_anchor_context_may_extend_outside_claim_boundary() -> None:
     claim = (
-        "The Wilms' tumor suppressor gene ( WT1 ) was previously identified "
-        "as being imprinted"
+        "The Northlake candidate suppressor gene ( WT1 ) was earlier "
+        "recorded as parentally silenced"
     )
-    source = f"{claim}, with frequent maternal expression."
+    source = f"{claim}, with a recurring parental bias."
     item = _inventory_item(
         text=claim,
-        cue="was previously identified as being imprinted",
+        cue="was earlier recorded as parentally silenced",
         cue_anchor={
-            "mention_span": "was previously identified as being imprinted",
+            "mention_span": "was earlier recorded as parentally silenced",
             "left_context": "( WT1 ) ",
-            "right_context": ", with frequent maternal expression",
+            "right_context": ", with a recurring parental bias",
         },
         first_argument={
             "role": "GENE_OR_PROTEIN",
@@ -423,7 +423,7 @@ def test_trigger_anchor_context_may_extend_outside_claim_boundary() -> None:
             "exact_span": "WT1",
             "role_rationale": "WT1 is the source-local gene.",
         },
-        second_span="imprinted",
+        second_span="silenced",
     )
 
     bound = bind_claim_inventory(

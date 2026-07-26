@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
 from pathlib import Path
+
+import pytest
 
 from scripts.run_known_expert_source_unit_audit import known_expert_report_exit_code
 from scripts.validation.claim_events.finite_source_unit.contracts import (
@@ -17,6 +20,19 @@ from scripts.validation.claim_events.finite_source_unit.known_expert_runner impo
     select_known_expert_unit,
 )
 from scripts.validation.claim_events.fixture import load_fixture
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
+
+
+#: These checks read the corpus text itself, which this public repository does
+#: not carry.  They are skipped, never deleted: the reason names the licence and
+#: the exact command that restores them.
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
+)
 
 
 def _baseline() -> KnownExpertUnitGateInputs:
@@ -84,6 +100,7 @@ def test_known_expert_gate_fails_closed_on_all_safety_boundaries() -> None:
         )
 
 
+@requires_corpus
 def test_known_expert_runner_freezes_event_and_source_unit_identity() -> None:
     fixture = load_fixture(
         Path(
@@ -101,7 +118,11 @@ def test_known_expert_runner_freezes_event_and_source_unit_identity() -> None:
     assert unit.input_sha256 == (
         "14aec6614afd9d47d4cbafe7298b0e6b77b7a3d324048635d3fb98f463b9a0fd"
     )
-    assert "four-fold upregulation of Id1 mRNA" in unit.text
+    # The corpus sentence is licence-restricted, so it is pinned by digest
+    # rather than quoted.  See scripts/validation/RESTRICTED_CORPORA.md.
+    assert hashlib.sha256(unit.text.encode("utf-8")).hexdigest() == (
+        "193eb99d4d17d23d990650553f3189dc7523392e2c119dad6895528d475a8065"
+    )
 
 
 def test_known_expert_cli_exit_status_follows_deterministic_gate() -> None:

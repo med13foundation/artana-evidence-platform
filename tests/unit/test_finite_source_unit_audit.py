@@ -57,6 +57,19 @@ from scripts.validation.claim_events.finite_source_unit.source_units import (
     enumerate_source_units,
 )
 from scripts.validation.claim_events.fixture import load_fixture
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
+
+
+#: These checks read the corpus text itself, which this public repository does
+#: not carry.  They are skipped, never deleted: the reason names the licence and
+#: the exact command that restores them.
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
+)
 
 
 class _TimeoutClient:
@@ -922,6 +935,7 @@ def test_procedure_unit_gate_fails_closed_on_every_safety_boundary() -> None:
         )
 
 
+@requires_corpus
 def test_procedure_runner_freezes_the_previously_disputed_unit() -> None:
     fixture = load_fixture(
         Path(
@@ -937,9 +951,16 @@ def test_procedure_runner_freezes_the_previously_disputed_unit() -> None:
     assert unit.input_sha256 == (
         "19f72827611fa17d2b45c457ed6b632a1f549a9e44c3bb58387dc8d86dbdf47d"
     )
-    assert "electroporated using the U-15 program" in unit.text
+    # Pins the selected sentence without quoting it: the corpus text is
+    # licence-restricted, so its digest stands in for the excerpt that used to
+    # be asserted here.  This is stricter -- it fixes the whole unit, not a
+    # substring of it.
+    assert hashlib.sha256(unit.text.encode("utf-8")).hexdigest() == (
+        "d8604ac46ee2645f8b0103d67831a05b3fdafbb2020a4178fdc36ced99d1c918"
+    )
 
 
+@requires_corpus
 @pytest.mark.asyncio
 async def test_procedure_runner_executes_exactly_one_call_per_agent_role() -> None:
     fixture = load_fixture(
@@ -1017,6 +1038,7 @@ def test_unmatched_discovery_count_includes_stress_lane_events() -> None:
     )
 
 
+@requires_corpus
 @pytest.mark.asyncio
 async def test_provider_timeout_produces_failed_case_evidence() -> None:
     fixture = load_fixture(

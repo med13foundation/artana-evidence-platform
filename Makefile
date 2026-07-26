@@ -119,7 +119,8 @@ ARTANA_EVIDENCE_API_TEST_PATHS := \
 	 tests/unit/test_nary_claim_fixture.py \
 	 tests/unit/test_nary_claim_matching.py \
 	 tests/unit/test_nary_claim_operational.py \
-	 tests/unit/test_nary_claim_scoring.py
+	 tests/unit/test_nary_claim_scoring.py \
+	 tests/unit/test_restricted_corpus_text.py
 
 LIVE_ENDPOINT_CONTRACT_TEST_PATH := tests/e2e/artana_evidence_api/test_live_endpoint_contract.py
 LIVE_EXTERNAL_API_TEST_PATH := services/artana_evidence_api/tests/integration/test_research_init_live_pipeline.py

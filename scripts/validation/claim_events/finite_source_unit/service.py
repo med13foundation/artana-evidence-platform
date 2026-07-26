@@ -309,8 +309,8 @@ represent the outer event as POSITIVE_REGULATION, NEGATIVE_REGULATION, or
 REGULATION rather than collapsing it into the controlled event type. Preserve
 the controlled event or process as a BIOLOGICAL_PROCESS argument and preserve
 each material participant of that controlled event as its own correctly typed
-argument. A phrase such as "enhanced nuclear translocation of NF-kappa B" must
-not become only a LOCALIZATION event that leaves "enhanced" unstructured. A
+argument. A phrase such as "enhanced import of NF-kappa B into the nucleus"
+must not become only a LOCALIZATION event that leaves "enhanced" unstructured. A
 process span such as "expression of MCP-1 and TNF-alpha" is BIOLOGICAL_PROCESS;
 the named genes or proteins are separate GENE_OR_PROTEIN arguments. Do not label
 a process as GENE_OR_PROTEIN merely because its span contains gene names.

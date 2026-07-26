@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
 
 import pytest
@@ -34,6 +35,19 @@ from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.s
 from scripts.validation.claim_events.fixture import (
     DEFAULT_DEVELOPMENT_FIXTURE_PATH,
     load_fixture,
+)
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
+
+
+#: These checks read the corpus text itself, which this public repository does
+#: not carry.  They are skipped, never deleted: the reason names the licence and
+#: the exact command that restores them.
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
 )
 
 
@@ -70,6 +84,7 @@ def _baseline_gate() -> ControlledEventTrialGateInputs:
     )
 
 
+@requires_corpus
 def test_controlled_event_trial_selection_is_frozen_and_fresh() -> None:
     selection = select_controlled_event_trial(
         load_fixture(DEFAULT_DEVELOPMENT_FIXTURE_PATH),
@@ -77,9 +92,10 @@ def test_controlled_event_trial_selection_is_frozen_and_fresh() -> None:
 
     assert selection.case_id == "bionlp-ge-2011:PMC-2222968-06-Results-05"
     assert selection.unit.index == 11
-    assert selection.unit.text == (
-        "As described for the human cells, TGF-beta dramatically up-regulated "
-        "Foxp3 in the DO11.10 littermate control mice."
+    # The corpus sentence is licence-restricted, so it is pinned by digest
+    # rather than quoted.  See scripts/validation/RESTRICTED_CORPORA.md.
+    assert hashlib.sha256(selection.unit.text.encode("utf-8")).hexdigest() == (
+        "e305c7e19ea6e6e2a7014b3a3a021623b5e5ec756477c81cf5716e8861e0dc04"
     )
     assert len(selection.expert_events) == 1
     assert selection.expert_events[0].trigger_span == "up-regulated"
@@ -151,6 +167,7 @@ def test_structure_replay_authorization_requires_successful_exact_report() -> No
         _verify_authorization_payload(failed_gate)
 
 
+@requires_corpus
 def test_expert_core_matching_preserves_valid_additional_arguments() -> None:
     selection = select_controlled_event_trial(
         load_fixture(DEFAULT_DEVELOPMENT_FIXTURE_PATH),
@@ -175,7 +192,7 @@ def test_expert_core_matching_preserves_valid_additional_arguments() -> None:
             {
                 "event_role": "CONTEXT",
                 "role": "POPULATION",
-                "exact_span": "DO11.10 littermate control mice",
+                "exact_span": "DO11.10 littermate control animals",
                 "source_start": selection.unit.source_start
                 + selection.unit.text.index("DO11.10"),
             },

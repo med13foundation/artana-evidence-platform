@@ -253,7 +253,7 @@ async def test_procedures_and_measurement_only_items_never_enter_relation_framin
     None
 ):
     procedure = "Reporter constructs were electroporated into CD4+ T cells."
-    measurement = "Luciferase activity was measured after 24 hours."
+    measurement = "Luciferase activity was recorded after 24 hours."
     text = f"{procedure} {measurement}"
     inventory = {
         "claims": [
@@ -268,7 +268,7 @@ async def test_procedures_and_measurement_only_items_never_enter_relation_framin
             _inventory_claim(
                 exact_span=measurement,
                 endpoint_a_span="Luciferase activity",
-                relation_cue_span="was measured after",
+                relation_cue_span="was recorded after",
                 endpoint_b_span="24 hours",
                 claim_kind="MEASUREMENT_ONLY",
                 event_type="OTHER_EXPLICIT",
@@ -393,9 +393,9 @@ def test_completeness_missing_claims_must_be_relation_eligible(
     claim_kind: str,
 ) -> None:
     descriptor = _inventory_claim(
-        exact_span="Luciferase activity was measured after 24 hours.",
+        exact_span="Luciferase activity was recorded after 24 hours.",
         endpoint_a_span="Luciferase activity",
-        relation_cue_span="was measured after",
+        relation_cue_span="was recorded after",
         endpoint_b_span="24 hours",
         claim_kind=claim_kind,
         event_type="OTHER_EXPLICIT",
@@ -2337,12 +2337,12 @@ async def test_duplicate_only_completeness_review_stops_without_another_agent_ca
 
 @pytest.mark.asyncio
 async def test_procedural_method_is_categorically_excluded_from_recovery() -> None:
-    text = "Primers and probes were provided by Assay-on-Demand (Applied Biosystems)."
+    text = "Buffers and reagents were provided by Northlake Bioreagents (Kit R-12)."
     procedural_descriptor = _inventory_claim(
         exact_span=text,
-        endpoint_a_span="Primers and probes",
+        endpoint_a_span="Buffers and reagents",
         relation_cue_span="provided by",
-        endpoint_b_span="Assay-on-Demand (Applied Biosystems)",
+        endpoint_b_span="Northlake Bioreagents (Kit R-12)",
         event_type="OTHER_EXPLICIT",
     )
     runner = ScriptedStepRunner(
@@ -2378,7 +2378,7 @@ async def test_procedural_method_is_categorically_excluded_from_recovery() -> No
     )
     confirmation_prompt = cast("str", runner.calls[-1]["prompt"])
     assert "EXCLUDED REVIEWED ITEMS" in confirmation_prompt
-    assert "Primers and probes" in confirmation_prompt
+    assert "Buffers and reagents" in confirmation_prompt
 
 
 @pytest.mark.asyncio

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
 from pathlib import Path
 
@@ -25,6 +26,19 @@ from scripts.validation.claim_events.finite_source_unit.discovery.fresh_unit imp
     select_fresh_hidden_unit,
 )
 from scripts.validation.claim_events.fixture import load_fixture
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
+
+
+#: These checks read the corpus text itself, which this public repository does
+#: not carry.  They are skipped, never deleted: the reason names the licence and
+#: the exact command that restores them.
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
+)
 
 _FIXTURE_PATH = Path(
     "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json",
@@ -115,6 +129,7 @@ def test_fresh_discovery_gate_fails_closed_on_every_boundary() -> None:
         )
 
 
+@requires_corpus
 def test_fresh_unit_is_frozen_unexposed_and_has_no_local_gold() -> None:
     selection = select_fresh_hidden_unit(load_fixture(_FIXTURE_PATH))
 
@@ -126,8 +141,10 @@ def test_fresh_unit_is_frozen_unexposed_and_has_no_local_gold() -> None:
     assert selection.unit.input_sha256 == (
         "517b4ab2c503e65ce9d1b11f6b77e2361215f642cd0c54eec6abbb785a88c905"
     )
-    assert "P-selectin specifically enhanced nuclear translocation" in (
-        selection.unit.text
+    # The corpus sentence is licence-restricted, so it is pinned by digest
+    # rather than quoted.  See scripts/validation/RESTRICTED_CORPORA.md.
+    assert hashlib.sha256(selection.unit.text.encode("utf-8")).hexdigest() == (
+        "7470319518ed1ce44e7195841143cfc1f91e4799babe8676f46d3a2255e148d3"
     )
     assert len(selection.exposure_registry_sha256) == 64
     assert selection.authoritative_article_url.endswith("/7537762/")

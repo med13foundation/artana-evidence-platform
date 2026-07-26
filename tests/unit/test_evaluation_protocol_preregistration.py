@@ -17,15 +17,24 @@ from typing import Any
 import pytest
 
 from scripts.validation.claim_events.evaluation import _run_passes
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
 from scripts.validation.claim_events.fixture import (
     DEVELOPMENT_FIXTURE_V2_PATH,
     FROZEN_DEVELOPMENT_FIXTURE_V2_SHA256,
     load_fixture,
+    load_fixture_payload,
 )
 from scripts.validation.claim_events.scoring import score_fixture
 
 _PROTOCOL = Path(
     "docs/validation/preregistrations/2026-07-25-tg04-evaluation-protocol-v1.json"
+)
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
 )
 
 
@@ -49,6 +58,7 @@ def _predictions(raw: dict[str, Any], mutate) -> dict[str, Any]:  # noqa: ANN001
     return {"cases": cases}
 
 
+@requires_corpus
 def test_protocol_pins_the_fixture_the_code_loads(protocol: dict[str, Any]) -> None:
     assert protocol["fixture"]["sha256"] == FROZEN_DEVELOPMENT_FIXTURE_V2_SHA256
     assert protocol["fixture"]["path"] == str(DEVELOPMENT_FIXTURE_V2_PATH)
@@ -71,12 +81,11 @@ def test_declared_thresholds_match_the_gate_constants(protocol: dict[str, Any]) 
         )
 
 
+@requires_corpus
 def test_gold_as_predictions_scores_exactly_one(fixture_v2) -> None:  # noqa: ANN001
     """The calibration the protocol requires before any model score is read."""
 
-    raw: dict[str, Any] = json.loads(
-        DEVELOPMENT_FIXTURE_V2_PATH.read_text(encoding="utf-8"),
-    )
+    raw: dict[str, Any] = load_fixture_payload(DEVELOPMENT_FIXTURE_V2_PATH)
     score = score_fixture(fixture_v2, _predictions(raw, lambda event, case: None))
 
     assert _run_passes(score) is True
@@ -91,12 +100,11 @@ def test_gold_as_predictions_scores_exactly_one(fixture_v2) -> None:  # noqa: AN
         assert getattr(score.metrics, name).rate == 1.0, name
 
 
+@requires_corpus
 def test_matcher_tolerates_a_widened_trigger(fixture_v2) -> None:  # noqa: ANN001
     """The preregistered tolerance: same event, wider span, same start offset."""
 
-    raw: dict[str, Any] = json.loads(
-        DEVELOPMENT_FIXTURE_V2_PATH.read_text(encoding="utf-8"),
-    )
+    raw: dict[str, Any] = load_fixture_payload(DEVELOPMENT_FIXTURE_V2_PATH)
 
     def widen(event: dict[str, Any], case: dict[str, Any]) -> None:
         text = case["source_text"]
@@ -147,12 +155,11 @@ def test_matcher_tolerates_a_widened_trigger(fixture_v2) -> None:  # noqa: ANN00
         ),
     ],
 )
+@requires_corpus
 def test_tolerance_is_bounded(fixture_v2, label: str, mutate) -> None:  # noqa: ANN001
     """Every discrimination the strict matcher made must survive the tolerance."""
 
-    raw: dict[str, Any] = json.loads(
-        DEVELOPMENT_FIXTURE_V2_PATH.read_text(encoding="utf-8"),
-    )
+    raw: dict[str, Any] = load_fixture_payload(DEVELOPMENT_FIXTURE_V2_PATH)
     score = score_fixture(fixture_v2, _predictions(raw, mutate))
 
     assert score.metrics.whole_event_recall.rate == 0.0, label

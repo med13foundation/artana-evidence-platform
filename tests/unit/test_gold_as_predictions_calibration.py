@@ -23,11 +23,19 @@ from typing import Any, cast
 import pytest
 
 from scripts.validation.claim_events.evaluation import _run_passes
-from scripts.validation.claim_events.fixture import load_fixture
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
+from scripts.validation.claim_events.fixture import load_fixture, load_fixture_payload
 from scripts.validation.claim_events.scoring import score_fixture
 
 _FIXTURE = Path(
     "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json"
+)
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
 )
 _GATED_METRICS = (
     "whole_event_precision",
@@ -39,7 +47,7 @@ _GATED_METRICS = (
 
 @pytest.fixture(name="raw")
 def _raw() -> dict[str, Any]:
-    return cast("dict[str, Any]", json.loads(_FIXTURE.read_text(encoding="utf-8")))
+    return cast("dict[str, Any]", load_fixture_payload(_FIXTURE))
 
 
 def _score(raw: dict[str, Any], cases: list[dict[str, Any]]) -> Any:
@@ -47,6 +55,7 @@ def _score(raw: dict[str, Any], cases: list[dict[str, Any]]) -> Any:
     return score_fixture(cast("Any", fixture), {"cases": cases})
 
 
+@requires_corpus
 def test_gold_as_predictions_scores_perfectly(raw: dict[str, Any]) -> None:
     """V1: the gold answer must score 1.0 against the scorer that grades it.
 
@@ -74,6 +83,7 @@ def test_gold_as_predictions_scores_perfectly(raw: dict[str, Any]) -> None:
     assert _run_passes(score) is True
 
 
+@requires_corpus
 def test_corpus_faithful_extractor_cannot_pass_the_precision_gate(
     raw: dict[str, Any],
 ) -> None:
