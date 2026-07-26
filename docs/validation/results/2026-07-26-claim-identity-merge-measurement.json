@@ -1,0 +1,1511 @@
+{
+  "READ_FIRST": "docs/validation/reports/2026-07-26-claim-identity-merge-measurement.md -- the mesh_id arms are a tautology (identity derived from the answer key) and the mention_text recall figures are rule-dependent. Do not quote a number from this file without reading which ones survive.",
+  "corpus": {
+    "name": "BC5CDR (NCBI, public domain)",
+    "digests": {
+      "CDR_DevelopmentSet.PubTator.txt": "9e18d8e700168887a7919e62f67ac2ce2357e3f409a48ee992906abdd80fe3e5",
+      "CDR_TestSet.PubTator.txt": "a3c48d5f35bdfce20c2371778abedc9fd24d1da092207072e5181ad53c8d0e2f",
+      "CDR_TrainingSet.PubTator.txt": "7afcec134e3d4871e74b0398d92850d3c9ac94c0bdc780003f2d60184c012bd8"
+    },
+    "documents": 1500,
+    "distinct_cid_facts": 2434,
+    "multi_document_cid_facts": 325
+  },
+  "preregistered": {
+    "relation": "CAUSES",
+    "span_heuristic": "first sentence containing both mentions; else first containing disease; else title",
+    "label_rule": "most frequent surface mention per document, lexicographic tie-break",
+    "same_fact_ground_truth": "equality of gold (chemical MeSH, disease MeSH)",
+    "bootstrap_seed": 20260726
+  },
+  "arms": {
+    "mention_text/min": {
+      "frames": 3116,
+      "skipped": 0,
+      "variants": {
+        "a_today": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 0,
+          "recall": 0.0,
+          "recall_wilson": [
+            0.0,
+            0.0018713572445141408
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": null,
+          "merge_precision_wilson": null,
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 0,
+          "distinct_identities": 3048,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              0.0,
+              0.0
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": null,
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "b_drop_source_evidence": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 650,
+          "recall": 0.317227916056613,
+          "recall_wilson": [
+            0.2974343470976047,
+            0.3377055487423862
+          ],
+          "false_merge_pairs": 3,
+          "fused_identity_groups": 2,
+          "merge_precision": 0.9954058192955589,
+          "merge_precision_wilson": [
+            0.9865803951893766,
+            0.998436388156867
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 84,
+          "distinct_identities": 2760,
+          "examples": [
+            {
+              "identity": "f66177f4acd24f08",
+              "gold_facts": [
+                [
+                  "D003520",
+                  "D003556"
+                ],
+                [
+                  "D003520",
+                  "D006470"
+                ]
+              ],
+              "documents": [
+                "1468485",
+                "1545575"
+              ],
+              "labels": [
+                [
+                  "cyclophosphamide",
+                  "hemorrhagic cystitis"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "3dfe2630b2104a03",
+              "gold_facts": [
+                [
+                  "D016559",
+                  "D014652"
+                ],
+                [
+                  "D016559",
+                  "D057049"
+                ]
+              ],
+              "documents": [
+                "11007689",
+                "19135948"
+              ],
+              "labels": [
+                [
+                  "tacrolimus",
+                  "TMA"
+                ]
+              ],
+              "false_pairs": 1
+            }
+          ],
+          "bootstrap": {
+            "recall_ci": [
+              0.24786324786324787,
+              0.39438700147710487
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              12
+            ],
+            "merge_precision_ci": [
+              0.979933110367893,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "c_b_plus_strip_perdoc_text": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 650,
+          "recall": 0.317227916056613,
+          "recall_wilson": [
+            0.2974343470976047,
+            0.3377055487423862
+          ],
+          "false_merge_pairs": 3,
+          "fused_identity_groups": 2,
+          "merge_precision": 0.9954058192955589,
+          "merge_precision_wilson": [
+            0.9865803951893766,
+            0.998436388156867
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 84,
+          "distinct_identities": 2760,
+          "examples": [
+            {
+              "identity": "f66177f4acd24f08",
+              "gold_facts": [
+                [
+                  "D003520",
+                  "D003556"
+                ],
+                [
+                  "D003520",
+                  "D006470"
+                ]
+              ],
+              "documents": [
+                "1468485",
+                "1545575"
+              ],
+              "labels": [
+                [
+                  "cyclophosphamide",
+                  "hemorrhagic cystitis"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "3dfe2630b2104a03",
+              "gold_facts": [
+                [
+                  "D016559",
+                  "D014652"
+                ],
+                [
+                  "D016559",
+                  "D057049"
+                ]
+              ],
+              "documents": [
+                "11007689",
+                "19135948"
+              ],
+              "labels": [
+                [
+                  "tacrolimus",
+                  "TMA"
+                ]
+              ],
+              "false_pairs": 1
+            }
+          ],
+          "bootstrap": {
+            "recall_ci": [
+              0.24786324786324787,
+              0.39438700147710487
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              12
+            ],
+            "merge_precision_ci": [
+              0.979933110367893,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "c2_c_plus_states_only": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 650,
+          "recall": 0.317227916056613,
+          "recall_wilson": [
+            0.2974343470976047,
+            0.3377055487423862
+          ],
+          "false_merge_pairs": 3,
+          "fused_identity_groups": 2,
+          "merge_precision": 0.9954058192955589,
+          "merge_precision_wilson": [
+            0.9865803951893766,
+            0.998436388156867
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 84,
+          "distinct_identities": 2760,
+          "examples": [
+            {
+              "identity": "f09f8f7db2c67ef4",
+              "gold_facts": [
+                [
+                  "D003520",
+                  "D003556"
+                ],
+                [
+                  "D003520",
+                  "D006470"
+                ]
+              ],
+              "documents": [
+                "1468485",
+                "1545575"
+              ],
+              "labels": [
+                [
+                  "cyclophosphamide",
+                  "hemorrhagic cystitis"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "4288fcec1689abbc",
+              "gold_facts": [
+                [
+                  "D016559",
+                  "D014652"
+                ],
+                [
+                  "D016559",
+                  "D057049"
+                ]
+              ],
+              "documents": [
+                "11007689",
+                "19135948"
+              ],
+              "labels": [
+                [
+                  "tacrolimus",
+                  "TMA"
+                ]
+              ],
+              "false_pairs": 1
+            }
+          ],
+          "bootstrap": {
+            "recall_ci": [
+              0.24786324786324787,
+              0.39438700147710487
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              12
+            ],
+            "merge_precision_ci": [
+              0.979933110367893,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "e_triple_polarity_status": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 745,
+          "recall": 0.3635919960956564,
+          "recall_wilson": [
+            0.3430365972234345,
+            0.3846579311805106
+          ],
+          "false_merge_pairs": 5,
+          "fused_identity_groups": 3,
+          "merge_precision": 0.9933333333333333,
+          "merge_precision_wilson": [
+            0.9844894056399562,
+            0.9971491773196468
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 106,
+          "distinct_identities": 2712,
+          "examples": [
+            {
+              "identity": "812e029b9d6560e7",
+              "gold_facts": [
+                [
+                  "D003520",
+                  "D003556"
+                ],
+                [
+                  "D003520",
+                  "D006470"
+                ]
+              ],
+              "documents": [
+                "1468485",
+                "1545575"
+              ],
+              "labels": [
+                [
+                  "cyclophosphamide",
+                  "hemorrhagic cystitis"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "e413ce800821b4fc",
+              "gold_facts": [
+                [
+                  "D007372",
+                  "D000743"
+                ],
+                [
+                  "D016898",
+                  "D000743"
+                ]
+              ],
+              "documents": [
+                "15482540",
+                "15580403",
+                "16629641"
+              ],
+              "labels": [
+                [
+                  "Interferon",
+                  "hemolytic anemia"
+                ],
+                [
+                  "interferon",
+                  "Hemolytic anemia"
+                ],
+                [
+                  "interferon",
+                  "hemolytic anemia"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "6c42d8178e127b6e",
+              "gold_facts": [
+                [
+                  "D016559",
+                  "D014652"
+                ],
+                [
+                  "D016559",
+                  "D057049"
+                ]
+              ],
+              "documents": [
+                "11007689",
+                "19135948"
+              ],
+              "labels": [
+                [
+                  "tacrolimus",
+                  "TMA"
+                ]
+              ],
+              "false_pairs": 1
+            }
+          ],
+          "bootstrap": {
+            "recall_ci": [
+              0.29506437768240346,
+              0.4358695652173913
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              16
+            ],
+            "merge_precision_ci": [
+              0.978601997146933,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "d_triple_only": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 745,
+          "recall": 0.3635919960956564,
+          "recall_wilson": [
+            0.3430365972234345,
+            0.3846579311805106
+          ],
+          "false_merge_pairs": 5,
+          "fused_identity_groups": 3,
+          "merge_precision": 0.9933333333333333,
+          "merge_precision_wilson": [
+            0.9844894056399562,
+            0.9971491773196468
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 106,
+          "distinct_identities": 2712,
+          "examples": [
+            {
+              "identity": "fb1c1c57c2655083",
+              "gold_facts": [
+                [
+                  "D003520",
+                  "D003556"
+                ],
+                [
+                  "D003520",
+                  "D006470"
+                ]
+              ],
+              "documents": [
+                "1468485",
+                "1545575"
+              ],
+              "labels": [
+                [
+                  "cyclophosphamide",
+                  "hemorrhagic cystitis"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "89f4840ea246f058",
+              "gold_facts": [
+                [
+                  "D007372",
+                  "D000743"
+                ],
+                [
+                  "D016898",
+                  "D000743"
+                ]
+              ],
+              "documents": [
+                "15482540",
+                "15580403",
+                "16629641"
+              ],
+              "labels": [
+                [
+                  "Interferon",
+                  "hemolytic anemia"
+                ],
+                [
+                  "interferon",
+                  "Hemolytic anemia"
+                ],
+                [
+                  "interferon",
+                  "hemolytic anemia"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "742ecffe597df46e",
+              "gold_facts": [
+                [
+                  "D016559",
+                  "D014652"
+                ],
+                [
+                  "D016559",
+                  "D057049"
+                ]
+              ],
+              "documents": [
+                "11007689",
+                "19135948"
+              ],
+              "labels": [
+                [
+                  "tacrolimus",
+                  "TMA"
+                ]
+              ],
+              "false_pairs": 1
+            }
+          ],
+          "bootstrap": {
+            "recall_ci": [
+              0.29506437768240346,
+              0.4358695652173913
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              16
+            ],
+            "merge_precision_ci": [
+              0.978601997146933,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        }
+      }
+    },
+    "mention_text/doc": {
+      "frames": 3116,
+      "skipped": 0,
+      "variants": {
+        "a_today": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 0,
+          "recall": 0.0,
+          "recall_wilson": [
+            0.0,
+            0.0018713572445141408
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": null,
+          "merge_precision_wilson": null,
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 0,
+          "distinct_identities": 3048,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              0.0,
+              0.0
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": null,
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "b_drop_source_evidence": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 650,
+          "recall": 0.317227916056613,
+          "recall_wilson": [
+            0.2974343470976047,
+            0.3377055487423862
+          ],
+          "false_merge_pairs": 3,
+          "fused_identity_groups": 2,
+          "merge_precision": 0.9954058192955589,
+          "merge_precision_wilson": [
+            0.9865803951893766,
+            0.998436388156867
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 84,
+          "distinct_identities": 2760,
+          "examples": [
+            {
+              "identity": "8441adbed31b84ab",
+              "gold_facts": [
+                [
+                  "D003520",
+                  "D003556"
+                ],
+                [
+                  "D003520",
+                  "D006470"
+                ]
+              ],
+              "documents": [
+                "1468485",
+                "1545575"
+              ],
+              "labels": [
+                [
+                  "cyclophosphamide",
+                  "hemorrhagic cystitis"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "0a867b51e2f3ba37",
+              "gold_facts": [
+                [
+                  "D016559",
+                  "D014652"
+                ],
+                [
+                  "D016559",
+                  "D057049"
+                ]
+              ],
+              "documents": [
+                "11007689",
+                "19135948"
+              ],
+              "labels": [
+                [
+                  "tacrolimus",
+                  "TMA"
+                ]
+              ],
+              "false_pairs": 1
+            }
+          ],
+          "bootstrap": {
+            "recall_ci": [
+              0.24786324786324787,
+              0.39438700147710487
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              12
+            ],
+            "merge_precision_ci": [
+              0.979933110367893,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "c_b_plus_strip_perdoc_text": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 650,
+          "recall": 0.317227916056613,
+          "recall_wilson": [
+            0.2974343470976047,
+            0.3377055487423862
+          ],
+          "false_merge_pairs": 3,
+          "fused_identity_groups": 2,
+          "merge_precision": 0.9954058192955589,
+          "merge_precision_wilson": [
+            0.9865803951893766,
+            0.998436388156867
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 84,
+          "distinct_identities": 2760,
+          "examples": [
+            {
+              "identity": "8e077a4bbe52bd5c",
+              "gold_facts": [
+                [
+                  "D003520",
+                  "D003556"
+                ],
+                [
+                  "D003520",
+                  "D006470"
+                ]
+              ],
+              "documents": [
+                "1468485",
+                "1545575"
+              ],
+              "labels": [
+                [
+                  "cyclophosphamide",
+                  "hemorrhagic cystitis"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "9d3c3be86d6b5589",
+              "gold_facts": [
+                [
+                  "D016559",
+                  "D014652"
+                ],
+                [
+                  "D016559",
+                  "D057049"
+                ]
+              ],
+              "documents": [
+                "11007689",
+                "19135948"
+              ],
+              "labels": [
+                [
+                  "tacrolimus",
+                  "TMA"
+                ]
+              ],
+              "false_pairs": 1
+            }
+          ],
+          "bootstrap": {
+            "recall_ci": [
+              0.24786324786324787,
+              0.39438700147710487
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              12
+            ],
+            "merge_precision_ci": [
+              0.979933110367893,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "c2_c_plus_states_only": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 650,
+          "recall": 0.317227916056613,
+          "recall_wilson": [
+            0.2974343470976047,
+            0.3377055487423862
+          ],
+          "false_merge_pairs": 3,
+          "fused_identity_groups": 2,
+          "merge_precision": 0.9954058192955589,
+          "merge_precision_wilson": [
+            0.9865803951893766,
+            0.998436388156867
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 84,
+          "distinct_identities": 2760,
+          "examples": [
+            {
+              "identity": "3a9834d2dc973c3a",
+              "gold_facts": [
+                [
+                  "D003520",
+                  "D003556"
+                ],
+                [
+                  "D003520",
+                  "D006470"
+                ]
+              ],
+              "documents": [
+                "1468485",
+                "1545575"
+              ],
+              "labels": [
+                [
+                  "cyclophosphamide",
+                  "hemorrhagic cystitis"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "8842c2d733bbe8e8",
+              "gold_facts": [
+                [
+                  "D016559",
+                  "D014652"
+                ],
+                [
+                  "D016559",
+                  "D057049"
+                ]
+              ],
+              "documents": [
+                "11007689",
+                "19135948"
+              ],
+              "labels": [
+                [
+                  "tacrolimus",
+                  "TMA"
+                ]
+              ],
+              "false_pairs": 1
+            }
+          ],
+          "bootstrap": {
+            "recall_ci": [
+              0.24786324786324787,
+              0.39438700147710487
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              12
+            ],
+            "merge_precision_ci": [
+              0.979933110367893,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "e_triple_polarity_status": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 745,
+          "recall": 0.3635919960956564,
+          "recall_wilson": [
+            0.3430365972234345,
+            0.3846579311805106
+          ],
+          "false_merge_pairs": 5,
+          "fused_identity_groups": 3,
+          "merge_precision": 0.9933333333333333,
+          "merge_precision_wilson": [
+            0.9844894056399562,
+            0.9971491773196468
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 106,
+          "distinct_identities": 2712,
+          "examples": [
+            {
+              "identity": "812e029b9d6560e7",
+              "gold_facts": [
+                [
+                  "D003520",
+                  "D003556"
+                ],
+                [
+                  "D003520",
+                  "D006470"
+                ]
+              ],
+              "documents": [
+                "1468485",
+                "1545575"
+              ],
+              "labels": [
+                [
+                  "cyclophosphamide",
+                  "hemorrhagic cystitis"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "e413ce800821b4fc",
+              "gold_facts": [
+                [
+                  "D007372",
+                  "D000743"
+                ],
+                [
+                  "D016898",
+                  "D000743"
+                ]
+              ],
+              "documents": [
+                "15482540",
+                "15580403",
+                "16629641"
+              ],
+              "labels": [
+                [
+                  "Interferon",
+                  "hemolytic anemia"
+                ],
+                [
+                  "interferon",
+                  "Hemolytic anemia"
+                ],
+                [
+                  "interferon",
+                  "hemolytic anemia"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "6c42d8178e127b6e",
+              "gold_facts": [
+                [
+                  "D016559",
+                  "D014652"
+                ],
+                [
+                  "D016559",
+                  "D057049"
+                ]
+              ],
+              "documents": [
+                "11007689",
+                "19135948"
+              ],
+              "labels": [
+                [
+                  "tacrolimus",
+                  "TMA"
+                ]
+              ],
+              "false_pairs": 1
+            }
+          ],
+          "bootstrap": {
+            "recall_ci": [
+              0.29506437768240346,
+              0.4358695652173913
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              16
+            ],
+            "merge_precision_ci": [
+              0.978601997146933,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "d_triple_only": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 745,
+          "recall": 0.3635919960956564,
+          "recall_wilson": [
+            0.3430365972234345,
+            0.3846579311805106
+          ],
+          "false_merge_pairs": 5,
+          "fused_identity_groups": 3,
+          "merge_precision": 0.9933333333333333,
+          "merge_precision_wilson": [
+            0.9844894056399562,
+            0.9971491773196468
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 106,
+          "distinct_identities": 2712,
+          "examples": [
+            {
+              "identity": "fb1c1c57c2655083",
+              "gold_facts": [
+                [
+                  "D003520",
+                  "D003556"
+                ],
+                [
+                  "D003520",
+                  "D006470"
+                ]
+              ],
+              "documents": [
+                "1468485",
+                "1545575"
+              ],
+              "labels": [
+                [
+                  "cyclophosphamide",
+                  "hemorrhagic cystitis"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "89f4840ea246f058",
+              "gold_facts": [
+                [
+                  "D007372",
+                  "D000743"
+                ],
+                [
+                  "D016898",
+                  "D000743"
+                ]
+              ],
+              "documents": [
+                "15482540",
+                "15580403",
+                "16629641"
+              ],
+              "labels": [
+                [
+                  "Interferon",
+                  "hemolytic anemia"
+                ],
+                [
+                  "interferon",
+                  "Hemolytic anemia"
+                ],
+                [
+                  "interferon",
+                  "hemolytic anemia"
+                ]
+              ],
+              "false_pairs": 2
+            },
+            {
+              "identity": "742ecffe597df46e",
+              "gold_facts": [
+                [
+                  "D016559",
+                  "D014652"
+                ],
+                [
+                  "D016559",
+                  "D057049"
+                ]
+              ],
+              "documents": [
+                "11007689",
+                "19135948"
+              ],
+              "labels": [
+                [
+                  "tacrolimus",
+                  "TMA"
+                ]
+              ],
+              "false_pairs": 1
+            }
+          ],
+          "bootstrap": {
+            "recall_ci": [
+              0.29506437768240346,
+              0.4358695652173913
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              16
+            ],
+            "merge_precision_ci": [
+              0.978601997146933,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        }
+      }
+    },
+    "mesh_id/min": {
+      "frames": 3116,
+      "skipped": 0,
+      "variants": {
+        "a_today": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 0,
+          "recall": 0.0,
+          "recall_wilson": [
+            0.0,
+            0.0018713572445141408
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": null,
+          "merge_precision_wilson": null,
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 0,
+          "distinct_identities": 3116,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              0.0,
+              0.0
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": null,
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "b_drop_source_evidence": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 2049,
+          "recall": 1.0,
+          "recall_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": 1.0,
+          "merge_precision_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 325,
+          "distinct_identities": 2434,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              1.0,
+              1.0
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": [
+              1.0,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "c_b_plus_strip_perdoc_text": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 2049,
+          "recall": 1.0,
+          "recall_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": 1.0,
+          "merge_precision_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 325,
+          "distinct_identities": 2434,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              1.0,
+              1.0
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": [
+              1.0,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "c2_c_plus_states_only": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 2049,
+          "recall": 1.0,
+          "recall_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": 1.0,
+          "merge_precision_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 325,
+          "distinct_identities": 2434,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              1.0,
+              1.0
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": [
+              1.0,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "e_triple_polarity_status": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 2049,
+          "recall": 1.0,
+          "recall_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": 1.0,
+          "merge_precision_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 325,
+          "distinct_identities": 2434,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              1.0,
+              1.0
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": [
+              1.0,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "d_triple_only": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 2049,
+          "recall": 1.0,
+          "recall_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": 1.0,
+          "merge_precision_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 325,
+          "distinct_identities": 2434,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              1.0,
+              1.0
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": [
+              1.0,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        }
+      },
+      "circularity_warning": "subject/object ARE the gold MeSH ids that define the ground truth, so any variant that drops per-document text scores recall 1.0 by construction. Not a result."
+    },
+    "mesh_id/doc": {
+      "frames": 3116,
+      "skipped": 0,
+      "variants": {
+        "a_today": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 0,
+          "recall": 0.0,
+          "recall_wilson": [
+            0.0,
+            0.0018713572445141408
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": null,
+          "merge_precision_wilson": null,
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 0,
+          "distinct_identities": 3116,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              0.0,
+              0.0
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": null,
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "b_drop_source_evidence": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 650,
+          "recall": 0.317227916056613,
+          "recall_wilson": [
+            0.2974343470976047,
+            0.3377055487423862
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": 1.0,
+          "merge_precision_wilson": [
+            0.9941245708440697,
+            0.9999999999999999
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 84,
+          "distinct_identities": 2828,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              0.24786324786324787,
+              0.39438700147710487
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": [
+              1.0,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "c_b_plus_strip_perdoc_text": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 968,
+          "recall": 0.47242557345046365,
+          "recall_wilson": [
+            0.4508804371226973,
+            0.4940739129840037
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": 1.0,
+          "merge_precision_wilson": [
+            0.9960470924479874,
+            1.0
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 122,
+          "distinct_identities": 2716,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              0.4048414023372287,
+              0.5417867435158501
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": [
+              1.0,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "c2_c_plus_states_only": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 2049,
+          "recall": 1.0,
+          "recall_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": 1.0,
+          "merge_precision_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 325,
+          "distinct_identities": 2434,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              1.0,
+              1.0
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": [
+              1.0,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "e_triple_polarity_status": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 2049,
+          "recall": 1.0,
+          "recall_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": 1.0,
+          "merge_precision_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 325,
+          "distinct_identities": 2434,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              1.0,
+              1.0
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": [
+              1.0,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        },
+        "d_triple_only": {
+          "true_pairs": 2049,
+          "merged_true_pairs": 2049,
+          "recall": 1.0,
+          "recall_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "false_merge_pairs": 0,
+          "fused_identity_groups": 0,
+          "merge_precision": 1.0,
+          "merge_precision_wilson": [
+            0.998128642755486,
+            1.0
+          ],
+          "multi_document_facts": 325,
+          "facts_fully_collapsed": 325,
+          "distinct_identities": 2434,
+          "examples": [],
+          "bootstrap": {
+            "recall_ci": [
+              1.0,
+              1.0
+            ],
+            "false_merge_pairs_ci": [
+              0,
+              0
+            ],
+            "merge_precision_ci": [
+              1.0,
+              1.0
+            ],
+            "resamples": 2000,
+            "seed": 20260726
+          }
+        }
+      },
+      "circularity_warning": "subject/object ARE the gold MeSH ids that define the ground truth, so any variant that drops per-document text scores recall 1.0 by construction. Not a result."
+    }
+  }
+}

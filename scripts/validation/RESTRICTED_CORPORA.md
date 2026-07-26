@@ -112,6 +112,26 @@ a reason naming the licence and the fetch command. **They are never deleted, and
 a skip is never the way to make a gate green.** Everything that can be checked
 from derived data alone still runs offline.
 
+## Corpora assessed and found unrestricted
+
+**BC5CDR** (BioCreative V Chemical-Disease Relation, NCBI) ships a PUBLIC DOMAIN
+NOTICE: the corpus is a "United States Government Work", and "the National
+Library of Medicine and the U.S. Government have not placed any restriction on
+its use or reproduction." Nothing here forbids committing it.
+
+It is still not committed, and the name-versus-span rule above was applied to
+everything derived from it in `scripts/validation/claim_identity_merge/` and
+`docs/validation/results/2026-07-26-claim-identity-merge-*.json` — entity labels
+kept, document prose stripped. That is a deliberate choice: the rule is about
+what a derived artifact is *for*, and it reads better when it does not depend on
+which corpus happens to be underneath. The one stripped file and the reason are
+recorded in `docs/validation/reports/2026-07-26-claim-identity-merge-measurement.md`.
+
+Note that neither half of the guard below looks at BC5CDR. `restricted-corpus-scan`
+compares against the GE corpus only, so a clean run says nothing about BC5CDR
+text, and the mechanical boundary for the BC5CDR artifacts is
+`harvest_real_labels.py::_reject_spans` instead.
+
 ## Adding a corpus
 
 Before committing anything derived from a new corpus, check its licence for

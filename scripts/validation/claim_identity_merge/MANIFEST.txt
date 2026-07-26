@@ -1,0 +1,59 @@
+# Reproducibility manifest -- issue #217 claim-identity merge measurement
+#
+# Read the report before quoting any number these scripts emit:
+#   docs/validation/reports/2026-07-26-claim-identity-merge-measurement.md
+# It names which figures survive scrutiny and which do not. One arm's headline
+# is a tautology.
+
+measured:      2026-07-26
+repo HEAD:     badee1f54521dbed5724a237bfa1f24abe1d4629
+python:        3.13.12
+bootstrap:     2000 resamples over documents, seed 20260726
+
+## corpus (BC5CDR, NCBI public domain -- NOT committed, fetch on demand)
+#
+# https://ftp.ncbi.nlm.nih.gov/pub/lu/CDR/
+# Point ARTANA_BC5CDR_CORPUS at the extracted directory, or place the three
+# files in .corpus-cache/bc5cdr/ (git-ignored).
+9e18d8e700168887a7919e62f67ac2ce2357e3f409a48ee992906abdd80fe3e5  CDR_DevelopmentSet.PubTator.txt
+a3c48d5f35bdfce20c2371778abedc9fd24d1da092207072e5181ad53c8d0e2f  CDR_TestSet.PubTator.txt
+7afcec134e3d4871e74b0398d92850d3c9ac94c0bdc780003f2d60184c012bd8  CDR_TrainingSet.PubTator.txt
+
+## how to re-run
+#
+#   export ARTANA_BC5CDR_CORPUS=/path/to/bc5cdr
+#   PYTHONPATH=. python3 -m scripts.validation.claim_identity_merge.measure
+#   PYTHONPATH=. python3 -m scripts.validation.claim_identity_merge.supplementary
+#   PYTHONPATH=. python3 -m scripts.validation.claim_identity_merge.harvest_real_labels
+#
+# The first two are pure functions of the corpus and rewrite the committed
+# results in place, so `git diff` after a re-run is the reproduction check.
+# Both were verified byte-identical under two values of PYTHONHASHSEED.
+#
+# harvest_real_labels reads artana.kernel_events out of the local Postgres
+# container and reproduces only against that database. It makes no provider
+# call; the model outputs it reads were already paid for and persisted.
+
+## outputs, in docs/validation/results/
+#
+# main sweep, 4 arms x 6 identity variants:
+977606902c32ad55f95c48078644c3da7caade33a6bcb14784e64da108bc604a  2026-07-26-claim-identity-merge-measurement.json
+# surface-form census, intra-document collisions:
+ba7fb414e54d2383ee8eae689e58a4a96334495a1efe9fd27877b6922821f1c5  2026-07-26-claim-identity-merge-supplementary.json
+# real model-authored labels from the audit trail:
+fc3ccf8e4278e0bb1d98f1cea9a0c3fb0931b38e481d2d02384311983bfe7145  2026-07-26-claim-identity-merge-model-labels.json
+#
+# The first two digests were reproduced under PYTHONHASHSEED=7 and =99 as well
+# as unset. If a re-run moves one of them, the corpus or the code moved -- the
+# scripts have no other source of variation.
+
+## what was deliberately not committed
+#
+# framing_events.jsonl -- sha256
+#   dcb19d98d1b25563c8a0440144279f120c740f65c32afa57b0d17e0168ff735f
+# 25 raw model_terminal payloads, 172 kB. Each carries a verbatim BC5CDR
+# sentence in its `sentence` field and quotes the source again in
+# `decision_rationale`. That is document prose, and prose is not committed here
+# whatever its licence permits. It is an intermediate: harvest_real_labels.py
+# reads the same rows straight from artana.kernel_events, so nothing depends on
+# the file. See the report's redaction section.
