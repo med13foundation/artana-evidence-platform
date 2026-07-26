@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime  # noqa: TC003
 from uuid import uuid4
 
+from artana_evidence_api.claim_fingerprint import MAX_FINGERPRINT_LENGTH
 from artana_evidence_api.db_schema import (
     harness_table_options,
     qualify_harness_foreign_key_target,
@@ -261,7 +262,10 @@ class HarnessProposalModel(Base):
         nullable=True,
         index=True,
     )
-    claim_fingerprint: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    claim_fingerprint: Mapped[str | None] = mapped_column(
+        String(MAX_FINGERPRINT_LENGTH),
+        nullable=True,
+    )
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
     decided_by_user_id: Mapped[str | None] = mapped_column(
@@ -376,7 +380,10 @@ class HarnessReviewItemModel(Base):
         nullable=True,
         index=True,
     )
-    review_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    review_fingerprint: Mapped[str | None] = mapped_column(
+        String(MAX_FINGERPRINT_LENGTH),
+        nullable=True,
+    )
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
     decided_by_user_id: Mapped[str | None] = mapped_column(

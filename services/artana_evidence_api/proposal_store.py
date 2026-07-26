@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from threading import Lock
 from uuid import UUID, uuid4
 
+from artana_evidence_api.claim_fingerprint import require_storable_fingerprint
 from artana_evidence_api.document_extraction_support.proposal_relation_type_guard import (
     normalize_candidate_claim_relation_payload,
 )
@@ -187,6 +188,10 @@ class HarnessProposalStore:
         ):
             msg = "verified source provenance requires a proposal document_id"
             raise ValueError(msg)
+        require_storable_fingerprint(
+            proposal.claim_fingerprint,
+            field="claim_fingerprint",
+        )
         return replace(
             proposal,
             title=cls.normalize_proposal_title(proposal.title),

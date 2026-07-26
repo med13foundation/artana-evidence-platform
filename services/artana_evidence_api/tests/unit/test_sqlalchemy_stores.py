@@ -13,6 +13,13 @@ from artana_evidence_api.approval_store import (
     HarnessApprovalAction,
     HarnessApprovalStore,
 )
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimFrame,
+    ClaimQualifier,
+    EpistemicStatus,
+    Polarity,
+    SourceEvidenceSpan,
+)
 from artana_evidence_api.models.base import Base
 from artana_evidence_api.models.harness import (
     HarnessDocumentModel,
@@ -152,6 +159,135 @@ def test_harness_proposal_model_has_unique_active_fingerprint_index() -> None:
     ]
     assert "pending_review" in str(index.dialect_options["postgresql"]["where"])
     assert "promoted" in str(index.dialect_options["postgresql"]["where"])
+
+
+def _claim_frame_for_persistence() -> ClaimFrame:
+    """Return a minimal but real ClaimFrame, for its real dedupe identity."""
+
+    span = "Osimertinib improved response versus chemotherapy."
+    return ClaimFrame(
+        subject="osimertinib",
+        predicate="improves",
+        object="response",
+        source_evidence=SourceEvidenceSpan(
+            exact_span=span,
+            locator="chunk:1#sentence:1",
+        ),
+        polarity=Polarity.SUPPORT,
+        epistemic_status=EpistemicStatus.ASSERTED,
+        biological_or_variant_state=ClaimQualifier.not_applicable(),
+        condition=ClaimQualifier.not_applicable(),
+        population=ClaimQualifier.not_applicable(),
+        intervention=ClaimQualifier.present(
+            value="osimertinib",
+            exact_span="Osimertinib",
+        ),
+        comparator=ClaimQualifier.present(
+            value="chemotherapy",
+            exact_span="chemotherapy",
+        ),
+        outcome=ClaimQualifier.present(
+            value="response",
+            exact_span="improved response",
+        ),
+        study_design=ClaimQualifier.not_applicable(),
+        treatment_setting=ClaimQualifier.not_applicable(),
+        timeframe=ClaimQualifier.not_applicable(),
+        threshold=ClaimQualifier.not_applicable(),
+        extraction_rationale="One unambiguous comparative finding.",
+    )
+
+
+def _fingerprint_column_length() -> int:
+    length = HarnessProposalModel.__table__.c.claim_fingerprint.type.length
+    assert length is not None, "claim_fingerprint must declare a bounded width"
+    return int(length)
+
+
+def test_a_frame_backed_proposal_fits_the_fingerprint_column(
+    db_session: Session,
+) -> None:
+    """A frame-backed proposal must actually be persistable.
+
+    ``ClaimFrame.dedupe_identity`` is a full 64-character SHA-256 and
+    ``document_extraction_drafts`` writes it straight into ``claim_fingerprint``,
+    which was declared varchar(32).  On Postgres every such insert raised
+    ``StringDataRightTruncation``, so no frame-backed extraction proposal could
+    be stored at all.
+
+    This uses the shared ``db_session`` fixture rather than this module's
+    in-memory SQLite one so that the gate runs it against real Postgres, where
+    the insert is what fails.  The declared-width assertion is what fails on
+    SQLite, which ignores VARCHAR length entirely and stores an over-long value
+    happily -- that indifference is exactly how the defect survived a green
+    suite.
+    """
+
+    frame = _claim_frame_for_persistence()
+    fingerprint = frame.dedupe_identity
+    assert len(fingerprint) == 64
+
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        db_session,
+        space_id=space_id,
+        harness_id="document_extraction",
+        title="Frame-backed extraction",
+        input_payload={},
+    )
+    store = SqlAlchemyHarnessProposalStore(db_session)
+    created = store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="document_extraction",
+                source_key="document-1:0",
+                title="Extracted claim: osimertinib improves response",
+                summary="Osimertinib improved response versus chemotherapy.",
+                confidence=0.8,
+                ranking_score=0.9,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={"proposed_claim_type": "ASSOCIATED_WITH"},
+                metadata={"claim_frame_dedupe_identity": fingerprint},
+                claim_fingerprint=fingerprint,
+            ),
+        ),
+    )
+
+    assert len(created) == 1
+    assert created[0].claim_fingerprint == fingerprint
+    reread = store.get_proposal(space_id=space_id, proposal_id=created[0].id)
+    assert reread is not None
+    assert reread.claim_fingerprint == fingerprint
+    assert len(fingerprint) <= _fingerprint_column_length(), (
+        "the store accepted a fingerprint wider than its own column; SQLite "
+        "swallows that, Postgres raises StringDataRightTruncation"
+    )
+
+
+def test_an_evidence_selection_fingerprint_fits_its_column() -> None:
+    """The other over-wide writer: a namespaced evidence-selection fingerprint.
+
+    ``evidence_selection_review_staging`` writes
+    ``evidence-selection:<sha256>`` (83 characters) and
+    ``evidence-selection-review:<sha256>`` (90).  Both are produced by the same
+    staging call, so widening only one side would turn a symmetric failure into
+    a proposal that lands without its review item.
+    """
+
+    record_hash = hashlib.sha256(b"{}").hexdigest()
+    proposal_fingerprint = f"evidence-selection:{record_hash}"
+    review_fingerprint = f"evidence-selection-review:{record_hash}"
+
+    proposal_width = _fingerprint_column_length()
+    review_width = HarnessReviewItemModel.__table__.c.review_fingerprint.type.length
+    assert review_width is not None
+
+    assert len(proposal_fingerprint) <= proposal_width
+    assert len(review_fingerprint) <= int(review_width)
 
 
 def test_sqlalchemy_harness_proposal_store_retains_unique_conflict_race() -> None:

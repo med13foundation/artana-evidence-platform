@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from threading import Lock
 from uuid import UUID, uuid4
 
+from artana_evidence_api.claim_fingerprint import require_storable_fingerprint
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
 from artana_evidence_api.types.review_actor import ReviewActor
@@ -124,6 +125,10 @@ class HarnessReviewItemStore:
         review_item: HarnessReviewItemDraft,
     ) -> HarnessReviewItemDraft:
         """Return a normalized draft with persistence-safe fields."""
+        require_storable_fingerprint(
+            review_item.review_fingerprint,
+            field="review_fingerprint",
+        )
         return replace(
             review_item,
             source_family=cls.normalize_source_family(
