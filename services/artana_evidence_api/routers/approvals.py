@@ -248,6 +248,12 @@ def record_intent(  # noqa: PLR0913
         metadata=request.metadata,
     )
     approvals = approval_store.list_approvals(space_id=space_id, run_id=run_id)
+    # A decided approval is retained as a record of what a person did, not as a
+    # live gate. Counting those as pending re-paused the run on an idempotent or
+    # narrower re-post and reported approvals no reviewer could act on.
+    pending_approvals = [
+        approval for approval in approvals if approval.status == "pending"
+    ]
     run_registry.record_event(
         space_id=space_id,
         run_id=run_id,
@@ -256,9 +262,10 @@ def record_intent(  # noqa: PLR0913
         payload={
             "summary": request.summary,
             "approval_count": len(approvals),
+            "pending_approval_count": len(pending_approvals),
         },
     )
-    if approvals and run.status != "failed":
+    if pending_approvals and run.status != "failed":
         current_progress = run_registry.get_progress(space_id=space_id, run_id=run_id)
         run_registry.set_run_status(
             space_id=space_id,
@@ -283,14 +290,14 @@ def record_intent(  # noqa: PLR0913
                 current_progress.total_steps if current_progress is not None else None
             ),
             resume_point="approval_gate",
-            metadata={"pending_approvals": len(approvals)},
+            metadata={"pending_approvals": len(pending_approvals)},
         )
         run_registry.record_event(
             space_id=space_id,
             run_id=run_id,
             event_type="run.paused",
             message="Run paused at approval gate.",
-            payload={"pending_approvals": len(approvals)},
+            payload={"pending_approvals": len(pending_approvals)},
         )
         artifact_store.patch_workspace(
             space_id=space_id,
@@ -298,7 +305,7 @@ def record_intent(  # noqa: PLR0913
             patch={
                 "status": "paused",
                 "resume_point": "approval_gate",
-                "pending_approvals": len(approvals),
+                "pending_approvals": len(pending_approvals),
             },
         )
     return HarnessRunIntentResponse.from_record(intent)

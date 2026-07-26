@@ -5841,6 +5841,89 @@ def test_record_intent_and_decide_approval() -> None:
     assert "run.resumed" in event_types
 
 
+def test_re_posting_an_intent_whose_approvals_are_all_decided_does_not_pause() -> None:
+    """A retained decision is a record, not a live gate.
+
+    Decided approvals now survive a re-proposal, but record_intent counted
+    everything list_approvals returned as pending -- so an idempotent re-post
+    paused a run at an approval gate with nothing left to approve, and reported
+    a pending count that no reviewer could act on.
+    """
+
+    async def _leave_run_queued(
+        run: HarnessRunRecord,
+        services: HarnessExecutionServices,
+    ) -> HarnessExecutionResult:
+        del services
+        return run
+
+    client = _build_client(execution_override=_leave_run_queued)
+    space_id = str(uuid4())
+    run_id = client.post(
+        f"/v1/spaces/{space_id}/runs",
+        json={"harness_id": "claim-curation"},
+        headers=_auth_headers(),
+    ).json()["id"]
+    intent_body = {
+        "summary": "One gated write",
+        "proposed_actions": [
+            {
+                "approval_key": "promote-claim-1",
+                "title": "Promote claim candidate",
+                "risk_level": "high",
+                "target_type": "claim",
+                "target_id": "claim-1",
+                "requires_approval": True,
+                "metadata": {"origin": "chat"},
+            },
+        ],
+    }
+
+    assert (
+        client.post(
+            f"/v1/spaces/{space_id}/runs/{run_id}/intent",
+            json=intent_body,
+            headers=_auth_headers(),
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            f"/v1/spaces/{space_id}/runs/{run_id}/approvals/promote-claim-1",
+            json={"decision": "approved", "reason": "Evidence looks sufficient"},
+            headers=_auth_headers(),
+        ).status_code
+        == 200
+    )
+    resumed = client.post(
+        f"/v1/spaces/{space_id}/runs/{run_id}/resume",
+        json={"reason": "Approvals resolved"},
+        headers=_auth_headers(),
+    )
+    assert resumed.status_code == 200
+
+    # The same plan again: the approval is decided, so nothing is gating.
+    replayed = client.post(
+        f"/v1/spaces/{space_id}/runs/{run_id}/intent",
+        json=intent_body,
+        headers=_auth_headers(),
+    )
+
+    assert replayed.status_code == 200
+    progress = client.get(
+        f"/v1/spaces/{space_id}/runs/{run_id}/progress",
+        headers=_auth_headers(role="viewer"),
+    ).json()
+    assert progress["status"] != "paused"
+    assert progress["phase"] != "approval"
+
+    workspace = client.get(
+        f"/v1/spaces/{space_id}/runs/{run_id}/workspace",
+        headers=_auth_headers(role="viewer"),
+    ).json()
+    assert workspace["snapshot"].get("pending_approvals", 0) == 0
+
+
 def test_decide_missing_approval_returns_not_found() -> None:
     """Missing approvals should return 404."""
     client = _build_client()
