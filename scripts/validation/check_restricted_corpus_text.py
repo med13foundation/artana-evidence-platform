@@ -42,6 +42,14 @@ reported runs, do not just count them.
 outward from a seed, so a run shorter than one seed is unreachable at any
 threshold, and a lower one would only buy a clean line about lengths that were
 never searched.  A threshold under the seed is refused rather than answered.
+
+The corpus itself is checked before anything is indexed, for the same reason.
+This scan can only compare against the documents it has, and a document it does
+not have is one it reports every file clean of.  The completeness check in
+`restricted_corpus_completeness.py` requires the whole frozen corpus -- count,
+identity and content -- and refuses to scan otherwise, so an incomplete
+extraction fails instead of narrowing the question behind an unchanged clean
+line.
 """
 
 from __future__ import annotations
@@ -58,7 +66,10 @@ if str(_REPO_ROOT) not in sys.path:
 
 from scripts.validation.claim_events.corpus_text import (  # noqa: E402
     RestrictedCorpusUnavailableError,
-    corpus_root,
+)
+from scripts.validation.restricted_corpus_completeness import (  # noqa: E402
+    IncompleteRestrictedCorpusError,
+    complete_corpus_root,
 )
 from scripts.validation.restricted_corpus_normalization import (  # noqa: E402
     normalize,
@@ -168,8 +179,16 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     try:
-        root = corpus_root()
-    except RestrictedCorpusUnavailableError as error:
+        # Not `corpus_root()`: that accepts a directory as soon as one `.txt`
+        # is in it, and this scan can only compare against documents it has.
+        # A corpus missing documents produces the same clean line as a clean
+        # tree, about a smaller question than the line claims.  See
+        # `restricted_corpus_completeness.py`.
+        root = complete_corpus_root()
+    except (
+        RestrictedCorpusUnavailableError,
+        IncompleteRestrictedCorpusError,
+    ) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
 
@@ -217,7 +236,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     print(
         f"No verbatim corpus run of {arguments.threshold}+ characters in any of "
-        f"{scanned} tracked text file(s). No path is exempt.",
+        f"{scanned} tracked text file(s), compared against all "
+        f"{len(documents)} corpus documents. No path is exempt.",
     )
     return 0
 

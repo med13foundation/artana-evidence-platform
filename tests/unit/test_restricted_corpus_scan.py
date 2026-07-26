@@ -19,7 +19,9 @@ corpus is synthetic and built in `tmp_path`, so these run everywhere.
 
 from __future__ import annotations
 
+import ast
 import inspect
+import shutil
 import subprocess
 from collections import defaultdict
 from pathlib import Path
@@ -28,7 +30,28 @@ import pytest
 
 from scripts.validation import check_restricted_corpus_digests as offline
 from scripts.validation import check_restricted_corpus_text as scanner
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+    corpus_root,
+    normalized_document_text,
+    text_digest,
+)
+from scripts.validation.restricted_corpus_completeness import (
+    IncompleteRestrictedCorpusError,
+    document_digests,
+    manifest_digest,
+    require_complete_corpus,
+)
 from scripts.validation.restricted_corpus_normalization import normalize
+
+#: The completeness checks below need the corpus itself, which this public
+#: repository does not carry.  They are skipped, never deleted: the reason
+#: names the licence and the exact command that restores them.
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
+)
 
 #: Two synthetic "corpus" documents sharing a fragment.  The shared part alone
 #: already clears the threshold, and the file's continuation of it -- shorter
@@ -100,7 +123,7 @@ def _run_main(
         path.write_text(body, encoding="utf-8")
 
     monkeypatch.setattr(scanner, "_REPO_ROOT", tree)
-    monkeypatch.setattr(scanner, "corpus_root", lambda: root)
+    monkeypatch.setattr(scanner, "complete_corpus_root", lambda: root)
     monkeypatch.setattr(scanner, "_tracked_files", lambda: sorted(files))
     return scanner.main(["--threshold", str(threshold)])
 
@@ -312,7 +335,7 @@ def test_a_missing_corpus_is_an_error_not_a_pass(
     def _absent() -> Path:
         raise scanner.RestrictedCorpusUnavailableError("corpus absent")
 
-    monkeypatch.setattr(scanner, "corpus_root", _absent)
+    monkeypatch.setattr(scanner, "complete_corpus_root", _absent)
     monkeypatch.setattr(scanner, "_tracked_files", list)
 
     assert scanner.main([]) == 2
@@ -417,3 +440,220 @@ def test_the_scanner_source_carries_the_reason_for_its_own_shape() -> None:
 
     assert "No path is exempt" in source
     assert str(scanner._DEFAULT_THRESHOLD) in source
+
+
+def _pinnable_corpus(root: Path, documents: dict[str, str]) -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    for document_id, body in documents.items():
+        (root / f"{document_id}.txt").write_text(body, encoding="utf-8")
+
+
+def _expectations(documents: dict[str, str]) -> tuple[dict[str, str], int, str]:
+    digests = {
+        document_id: text_digest(normalized_document_text(body))
+        for document_id, body in documents.items()
+    }
+    return digests, len(digests), manifest_digest(digests)
+
+
+def _complete(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[Path, dict[str, str], int, str]:
+    """A three-document corpus with two of them pinned, and its expectations."""
+
+    documents = {
+        "SYNTHETIC-0001": _DOCUMENT_ONE,
+        "SYNTHETIC-0002": _DOCUMENT_TWO,
+        "SYNTHETIC-0003": _DOCUMENT_THREE,
+    }
+    root = tmp_path / "corpus"
+    _pinnable_corpus(root, documents)
+    digests, count, manifest = _expectations(documents)
+    pinned = {
+        document_id: digests[document_id]
+        for document_id in documents
+        if document_id != "SYNTHETIC-0003"
+    }
+    monkeypatch.setattr(
+        "scripts.validation.restricted_corpus_completeness.pinned_documents",
+        lambda: pinned,
+    )
+    return root, digests, count, manifest
+
+
+def test_a_complete_corpus_is_accepted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The control: the check must not refuse the corpus it is meant to admit."""
+
+    root, _, count, manifest = _complete(tmp_path, monkeypatch)
+
+    require_complete_corpus(
+        root,
+        expected_count=count,
+        expected_manifest_sha256=manifest,
+    )
+
+
+def test_a_missing_pinned_document_is_named_not_skipped(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The defect: a document the scan does not have, it reports every file clean of.
+
+    `corpus_root` accepts a directory as soon as one `.txt` turns up in it, so
+    a partial extraction indexed only what was there and the scan still printed
+    a clean line -- an assurance about the documents that happened to survive,
+    in the wording of an assurance about the corpus.
+    """
+
+    root, _, count, manifest = _complete(tmp_path, monkeypatch)
+    (root / "SYNTHETIC-0001.txt").unlink()
+
+    with pytest.raises(IncompleteRestrictedCorpusError, match="SYNTHETIC-0001"):
+        require_complete_corpus(
+            root,
+            expected_count=count,
+            expected_manifest_sha256=manifest,
+        )
+
+
+def test_an_altered_pinned_document_is_named(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A document that is present but not the frozen revision is not the corpus."""
+
+    root, _, count, manifest = _complete(tmp_path, monkeypatch)
+    (root / "SYNTHETIC-0002.txt").write_text(
+        f"{_DOCUMENT_TWO} Appended.",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(IncompleteRestrictedCorpusError, match="SYNTHETIC-0002"):
+        require_complete_corpus(
+            root,
+            expected_count=count,
+            expected_manifest_sha256=manifest,
+        )
+
+
+def test_a_document_outside_the_pinned_panel_cannot_go_missing_quietly(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The frozen panel pins 40 of 259 documents, so it is not the whole answer.
+
+    Stopping at the panel would have moved the fail-open one level down: a
+    corpus holding only the pinned documents satisfies every per-document
+    digest while the scan reads 219 fewer documents than it claims.  The count
+    and the manifest are what close that, and this is the case that separates
+    them from the panel.
+    """
+
+    root, _, count, manifest = _complete(tmp_path, monkeypatch)
+    (root / "SYNTHETIC-0003.txt").unlink()
+
+    with pytest.raises(IncompleteRestrictedCorpusError, match="2 documents"):
+        require_complete_corpus(
+            root,
+            expected_count=count,
+            expected_manifest_sha256=manifest,
+        )
+
+
+def test_a_substituted_document_fails_the_manifest(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Right count, every pinned document intact, wrong corpus.
+
+    A document outside the panel replaced by different text keeps the count and
+    passes every per-document pin there is.  Only a digest over the whole set
+    sees it, which is why the manifest is the last check rather than the only
+    message.
+    """
+
+    root, _, count, manifest = _complete(tmp_path, monkeypatch)
+    (root / "SYNTHETIC-0003.txt").write_text("Substituted body.", encoding="utf-8")
+
+    with pytest.raises(IncompleteRestrictedCorpusError, match="manifest"):
+        require_complete_corpus(
+            root,
+            expected_count=count,
+            expected_manifest_sha256=manifest,
+        )
+
+
+def test_an_incomplete_corpus_stops_the_scan_rather_than_narrowing_it(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The seam is load-bearing: a refused corpus is exit 2, not a clean pass."""
+
+    def _incomplete() -> Path:
+        raise IncompleteRestrictedCorpusError("SYNTHETIC-0001 is absent")
+
+    monkeypatch.setattr(scanner, "complete_corpus_root", _incomplete)
+    monkeypatch.setattr(scanner, "_tracked_files", list)
+
+    assert scanner.main([]) == 2
+    printed = capsys.readouterr()
+    assert "SYNTHETIC-0001" in printed.err
+    assert "No verbatim corpus run" not in printed.out
+
+
+def test_the_scanner_asks_for_a_complete_corpus_not_merely_a_present_one() -> None:
+    """Anti-rot: the plain locator is the fail-open call this scan must not make.
+
+    Read out of the parse tree rather than out of the text, because the text
+    names both functions -- in the docstring and in the comment that says why
+    the shorter one is wrong -- and a check that greps would either forbid the
+    explanation or pass on it.
+    """
+
+    called = {
+        node.func.id
+        for node in ast.walk(ast.parse(inspect.getsource(scanner)))
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+    }
+
+    assert "complete_corpus_root" in called
+    assert "corpus_root" not in called, (
+        "corpus_root() accepts a directory holding one .txt, so the scan would "
+        "index whatever survived and report the rest of the tree clean of it"
+    )
+
+
+@requires_corpus
+def test_the_real_corpus_is_complete_against_the_pinned_archive() -> None:
+    """The pinned count and manifest must describe the corpus people fetch.
+
+    Without this the constants are unfalsifiable: a wrong manifest would refuse
+    every corpus, and the failure would look like the guard working.
+    """
+
+    require_complete_corpus(corpus_root())
+
+
+@requires_corpus
+def test_removing_one_real_document_is_refused_by_the_pinned_constants(
+    tmp_path: Path,
+) -> None:
+    """The measured bypass, closed, against the real corpus and real pins."""
+
+    copy = tmp_path / "partial"
+    copy.mkdir()
+    for path in corpus_root().glob("*.txt"):
+        shutil.copy2(path, copy / path.name)
+    removed = sorted(copy.glob("*.txt"))[0]
+    document_id = removed.stem
+    removed.unlink()
+
+    assert len(document_digests(copy)) == len(document_digests(corpus_root())) - 1
+    with pytest.raises(IncompleteRestrictedCorpusError) as error:
+        require_complete_corpus(copy)
+    assert document_id in str(error.value) or "documents" in str(error.value)

@@ -56,6 +56,36 @@ _REJECTED = {
 }
 
 
+def _object(value: object) -> dict[str, object]:
+    """Narrow one JSON value to an object.
+
+    `dict[str, object]` rather than `dict[str, Any]`, which AGENTS.md
+    prohibits in new code.  The cost is these four helpers; the point is that
+    `Any` lets a misspelled key or a wrong-typed field through as a test that
+    quietly checks nothing, which is the failure this record's own guard
+    exists to prevent.  Same three narrowings as
+    `tests/unit/test_restricted_corpus_text.py`, plus one for integers.
+    """
+
+    assert isinstance(value, dict), f"expected a JSON object, got {type(value)}"
+    return value
+
+
+def _array(value: object) -> list[object]:
+    assert isinstance(value, list), f"expected a JSON array, got {type(value)}"
+    return value
+
+
+def _text(value: object) -> str:
+    assert isinstance(value, str), f"expected a JSON string, got {type(value)}"
+    return value
+
+
+def _integer(value: object) -> int:
+    assert isinstance(value, int), f"expected a JSON integer, got {type(value)}"
+    return value
+
+
 def _events(path: Path) -> dict[tuple[str, str], dict[str, Any]]:
     payload: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
     return {
@@ -162,20 +192,22 @@ def test_v2_strengthens_negative_polarity_coverage() -> None:
 def test_adjudication_record_backs_every_correction() -> None:
     """No correction may exist without a published, source-cited rationale."""
 
-    record: dict[str, Any] = json.loads(
-        Path(POLARITY_ADJUDICATION_RECORD).read_text(encoding="utf-8"),
+    record = _object(
+        json.loads(Path(POLARITY_ADJUDICATION_RECORD).read_text(encoding="utf-8")),
     )
+    corrections = [_object(item) for item in _array(record["corrections"])]
     documented = {
-        (item["document_id"], item["event_annotation_id"])
-        for item in record["corrections"]
+        (_text(item["document_id"]), _text(item["event_annotation_id"]))
+        for item in corrections
     }
 
     assert documented == set(POLARITY_ADJUDICATIONS)
-    assert all(item["rationale"].strip() for item in record["corrections"])
+    assert all(_text(item["rationale"]).strip() for item in corrections)
 
+    rejected_items = [_object(item) for item in _array(record["rejected_candidates"])]
     rejected = {
-        (item["document_id"], item["event_annotation_id"])
-        for item in record["rejected_candidates"]
+        (_text(item["document_id"]), _text(item["event_annotation_id"]))
+        for item in rejected_items
     }
     assert rejected >= _REJECTED, "rejected candidates must stay documented"
 
@@ -192,23 +224,31 @@ def test_adjudication_cites_its_source_without_republishing_it() -> None:
     reference on every single record.
     """
 
-    record: dict[str, Any] = json.loads(
-        Path(POLARITY_ADJUDICATION_RECORD).read_text(encoding="utf-8"),
+    record = _object(
+        json.loads(Path(POLARITY_ADJUDICATION_RECORD).read_text(encoding="utf-8")),
     )
-    items = [*record["corrections"], *record["rejected_candidates"]]
+    items = [
+        _object(item)
+        for section in ("corrections", "rejected_candidates")
+        for item in _array(record[section])
+    ]
 
     assert items, "the record must not be empty"
-    assert record["restricted_text"]["corpus"] == "BioNLP-ST-2011-GE"
+    restricted = _object(record["restricted_text"])
+    assert _text(restricted["corpus"]) == "BioNLP-ST-2011-GE"
     for item in items:
         assert "evidence" not in item, (
-            f"{item['document_id']}:{item['event_annotation_id']} carries "
+            f"{_text(item['document_id'])}:"
+            f"{_text(item['event_annotation_id'])} carries "
             f"verbatim corpus text again"
         )
-        start, _, end = item["evidence_locator"].removeprefix("char:").partition("-")
-        assert item["evidence_locator"].startswith("char:")
-        assert int(end) - int(start) == item["evidence_length"] > 0
-        assert len(item["evidence_sha256"]) == 64
-        assert int(item["evidence_sha256"], 16) >= 0
+        locator = _text(item["evidence_locator"])
+        assert locator.startswith("char:")
+        start, _, end = locator.removeprefix("char:").partition("-")
+        assert int(end) - int(start) == _integer(item["evidence_length"]) > 0
+        digest = _text(item["evidence_sha256"])
+        assert len(digest) == 64
+        assert int(digest, 16) >= 0
 
 
 @pytest.mark.parametrize("key", sorted(POLARITY_ADJUDICATIONS))

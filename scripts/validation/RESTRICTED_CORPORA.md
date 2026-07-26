@@ -134,7 +134,7 @@ commit. Neither half alone is sufficient, and neither is a clean bill of health.
 | --- | --- | --- |
 | Needs the corpus | no | **yes** |
 | Wired into | pre-commit, `make service-checks`, and its own CI job with no condition on it | `make restricted-corpus-scan`, by hand, before landing corpus-derived work |
-| Compares against | committed digests of runs already removed | every document in the corpus |
+| Compares against | committed digests of runs already removed | all 259 corpus documents, or it refuses to run |
 | Catches | those runs coming back at 40+ folded characters — a revert, a paste out of published history, a re-wrapped, re-cased or re-emphasised copy | any verbatim run of 40+ characters, from any document |
 | **Misses** | **any corpus text never removed before** — a fresh sentence from a document nobody has quoted is invisible to it — and any removed run that folds below 32 characters, which cannot be indexed at all | runs shorter than 40 characters; anything paraphrased rather than copied; anything the comparison form does not fold |
 
@@ -158,6 +158,28 @@ unless the committed set still hashes to `INDEX_SHA256` in
 `scripts/validation/restricted_corpus_digests.py`. Rebuilding the set moves
 both, in one commit, with the reason on the record; the builder prints the new
 value.
+
+The corpus-backed half had the same shape from the other side: it can only
+compare against the documents it has, and `corpus_root()` accepts a directory
+the moment one `.txt` appears in it. So a partial extraction, an interrupted
+fetch, or a cache someone deleted files out of indexed a smaller corpus and
+printed the same clean line — an assurance about the documents that happened to
+survive, in the wording of an assurance about the corpus. Measured: with one
+document removed from a copy, a planted 120-character verbatim run from that
+document was reported by nothing, and the scan said "No verbatim corpus run of
+40+ characters in any of 1864 tracked text file(s). No path is exempt."
+
+`restricted_corpus_completeness.py` now runs before the seed index is built and
+refuses anything short of the whole frozen corpus: every document the frozen
+TG-04 panel pins, present and matching its `source_sha256`; 259 documents; and
+a manifest digest over every id paired with the digest of its normalized text.
+The panel alone would not have been enough, which is the part worth stating —
+it pins 40 of the 259, so a corpus holding only those 40 satisfies every
+per-document digest there is. Measured on the same tree: with one *unpinned*
+document removed and a 130-character run from it planted, all 40 panel digests
+still verified and the old scan still reported clean; the count and the manifest
+are what refuse it. The clean line now names how many documents it compared
+against, so the scope of the assurance is on the line that gives it.
 
 Neither half reads a path it cannot open, and both take the tracked list from
 `git ls-files -z`. Splitting that list on whitespace instead broke any path
