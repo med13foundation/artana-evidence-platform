@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 from pathlib import Path
 
@@ -180,3 +181,44 @@ def test_content_blind_selection_uses_document_id_hash_order(tmp_path: Path) -> 
     )
 
     assert select_document_ids(tmp_path, count=2) == expected
+
+
+def test_importer_validates_inside_the_extraction_it_verified() -> None:
+    """Regression: the read-back must use the archive this run extracted.
+
+    `--archive` is the whole input: its digest is checked against the frozen
+    TG-04 source and the panel is built from what comes out of it.  The
+    validating read-back sat outside the `TemporaryDirectory` block, so by the
+    time it ran the extraction was deleted and `load_fixture` fell through to
+    `ARTANA_BIONLP_GE_CORPUS` or the default cache -- silently validating
+    against a corpus this run never saw, or, with neither present, writing the
+    output and then dying on an unhandled error.
+    """
+
+    importer = Path(__file__).resolve().parents[2] / (
+        "scripts/import_bionlp_claim_event_fixture.py"
+    )
+    tree = ast.parse(importer.read_text(encoding="utf-8"))
+    calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "load_fixture"
+    ]
+
+    assert len(calls) == 1, "the importer must read its own output back exactly once"
+    assert any(keyword.arg == "corpus" for keyword in calls[0].keywords), (
+        "load_fixture must be told which corpus to rejoin, or it picks its own"
+    )
+    extractions = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.With)
+        and any(
+            "TemporaryDirectory" in ast.dump(item.context_expr) for item in node.items
+        )
+    ]
+    assert any(calls[0] in set(ast.walk(node)) for node in extractions), (
+        "the read-back must happen while the extracted archive still exists"
+    )

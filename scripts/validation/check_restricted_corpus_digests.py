@@ -40,8 +40,10 @@ if str(_REPO_ROOT) not in sys.path:
 
 from scripts.validation.restricted_corpus_digests import (  # noqa: E402
     DIGEST_PATH,
+    INDEX_SHA256,
     STRIDE,
     WINDOW,
+    index_digest,
     window_digest,
 )
 from scripts.validation.restricted_corpus_normalization import (  # noqa: E402
@@ -55,14 +57,24 @@ from scripts.validation.restricted_corpus_normalization import (  # noqa: E402
 
 
 def _tracked_files() -> list[str]:
+    """Every tracked path, NUL-delimited so a filename cannot hide one.
+
+    `git ls-files` separates paths with newlines and quotes only some of them,
+    so splitting its output on whitespace shatters any path containing a space,
+    a tab or a newline into fragments that name no file -- and this scan skips
+    what it cannot open, silently.  One tracked `report copy.md` was enough to
+    carry 169 characters of restricted prose past both halves of the guard,
+    which then printed a clean tree.  `-z` makes the separator unambiguous.
+    """
+
     listing = subprocess.run(  # noqa: S603
-        ["git", "ls-files"],  # noqa: S607
+        ["git", "ls-files", "-z"],  # noqa: S607
         capture_output=True,
         text=True,
         check=True,
         cwd=_REPO_ROOT,
     )
-    return listing.stdout.split()
+    return [relative for relative in listing.stdout.split("\0") if relative]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -86,6 +98,31 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
     known: frozenset[str] = frozenset(payload["window_digests"])
+    if not known or not payload["runs"]:
+        print(
+            f"error: {arguments.digests} indexes {len(known)} window digest(s) "
+            f"over {len(payload['runs'])} run(s); a scan against an empty index "
+            f"reports every tree clean, so this is a broken guard, not a pass",
+            file=sys.stderr,
+        )
+        return 2
+    if arguments.digests == DIGEST_PATH:
+        # The committed set is the whole of this guard's detection data, and it
+        # is a machine-written file nobody reads.  Deleting or truncating it is
+        # a quiet one-line diff that turns the gate green over live text, so
+        # its content is pinned and a mismatch stops the run.  A set supplied
+        # explicitly on the command line is the caller's own and is not pinned.
+        observed = index_digest(payload)
+        if observed != INDEX_SHA256:
+            print(
+                f"error: {arguments.digests} hashes to {observed}, but this "
+                f"checker pins {INDEX_SHA256}. Rebuild it with "
+                f"`make restricted-corpus-digests` and move INDEX_SHA256 in "
+                f"scripts/validation/restricted_corpus_digests.py in the same "
+                f"commit, saying why the indexed run set changed.",
+                file=sys.stderr,
+            )
+            return 2
 
     findings: list[str] = []
     scanned = 0

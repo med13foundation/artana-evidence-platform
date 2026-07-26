@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import re
@@ -7,6 +8,8 @@ import shutil
 import subprocess
 import tomllib
 from pathlib import Path
+
+import yaml
 
 
 def _repo_root() -> Path:
@@ -141,6 +144,74 @@ def test_ci_repo_control_jobs_run_relation_feasibility_quality_tests() -> None:
 
     assert "tests/unit/test_relation_feasibility_audit.py" in evidence_api_workflow
     assert "tests/unit/test_relation_feasibility_audit.py" in graph_workflow
+
+
+def test_restricted_corpus_guard_runs_on_every_pull_request() -> None:
+    """Regression: the guard must not sit behind the planner that skips it.
+
+    It shipped as a step inside `evidence_api_gate`, whose condition is `full`
+    or `evidence_api`.  A docs-only pull request sets neither -- and
+    `docs/validation/` is exactly the tree restricted corpus text was removed
+    from -- so the check was absent from the changes most likely to reintroduce
+    it, while the workflow still reported success.  It now has its own job with
+    no condition and no dependency, and the summary job fails on anything but
+    success, because a job with nothing to skip on must never be skipped.
+    """
+
+    workflow = yaml.safe_load(
+        _read_text(".github/workflows/evidence-api-service-checks.yml"),
+    )
+    jobs = workflow["jobs"]
+    guard = jobs["restricted_corpus_guard"]
+
+    assert "if" not in guard, "the guard must not be conditional on a plan"
+    assert "needs" not in guard, "the guard must not wait on a job that can fail"
+    checks = [
+        step
+        for step in guard["steps"]
+        if "restricted-corpus-digest-check" in str(step.get("run", ""))
+    ]
+    assert len(checks) == 1, "the guard job must run the digest check"
+
+    conditional = {
+        name: job
+        for name, job in jobs.items()
+        if name != "restricted_corpus_guard" and ("if" in job or "needs" in job)
+    }
+    for name, job in conditional.items():
+        for step in job.get("steps", []):
+            assert "restricted-corpus-digest-check" not in str(step.get("run", "")), (
+                f"{name} can be skipped, so it cannot be where the guard runs"
+            )
+
+    summary = jobs["evidence-api-service-checks"]
+    assert "restricted_corpus_guard" in summary["needs"]
+    assert 'needs.restricted_corpus_guard.result }}" != "success"' in str(
+        summary["steps"],
+    ), "the summary must fail on a skipped guard, not tolerate it"
+
+
+def test_repo_control_tests_are_not_skipped_by_a_full_run() -> None:
+    """Regression: these tests must run on the changes most likely to break CI.
+
+    The job that runs `tests/unit/test_control_files.py` was conditioned on
+    `full != 'true'`, and the full branch it deferred to runs static checks and
+    coverage over paths that do not include this file.  So a change to a
+    workflow or a migration -- the two highest-risk kinds -- was the one case
+    where the repository control tests did not run anywhere.  A red test in
+    this file went unnoticed on the pull request that introduced it.
+    """
+
+    workflow = yaml.safe_load(
+        _read_text(".github/workflows/evidence-api-service-checks.yml"),
+    )
+    job = workflow["jobs"]["evidence_api_repo_control_checks"]
+
+    assert "full" not in job["if"], (
+        "a full run does not execute the repo control tests; conditioning this "
+        "job on `full != true` means they run nowhere on high-risk changes"
+    )
+    assert "tests/unit/test_control_files.py" in str(job["steps"])
 
 
 def test_readme_visualizes_backend_review_workflow() -> None:
@@ -493,32 +564,106 @@ def test_validate_architecture_structure_script_exists_and_is_executable_module(
     assert "raise SystemExit(main())" in text
 
 
+def _module_constants(module: Path) -> dict[str, str]:
+    """Module-level names bound to a string, as the interpreter would see them.
+
+    `NAME = "literal"` and `NAME = _REPO_ROOT / "docs/..."` both count; the
+    second yields the relative path.  Read from the parse tree rather than the
+    file's characters, so a digest sitting in a comment or a docstring is never
+    mistaken for a live pin.
+    """
+
+    constants: dict[str, str] = {}
+    for node in ast.parse(module.read_text(encoding="utf-8")).body:
+        if not isinstance(node, ast.Assign | ast.AnnAssign):
+            continue
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+        literal = _string_value(node.value)
+        if literal is None:
+            continue
+        for target in targets:
+            if isinstance(target, ast.Name):
+                constants[target.id] = literal
+    return constants
+
+
+def _string_value(node: ast.expr | None) -> str | None:
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if (
+        isinstance(node, ast.BinOp)
+        and isinstance(node.op, ast.Div)
+        and isinstance(node.left, ast.Name)
+        and node.left.id == "_REPO_ROOT"
+    ):
+        return _string_value(node.right)
+    return None
+
+
 def test_frozen_report_pins_match_the_reports_they_name() -> None:
     """Regression: a pin over a validation record must not rot in silence.
 
     Three of these went stale at once when the 2026-07-25 redaction rewrote the
     reports underneath them, and each failure surfaced only in a test outside
     the gate.  A pin exists to prove a record has not moved; a stale one proves
-    nothing and reads as tampering.  So every constant that pairs a `docs/`
-    path with a SHA-256 is checked against the file it names, and a pin that is
-    deliberately moved has to be moved here too.
+    nothing and reads as tampering.
+
+    The first version of this test asked whether the digest appeared anywhere
+    in the module's source, and each of these three modules deliberately keeps
+    its *superseded* digest in a comment beside the live one, so that a pin
+    cannot be bumped without a reason on the record.  That made reverting a
+    report to its pre-redaction bytes -- restricted corpus text and all -- pass
+    this test, while the constant still pointed at the redacted file and the
+    verifier that reads it raised.  A guard that a comment can satisfy is not
+    reading the program.  So the pin is now read as an assignment, paired with
+    the path constant it belongs to by name.
     """
 
-    pinned_path = re.compile(r'_REPO_ROOT\s*/\s*"(docs/[^"]+\.md)"')
     checked = 0
-    for module in (REPO_ROOT / "scripts").rglob("*.py"):
-        source = module.read_text(encoding="utf-8")
-        if "SHA256" not in source:
-            continue
-        for relative in pinned_path.findall(source):
+    for module in sorted((REPO_ROOT / "scripts").rglob("*.py")):
+        constants = _module_constants(module)
+        for name, relative in constants.items():
+            if not name.endswith("_PATH") or not relative.startswith("docs/"):
+                continue
             target = REPO_ROOT / relative
             assert target.exists(), (module.name, relative)
+            pin = f"{name.removesuffix('_PATH')}_SHA256"
+            assert pin in constants, (
+                f"{module.relative_to(REPO_ROOT)} names {relative} as {name} "
+                f"but assigns no {pin}; a path with no pin beside it is not a "
+                f"frozen record"
+            )
             digest = hashlib.sha256(target.read_bytes()).hexdigest()
-            assert digest in source, (
+            assert constants[pin] == digest, (
                 f"{module.relative_to(REPO_ROOT)} pins {relative}, which now "
-                f"hashes to {digest[:12]}... and matches no digest in that "
-                f"module; move the pin deliberately and say why, or restore "
-                f"the file"
+                f"hashes to {digest[:12]}... while {pin} is assigned "
+                f"{constants[pin][:12]}...; move the pin deliberately and say "
+                f"why, or restore the file. A digest in a comment does not "
+                f"count -- that is how a revert used to pass this test."
             )
             checked += 1
     assert checked >= 3, "the pins this guards stopped being discoverable"
+
+
+def test_frozen_report_verifiers_accept_the_reports_at_head() -> None:
+    """Regression: the pin check above must agree with the running code.
+
+    Reading constants is still reading source.  These three verifiers are what
+    actually gate a run, so they are called on the files at HEAD: if a report
+    moves and a pin does not, this fails where it will be noticed rather than
+    at the start of a live model run.
+    """
+
+    from scripts.validation.claim_events.finite_source_unit.discovery import (
+        fresh_authorization,
+        transport_smoke,
+    )
+
+    assert (
+        transport_smoke.verify_prior_failure_report()
+        == transport_smoke._PR175_REPORT_SHA256
+    )
+    assert (
+        fresh_authorization.verify_fresh_discovery_authorization()
+        == fresh_authorization._PR176_REPORT_SHA256
+    )

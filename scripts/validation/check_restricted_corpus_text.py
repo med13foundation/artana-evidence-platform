@@ -37,6 +37,11 @@ window size and the floor are still not reported.  That is a deliberate floor,
 not a safe harbour: it catches sentence-length quotation and bulk
 republication, and it will not catch a short but distinctive excerpt.  Read the
 reported runs, do not just count them.
+
+`--threshold` lowers the floor, but not below `_SEED`: matches are grown
+outward from a seed, so a run shorter than one seed is unreachable at any
+threshold, and a lower one would only buy a clean line about lengths that were
+never searched.  A threshold under the seed is refused rather than answered.
 """
 
 from __future__ import annotations
@@ -76,14 +81,23 @@ _SHARED_IDIOM: tuple[str, ...] = (
 
 
 def _tracked_files() -> list[str]:
+    """Every tracked path, NUL-delimited so a filename cannot hide one.
+
+    Splitting `git ls-files` on whitespace breaks any path containing a space,
+    a tab or a newline into fragments that name no file, and a path this scan
+    cannot open is skipped without a word.  That is a path-shaped exemption
+    granted by whoever chose the filename, which is the defect this scan
+    already had once as `_KNOWN_EXCEPTIONS`, arrived at from the other side.
+    """
+
     listing = subprocess.run(  # noqa: S603
-        ["git", "ls-files"],  # noqa: S607
+        ["git", "ls-files", "-z"],  # noqa: S607
         capture_output=True,
         text=True,
         check=True,
         cwd=_REPO_ROOT,
     )
-    return listing.stdout.split()
+    return [relative for relative in listing.stdout.split("\0") if relative]
 
 
 def _is_shared_idiom(run: str) -> bool:
@@ -141,6 +155,17 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--threshold", type=int, default=_DEFAULT_THRESHOLD)
     arguments = parser.parse_args(argv)
+    if arguments.threshold < _SEED:
+        # Runs are grown outward from a seed, so a run shorter than one seed is
+        # invisible however low the threshold goes -- while the clean line still
+        # says "No verbatim corpus run of N+ characters", which for N below the
+        # seed is a claim the scan never tested.  Refuse the argument rather
+        # than answer a question this shape of search cannot answer.
+        parser.error(
+            f"--threshold must be at least the {_SEED}-character seed: a run "
+            f"shorter than one seed cannot be found at any threshold, so "
+            f"{arguments.threshold} would report a clean tree it never checked",
+        )
 
     try:
         root = corpus_root()

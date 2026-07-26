@@ -47,8 +47,10 @@ from scripts.validation.claim_events.corpus_text import (  # noqa: E402
 )
 from scripts.validation.restricted_corpus_digests import (  # noqa: E402
     DIGEST_PATH,
+    INDEX_SHA256,
     STRIDE,
     WINDOW,
+    index_digest,
     window_digest,
 )
 from scripts.validation.restricted_corpus_normalization import (  # noqa: E402
@@ -172,6 +174,17 @@ def main() -> int:
         f"wrote {DIGEST_PATH.relative_to(_REPO_ROOT)}: {len(runs)} run(s), "
         f"{len(windows)} window digest(s)",
     )
+    rebuilt = index_digest(payload)
+    if rebuilt != INDEX_SHA256:
+        # The checker refuses to scan against an artifact that does not hash to
+        # its pin, because emptying this file is otherwise a silent green.  So
+        # a rebuild is only half a change until the pin moves with it.
+        print(
+            f"the indexed run set changed; set INDEX_SHA256 in "
+            f"scripts/validation/restricted_corpus_digests.py to\n"
+            f"    {rebuilt}\n"
+            f"in this commit, and say why the set changed.",
+        )
     return 0
 
 

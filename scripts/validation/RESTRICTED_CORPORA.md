@@ -133,7 +133,7 @@ commit. Neither half alone is sufficient, and neither is a clean bill of health.
 | | `restricted-corpus-digest-check` | `restricted-corpus-scan` |
 | --- | --- | --- |
 | Needs the corpus | no | **yes** |
-| Wired into | pre-commit, `make service-checks`, and CI unconditionally | `make restricted-corpus-scan`, by hand, before landing corpus-derived work |
+| Wired into | pre-commit, `make service-checks`, and its own CI job with no condition on it | `make restricted-corpus-scan`, by hand, before landing corpus-derived work |
 | Compares against | committed digests of runs already removed | every document in the corpus |
 | Catches | those runs coming back at 40+ folded characters — a revert, a paste out of published history, a re-wrapped, re-cased or re-emphasised copy | any verbatim run of 40+ characters, from any document |
 | **Misses** | **any corpus text never removed before** — a fresh sentence from a document nobody has quoted is invisible to it — and any removed run that folds below 32 characters, which cannot be indexed at all | runs shorter than 40 characters; anything paraphrased rather than copied; anything the comparison form does not fold |
@@ -149,6 +149,21 @@ digest set is `restricted_corpus_digests.json`, rebuilt with
 `make restricted-corpus-digests` from the same locators the redacted records
 publish. The digests are one-way: they let a machine recognise restricted text,
 not reconstruct it.
+
+That artifact is the whole of the offline half's detection data, and it is
+machine-written, so emptying or truncating it would have narrowed what the gate
+sees without changing anything a reader would notice — an empty index matches
+nothing and reports every tree clean. The checker therefore refuses to scan
+unless the committed set still hashes to `INDEX_SHA256` in
+`scripts/validation/restricted_corpus_digests.py`. Rebuilding the set moves
+both, in one commit, with the reason on the record; the builder prints the new
+value.
+
+Neither half reads a path it cannot open, and both take the tracked list from
+`git ls-files -z`. Splitting that list on whitespace instead broke any path
+containing a space or a tab into fragments naming no file, which both scans
+skipped in silence: a filename was enough to exempt a file, and the clean line
+counts only what was read.
 
 ### Two digests, one locator
 

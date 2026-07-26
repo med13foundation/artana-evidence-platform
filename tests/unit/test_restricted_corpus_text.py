@@ -17,7 +17,6 @@ import copy
 import hashlib
 import json
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -40,8 +39,10 @@ from scripts.validation.claim_events.fixture import (
 )
 from scripts.validation.restricted_corpus_digests import (
     DIGEST_PATH,
+    INDEX_SHA256,
     STRIDE,
     WINDOW,
+    index_digest,
     window_digest,
 )
 from scripts.validation.restricted_corpus_normalization import normalize
@@ -60,6 +61,34 @@ _DOCUMENT = "SYNTHETIC-0001"
 _SOURCE_TEXT = "Synthetic title.\n\nAlpha protein binds beta protein in vitro."
 
 
+def _object(value: object) -> dict[str, object]:
+    """Narrow one JSON value to an object.
+
+    `dict[str, object]` is the shape `corpus_text` itself declares, and it is
+    what these payloads are; `Any` would let a typo through as a test that
+    quietly checks nothing, which is the failure mode this whole file exists
+    to prevent.
+    """
+
+    assert isinstance(value, dict), f"expected a JSON object, got {type(value)}"
+    return value
+
+
+def _array(value: object) -> list[object]:
+    assert isinstance(value, list), f"expected a JSON array, got {type(value)}"
+    return value
+
+
+def _text(value: object) -> str:
+    assert isinstance(value, str), f"expected a JSON string, got {type(value)}"
+    return value
+
+
+def _first_event(payload: dict[str, object]) -> dict[str, object]:
+    case = _object(_array(payload["cases"])[0])
+    return _object(_array(case["events"])[0])
+
+
 def _text_bearing_keys(node: object) -> set[str]:
     """Every key anywhere in the payload that would carry corpus prose."""
 
@@ -76,7 +105,7 @@ def _text_bearing_keys(node: object) -> set[str]:
     return set()
 
 
-def _synthetic_payload() -> dict[str, Any]:
+def _synthetic_payload() -> dict[str, object]:
     span_start = _SOURCE_TEXT.index("Alpha protein binds beta protein")
     span_end = span_start + len("Alpha protein binds beta protein")
     return {
@@ -124,7 +153,7 @@ def test_committed_fixture_carries_no_corpus_text(path: Path, expected: str) -> 
     """The exposure this redaction exists to close, asserted on the bytes."""
 
     raw = path.read_bytes()
-    payload: dict[str, Any] = json.loads(raw)
+    payload: dict[str, object] = json.loads(raw)
 
     assert is_redacted(payload), f"{path} must declare its restricted-text policy"
     assert _text_bearing_keys(payload) == set(), (
@@ -148,13 +177,15 @@ def test_committed_fixture_still_pins_the_text_it_no_longer_carries(
     rescoring the benchmark against different sentences.
     """
 
-    payload: dict[str, Any] = json.loads(path.read_bytes())
+    payload: dict[str, object] = json.loads(path.read_bytes())
 
-    for case in payload["cases"]:
-        assert len(case["source_sha256"]) == 64
+    for raw_case in _array(payload["cases"]):
+        case = _object(raw_case)
+        assert len(_text(case["source_sha256"])) == 64
+        assert isinstance(case["source_length"], int)
         assert case["source_length"] > 0
-    declaration = payload["restricted_text"]
-    assert len(declaration["rehydrated_sha256"]) == 64
+    declaration = _object(payload["restricted_text"])
+    assert len(_text(declaration["rehydrated_sha256"])) == 64
     assert declaration["corpus"] == "BioNLP-ST-2011-GE"
 
 
@@ -173,6 +204,39 @@ def test_redaction_round_trips_exactly(tmp_path: Path) -> None:
 
     assert _text_bearing_keys(redacted) == set()
     assert canonical_fixture_bytes(rehydrated) == canonical_fixture_bytes(original)
+
+
+def test_rehydration_uses_the_corpus_it_is_given_not_the_environment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A caller holding one corpus must be validated against that corpus.
+
+    `import_bionlp_claim_event_fixture` extracts the archive it was given,
+    verifies its digest and builds the panel from it -- then read the fixture
+    back after the extraction had been deleted, so the check ran against
+    `ARTANA_BIONLP_GE_CORPUS` or the default cache: a different copy, which
+    with neither present was no copy at all and an unhandled error after the
+    output was already written.  It now names the extraction it just used.
+    """
+
+    redacted = redact_fixture_payload(_synthetic_payload())
+    given = tmp_path / "given"
+    given.mkdir()
+    (given / f"{_DOCUMENT}.txt").write_text(_SOURCE_TEXT, encoding="utf-8")
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    (elsewhere / f"{_DOCUMENT}.txt").write_text(
+        _SOURCE_TEXT.replace("Alpha", "Gamma"),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv(RESTRICTED_CORPUS_ENV_VAR, str(elsewhere))
+
+    rehydrated = rehydrate_fixture_payload(redacted, root=given)
+
+    assert _first_event(rehydrated)["source_span"] == "Alpha protein binds beta protein"
+    with pytest.raises(ValueError, match="does not match the digest"):
+        rehydrate_fixture_payload(redacted)
 
 
 def test_rehydration_rejects_a_corpus_that_is_not_the_pinned_revision(
@@ -197,7 +261,7 @@ def test_rehydration_rejects_offsets_that_disagree_with_the_text(
 
     redacted = redact_fixture_payload(_synthetic_payload())
     tampered = copy.deepcopy(redacted)
-    tampered["cases"][0]["events"][0]["trigger_locator"] = "char:0-5"
+    _first_event(tampered)["trigger_locator"] = "char:0-5"
     (tmp_path / f"{_DOCUMENT}.txt").write_text(_SOURCE_TEXT, encoding="utf-8")
 
     with pytest.raises(ValueError, match="rehydrated fixture hashes to"):
@@ -208,7 +272,7 @@ def test_redaction_refuses_offsets_that_do_not_bind_their_span() -> None:
     """Redaction is destructive, so it must verify before it discards."""
 
     payload = _synthetic_payload()
-    payload["cases"][0]["events"][0]["source_locator"] = "char:0-4"
+    _first_event(payload)["source_locator"] = "char:0-4"
 
     with pytest.raises(ValueError, match="refusing to redact"):
         redact_fixture_payload(payload)
@@ -427,6 +491,62 @@ def test_offline_guard_detects_a_reintroduced_run(tmp_path: Path) -> None:
     assert not any(
         window_digest(innocent[index : index + WINDOW]) in known for index in probes
     )
+
+
+def test_the_committed_index_matches_the_digest_the_checker_pins() -> None:
+    """The artifact and its pin must agree, or the guard refuses to run.
+
+    Rebuilding the run set legitimately moves both; this is what makes moving
+    only one of them a failure rather than a silent change of what is detected.
+    """
+
+    payload = json.loads(DIGEST_PATH.read_text(encoding="utf-8"))
+
+    assert index_digest(payload) == INDEX_SHA256, (
+        "the digest set changed without its pin; rebuild with "
+        "`make restricted-corpus-digests`, move INDEX_SHA256 in the same "
+        "commit, and say why the indexed run set changed"
+    )
+
+
+def test_an_emptied_digest_set_is_an_error_not_a_clean_tree(tmp_path: Path) -> None:
+    """Deleting the detection data must not read as detecting nothing.
+
+    `known` built from an empty list matches nothing, so the scan used to print
+    a clean result and report that it had checked zero digests -- over any
+    tree, however much restricted text it carried.  This was measured: with
+    `window_digests` emptied, a planted 169-character run went from caught to a
+    green gate, and no test noticed, because the integrity test only asked
+    whether the entries were unique and an empty list is.
+    """
+
+    payload = json.loads(DIGEST_PATH.read_text(encoding="utf-8"))
+    payload["window_digests"] = []
+    path = tmp_path / "restricted_corpus_digests.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    assert check_restricted_corpus_digests.main(["--digests", str(path)]) == 2
+
+
+def test_a_truncated_committed_index_is_refused(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Losing one digest is as quiet as losing all of them, so it is pinned.
+
+    Emptiness is the loud case.  Dropping a single window from the committed
+    set narrows exactly one run's detection and changes nothing a reader would
+    see, so the checker compares the whole index against `INDEX_SHA256` before
+    it will scan with it.
+    """
+
+    payload = json.loads(DIGEST_PATH.read_text(encoding="utf-8"))
+    payload["window_digests"] = payload["window_digests"][:-1]
+    path = tmp_path / "restricted_corpus_digests.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    monkeypatch.setattr(check_restricted_corpus_digests, "DIGEST_PATH", path)
+
+    assert check_restricted_corpus_digests.main([]) == 2
 
 
 def test_no_tracked_file_carries_a_known_restricted_run() -> None:

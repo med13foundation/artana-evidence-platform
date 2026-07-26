@@ -87,13 +87,19 @@ _LOCATOR_RE: Final = re.compile(r"^char:(?P<start>\d+)-(?P<end>\d+)$")
 _EnumT = TypeVar("_EnumT", bound=StrEnum)
 
 
-def load_fixture(path: Path) -> NaryClaimFixture:
+def load_fixture(path: Path, *, corpus: Path | None = None) -> NaryClaimFixture:
     """Load and validate one fixture, rehydrating restricted text if needed.
 
     A committed fixture carries no corpus text, so it is rejoined with the
     fetched corpus first.  `sha256` is always the digest of the text-bearing
     fixture, redacted or not, so a gate pinning the panel keeps pinning the
     same bytes it pinned before the text was removed.
+
+    `corpus` names the extracted documents to rejoin with.  Callers that hold
+    one particular copy -- the importer, which has just extracted the archive
+    it was given and verified its digest -- must pass it, or validation is
+    performed against whatever `ARTANA_BIONLP_GE_CORPUS` or the default cache
+    happens to hold, which is a different corpus than the one under test.
     """
 
     raw_bytes = path.read_bytes()
@@ -101,7 +107,7 @@ def load_fixture(path: Path) -> NaryClaimFixture:
     if is_redacted(payload):
         # Hash the rehydrated panel, not the committed bytes, so digests pinned
         # before the corpus text was removed keep pinning the same panel.
-        payload = _object(rehydrate_fixture_payload(payload), "fixture")
+        payload = _object(rehydrate_fixture_payload(payload, root=corpus), "fixture")
         raw_bytes = canonical_fixture_bytes(payload)
     _require_keys(payload, {"schema_version", "metadata", "cases"}, "fixture")
     schema_version = _string(payload, "schema_version")

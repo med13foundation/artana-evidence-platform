@@ -15,6 +15,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # No `needs` and no `if`: this is the one check that must run on every pull
+  # request, whatever it touched. It lived inside evidence_api_gate, which runs
+  # only when the planner sets `full` or `evidence_api` -- and a docs-only pull
+  # request sets neither, while docs/validation/ is precisely where restricted
+  # corpus text was found and removed. A graph-only change skipped it too. The
+  # guard was absent from the changes most likely to trip it.
+  #
+  # It is stdlib-only and takes about a second, so it needs no dependency
+  # install. It catches only runs already removed -- the corpus-backed scan is
+  # the thorough half and needs the corpus. See
+  # scripts/validation/RESTRICTED_CORPORA.md.
+  restricted_corpus_guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Check for re-introduced restricted corpus text
+        run: make restricted-corpus-digest-check
+
   plan_service_checks:
     runs-on: ubuntu-latest
     outputs:
@@ -73,9 +99,15 @@ jobs:
       - name: Run changed unit tests
         run: venv/bin/python3 -m pytest ${{ needs.plan_service_checks.outputs.targeted_test_paths }} -q
 
+  # `&& full != 'true'` used to sit on this condition, on the assumption that a
+  # full run covers these. It does not: the full branch of evidence_api_gate
+  # runs static checks and coverage, and no coverage path includes
+  # tests/unit/test_control_files.py. So on every high-risk change -- any
+  # workflow or migration edit -- the repository control tests were the one
+  # thing that silently did not run.
   evidence_api_repo_control_checks:
     needs: plan_service_checks
-    if: needs.plan_service_checks.outputs.repo_control == 'true' && needs.plan_service_checks.outputs.full != 'true'
+    if: needs.plan_service_checks.outputs.repo_control == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -160,14 +192,6 @@ jobs:
             'ARTANA_ADMIN_PASSWORD=change_me_locally1' \
             > .env.postgres
 
-      # Unconditional: this job also runs the targeted path, which skips
-      # service-checks, and restricted corpus text has no reason to correlate
-      # with the paths a change touches. It is offline and takes about a
-      # second. It catches only runs already removed -- the full scan needs the
-      # corpus. See scripts/validation/RESTRICTED_CORPORA.md.
-      - name: Check for re-introduced restricted corpus text
-        run: make restricted-corpus-digest-check
-
       - name: Run evidence API checks
         run: |
           if [ "${{ needs.plan_service_checks.outputs.full }}" = "true" ]; then
@@ -180,6 +204,7 @@ jobs:
   evidence-api-service-checks:
     needs:
       - plan_service_checks
+      - restricted_corpus_guard
       - evidence_api_targeted_tests
       - evidence_api_repo_control_checks
       - evidence_api_gate
@@ -193,6 +218,13 @@ jobs:
           echo "repo_control=${{ needs.plan_service_checks.outputs.repo_control }}"
           echo "evidence_api=${{ needs.plan_service_checks.outputs.evidence_api }}"
           echo "full=${{ needs.plan_service_checks.outputs.full }}"
+          # Success only, never skipped: this one has no condition to skip on,
+          # so a skip means the job was removed or its dependencies were and
+          # the summary must not pass that off as a clean run.
+          if [ "${{ needs.restricted_corpus_guard.result }}" != "success" ]; then
+            echo "restricted corpus guard did not run to success"
+            exit 1
+          fi
           case "${{ needs.evidence_api_targeted_tests.result }}" in
             success|skipped) ;;
             *) exit 1 ;;

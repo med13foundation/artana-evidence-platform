@@ -289,8 +289,10 @@ architecture-structure-check: ## Enforce package structure and sprawl guardrails
 # Two halves, because the thorough check needs a corpus we are not allowed to
 # commit. This half runs anywhere and catches restricted runs we have already
 # removed coming back; it is blind to corpus text nobody has removed before.
+# No check_venv: this is stdlib only, and it has to be runnable in a CI job
+# that installs nothing. A guard that runs everywhere is worth more than one
+# that shares a bootstrap with the gates it is meant to outlive.
 restricted-corpus-digest-check: ## Catch re-introduced restricted corpus text (offline)
-	$(call check_venv)
 	PYTHONPATH="$(CURDIR)" $(USE_PYTHON) scripts/validation/check_restricted_corpus_digests.py
 
 # The other half: every tracked file against every corpus document. Needs the

@@ -20,11 +20,13 @@ corpus is synthetic and built in `tmp_path`, so these run everywhere.
 from __future__ import annotations
 
 import inspect
+import subprocess
 from collections import defaultdict
 from pathlib import Path
 
 import pytest
 
+from scripts.validation import check_restricted_corpus_digests as offline
 from scripts.validation import check_restricted_corpus_text as scanner
 from scripts.validation.restricted_corpus_normalization import normalize
 
@@ -348,6 +350,59 @@ def test_the_scan_never_prints_the_corpus_when_it_finds_nothing(
     printed = capsys.readouterr()
     assert _SHARED not in printed.out + printed.err
     assert _OTHER_RUN not in printed.out + printed.err
+
+
+@pytest.mark.parametrize("module", [scanner, offline])
+def test_a_filename_cannot_exempt_a_file_from_either_guard(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    module: object,
+) -> None:
+    """Whitespace in a tracked path used to remove it from both scans.
+
+    `git ls-files` was split on whitespace, so `docs/validation/report copy.md`
+    arrived as two paths that name no file, and a path neither guard can open
+    is skipped in silence.  That is the `_KNOWN_EXCEPTIONS` defect reached from
+    the other end -- an exemption granted by whoever chooses a filename, and
+    invisible in the clean line, which counts only what it managed to read.
+    Both halves were measured passing over 169 characters of real corpus prose
+    at such a path before this was fixed.
+    """
+
+    repository = tmp_path / "repository"
+    (repository / "docs").mkdir(parents=True)
+    awkward = ("report copy.md", "report\ttab.md", "plain.md")
+    for name in awkward:
+        (repository / "docs" / name).write_text("placeholder\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=repository, check=True)  # noqa: S603, S607
+    subprocess.run(["git", "add", "-A"], cwd=repository, check=True)  # noqa: S603, S607
+
+    monkeypatch.setattr(module, "_REPO_ROOT", repository)
+    tracked = module._tracked_files()  # type: ignore[attr-defined]
+
+    assert set(tracked) == {f"docs/{name}" for name in awkward}
+    for relative in tracked:
+        assert (repository / relative).is_file(), (
+            f"{relative!r} names no file, so the scan skips it without a word"
+        )
+
+
+def test_a_threshold_below_the_seed_is_refused_not_answered(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A clean line must not cover lengths the search cannot reach.
+
+    Runs are grown outward from a `_SEED`-character match, so a run shorter
+    than one seed is invisible at any threshold -- while `--threshold 10` still
+    printed "No verbatim corpus run of 10+ characters", which is an assurance
+    about six lengths that were never examined.
+    """
+
+    with pytest.raises(SystemExit) as exit_info:
+        scanner.main(["--threshold", str(scanner._SEED - 1)])
+
+    assert exit_info.value.code == 2
+    assert str(scanner._SEED) in capsys.readouterr().err
 
 
 def test_the_scanner_source_carries_the_reason_for_its_own_shape() -> None:

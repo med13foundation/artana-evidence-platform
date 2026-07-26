@@ -9,8 +9,12 @@ would go quietly green.
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 #: Characters per indexed window.  Long enough that a window is a distinctive
 #: fragment of prose rather than a common phrase.
@@ -36,4 +40,47 @@ def window_digest(window: str) -> str:
     return hashlib.sha256(window.encode("utf-8")).hexdigest()[:16]
 
 
-__all__ = ["DIGEST_PATH", "STRIDE", "WINDOW", "window_digest"]
+def index_digest(payload: Mapping[str, object]) -> str:
+    """Digest the detection data of a digest artifact.
+
+    Only the fields a scan actually reads: the probe geometry, the manifest of
+    indexed runs, and the window digests themselves.  Prose in the artifact --
+    the note, the conventions -- may be reworded without moving this.
+    """
+
+    return hashlib.sha256(
+        json.dumps(
+            {
+                key: payload.get(key)
+                for key in ("window", "stride", "runs", "window_digests")
+            },
+            sort_keys=True,
+        ).encode("utf-8"),
+    ).hexdigest()
+
+
+#: The committed artifact, pinned by content.
+#:
+#: Emptying `window_digests` used not to make the checker fail: `known` became
+#: an empty set, nothing matched, and it reported a clean tree while printing
+#: that it had checked zero digests.  A guard whose only detection data can be
+#: deleted into a green result protects nothing, and that deletion is a
+#: one-line diff in a file no human reads.  So the checker now refuses to run
+#: unless the committed artifact still hashes to this, and the artifact cannot
+#: lose even one digest without saying so.
+#:
+#: Rebuilding the set legitimately moves this.  `build_restricted_corpus_digests.py`
+#: prints the new value; move it in the same commit that rebuilds, and say why
+#: the run set changed.
+INDEX_SHA256: Final = (
+    "2b7d3f311187dba369bc121f37d5e3d1cd48ab62818412ad3238b731a47aec38"
+)
+
+__all__ = [
+    "DIGEST_PATH",
+    "INDEX_SHA256",
+    "STRIDE",
+    "WINDOW",
+    "index_digest",
+    "window_digest",
+]

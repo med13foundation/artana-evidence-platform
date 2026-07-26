@@ -45,6 +45,8 @@ from scripts.validation.claim_events.finite_source_unit.runner import (
     source_supported_unmatched_count,
 )
 from scripts.validation.claim_events.finite_source_unit.service import (
+    _EXTRACTION_PROMPT_VERSION,
+    _VERIFICATION_PROMPT_VERSION,
     FiniteSourceUnitModelClient,
     VerifiedEventCandidate,
     _extraction_prompt,
@@ -795,6 +797,42 @@ def test_agent_contracts_reject_transport_identity_fields() -> None:
                 ],
             },
         )
+
+
+def test_extraction_prompt_bytes_match_their_declared_version() -> None:
+    """A prompt version must name one prompt, or it names nothing.
+
+    `extract_source_unit` derives its step key from the prompt version, the
+    model id, the unit hash and the namespace -- never from the prompt body.
+    So an edit to the body without a bump gives two different instructions one
+    deterministic identity, and results from different model inputs become
+    indistinguishable after the fact.  That is what happened on 2026-07-25:
+    the redaction rewrote an example inside the extraction prompt and left the
+    version at v5.
+
+    The prompt is rendered over a fixed unit, so this pins the instructions and
+    not the source.  Changing either prompt requires bumping its version in the
+    same edit, which is the whole point.
+    """
+
+    unit = enumerate_source_units(
+        case_id="prompt-pin",
+        source_text="Reporter vectors were added to CD4+ T cells and electroporated.",
+    )[0]
+
+    assert _EXTRACTION_PROMPT_VERSION == "tg04.finite_source_unit.extraction.v6"
+    assert (
+        hashlib.sha256(_extraction_prompt(unit).encode("utf-8")).hexdigest()
+        == "82a71263fa50f2c544db8b449cb96f036082c7deb36387885c3a213f95b8d940"
+    ), "the extraction prompt body moved; bump _EXTRACTION_PROMPT_VERSION"
+
+    assert _VERIFICATION_PROMPT_VERSION == "tg04.finite_source_unit.verification.v5"
+    assert (
+        hashlib.sha256(
+            _verification_prompt(unit=unit, candidates=()).encode("utf-8"),
+        ).hexdigest()
+        == "eb345b872a636bbab54147b8039dd89be9219b7b17e8b4e3666284fe38cc8edd"
+    ), "the verification prompt body moved; bump _VERIFICATION_PROMPT_VERSION"
 
 
 def test_both_agents_receive_the_same_scientific_eligibility_policy() -> None:

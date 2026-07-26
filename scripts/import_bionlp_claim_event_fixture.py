@@ -22,6 +22,7 @@ from scripts.validation.claim_events.bionlp_import import (  # noqa: E402
     select_document_ids,
 )
 from scripts.validation.claim_events.corpus_text import (  # noqa: E402
+    RestrictedCorpusUnavailableError,
     canonical_fixture_bytes,
     redact_fixture_payload,
 )
@@ -57,12 +58,24 @@ def main(argv: tuple[str, ...] | None = None) -> int:
                 archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
                 source_url=TG04_BIONLP_SOURCE_URL,
             )
-        output.parent.mkdir(parents=True, exist_ok=True)
-        # Only the derived half is written.  The corpus text stays in the
-        # fetched cache; `load_fixture` rejoins the two on demand.
-        output.write_bytes(canonical_fixture_bytes(redact_fixture_payload(payload)))
-        fixture = load_fixture(output)
-    except (OSError, tarfile.TarError, TypeError, ValueError) as exc:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            # Only the derived half is written.  The corpus text stays in the
+            # fetched cache; `load_fixture` rejoins the two on demand.
+            output.write_bytes(canonical_fixture_bytes(redact_fixture_payload(payload)))
+            # Read back inside the extraction, and against it. Validating after
+            # the temporary directory is gone sent `load_fixture` to
+            # ARTANA_BIONLP_GE_CORPUS or the default cache instead -- a corpus
+            # this run never touched, so the check either verified the wrong
+            # documents or, with neither present, crashed with an unhandled
+            # RestrictedCorpusUnavailableError after the output was written.
+            fixture = load_fixture(output, corpus=corpus_root)
+    except (
+        OSError,
+        RestrictedCorpusUnavailableError,
+        tarfile.TarError,
+        TypeError,
+        ValueError,
+    ) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     print(f"Wrote fixture: {output}")
