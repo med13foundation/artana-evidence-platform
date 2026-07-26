@@ -444,3 +444,39 @@ The metric layer is now specified so that a system which connects nothing scores
 So the first month should not promise a CONNECT accuracy number. It should deliver: **the connecting capability is not wired end-to-end, here is precisely where it stops, here is what it costs to close, and here — with published baselines and a scorer that provably collapses on degenerate inputs — is the measurement apparatus that will produce a real number the day it is unblocked.**
 
 That is a smaller promise than "we validated the backend." It is the one the code supports.
+
+---
+
+## 16. Decisions taken
+
+Recorded 2026-07-26 by the product owner, after review of §13.
+
+### 16.1 Fund the CONNECT work in full — now
+
+Committed, rather than gating on Phase 0's result. **Phase 0 still runs first**; what changed is the commitment, not the order. Its purpose is unchanged and remains load-bearing for two reasons:
+
+1. It sizes the ClaimFrame-persistence contract, which is the one component in the estimate that is genuinely unscoped. The ~45 engineer-day figure excludes it.
+2. It can still show the design is wrong, at zero provider cost. Committing the budget does not make an invalid design valid, and §12 should still be run as an early warning rather than as a gate.
+
+**Reporting obligation this creates:** because the go/no-go checkpoint has been removed, Phase 0's output must be escalated explicitly when it lands, not folded into a status update. If it returns a ClaimFrame estimate materially above the placeholder, that is a re-decision point even though the funding decision is already made.
+
+### 16.2 Drop BioNLP-ST GENIA — use freely-licensed corpora only
+
+BC5CDR (verified public domain) and BioRED (provenance verified) only.
+
+**This is remediation, not a forward-looking choice.** §2.3 records a live exposure: `scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json` and `_v2.json` each embed 54,834 characters of GE `source_text` across 40 documents, git-tracked in a public repository. Verified independently: 40 `source_text` fields per file.
+
+Consequences to work through, none of them free:
+
+- **Lane 1 (READ) loses the corpus it was designed around.** GENIA was selected for READ precisely because its event annotation suits that estimand. BC5CDR and BioRED carry relations rather than the multi-argument event structure Lane 1 scores, so Lane 1's estimand must be redefined against what the remaining corpora actually annotate. This is a design change to §1.1 and §6, not a substitution.
+- **The existing scorer and gold panel were built against GENIA.** The two-sided calibration (`2026-07-24-tg04-two-sided-scorer-calibration.md`), the 7 polarity adjudications, and the preregistered protocol all target the GE fixture. What survives re-targeting must be re-established, and the gold-as-predictions gate must be re-run on whatever replaces it.
+- **Blockers H1–H3 concerned the GE fixture** and may be moot rather than fixed. Re-check before counting them as closed.
+- **Removing the files does not remove them from git history.** The repository is public, so the content stays retrievable from prior commits. Full remediation requires rewriting published history — force-pushing a shared repository — which is a separate decision with its own cost, and is not taken here.
+
+### 16.3 Production environment — deferred
+
+Prove the system's value first. Recorded on issue #215. Staging is the environment; it runs current `main` via CI and is traceable to a commit.
+
+### 16.4 Partner communication
+
+Lead with what is demonstrable: source-linked claims, and every decision carrying its reviewer and their written reason. State plainly that extraction accuracy is not yet measured and is being measured. Do not quote an accuracy figure — §14's publication rules apply to partner-facing material exactly as they apply to reports.
