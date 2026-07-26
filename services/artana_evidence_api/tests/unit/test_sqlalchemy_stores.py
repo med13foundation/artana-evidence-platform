@@ -409,74 +409,98 @@ def test_resolving_a_parked_proposal_as_duplicate_names_its_counterpart(
     assert still_active.status == "pending_review"
 
 
+class _NoDuplicateResult:
+    def first(self) -> None:
+        return None
+
+
+class _ConflictingHolderResult:
+    def first(self) -> tuple[str, str, None]:
+        return ("concurrent-proposal", "pending_review", None)
+
+
+class _LostRaceSession:
+    """A session that loses one fingerprint to a concurrent writer.
+
+    The writer's row becomes visible only after the rollback, which is what
+    really happens: it was committed by another transaction while this one held
+    an older snapshot.  Reporting it as invisible forever would let the retry
+    "succeed" for a reason no production race ever offers.
+    """
+
+    added: list[HarnessProposalModel]
+    rolled_back: bool
+    commits: int
+
+    def __init__(self, *, contested_fingerprint: str) -> None:
+        self.added = []
+        self.rolled_back = False
+        self.commits = 0
+        self._contested_fingerprint = contested_fingerprint
+
+    def execute(self, stmt) -> _NoDuplicateResult | _ConflictingHolderResult:  # noqa: ANN001
+        if not self.rolled_back:
+            return _NoDuplicateResult()
+        queried = stmt.compile().params.values()
+        if any(value == self._contested_fingerprint for value in queried):
+            return _ConflictingHolderResult()
+        return _NoDuplicateResult()
+
+    def add(self, model: HarnessProposalModel) -> None:
+        self.added.append(model)
+
+    def commit(self) -> None:
+        self.commits += 1
+        if self.commits == 1:
+            raise IntegrityError(
+                statement="INSERT INTO harness_proposals",
+                params={},
+                orig=Exception("duplicate active fingerprint"),
+            )
+
+    def rollback(self) -> None:
+        self.rolled_back = True
+
+    def refresh(self, model: HarnessProposalModel) -> None:
+        model.id = model.id or uuid4()
+        model.created_at = model.created_at or datetime.now(UTC).replace(tzinfo=None)
+        model.updated_at = model.updated_at or model.created_at
+
+
+def _race_draft(*, source_key: str, fingerprint: str) -> HarnessProposalDraft:
+    return HarnessProposalDraft(
+        proposal_type="candidate_claim",
+        source_kind="document_extraction",
+        source_key=source_key,
+        title=f"Candidate {source_key}",
+        summary="One claim extracted from a document.",
+        confidence=0.83,
+        ranking_score=0.91,
+        reasoning_path={},
+        evidence_bundle=[],
+        payload={"proposed_claim_type": "ASSOCIATED_WITH"},
+        metadata={},
+        claim_fingerprint=fingerprint,
+    )
+
+
 def test_sqlalchemy_harness_proposal_store_retains_unique_conflict_race() -> None:
     """ART-DATA-001: losing the fingerprint race must not discard the batch.
 
     A concurrent writer can claim the fingerprint between the pre-check and the
-    flush.  The batch is retried with every proposal retained as
+    flush.  The batch is retried, and the proposal that lost is retained as
     IDENTITY_PENDING, which cannot collide because the unique index only covers
     active statuses.
     """
 
-    class _NoDuplicateResult:
-        def first(self) -> None:
-            return None
-
-    class _UniqueConflictSession:
-        added: list[HarnessProposalModel]
-        rolled_back: bool
-        commits: int
-
-        def __init__(self) -> None:
-            self.added = []
-            self.rolled_back = False
-            self.commits = 0
-
-        def execute(self, _stmt) -> _NoDuplicateResult:
-            return _NoDuplicateResult()
-
-        def add(self, model: HarnessProposalModel) -> None:
-            self.added.append(model)
-
-        def commit(self) -> None:
-            self.commits += 1
-            if self.commits == 1:
-                raise IntegrityError(
-                    statement="INSERT INTO harness_proposals",
-                    params={},
-                    orig=Exception("duplicate active fingerprint"),
-                )
-
-        def rollback(self) -> None:
-            self.rolled_back = True
-
-        def refresh(self, model: HarnessProposalModel) -> None:
-            model.id = model.id or uuid4()
-            model.created_at = model.created_at or datetime.now(UTC).replace(
-                tzinfo=None
-            )
-            model.updated_at = model.updated_at or model.created_at
-
-    session = _UniqueConflictSession()
+    contested = "duplicatefingerprint000000000001"
+    session = _LostRaceSession(contested_fingerprint=contested)
     store = SqlAlchemyHarnessProposalStore(cast("Session", session))
     created = store.create_proposals(
         space_id=str(uuid4()),
         run_id=str(uuid4()),
         proposals=(
-            HarnessProposalDraft(
-                proposal_type="candidate_claim",
-                source_kind="document_extraction",
-                source_key="duplicate-race",
-                title="Duplicate candidate",
-                summary="A concurrent insert won the fingerprint race.",
-                confidence=0.83,
-                ranking_score=0.91,
-                reasoning_path={},
-                evidence_bundle=[],
-                payload={"proposed_claim_type": "ASSOCIATED_WITH"},
-                metadata={},
-                claim_fingerprint="duplicatefingerprint000000000001",
-            ),
+            _race_draft(source_key="duplicate-race", fingerprint=contested),
         ),
     )
 
@@ -485,6 +509,92 @@ def test_sqlalchemy_harness_proposal_store_retains_unique_conflict_race() -> Non
     assert created[0].decision_reason is not None
     assert session.added
     assert session.rolled_back is True
+
+
+def test_losing_one_fingerprint_race_parks_only_the_proposal_that_lost() -> None:
+    """One collision must not take the rest of the document's claims with it.
+
+    The retry used to re-persist the entire batch as IDENTITY_PENDING, so a
+    single contested fingerprint removed every unrelated claim extracted from
+    the same document from the review queue.  On BC5CDR that pattern would have
+    parked 241 drafts across the 66 documents (4.4%) that contain a colliding
+    pair.
+    """
+
+    contested = "contestedfingerprint000000000001"
+    session = _LostRaceSession(contested_fingerprint=contested)
+    store = SqlAlchemyHarnessProposalStore(cast("Session", session))
+
+    created = store.create_proposals(
+        space_id=str(uuid4()),
+        run_id=str(uuid4()),
+        proposals=(
+            _race_draft(source_key="claim-0", fingerprint="uncontested0000000000000000000a"),
+            _race_draft(source_key="claim-1", fingerprint=contested),
+            _race_draft(source_key="claim-2", fingerprint="uncontested0000000000000000000b"),
+            _race_draft(source_key="claim-3", fingerprint="uncontested0000000000000000000c"),
+        ),
+    )
+
+    assert session.rolled_back is True
+    by_source_key = {record.source_key: record for record in created}
+    assert len(by_source_key) == 4, "nothing may be dropped"
+    assert by_source_key["claim-1"].status == IDENTITY_PENDING_STATUS
+    assert [
+        source_key
+        for source_key, record in sorted(by_source_key.items())
+        if record.status == "pending_review"
+    ] == ["claim-0", "claim-2", "claim-3"]
+
+
+def test_two_drafts_in_one_batch_sharing_a_fingerprint_park_only_one(
+    db_session: Session,
+) -> None:
+    """A collision inside one batch must cost one draft, not the batch.
+
+    The pre-check queried committed rows and the session does not autoflush, so
+    a sibling draft in the same batch was invisible to it: both were planned as
+    pending_review, the partial unique index rejected the insert, and the whole
+    batch was retained as IDENTITY_PENDING -- unreviewable.  One extraction pass
+    producing two claims with the same fingerprint is ordinary, not exceptional.
+    """
+
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        db_session,
+        space_id=space_id,
+        harness_id="document_extraction",
+        title="One document, four claims",
+        input_payload={},
+    )
+    store = SqlAlchemyHarnessProposalStore(db_session)
+    shared = "sharedwithinbatch00000000000001"
+
+    created = store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=(
+            _race_draft(source_key="claim-0", fingerprint="distinct000000000000000000000a"),
+            _race_draft(source_key="claim-1", fingerprint=shared),
+            _race_draft(source_key="claim-2", fingerprint=shared),
+            _race_draft(source_key="claim-3", fingerprint="distinct000000000000000000000b"),
+        ),
+    )
+
+    assert len(created) == 4, "nothing may be dropped"
+    statuses = {record.source_key: record.status for record in created}
+    assert statuses["claim-0"] == "pending_review"
+    assert statuses["claim-3"] == "pending_review"
+    assert sorted([statuses["claim-1"], statuses["claim-2"]]) == [
+        IDENTITY_PENDING_STATUS,
+        "pending_review",
+    ]
+
+    persisted = store.list_proposals(space_id=space_id, run_id=run.id)
+    assert len(persisted) == 4
+    assert (
+        sum(1 for record in persisted if record.status == "pending_review")
+    ) == 3, "three of the four must still be reviewable"
 
 
 def test_a_proposal_without_provenance_reads_back_as_explicitly_unverified(
