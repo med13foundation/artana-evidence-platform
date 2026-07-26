@@ -17,7 +17,6 @@ deleted -- when that happens.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, cast
 
 import pytest
 
@@ -27,7 +26,8 @@ from scripts.validation.claim_events.corpus_text import (
 )
 from scripts.validation.claim_events.evaluation import _run_passes
 from scripts.validation.claim_events.fixture import load_fixture, load_fixture_payload
-from scripts.validation.claim_events.scoring import score_fixture
+from scripts.validation.claim_events.scoring import FixtureScore, score_fixture
+from tests.json_narrowing import as_array, as_object, as_text, objects
 
 _FIXTURE = Path(
     "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json"
@@ -45,17 +45,16 @@ _GATED_METRICS = (
 
 
 @pytest.fixture(name="raw")
-def _raw() -> dict[str, Any]:
-    return cast("dict[str, Any]", load_fixture_payload(_FIXTURE))
+def _raw() -> dict[str, object]:
+    return load_fixture_payload(_FIXTURE)
 
 
-def _score(raw: dict[str, Any], cases: list[dict[str, Any]]) -> Any:
-    fixture = load_fixture(_FIXTURE)
-    return score_fixture(cast("Any", fixture), {"cases": cases})
+def _score(cases: list[dict[str, object]]) -> FixtureScore:
+    return score_fixture(load_fixture(_FIXTURE), {"cases": cases})
 
 
 @requires_corpus
-def test_gold_as_predictions_scores_perfectly(raw: dict[str, Any]) -> None:
+def test_gold_as_predictions_scores_perfectly(raw: dict[str, object]) -> None:
     """V1: the gold answer must score 1.0 against the scorer that grades it.
 
     This failed before `_argument_key` accepted the fixture's `participant_role`
@@ -65,10 +64,9 @@ def test_gold_as_predictions_scores_perfectly(raw: dict[str, Any]) -> None:
     """
 
     score = _score(
-        raw,
         [
             {"case_id": case["case_id"], "events": case["events"]}
-            for case in raw["cases"]
+            for case in objects(raw["cases"])
         ],
     )
 
@@ -84,7 +82,7 @@ def test_gold_as_predictions_scores_perfectly(raw: dict[str, Any]) -> None:
 
 @requires_corpus
 def test_corpus_faithful_extractor_cannot_pass_the_precision_gate(
-    raw: dict[str, Any],
+    raw: dict[str, object],
 ) -> None:
     """A perfect extractor fails, because precision counts every prediction.
 
@@ -97,21 +95,21 @@ def test_corpus_faithful_extractor_cannot_pass_the_precision_gate(
     denominator is fixed; do not delete it.
     """
 
-    exclusions = raw["metadata"]["event_exclusions"]
+    exclusions = objects(as_object(raw["metadata"])["event_exclusions"])
     gold_documents = {
-        case["title"]
-        for case in raw["cases"]
+        as_text(case["title"])
+        for case in objects(raw["cases"])
         if case.get("control_status") == "EVENT_GOLD"
     }
     dropped: dict[str, int] = {}
     for item in exclusions:
-        document = item["document_id"]
+        document = as_text(item["document_id"])
         if document in gold_documents:
             dropped[document] = dropped.get(document, 0) + 1
 
-    cases: list[dict[str, Any]] = []
-    for case in raw["cases"]:
-        events = list(case["events"])
+    cases: list[dict[str, object]] = []
+    for case in objects(raw["cases"]):
+        events: list[object] = list(as_array(case["events"]))
         events.extend(
             {
                 "event_type": "BINDING",
@@ -121,11 +119,11 @@ def test_corpus_faithful_extractor_cannot_pass_the_precision_gate(
                 "epistemic_status": "ASSERTED",
                 "arguments": [],
             }
-            for index in range(dropped.get(case["title"], 0))
+            for index in range(dropped.get(as_text(case["title"]), 0))
         )
         cases.append({"case_id": case["case_id"], "events": events})
 
-    score = _score(raw, cases)
+    score = _score(cases)
 
     assert score.metrics.whole_event_recall.rate == 1.0, (
         "this extractor finds every gold event"

@@ -95,7 +95,8 @@ ARTANA_EVIDENCE_API_LINT_PATHS := \
  scripts/ci/validate_agent_output_boundaries.py \
  scripts/export_artana_evidence_api_openapi.py \
  scripts/validate_artana_evidence_api_service_boundary.py \
- tests/e2e/artana_evidence_api
+ scripts/validation \
+ tests
 
 ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS := \
  --show-error-codes
@@ -121,7 +122,8 @@ ARTANA_EVIDENCE_API_TEST_PATHS := \
 	 tests/unit/test_nary_claim_operational.py \
 	 tests/unit/test_nary_claim_scoring.py \
 	 tests/unit/test_restricted_corpus_text.py \
-	 tests/unit/test_restricted_corpus_scan.py
+	 tests/unit/test_restricted_corpus_scan.py \
+	 tests/unit/test_typing_any_ban.py
 
 LIVE_ENDPOINT_CONTRACT_TEST_PATH := tests/e2e/artana_evidence_api/test_live_endpoint_contract.py
 LIVE_EXTERNAL_API_TEST_PATH := services/artana_evidence_api/tests/integration/test_research_init_live_pipeline.py
@@ -162,7 +164,7 @@ define check_venv
 fi
 endef
 
-.PHONY: help all venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check agent-output-boundary-check graph-phase6-release-check architecture-size-check architecture-structure-check restricted-corpus-digest-check restricted-corpus-scan restricted-corpus-digests graph-service-lint graph-service-type-check graph-service-type-check-strict-imports graph-service-test graph-service-static-checks-core graph-service-static-checks graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-type-check-strict-imports artana-evidence-api-test evidence-selection-semantic-baseline-check evidence-selection-semantic-benchmark-v2-check evidence-selection-semantic-model-comparison coverage-check relation-feasibility-quality-gate artana-evidence-api-static-checks-core artana-evidence-api-static-checks artana-evidence-api-service-checks service-checks live-endpoint-contract-check live-external-api-check live-agent-relation-feasibility-check live-service-checks type-hardening-baseline run-graph-service run-artana-evidence-api-service run-artana-evidence-api-worker run-all
+.PHONY: help all venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check agent-output-boundary-check graph-phase6-release-check architecture-size-check architecture-structure-check restricted-corpus-digest-check restricted-corpus-scan restricted-corpus-digests typing-any-check graph-service-lint graph-service-type-check graph-service-type-check-strict-imports graph-service-test graph-service-static-checks-core graph-service-static-checks graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-type-check-strict-imports artana-evidence-api-test evidence-selection-semantic-baseline-check evidence-selection-semantic-benchmark-v2-check evidence-selection-semantic-model-comparison coverage-check relation-feasibility-quality-gate artana-evidence-api-static-checks-core artana-evidence-api-static-checks artana-evidence-api-service-checks service-checks live-endpoint-contract-check live-external-api-check live-agent-relation-feasibility-check live-service-checks type-hardening-baseline run-graph-service run-artana-evidence-api-service run-artana-evidence-api-worker run-all
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-32s %s\n", $$1, $$2}'
@@ -306,6 +308,16 @@ restricted-corpus-digests: ## Rebuild the committed digest set (needs the corpus
 	$(call check_venv)
 	PYTHONPATH="$(CURDIR)" $(USE_PYTHON) scripts/validation/build_restricted_corpus_digests.py
 
+# ruff has no rule for `fixture: dict[str, Any] = load(...)` -- ANN401 covers
+# parameters and returns, not locals -- and until this branch `tests/unit/` was
+# outside every ruff path anyway, so nothing opened those files at all. Seven
+# `Any` annotations reached HEAD through that pair of holes and a hand sweep
+# missed four of them. No check_venv and stdlib only, for the same reason as
+# the corpus digest check above: it has to be runnable in a CI job that
+# installs nothing.
+typing-any-check: ## Enforce the AGENTS.md ban on `Any` in guarded trees
+	PYTHONPATH="$(CURDIR)" $(USE_PYTHON) scripts/ci/check_typing_any_ban.py
+
 graph-service-lint: ## Run ruff on graph service paths
 	$(call check_venv)
 	$(USE_PYTHON) -m ruff check $(GRAPH_SERVICE_LINT_PATHS)
@@ -437,6 +449,7 @@ service-checks: ## Run all service gates including coverage enforcement
 	@$(MAKE) -s architecture-size-check
 	@$(MAKE) -s architecture-structure-check
 	@$(MAKE) -s restricted-corpus-digest-check
+	@$(MAKE) -s typing-any-check
 	@$(MAKE) -s relation-feasibility-quality-gate
 	@$(MAKE) -s coverage-check
 

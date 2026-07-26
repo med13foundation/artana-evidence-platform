@@ -16,7 +16,6 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -37,6 +36,13 @@ from scripts.validation.claim_events.fixture import (
     REDACTED_DEVELOPMENT_FIXTURE_V2_SHA256,
     load_fixture,
 )
+from tests.json_narrowing import (
+    as_array,
+    as_integer,
+    as_object,
+    as_text,
+    objects,
+)
 
 #: These checks read the corpus text itself, which this public repository does
 #: not carry.  They are skipped, never deleted: the reason names the licence and
@@ -56,42 +62,19 @@ _REJECTED = {
 }
 
 
-def _object(value: object) -> dict[str, object]:
-    """Narrow one JSON value to an object.
+def _events(path: Path) -> dict[tuple[str, str], dict[str, object]]:
+    """Index one panel by (document title, event annotation id)."""
 
-    `dict[str, object]` rather than `dict[str, Any]`, which AGENTS.md
-    prohibits in new code.  The cost is these four helpers; the point is that
-    `Any` lets a misspelled key or a wrong-typed field through as a test that
-    quietly checks nothing, which is the failure this record's own guard
-    exists to prevent.  Same three narrowings as
-    `tests/unit/test_restricted_corpus_text.py`, plus one for integers.
-    """
-
-    assert isinstance(value, dict), f"expected a JSON object, got {type(value)}"
-    return value
-
-
-def _array(value: object) -> list[object]:
-    assert isinstance(value, list), f"expected a JSON array, got {type(value)}"
-    return value
-
-
-def _text(value: object) -> str:
-    assert isinstance(value, str), f"expected a JSON string, got {type(value)}"
-    return value
-
-
-def _integer(value: object) -> int:
-    assert isinstance(value, int), f"expected a JSON integer, got {type(value)}"
-    return value
-
-
-def _events(path: Path) -> dict[tuple[str, str], dict[str, Any]]:
-    payload: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+    payload = as_object(json.loads(path.read_text(encoding="utf-8")))
     return {
-        (case["title"], event["annotation_provenance"]["event_annotation_id"]): event
-        for case in payload["cases"]
-        for event in case["events"]
+        (
+            as_text(case["title"]),
+            as_text(
+                as_object(event["annotation_provenance"])["event_annotation_id"],
+            ),
+        ): event
+        for case in objects(payload["cases"])
+        for event in objects(case["events"])
     }
 
 
@@ -192,21 +175,21 @@ def test_v2_strengthens_negative_polarity_coverage() -> None:
 def test_adjudication_record_backs_every_correction() -> None:
     """No correction may exist without a published, source-cited rationale."""
 
-    record = _object(
+    record = as_object(
         json.loads(Path(POLARITY_ADJUDICATION_RECORD).read_text(encoding="utf-8")),
     )
-    corrections = [_object(item) for item in _array(record["corrections"])]
+    corrections = objects(record["corrections"])
     documented = {
-        (_text(item["document_id"]), _text(item["event_annotation_id"]))
+        (as_text(item["document_id"]), as_text(item["event_annotation_id"]))
         for item in corrections
     }
 
     assert documented == set(POLARITY_ADJUDICATIONS)
-    assert all(_text(item["rationale"]).strip() for item in corrections)
+    assert all(as_text(item["rationale"]).strip() for item in corrections)
 
-    rejected_items = [_object(item) for item in _array(record["rejected_candidates"])]
+    rejected_items = objects(record["rejected_candidates"])
     rejected = {
-        (_text(item["document_id"]), _text(item["event_annotation_id"]))
+        (as_text(item["document_id"]), as_text(item["event_annotation_id"]))
         for item in rejected_items
     }
     assert rejected >= _REJECTED, "rejected candidates must stay documented"
@@ -224,29 +207,29 @@ def test_adjudication_cites_its_source_without_republishing_it() -> None:
     reference on every single record.
     """
 
-    record = _object(
+    record = as_object(
         json.loads(Path(POLARITY_ADJUDICATION_RECORD).read_text(encoding="utf-8")),
     )
     items = [
-        _object(item)
+        as_object(item)
         for section in ("corrections", "rejected_candidates")
-        for item in _array(record[section])
+        for item in as_array(record[section])
     ]
 
     assert items, "the record must not be empty"
-    restricted = _object(record["restricted_text"])
-    assert _text(restricted["corpus"]) == "BioNLP-ST-2011-GE"
+    restricted = as_object(record["restricted_text"])
+    assert as_text(restricted["corpus"]) == "BioNLP-ST-2011-GE"
     for item in items:
         assert "evidence" not in item, (
-            f"{_text(item['document_id'])}:"
-            f"{_text(item['event_annotation_id'])} carries "
+            f"{as_text(item['document_id'])}:"
+            f"{as_text(item['event_annotation_id'])} carries "
             f"verbatim corpus text again"
         )
-        locator = _text(item["evidence_locator"])
+        locator = as_text(item["evidence_locator"])
         assert locator.startswith("char:")
         start, _, end = locator.removeprefix("char:").partition("-")
-        assert int(end) - int(start) == _integer(item["evidence_length"]) > 0
-        digest = _text(item["evidence_sha256"])
+        assert int(end) - int(start) == as_integer(item["evidence_length"]) > 0
+        digest = as_text(item["evidence_sha256"])
         assert len(digest) == 64
         assert int(digest, 16) >= 0
 

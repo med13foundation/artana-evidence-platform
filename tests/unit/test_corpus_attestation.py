@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -29,6 +28,13 @@ from scripts.validation.claim_events.corpus_text import (
     corpus_is_available,
 )
 from scripts.validation.claim_events.fixture import load_fixture_payload
+from tests.json_narrowing import (
+    as_array,
+    as_integer,
+    as_object,
+    as_text,
+    objects,
+)
 
 requires_corpus = pytest.mark.skipif(
     not corpus_is_available(),
@@ -51,7 +57,7 @@ def _attested() -> frozenset[str]:
 def test_index_publishes_digests_only(attested: frozenset[str]) -> None:
     """The repository must not republish annotation content."""
 
-    record: dict[str, Any] = json.loads(_INDEX.read_text(encoding="utf-8"))
+    record = as_object(json.loads(_INDEX.read_text(encoding="utf-8")))
 
     assert record["schema_version"] == INDEX_SCHEMA_VERSION
     assert set(record) == {
@@ -63,32 +69,33 @@ def test_index_publishes_digests_only(attested: frozenset[str]) -> None:
         "digest_count",
         "digests",
     }
+    digests = [as_text(entry) for entry in as_array(record["digests"])]
     assert all(
         len(digest) == 64
         and all(character in "0123456789abcdef" for character in digest)
-        for digest in record["digests"]
+        for digest in digests
     ), "every entry must be an opaque sha256, never annotation text"
 
 
 def test_index_covers_the_whole_selected_corpus() -> None:
     """472 is the count the ledger could not previously verify against source."""
 
-    record: dict[str, Any] = json.loads(_INDEX.read_text(encoding="utf-8"))
+    record = as_object(json.loads(_INDEX.read_text(encoding="utf-8")))
 
-    assert record["document_count"] == 40
-    assert record["corpus_event_count"] == 472
+    assert as_integer(record["document_count"]) == 40
+    assert as_integer(record["corpus_event_count"]) == 472
 
 
 @requires_corpus
 def test_retained_gold_events_are_all_attested(attested: frozenset[str]) -> None:
     """Gold is a subset of the corpus, so every gold event must be attested."""
 
-    fixture: dict[str, Any] = load_fixture_payload(_FIXTURE)
+    fixture = load_fixture_payload(_FIXTURE)
     unattested = [
-        (case["title"], event.get("trigger_span"))
-        for case in fixture["cases"]
-        for event in case["events"]
-        if prediction_digest(case["title"], event) not in attested
+        (as_text(case["title"]), event.get("trigger_span"))
+        for case in objects(fixture["cases"])
+        for event in objects(case["events"])
+        if prediction_digest(as_text(case["title"]), event) not in attested
     ]
 
     assert unattested == [], f"gold events missing from the corpus index: {unattested}"
@@ -105,12 +112,12 @@ def test_attestation_separates_out_of_scope_truth_from_invention(
     same number of fabricated events is still punished.
     """
 
-    fixture: dict[str, Any] = load_fixture_payload(_FIXTURE)
-    case = next(item for item in fixture["cases"] if item["events"])
-    document = case["title"]
-    gold = list(case["events"])
+    fixture = load_fixture_payload(_FIXTURE)
+    case = next(item for item in objects(fixture["cases"]) if item["events"])
+    document = as_text(case["title"])
+    gold = objects(case["events"])
 
-    invented = [
+    invented: list[dict[str, object]] = [
         {
             "trigger_span": f"__invented_{index}",
             "trigger_source_start": 900_000 + index,

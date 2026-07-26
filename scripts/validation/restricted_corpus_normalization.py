@@ -22,23 +22,105 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from typing import Final
+from typing import TYPE_CHECKING, Final
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+#: Every Unicode dash and hyphen, folded to ASCII "-".
+#:
+#: This used to hold three of them -- en dash, em dash and minus sign -- and
+#: not U+2010 HYPHEN or U+2011 NON-BREAKING HYPHEN, which are what a word
+#: processor and a PDF respectively produce from an ordinary typed hyphen.  A
+#: quotation copied through either arrived with an unfolded character in the
+#: middle, and an unfolded character splits one run into two: an excerpt near
+#: the threshold becomes two fragments that can both fall under it, and the
+#: guard reports a clean tree.  Picking off confusables one at a time is what
+#: produced that gap, so this is the whole `Pd` (Dash_Punctuation) category
+#: rather than the ones anyone happened to hit, plus U+2212, the one dash
+#: Unicode files under `Sm` instead.  `test_restricted_corpus_text.py` asserts
+#: both halves of that claim: that every character listed here really folds,
+#: and that the list still covers every `Pd` codepoint the running Python
+#: knows about -- so a Unicode release that adds a dash is a test failure, not
+#: another silent split.
+_DASHES: Final = (
+    "-",  # HYPHEN-MINUS (the ASCII target itself; folding it is identity)
+    "֊",  # ARMENIAN HYPHEN
+    "־",  # HEBREW PUNCTUATION MAQAF
+    "᐀",  # CANADIAN SYLLABICS HYPHEN
+    "᠆",  # MONGOLIAN TODO SOFT HYPHEN
+    "‐",  # HYPHEN
+    "‑",  # NON-BREAKING HYPHEN
+    "‒",  # FIGURE DASH
+    "–",  # EN DASH
+    "—",  # EM DASH
+    "―",  # HORIZONTAL BAR
+    "−",  # MINUS SIGN (category Sm, not Pd)
+    "⸗",  # DOUBLE OBLIQUE HYPHEN
+    "⸚",  # HYPHEN WITH DIAERESIS
+    "⸺",  # TWO-EM DASH
+    "⸻",  # THREE-EM DASH
+    "⹀",  # DOUBLE HYPHEN
+    "⹝",  # OBLIQUE HYPHEN
+    "〜",  # WAVE DASH
+    "〰",  # WAVY DASH
+    "゠",  # KATAKANA-HIRAGANA DOUBLE HYPHEN
+    "︱",  # PRESENTATION FORM FOR VERTICAL EM DASH
+    "︲",  # PRESENTATION FORM FOR VERTICAL EN DASH
+    "﹘",  # SMALL EM DASH
+    "﹣",  # SMALL HYPHEN-MINUS
+    "－",  # FULLWIDTH HYPHEN-MINUS
+    "\U00010ead",  # YEZIDI HYPHENATION MARK
+)
+
+#: Apostrophes and single quotation marks, folded to ASCII "'".
+#:
+#: The same argument as the dashes, one class over: this held U+2018, U+2019
+#: and U+201A, so a low-9 double quote or a guillemet or a prime -- all of
+#: which a word processor and a typesetter produce routinely -- still split a
+#: run.  U+0060 GRAVE ACCENT is deliberately absent: `_MARKDOWN` below removes
+#: backticks entirely, and folding them to an apostrophe here would take that
+#: away.
+_SINGLE_QUOTES: Final = (
+    "‘",  # LEFT SINGLE QUOTATION MARK
+    "’",  # RIGHT SINGLE QUOTATION MARK
+    "‚",  # SINGLE LOW-9 QUOTATION MARK
+    "‛",  # SINGLE HIGH-REVERSED-9 QUOTATION MARK
+    "′",  # PRIME
+    "‵",  # REVERSED PRIME
+    "‹",  # SINGLE LEFT-POINTING ANGLE QUOTATION MARK
+    "›",  # SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
+    "ʼ",  # MODIFIER LETTER APOSTROPHE
+    "＇",  # FULLWIDTH APOSTROPHE
+)
+
+#: Double quotation marks, folded to ASCII '"'.
+_DOUBLE_QUOTES: Final = (
+    "“",  # LEFT DOUBLE QUOTATION MARK
+    "”",  # RIGHT DOUBLE QUOTATION MARK
+    "„",  # DOUBLE LOW-9 QUOTATION MARK
+    "‟",  # DOUBLE HIGH-REVERSED-9 QUOTATION MARK
+    "″",  # DOUBLE PRIME
+    "‶",  # REVERSED DOUBLE PRIME
+    "«",  # LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+    "»",  # RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+    "〃",  # DITTO MARK
+    "＂",  # FULLWIDTH QUOTATION MARK
+)
 
 #: Typographic characters that a formatter or editor substitutes silently.
-_PUNCTUATION: Final = str.maketrans(
-    {
-        "‘": "'",
-        "’": "'",
-        "‚": "'",
-        "“": '"',
-        "”": '"',
-        "–": "-",
-        "—": "-",
-        "−": "-",
-        " ": " ",
-        "…": "...",
-    },
-)
+#:
+#: Public so the tests can assert the claim character by character rather than
+#: re-listing it, which is how the previous list drifted out of date without
+#: anything failing.
+PUNCTUATION_FOLDING: Final[Mapping[str, str]] = {
+    **dict.fromkeys(_DASHES, "-"),
+    **dict.fromkeys(_SINGLE_QUOTES, "'"),
+    **dict.fromkeys(_DOUBLE_QUOTES, '"'),
+    " ": " ",  # NO-BREAK SPACE
+    "…": "...",  # HORIZONTAL ELLIPSIS
+}
+_PUNCTUATION: Final = str.maketrans(dict(PUNCTUATION_FOLDING))
 _WHITESPACE: Final = re.compile(r"\s+")
 
 #: Inline Markdown emphasis and code markers.  These records quote corpus prose
@@ -70,4 +152,4 @@ def normalize(text: str) -> str:
     return _WHITESPACE.sub(" ", _MARKDOWN.sub("", stripped))
 
 
-__all__ = ["normalize"]
+__all__ = ["PUNCTUATION_FOLDING", "normalize"]

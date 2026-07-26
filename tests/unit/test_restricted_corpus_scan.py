@@ -309,6 +309,46 @@ def test_markup_inside_a_quotation_does_not_shorten_the_reported_run(
     assert [length for length, _, _ in found] == [len(normalize(_OTHER_RUN))]
 
 
+def test_a_typographic_hyphen_inside_a_quotation_does_not_hide_it(
+    tmp_path: Path,
+) -> None:
+    """The same shape as the emphasis above, from a word processor or a PDF.
+
+    A typed hyphen becomes U+2010 HYPHEN in a word processor and U+2011
+    NON-BREAKING HYPHEN in text lifted from a PDF, and neither used to be
+    folded.  An unfolded character in the middle of a quotation is not a
+    cosmetic difference: it splits one run into two, and a run near the
+    threshold becomes two fragments that can both fall under it.  Here the
+    quotation is 53 normalized characters against a floor of 40, and the
+    fragments either side of the hyphen are 23 and 29 -- so before the fold the
+    scan reported nothing at all and the tree looked clean.
+    """
+
+    root = tmp_path / "corpus"
+    root.mkdir()
+    hyphenated = "activated alpha protein-beta receptor represses delta"
+    (root / "SYNTHETIC-0004.txt").write_text(
+        f"Preamble four. {hyphenated} End.",
+        encoding="utf-8",
+    )
+    expected = len(normalize(hyphenated))
+    head, _, tail = normalize(hyphenated).partition("-")
+    assert expected >= 40, "the quotation must be over the floor to begin with"
+    assert max(len(head), len(tail)) < 40, (
+        "an unfolded hyphen must leave fragments that both fall under the "
+        "floor, or this test would pass on the broken normalizer too"
+    )
+
+    for confusable in ("‐", "‑", "‒", "−"):
+        pasted = hyphenated.replace("-", confusable)
+
+        found = _scan(pasted, root, threshold=40)
+
+        assert [length for length, _, _ in found] == [expected], (
+            f"a quotation carrying U+{ord(confusable):04X} was not reported"
+        )
+
+
 def test_a_clean_tree_reports_that_no_path_was_exempt(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -16,6 +16,8 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import sys
+import unicodedata
 from pathlib import Path
 
 import pytest
@@ -45,7 +47,11 @@ from scripts.validation.restricted_corpus_digests import (
     index_digest,
     window_digest,
 )
-from scripts.validation.restricted_corpus_normalization import normalize
+from scripts.validation.restricted_corpus_normalization import (
+    PUNCTUATION_FOLDING,
+    normalize,
+)
+from tests.json_narrowing import as_array, as_object, as_text
 
 #: Every key that ever held verbatim corpus prose.
 _TEXT_KEYS = frozenset({"source_text", "source_span", "trigger_span", "exact_span"})
@@ -61,32 +67,9 @@ _DOCUMENT = "SYNTHETIC-0001"
 _SOURCE_TEXT = "Synthetic title.\n\nAlpha protein binds beta protein in vitro."
 
 
-def _object(value: object) -> dict[str, object]:
-    """Narrow one JSON value to an object.
-
-    `dict[str, object]` is the shape `corpus_text` itself declares, and it is
-    what these payloads are; `Any` would let a typo through as a test that
-    quietly checks nothing, which is the failure mode this whole file exists
-    to prevent.
-    """
-
-    assert isinstance(value, dict), f"expected a JSON object, got {type(value)}"
-    return value
-
-
-def _array(value: object) -> list[object]:
-    assert isinstance(value, list), f"expected a JSON array, got {type(value)}"
-    return value
-
-
-def _text(value: object) -> str:
-    assert isinstance(value, str), f"expected a JSON string, got {type(value)}"
-    return value
-
-
 def _first_event(payload: dict[str, object]) -> dict[str, object]:
-    case = _object(_array(payload["cases"])[0])
-    return _object(_array(case["events"])[0])
+    case = as_object(as_array(payload["cases"])[0])
+    return as_object(as_array(case["events"])[0])
 
 
 def _text_bearing_keys(node: object) -> set[str]:
@@ -179,13 +162,13 @@ def test_committed_fixture_still_pins_the_text_it_no_longer_carries(
 
     payload: dict[str, object] = json.loads(path.read_bytes())
 
-    for raw_case in _array(payload["cases"]):
-        case = _object(raw_case)
-        assert len(_text(case["source_sha256"])) == 64
+    for raw_case in as_array(payload["cases"]):
+        case = as_object(raw_case)
+        assert len(as_text(case["source_sha256"])) == 64
         assert isinstance(case["source_length"], int)
         assert case["source_length"] > 0
-    declaration = _object(payload["restricted_text"])
-    assert len(_text(declaration["rehydrated_sha256"])) == 64
+    declaration = as_object(payload["restricted_text"])
+    assert len(as_text(declaration["rehydrated_sha256"])) == 64
     assert declaration["corpus"] == "BioNLP-ST-2011-GE"
 
 
@@ -348,8 +331,67 @@ def test_normalization_folds_what_copying_changes() -> None:
     original = "Alpha-protein 'binds' beta   protein\nin vitro."
     mangled = "ALPHA‐protein ‘binds’ beta protein in\tvitro."
 
-    assert normalize(original) == normalize(mangled.replace("‐", "-"))
+    assert normalize(original) == normalize(mangled)
     assert normalize("A  B\n\tC") == "a b c"
+
+
+@pytest.mark.parametrize(
+    ("character", "folded"),
+    sorted(PUNCTUATION_FOLDING.items()),
+    ids=lambda value: f"U+{ord(value):04X}" if len(value) == 1 else value,
+)
+def test_every_character_the_map_claims_to_fold_really_folds(
+    character: str,
+    folded: str,
+) -> None:
+    """The map is a claim, and this is the claim being checked one by one.
+
+    The previous map folded en dash, em dash and minus and stopped there, so
+    U+2010 HYPHEN and U+2011 NON-BREAKING HYPHEN -- what a word processor and a
+    PDF make of a typed hyphen -- passed through unfolded and cut a quotation
+    into fragments that could both fall under the threshold.  Nothing failed
+    when that happened, because nothing asserted the map's contents; the one
+    test that touched a hyphen performed the missing fold by hand before
+    comparing.  So every entry is exercised through `normalize` itself here,
+    and adding a character without folding it is a failure rather than a
+    silently wider claim.
+    """
+
+    expected = "alpha beta" if character.isspace() else f"alpha{folded}beta"
+
+    assert normalize(f"alpha{character}beta") == expected
+
+
+def test_no_unicode_dash_is_left_unfolded() -> None:
+    """The next confusable must be a test failure, not another silent split.
+
+    Picking off dash lookalikes one at a time is what left the gap, so the map
+    claims the whole `Dash_Punctuation` category and this holds it to that
+    against the running Python's Unicode tables.  A Unicode release that adds a
+    dash fails here, in a test that names the codepoint, instead of quietly
+    becoming a way to hide a quotation from both halves of the guard.
+    """
+
+    dashes = {
+        chr(codepoint)
+        for codepoint in range(sys.maxunicode + 1)
+        if unicodedata.category(chr(codepoint)) == "Pd"
+    }
+
+    unfolded = sorted(
+        f"U+{ord(character):04X} {unicodedata.name(character, '?')}"
+        for character in dashes
+        if PUNCTUATION_FOLDING.get(character) != "-"
+    )
+
+    assert unfolded == [], (
+        "these dash codepoints are not folded to ASCII '-', so a quotation "
+        f"carrying one splits into fragments the guard cannot see: {unfolded}"
+    )
+    assert "−" in PUNCTUATION_FOLDING, (
+        "U+2212 MINUS SIGN is filed under Sm rather than Pd, so the category "
+        "sweep above cannot cover it and it must stay listed explicitly"
+    )
 
 
 def test_offline_digest_set_matches_the_windows_it_declares() -> None:

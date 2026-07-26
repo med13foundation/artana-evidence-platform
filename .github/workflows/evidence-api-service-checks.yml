@@ -41,6 +41,28 @@ jobs:
       - name: Check for re-introduced restricted corpus text
         run: make restricted-corpus-digest-check
 
+  # Unconditional for the same reason, arrived at the same way. A pull request
+  # that touches only `tests/unit/` is planned as `tests_only`: it runs the
+  # changed test files and nothing else -- no lint, no static checks, no
+  # coverage. That is exactly the shape that carried seven `dict[str, Any]`
+  # annotations onto HEAD, so the guard against them must not sit behind the
+  # planner that would skip it. Stdlib only and about a second, so it needs no
+  # dependency install.
+  typing_any_guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Check for banned `Any` annotations
+        run: make typing-any-check
+
   plan_service_checks:
     runs-on: ubuntu-latest
     outputs:
@@ -205,6 +227,7 @@ jobs:
     needs:
       - plan_service_checks
       - restricted_corpus_guard
+      - typing_any_guard
       - evidence_api_targeted_tests
       - evidence_api_repo_control_checks
       - evidence_api_gate
@@ -223,6 +246,10 @@ jobs:
           # the summary must not pass that off as a clean run.
           if [ "${{ needs.restricted_corpus_guard.result }}" != "success" ]; then
             echo "restricted corpus guard did not run to success"
+            exit 1
+          fi
+          if [ "${{ needs.typing_any_guard.result }}" != "success" ]; then
+            echo "typing Any guard did not run to success"
             exit 1
           fi
           case "${{ needs.evidence_api_targeted_tests.result }}" in

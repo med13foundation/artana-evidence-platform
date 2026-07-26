@@ -244,6 +244,22 @@ closes that shape. Others remain open by the same mechanism and are named in
 an HTML tag, a comment prefix repeated down a wrapped quote, an ellipsis
 standing in for elided words. Each splits a run, and a split run is a short run.
 
+The typographic fold had the same hole one class over, and it was found by
+reading the map rather than by a miss. It folded en dash, em dash and minus
+sign, and not U+2010 `HYPHEN` or U+2011 `NON-BREAKING HYPHEN` — which is what a
+word processor and a PDF respectively make of an ordinary typed hyphen, so a
+quotation copied through either arrived carrying one. A single unfolded
+character mid-sentence splits a threshold-length excerpt into two fragments
+that can both fall under the floor: a 53-character quotation with a hyphen in
+the middle became 23 and 29, and the scan reported nothing. Picking off
+confusables one at a time is what left the hole, so the map now claims the
+whole Unicode `Pd` (Dash_Punctuation) category plus U+2212, which Unicode files
+under `Sm`, and a wider set of quotation marks and primes.
+`tests/unit/test_restricted_corpus_text.py` holds it to that claim twice over:
+every character the map lists is exercised through `normalize` itself, and the
+list is checked against the running Python's Unicode tables, so a release that
+adds a dash is a named test failure rather than another silent split.
+
 Neither half is path-exempt. An earlier revision of the corpus-backed scan
 skipped `docs/validation/` — the one tree that still held restricted text — and
 so printed a clean result while roughly 1.5 kB of GE prose sat at HEAD. A
