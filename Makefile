@@ -72,7 +72,8 @@ ARTANA_EVIDENCE_API_TYPE_EXCLUDE := artana_evidence_api/(tests|alembic)/
 GRAPH_SERVICE_TEST_PATHS := \
 	 tests/e2e/graph_service \
 	 services/artana_evidence_db/tests/unit \
-	 services/artana_evidence_db/tests/integration
+	 services/artana_evidence_db/tests/integration \
+	 tests/unit/database/test_023_graph_external_fk_decoupling_contract.py
 
 ARTANA_EVIDENCE_API_LINT_PATHS := \
  services/artana_evidence_api \
@@ -106,7 +107,7 @@ ARTANA_EVIDENCE_API_TEST_PATHS := \
 	 tests/e2e/artana_evidence_api \
 	 services/artana_evidence_api/tests/integration \
 	 services/artana_evidence_api/tests/unit \
-	 tests/unit/database \
+	 tests/unit/database/test_artana_evidence_api_alembic_migration_regressions.py \
 	 tests/unit/test_finite_source_unit_audit.py \
 	 tests/unit/test_nary_claim_evaluation.py \
 	 tests/unit/test_nary_claim_runner.py \
