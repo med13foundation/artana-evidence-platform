@@ -27,7 +27,19 @@ _PENDING_REVIEW_STATUS = "pending_review"
 #: whose identity has not been adjudicated -- not something a reviewer can act
 #: on, and not something to discard.  See ART-DATA-001.
 IDENTITY_PENDING_STATUS = "identity_pending"
+#: Terminal status for a parked proposal adjudicated as the same fact.
+#:
+#: Not "rejected": nobody judged the observation unsupported.  A reviewer said
+#: it names a claim the space already holds, and the record keeps its own
+#: provenance and points at what it duplicates.  Outside migration 024's active
+#: unique index, so it can keep its fingerprint.
+DUPLICATE_STATUS = "duplicate"
+#: What a reviewer can say about a parked proposal's identity.
+DUPLICATE_RESOLUTION = "duplicate"
+DISTINCT_RESOLUTION = "distinct"
+IDENTITY_RESOLUTIONS = frozenset({DUPLICATE_RESOLUTION, DISTINCT_RESOLUTION})
 _DECISION_STATUSES = frozenset({"promoted", "rejected"})
+_ACTIVE_STATUSES = ("pending_review", "promoted")
 
 
 def undecidable_proposal_message(*, proposal_id: object, status: str) -> str:
@@ -37,16 +49,94 @@ def undecidable_proposal_message(*, proposal_id: object, status: str) -> str:
     'identity_pending'", which is false in the way that matters: nobody decided
     anything, and there is no decision for a reviewer to look up.  Both cases
     are still a 409 -- they conflict with the record's current state -- but a
-    reviewer reading the message needs to be able to tell them apart.
+    reviewer reading the message needs to be able to tell them apart, and the
+    parked one now has somewhere to go.
     """
     if status == IDENTITY_PENDING_STATUS:
         return (
             f"Proposal '{proposal_id}' is parked awaiting identity adjudication "
-            "and cannot be decided. It is a second independent observation whose "
-            "identity has not been resolved against the existing one (ART-DATA-001); "
-            "no decision has been made about it."
+            "and cannot be promoted or rejected until that is settled. It is a "
+            "second independent observation whose identity has not been resolved "
+            "against the existing one (ART-DATA-001). Adjudicate it first through "
+            "the review-queue action endpoint: 'resolve_as_duplicate' if the two "
+            "are the same fact, or 'release_as_distinct' if they are different "
+            "facts, which returns it to pending_review to be decided normally."
         )
     return f"Proposal '{proposal_id}' is already decided with status '{status}'"
+
+
+def unadjudicable_proposal_message(*, proposal_id: object, status: str) -> str:
+    """Return why one proposal's identity cannot be adjudicated right now."""
+
+    return (
+        f"Proposal '{proposal_id}' has status '{status}', not "
+        f"'{IDENTITY_PENDING_STATUS}', so there is no parked identity to "
+        "adjudicate."
+    )
+
+
+def missing_duplicate_counterpart_message(*, proposal_id: object) -> str:
+    """Return why "same fact" cannot be recorded without a counterpart."""
+
+    return (
+        f"Proposal '{proposal_id}' cannot be resolved as a duplicate because no "
+        "active proposal in this space still holds its claim fingerprint. There "
+        "is nothing left for it to duplicate, so recording one would invent a "
+        "reference. Release it as distinct and decide it on its own merits."
+    )
+
+
+def build_identity_adjudication(
+    *,
+    resolution: str,
+    duplicate_of_proposal_id: str | None,
+    released_claim_fingerprint: str | None,
+    reason: str | None,
+    decided_by: ReviewActor | None,
+    decided_at: datetime,
+) -> JSONObject:
+    """Return the system-authored record of one identity adjudication.
+
+    Kept in its own field rather than in ``metadata``, which callers populate
+    freely -- a caller must not be able to supply data that reads back as
+    adjudication history (the same reason migration 027 gave an approval its own
+    superseded-decision column).  It also has to survive the later promote or
+    reject of a released proposal, which overwrites decision_reason,
+    decided_at and decided_by.
+    """
+
+    return {
+        "resolution": resolution,
+        "duplicate_of_proposal_id": duplicate_of_proposal_id,
+        "released_claim_fingerprint": released_claim_fingerprint,
+        "reason": reason.strip()
+        if isinstance(reason, str) and reason.strip() != ""
+        else None,
+        "decided_by_user_id": decided_by.user_id if decided_by is not None else None,
+        "decided_by_email": decided_by.email if decided_by is not None else None,
+        "decided_at": decided_at.isoformat(),
+    }
+
+
+def clean_decision_reason(reason: str | None) -> str | None:
+    """Return one written reason, or None when nothing usable was written."""
+
+    if isinstance(reason, str) and reason.strip() != "":
+        return reason.strip()
+    return None
+
+
+def normalize_identity_resolution(resolution: str) -> str:
+    """Return one supported identity resolution, or raise."""
+
+    normalized = resolution.strip().lower()
+    if normalized not in IDENTITY_RESOLUTIONS:
+        msg = (
+            f"Unsupported identity resolution '{resolution}'. Supported values: "
+            f"{', '.join(sorted(IDENTITY_RESOLUTIONS))}"
+        )
+        raise ValueError(msg)
+    return normalized
 
 
 def is_undecidable_proposal_error(exc: ValueError) -> bool:
@@ -57,7 +147,12 @@ def is_undecidable_proposal_error(exc: ValueError) -> bool:
     start reporting 400 instead of 409.
     """
     text = str(exc)
-    return "already decided" in text or "parked awaiting identity" in text
+    return (
+        "already decided" in text
+        or "parked awaiting identity" in text
+        or "so there is no parked identity to adjudicate" in text
+        or "cannot be resolved as a duplicate" in text
+    )
 _MAX_PROPOSAL_TITLE_LENGTH = 256
 _TITLE_ELLIPSIS = "..."
 
@@ -133,6 +228,8 @@ class HarnessProposalRecord:
     evidence_grade: str | None = None
     source_provenance: ClaimSourceProvenance | None = None
     decided_by: ReviewActor | None = None
+    #: System-authored trail of how this record's parked identity was settled.
+    identity_adjudication: JSONObject | None = None
 
 
 class HarnessProposalStore:
@@ -463,11 +560,125 @@ class HarnessProposalStore:
                 decided_at=decision_timestamp,
                 decided_by=decided_by,
                 source_provenance=proposal.source_provenance,
+                # Survives the decision on purpose: a released proposal was
+                # adjudicated by one reviewer and decided by another, and the
+                # decision fields only have room for the second.
+                identity_adjudication=proposal.identity_adjudication,
                 created_at=proposal.created_at,
                 updated_at=decision_timestamp,
             )
             self._proposals[proposal.id] = updated
             return updated
+
+    def adjudicate_parked_proposal(
+        self,
+        *,
+        space_id: UUID | str,
+        proposal_id: UUID | str,
+        resolution: str,
+        reason: str | None,
+        decided_by: ReviewActor | None,
+    ) -> HarnessProposalRecord | None:
+        """Settle whether a parked proposal is the same fact as the one it hit.
+
+        ``identity_pending`` used to be terminal: no route reached it, the queue
+        offered no action on it, and every recovered second observation went
+        somewhere nobody could see.  This is the exit, and it is the reviewer's
+        to take -- the system still refuses to guess (ART-DATA-001).
+
+        "duplicate" keeps the record and points it at what it duplicates.
+        "distinct" returns it to ``pending_review`` so it can be promoted or
+        rejected normally, and clears its claim fingerprint: the reviewer has
+        just said that fingerprint groups two different facts, so it does not
+        identify this one, and leaving it would collide with the counterpart
+        under migration 024's active unique index.
+        """
+
+        normalized_resolution = normalize_identity_resolution(resolution)
+        with self._lock:
+            proposal = self._proposals.get(str(proposal_id))
+            if proposal is None or proposal.space_id != str(space_id):
+                return None
+            if proposal.status != IDENTITY_PENDING_STATUS:
+                raise ValueError(
+                    unadjudicable_proposal_message(
+                        proposal_id=proposal_id,
+                        status=proposal.status,
+                    ),
+                )
+            decided_at = datetime.now(UTC)
+            if normalized_resolution == DUPLICATE_RESOLUTION:
+                counterpart = self._active_fingerprint_counterpart(
+                    space_id=proposal.space_id,
+                    claim_fingerprint=proposal.claim_fingerprint,
+                    exclude_id=proposal.id,
+                )
+                if counterpart is None:
+                    raise ValueError(
+                        missing_duplicate_counterpart_message(
+                            proposal_id=proposal_id,
+                        ),
+                    )
+                updated = replace(
+                    proposal,
+                    status=DUPLICATE_STATUS,
+                    decision_reason=clean_decision_reason(reason),
+                    decided_at=decided_at,
+                    decided_by=decided_by,
+                    identity_adjudication=build_identity_adjudication(
+                        resolution=normalized_resolution,
+                        duplicate_of_proposal_id=counterpart.id,
+                        released_claim_fingerprint=None,
+                        reason=reason,
+                        decided_by=decided_by,
+                        decided_at=decided_at,
+                    ),
+                    updated_at=decided_at,
+                )
+            else:
+                updated = replace(
+                    proposal,
+                    status=_PENDING_REVIEW_STATUS,
+                    claim_fingerprint=None,
+                    # Undecided again, so the decision fields must not claim
+                    # otherwise; who released it lives in the adjudication.
+                    decision_reason=None,
+                    decided_at=None,
+                    decided_by=None,
+                    identity_adjudication=build_identity_adjudication(
+                        resolution=normalized_resolution,
+                        duplicate_of_proposal_id=None,
+                        released_claim_fingerprint=proposal.claim_fingerprint,
+                        reason=reason,
+                        decided_by=decided_by,
+                        decided_at=decided_at,
+                    ),
+                    updated_at=decided_at,
+                )
+            self._proposals[updated.id] = updated
+            return updated
+
+    def _active_fingerprint_counterpart(
+        self,
+        *,
+        space_id: str,
+        claim_fingerprint: str | None,
+        exclude_id: str,
+    ) -> HarnessProposalRecord | None:
+        """Return the active proposal a parked one collided with, if it remains."""
+
+        if not claim_fingerprint:
+            return None
+        for pid in self._proposal_ids_by_space.get(space_id, []):
+            candidate = self._proposals.get(pid)
+            if (
+                candidate is not None
+                and candidate.id != exclude_id
+                and candidate.claim_fingerprint == claim_fingerprint
+                and candidate.status in _ACTIVE_STATUSES
+            ):
+                return candidate
+        return None
 
     def reject_pending_duplicates(
         self,
@@ -495,29 +706,11 @@ class HarnessProposalStore:
                     and p.claim_fingerprint == claim_fingerprint
                     and p.status == _PENDING_REVIEW_STATUS
                 ):
-                    rejected = HarnessProposalRecord(
-                        id=p.id,
-                        space_id=p.space_id,
-                        run_id=p.run_id,
-                        proposal_type=p.proposal_type,
-                        source_kind=p.source_kind,
-                        source_key=p.source_key,
-                        document_id=p.document_id,
-                        title=p.title,
-                        summary=p.summary,
+                    rejected = replace(
+                        p,
                         status="rejected",
-                        confidence=p.confidence,
-                        ranking_score=p.ranking_score,
-                        reasoning_path=p.reasoning_path,
-                        evidence_bundle=p.evidence_bundle,
-                        payload=p.payload,
-                        metadata=p.metadata,
-                        claim_fingerprint=p.claim_fingerprint,
-                        evidence_grade=p.evidence_grade,
                         decision_reason=reason,
                         decided_at=now,
-                        source_provenance=p.source_provenance,
-                        created_at=p.created_at,
                         updated_at=now,
                     )
                     self._proposals[p.id] = rejected
@@ -532,7 +725,18 @@ class HarnessProposalStore:
 
 
 __all__ = [
+    "DISTINCT_RESOLUTION",
+    "DUPLICATE_RESOLUTION",
+    "DUPLICATE_STATUS",
+    "IDENTITY_PENDING_STATUS",
+    "IDENTITY_RESOLUTIONS",
     "HarnessProposalDraft",
     "HarnessProposalRecord",
     "HarnessProposalStore",
+    "build_identity_adjudication",
+    "is_undecidable_proposal_error",
+    "missing_duplicate_counterpart_message",
+    "normalize_identity_resolution",
+    "unadjudicable_proposal_message",
+    "undecidable_proposal_message",
 ]

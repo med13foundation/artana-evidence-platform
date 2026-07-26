@@ -13,7 +13,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import DBAPIError
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-CURRENT_HEAD_REVISION = "028_widen_fingerprint_columns"
+CURRENT_HEAD_REVISION = "029_proposal_identity_adjudication"
 _DECISION_TABLES = (
     "harness_proposals",
     "harness_review_items",
@@ -733,7 +733,7 @@ def test_028_widens_both_fingerprint_columns_without_losing_their_indexes(
     _run_alembic(
         database_url=database_url,
         command="upgrade",
-        revision=CURRENT_HEAD_REVISION,
+        revision="028_widen_fingerprint_columns",
     )
 
     engine = create_engine(database_url, future=True)
@@ -787,7 +787,7 @@ def test_028_downgrade_refuses_to_truncate_a_stored_identity(
     _run_alembic(
         database_url=database_url,
         command="upgrade",
-        revision=CURRENT_HEAD_REVISION,
+        revision="028_widen_fingerprint_columns",
     )
     _seed_harness_run_and_duplicate_proposals(
         database_url=database_url,
@@ -815,3 +815,34 @@ def test_028_downgrade_refuses_to_truncate_a_stored_identity(
 
     assert completed.returncode != 0
     assert "Cannot narrow" in completed.stderr
+
+
+def test_029_gives_a_parked_proposal_its_own_adjudication_column(
+    tmp_path: Path,
+) -> None:
+    """An identity adjudication must not share a column with caller metadata.
+
+    A reviewer settling a parked fingerprint collision (ART-DATA-001) is making
+    a system-recorded judgement, so it cannot live in metadata_payload, which
+    callers populate freely. It also has to outlive the later promote or reject
+    of a released proposal, which overwrites decision_reason and decided_by.
+    """
+    database_url = f"sqlite:///{tmp_path / 'harness_029_adjudication.db'}"
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision=CURRENT_HEAD_REVISION,
+    )
+
+    engine = create_engine(database_url, future=True)
+    try:
+        columns = {
+            column["name"]: column
+            for column in inspect(engine).get_columns("harness_proposals")
+        }
+    finally:
+        engine.dispose()
+
+    assert "identity_adjudication_payload" in columns
+    assert columns["identity_adjudication_payload"]["nullable"]
+    assert "metadata_payload" in columns

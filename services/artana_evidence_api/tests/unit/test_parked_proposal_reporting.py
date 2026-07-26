@@ -205,5 +205,160 @@ def test_parked_proposals_are_reachable_by_name_and_by_group() -> None:
         assert response.status_code == _HTTP_OK, response.text
         body = response.json()
         assert [item["id"] for item in body["items"]] == [f"proposal:{parked_id}"]
-        assert body["items"][0]["available_actions"] == []
+        assert body["items"][0]["available_actions"] == [
+            "resolve_as_duplicate",
+            "release_as_distinct",
+        ]
         assert body["items"][0]["decided_by"] is None
+
+
+def test_a_parked_proposal_can_be_resolved_as_a_duplicate() -> None:
+    """"These are the same fact" must be sayable, and must record what it names."""
+    fixture = _Fixture()
+    parked_id = fixture.park_a_second_observation()
+    counterpart_id = next(
+        proposal.id
+        for proposal in fixture.proposal_store.list_proposals(
+            space_id=fixture.space_id,
+            status="pending_review",
+        )
+    )
+
+    response = fixture.client.post(
+        f"/v1/spaces/{fixture.space_id}/review-queue/proposal:{parked_id}/actions",
+        json={
+            "action": "resolve_as_duplicate",
+            "reason": "Same assertion, two papers.",
+        },
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == _HTTP_OK, response.text
+    body = response.json()
+    assert body["status"] == "duplicate"
+    assert body["available_actions"] == []
+    assert body["decided_by"]["user_id"] == _TEST_USER_ID
+    adjudication = body["identity_adjudication"]
+    assert adjudication["resolution"] == "duplicate"
+    assert adjudication["duplicate_of_proposal_id"] == counterpart_id
+    assert adjudication["decided_by_email"] == _TEST_USER_EMAIL
+    assert adjudication["reason"] == "Same assertion, two papers."
+
+    parked = fixture.proposal_store.get_proposal(
+        space_id=fixture.space_id,
+        proposal_id=parked_id,
+    )
+    assert parked is not None
+    assert parked.claim_fingerprint == _FINGERPRINT, (
+        "a duplicate keeps its fingerprint; it is outside the active unique index"
+    )
+
+
+def test_a_parked_proposal_can_be_released_as_a_distinct_fact() -> None:
+    """"These are different facts" must return it to the ordinary queue."""
+    fixture = _Fixture()
+    parked_id = fixture.park_a_second_observation()
+
+    response = fixture.client.post(
+        f"/v1/spaces/{fixture.space_id}/review-queue/proposal:{parked_id}/actions",
+        json={
+            "action": "release_as_distinct",
+            "reason": "Different chemicals; the fingerprint collided.",
+        },
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == _HTTP_OK, response.text
+    body = response.json()
+    assert body["status"] == "pending_review"
+    assert body["available_actions"] == ["promote", "reject"]
+    assert body["decided_by"] is None, "released, not decided"
+    adjudication = body["identity_adjudication"]
+    assert adjudication["resolution"] == "distinct"
+    assert adjudication["released_claim_fingerprint"] == _FINGERPRINT
+    assert adjudication["decided_by_email"] == _TEST_USER_EMAIL
+
+    released = fixture.proposal_store.get_proposal(
+        space_id=fixture.space_id,
+        proposal_id=parked_id,
+    )
+    assert released is not None
+    assert released.claim_fingerprint is None, (
+        "the reviewer said this fingerprint groups two different facts, so it "
+        "no longer identifies this one"
+    )
+
+    decided = fixture.client.post(
+        f"/v1/spaces/{fixture.space_id}/proposals/{parked_id}/reject",
+        json={"reason": "Weak support once read on its own."},
+        headers=_auth_headers(),
+    )
+    assert decided.status_code == _HTTP_OK, decided.text
+    assert decided.json()["status"] == "rejected"
+    assert decided.json()["identity_adjudication"]["resolution"] == "distinct", (
+        "the adjudication trail must outlive the later decision"
+    )
+
+
+def test_a_duplicate_cannot_be_claimed_without_a_counterpart() -> None:
+    """Nothing left to duplicate means the reference would be invented."""
+    fixture = _Fixture()
+    parked_id = fixture.park_a_second_observation()
+    counterpart_id = next(
+        proposal.id
+        for proposal in fixture.proposal_store.list_proposals(
+            space_id=fixture.space_id,
+            status="pending_review",
+        )
+    )
+    rejected = fixture.client.post(
+        f"/v1/spaces/{fixture.space_id}/proposals/{counterpart_id}/reject",
+        json={"reason": "Withdrawn."},
+        headers=_auth_headers(),
+    )
+    assert rejected.status_code == _HTTP_OK, rejected.text
+
+    response = fixture.client.post(
+        f"/v1/spaces/{fixture.space_id}/review-queue/proposal:{parked_id}/actions",
+        json={"action": "resolve_as_duplicate", "reason": "Same fact."},
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == _HTTP_CONFLICT, response.text
+    assert "nothing left for it to duplicate" in response.json()["detail"]
+
+
+def test_an_unparked_proposal_cannot_be_adjudicated() -> None:
+    """Adjudication settles a parked identity; there is none to settle here."""
+    fixture = _Fixture()
+    created = fixture.proposal_store.create_proposals(
+        space_id=fixture.space_id,
+        run_id=fixture.run_id,
+        proposals=(fixture.draft(document_id=str(uuid4())),),
+    )
+
+    response = fixture.client.post(
+        f"/v1/spaces/{fixture.space_id}/review-queue/proposal:{created[0].id}/actions",
+        json={"action": "release_as_distinct"},
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == _HTTP_CONFLICT, response.text
+    assert "no parked identity to adjudicate" in response.json()["detail"]
+
+
+def test_the_conflict_message_names_the_way_out() -> None:
+    """The 409 said a parked proposal cannot be decided, and stopped there."""
+    fixture = _Fixture()
+    parked_id = fixture.park_a_second_observation()
+
+    response = fixture.client.post(
+        f"/v1/spaces/{fixture.space_id}/proposals/{parked_id}/promote",
+        json={"reason": "probe"},
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == _HTTP_CONFLICT, response.text
+    detail = response.json()["detail"]
+    assert "resolve_as_duplicate" in detail
+    assert "release_as_distinct" in detail

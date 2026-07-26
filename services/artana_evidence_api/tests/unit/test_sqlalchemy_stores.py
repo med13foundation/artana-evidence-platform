@@ -290,6 +290,125 @@ def test_an_evidence_selection_fingerprint_fits_its_column() -> None:
     assert len(review_fingerprint) <= int(review_width)
 
 
+def _parked_pair(
+    session: Session,
+    *,
+    fingerprint: str,
+) -> tuple[SqlAlchemyHarnessProposalStore, str, str, str]:
+    """Persist one active proposal and one parked collision against it."""
+
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="document_extraction",
+        title="Cross-document collision",
+        input_payload={},
+    )
+    store = SqlAlchemyHarnessProposalStore(session)
+
+    def _draft(source_document: str, title: str) -> HarnessProposalDraft:
+        # document_id is left unset: these rows are not linked to persisted
+        # documents, and unknown provenance is treated as a distinct source,
+        # which is what parks the second one.
+        return HarnessProposalDraft(
+            proposal_type="candidate_claim",
+            source_kind="document_extraction",
+            source_key=f"{source_document}:0",
+            title=title,
+            summary="A candidate claim from one document.",
+            confidence=0.8,
+            ranking_score=0.9,
+            reasoning_path={},
+            evidence_bundle=[],
+            payload={"proposed_claim_type": "ASSOCIATED_WITH"},
+            metadata={},
+            claim_fingerprint=fingerprint,
+        )
+
+    first = store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=(_draft(str(uuid4()), "First observation"),),
+    )
+    second = store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=(_draft(str(uuid4()), "Second observation"),),
+    )
+    assert second[0].status == IDENTITY_PENDING_STATUS
+    return store, space_id, first[0].id, second[0].id
+
+
+def test_releasing_a_parked_proposal_does_not_collide_with_the_active_index(
+    db_session: Session,
+) -> None:
+    """Release has to survive the very index that parked the record.
+
+    ``uq_harness_proposals_active_space_claim_fingerprint`` covers
+    (space_id, claim_fingerprint) while the status is pending_review or
+    promoted.  Returning a parked row to pending_review with its fingerprint
+    intact would therefore be rejected by the database, so releasing it clears
+    the fingerprint the reviewer just declared non-identifying.
+    """
+
+    fingerprint = "e" * 48
+    store, space_id, _active_id, parked_id = _parked_pair(
+        db_session,
+        fingerprint=fingerprint,
+    )
+
+    released = store.adjudicate_parked_proposal(
+        space_id=space_id,
+        proposal_id=parked_id,
+        resolution="distinct",
+        reason="Two different chemicals.",
+        decided_by=ReviewActor(user_id=str(uuid4()), email="reviewer@example.com"),
+    )
+
+    assert released is not None
+    assert released.status == "pending_review"
+    assert released.claim_fingerprint is None
+    assert released.decided_at is None
+    assert released.identity_adjudication is not None
+    assert released.identity_adjudication["released_claim_fingerprint"] == fingerprint
+    reread = store.get_proposal(space_id=space_id, proposal_id=parked_id)
+    assert reread is not None
+    assert reread.identity_adjudication == released.identity_adjudication
+
+
+def test_resolving_a_parked_proposal_as_duplicate_names_its_counterpart(
+    db_session: Session,
+) -> None:
+    """A duplicate is retained and points at what it duplicates, not deleted."""
+
+    fingerprint = "f" * 48
+    store, space_id, active_id, parked_id = _parked_pair(
+        db_session,
+        fingerprint=fingerprint,
+    )
+
+    resolved = store.adjudicate_parked_proposal(
+        space_id=space_id,
+        proposal_id=parked_id,
+        resolution="duplicate",
+        reason="Same assertion in two papers.",
+        decided_by=ReviewActor(user_id=str(uuid4()), email="reviewer@example.com"),
+    )
+
+    assert resolved is not None
+    assert resolved.status == "duplicate"
+    assert resolved.claim_fingerprint == fingerprint
+    assert resolved.decided_by is not None
+    assert resolved.identity_adjudication is not None
+    assert (
+        resolved.identity_adjudication["duplicate_of_proposal_id"] == active_id
+    )
+    still_active = store.get_proposal(space_id=space_id, proposal_id=active_id)
+    assert still_active is not None
+    assert still_active.status == "pending_review"
+
+
 def test_sqlalchemy_harness_proposal_store_retains_unique_conflict_race() -> None:
     """ART-DATA-001: losing the fingerprint race must not discard the batch.
 

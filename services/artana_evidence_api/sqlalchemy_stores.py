@@ -66,11 +66,18 @@ from .graph_snapshot import (
     HarnessGraphSnapshotStore,
 )
 from .proposal_store import (
+    DUPLICATE_RESOLUTION,
+    DUPLICATE_STATUS,
     IDENTITY_PENDING_STATUS,
     HarnessProposalDraft,
     HarnessProposalRecord,
     HarnessProposalStore,
     _is_same_document_rederivation,
+    build_identity_adjudication,
+    clean_decision_reason,
+    missing_duplicate_counterpart_message,
+    normalize_identity_resolution,
+    unadjudicable_proposal_message,
     undecidable_proposal_message,
 )
 from .research_state import (
@@ -260,7 +267,19 @@ def _proposal_record_from_model(model: HarnessProposalModel) -> HarnessProposalR
         updated_at=model.updated_at,
         claim_fingerprint=getattr(model, "claim_fingerprint", None),
         source_provenance=_source_provenance_from_model(model),
+        identity_adjudication=_identity_adjudication_from_model(model),
     )
+
+
+def _identity_adjudication_from_model(
+    model: HarnessProposalModel,
+) -> JSONObject | None:
+    """Read one proposal's identity adjudication, or None if never adjudicated."""
+
+    payload = getattr(model, "identity_adjudication_payload", None)
+    if not isinstance(payload, dict):
+        return None
+    return cast("JSONObject", payload)
 
 
 def _source_provenance_from_model(
@@ -790,6 +809,110 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         if model is None:
             return None
         return _proposal_record_from_model(model)
+
+    def adjudicate_parked_proposal(
+        self,
+        *,
+        space_id: UUID | str,
+        proposal_id: UUID | str,
+        resolution: str,
+        reason: str | None,
+        decided_by: ReviewActor | None,
+    ) -> HarnessProposalRecord | None:
+        """Settle a parked proposal's identity, durably.
+
+        Mirrors the in-memory store so the two cannot diverge on what an exit
+        from ``identity_pending`` means.  Releasing as distinct clears the claim
+        fingerprint, which is what lets the row return to ``pending_review``
+        without colliding with its counterpart under migration 024's active
+        unique index.
+        """
+
+        normalized_resolution = normalize_identity_resolution(resolution)
+        model = self.session.get(HarnessProposalModel, str(proposal_id))
+        if model is None or model.space_id != str(space_id):
+            return None
+        if model.status != IDENTITY_PENDING_STATUS:
+            raise ValueError(
+                unadjudicable_proposal_message(
+                    proposal_id=proposal_id,
+                    status=model.status,
+                ),
+            )
+        decided_at = datetime.now(UTC)
+        naive_decided_at = decided_at.replace(tzinfo=None)
+        if normalized_resolution == DUPLICATE_RESOLUTION:
+            counterpart_id = self._active_fingerprint_counterpart_id(
+                space_id=model.space_id,
+                claim_fingerprint=model.claim_fingerprint,
+                exclude_id=model.id,
+            )
+            if counterpart_id is None:
+                raise ValueError(
+                    missing_duplicate_counterpart_message(proposal_id=proposal_id),
+                )
+            model.status = DUPLICATE_STATUS
+            model.decision_reason = clean_decision_reason(reason)
+            model.decided_at = naive_decided_at
+            model.decided_by_user_id = (
+                decided_by.user_id if decided_by is not None else None
+            )
+            model.decided_by_email = (
+                decided_by.email if decided_by is not None else None
+            )
+            model.identity_adjudication_payload = build_identity_adjudication(
+                resolution=normalized_resolution,
+                duplicate_of_proposal_id=counterpart_id,
+                released_claim_fingerprint=None,
+                reason=reason,
+                decided_by=decided_by,
+                decided_at=decided_at,
+            )
+        else:
+            model.identity_adjudication_payload = build_identity_adjudication(
+                resolution=normalized_resolution,
+                duplicate_of_proposal_id=None,
+                released_claim_fingerprint=model.claim_fingerprint,
+                reason=reason,
+                decided_by=decided_by,
+                decided_at=decided_at,
+            )
+            model.status = "pending_review"
+            model.claim_fingerprint = None
+            model.decision_reason = None
+            model.decided_at = None
+            model.decided_by_user_id = None
+            model.decided_by_email = None
+        commit_or_flush(self.session)
+        self.session.refresh(model)
+        return _proposal_record_from_model(model)
+
+    def _active_fingerprint_counterpart_id(
+        self,
+        *,
+        space_id: str,
+        claim_fingerprint: str | None,
+        exclude_id: str,
+    ) -> str | None:
+        """Return the id of the active proposal a parked one collided with."""
+
+        if not claim_fingerprint:
+            return None
+        row = (
+            self.session.execute(
+                select(HarnessProposalModel.id)
+                .where(
+                    HarnessProposalModel.space_id == space_id,
+                    HarnessProposalModel.claim_fingerprint == claim_fingerprint,
+                    HarnessProposalModel.status.in_(["pending_review", "promoted"]),
+                    HarnessProposalModel.id != exclude_id,
+                )
+                .limit(1),
+            )
+            .scalars()
+            .first()
+        )
+        return str(row) if row is not None else None
 
     def reject_pending_duplicates(
         self,

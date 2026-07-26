@@ -266,6 +266,15 @@ class HarnessProposalModel(Base):
         String(MAX_FINGERPRINT_LENGTH),
         nullable=True,
     )
+    #: System-authored record of how a parked identity was adjudicated.
+    #:
+    #: Its own column rather than a metadata key, because metadata_payload is
+    #: caller-supplied and adjudication history must not be forgeable, and
+    #: because it has to outlive the promote or reject of a released proposal.
+    identity_adjudication_payload: Mapped[JSONObject | None] = mapped_column(
+        JSON,
+        nullable=True,
+    )
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
     decided_by_user_id: Mapped[str | None] = mapped_column(

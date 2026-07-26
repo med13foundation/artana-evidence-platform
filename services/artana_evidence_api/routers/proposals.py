@@ -91,6 +91,7 @@ class HarnessProposalResponse(BaseModel):
     payload: JSONObject
     metadata: JSONObject
     evidence_grade: str | None
+    identity_adjudication: JSONObject | None = None
     decision_reason: str | None
     decided_at: str | None
     decided_by: ReviewActor | None
@@ -119,6 +120,7 @@ class HarnessProposalResponse(BaseModel):
             payload=record.payload,
             metadata=record.metadata,
             evidence_grade=record.evidence_grade,
+            identity_adjudication=record.identity_adjudication,
             decision_reason=record.decision_reason,
             decided_at=serialize_optional_timestamp(record.decided_at),
             decided_by=record.decided_by,
