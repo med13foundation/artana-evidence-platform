@@ -249,16 +249,16 @@ if [[ -n "${DRUGBANK_API_KEY_SECRET_NAME:-}" ]]; then
   harness_secret_pairs+=("DRUGBANK_API_KEY=${DRUGBANK_API_KEY_SECRET_NAME}:latest")
   harness_secret_names+=("${DRUGBANK_API_KEY_SECRET_NAME}")
 fi
-if [[ -n "${ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME:-}" ]]; then
-  harness_secret_pairs+=(
-    "ARTANA_EVIDENCE_API_BOOTSTRAP_KEY=${ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME}:latest"
-  )
-  harness_secret_names+=("${ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME}")
-elif is_true "${ARTANA_EVIDENCE_API_REMOVE_BOOTSTRAP_KEY:-}"; then
+if is_true "${ARTANA_EVIDENCE_API_REMOVE_BOOTSTRAP_KEY:-}"; then
   harness_update_args+=(
     --remove-secrets
     "ARTANA_EVIDENCE_API_BOOTSTRAP_KEY"
   )
+elif [[ -n "${ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME:-}" ]]; then
+  harness_secret_pairs+=(
+    "ARTANA_EVIDENCE_API_BOOTSTRAP_KEY=${ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME}:latest"
+  )
+  harness_secret_names+=("${ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME}")
 fi
 if ((${#harness_secret_pairs[@]} > 0)); then
   harness_update_secrets="$(IFS=,; echo "${harness_secret_pairs[*]}")"

@@ -34,6 +34,11 @@ The public tester flow is:
 - `GET /v2/auth/api-keys`: list API-key summaries.
 - `DELETE /v2/auth/api-keys/{key_id}`: revoke one key.
 - `POST /v2/auth/api-keys/{key_id}/rotate`: revoke and replace one key.
+- `GET /v2/auth/testers/{user_id}/api-keys`: admin-only tester key inventory.
+- `DELETE /v2/auth/testers/{user_id}/api-keys/{key_id}`: admin-only tester key
+  revocation.
+- `POST /v2/auth/testers/{user_id}/api-keys/{key_id}/rotate`: admin-only tester
+  key rotation.
 
 Normal requests can use `X-Artana-Key`. Bearer JWTs are also supported by the
 auth layer. Existing v1 compatibility routes mirror this auth surface for older

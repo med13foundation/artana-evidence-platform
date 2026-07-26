@@ -71,6 +71,20 @@ def test_artana_evidence_api_runtime_sync_propagates_env_and_acl_defaults() -> N
     assert 'harness_env_pairs+=("SPACE_ACL_MODE=enforce")' in script
 
 
+def test_bootstrap_secret_removal_overrides_configured_secret_name() -> None:
+    """Regression: completed bootstrap must allow secret detachment in staging."""
+    script = _read_text(API_SYNC_SCRIPT)
+
+    removal_condition = 'if is_true "${ARTANA_EVIDENCE_API_REMOVE_BOOTSTRAP_KEY:-}"; then'
+    configured_secret_condition = (
+        'elif [[ -n "${ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME:-}" ]]; then'
+    )
+    assert removal_condition in script
+    assert configured_secret_condition in script
+    assert script.index(removal_condition) < script.index(configured_secret_condition)
+    assert '--remove-secrets\n    "ARTANA_EVIDENCE_API_BOOTSTRAP_KEY"' in script
+
+
 def test_artana_evidence_api_deploy_workflow_provisions_graph_jwt_secret() -> None:
     """Regression: every API deploy target must pass the graph JWT secret name."""
     workflow = _read_text(API_DEPLOY_WORKFLOW)
@@ -158,3 +172,26 @@ def test_artana_evidence_db_deploy_jobs_depend_on_service_checks() -> None:
         assert deploy_block.index("needs: graph-service-checks") < deploy_block.index(
             "docker/build-push-action@v5",
         )
+
+
+def test_staging_deploys_verify_internal_preview_boundaries_after_sync() -> None:
+    api_workflow = _read_text(API_DEPLOY_WORKFLOW)
+    graph_workflow = _read_text(DB_DEPLOY_WORKFLOW)
+    api_staging = _workflow_job_block(api_workflow, "deploy-staging")
+    graph_staging = _workflow_job_block(graph_workflow, "deploy-staging")
+
+    api_sync = "Sync Artana Evidence API runtime config (Staging)"
+    api_verify = "Verify internal preview public boundary (Staging)"
+    assert api_sync in api_staging
+    assert api_verify in api_staging
+    assert api_staging.index(api_sync) < api_staging.index(api_verify)
+    assert "scripts/verify_internal_preview.py" in api_staging
+    assert "--evidence-base-url" in api_staging
+
+    graph_sync = "Sync Artana Evidence DB runtime config (Staging)"
+    graph_verify = "Verify internal preview graph boundary (Staging)"
+    assert graph_sync in graph_staging
+    assert graph_verify in graph_staging
+    assert graph_staging.index(graph_sync) < graph_staging.index(graph_verify)
+    assert "scripts/verify_internal_preview.py" in graph_staging
+    assert "--graph-base-url" in graph_staging

@@ -18,6 +18,7 @@ or `packages/artana_api`.
 
 - [Current System](./architecture/current-system.md)
 - [User Guide](./user-guide/README.md)
+- [Internal Preview Runbook](./internal-preview-runbook.md)
 - [Remaining Work](./remaining_work_priorities.md)
 - [Evidence Excellence Progress Tracker](./validation/evidence-excellence-progress-tracker.md)
 - [Trusted Graph Readiness PR Plan](./validation/trusted-graph-readiness-pr-plan.md)

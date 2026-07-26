@@ -19,6 +19,7 @@ from artana_evidence_api.auth import (
 )
 from artana_evidence_api.dependencies import get_identity_gateway
 from artana_evidence_api.identity.contracts import (
+    IdentityApiKeyRecord,
     IdentityGateway,
     IdentityIssuedApiKey,
     IdentityUserConflictError,
@@ -35,6 +36,7 @@ router = APIRouter(
     prefix="/v1/auth",
     tags=["auth"],
 )
+_MANAGED_TESTER_ROLES = frozenset({"viewer", "researcher", "curator"})
 _BOOTSTRAP_KEY_SECURITY = APIKeyHeader(
     name=BOOTSTRAP_KEY_HEADER,
     auto_error=False,
@@ -424,6 +426,46 @@ def _ts(dt: datetime | None) -> str | None:
     return dt.isoformat() if dt is not None else None
 
 
+def _api_key_summary(model: IdentityApiKeyRecord) -> ApiKeySummaryResponse:
+    return ApiKeySummaryResponse(
+        id=str(model.id),
+        name=model.name,
+        key_prefix=model.key_prefix,
+        status=model.status,
+        created_at=model.created_at.isoformat(),
+        expires_at=_ts(model.expires_at),
+        revoked_at=_ts(model.revoked_at),
+        last_used_at=_ts(model.last_used_at),
+    )
+
+
+def _require_admin(current_user: HarnessUser) -> None:
+    if current_user.role != HarnessUserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required to manage tester API keys",
+        )
+
+
+def _require_managed_tester(
+    identity_gateway: IdentityGateway,
+    *,
+    user_id: UUID,
+) -> IdentityUserRecord:
+    user = identity_gateway.get_user(user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tester user not found",
+        )
+    if user.role not in _MANAGED_TESTER_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Target user is not a managed tester",
+        )
+    return user
+
+
 @router.get(
     "/api-keys",
     response_model=ApiKeyListResponse,
@@ -436,19 +478,7 @@ def list_api_keys(
     """Return all API keys for the caller, showing prefix only."""
     models = identity_gateway.list_api_keys(user_id=current_user.id)
     return ApiKeyListResponse(
-        keys=[
-            ApiKeySummaryResponse(
-                id=str(m.id),
-                name=m.name,
-                key_prefix=m.key_prefix,
-                status=m.status,
-                created_at=m.created_at.isoformat(),
-                expires_at=_ts(m.expires_at),
-                revoked_at=_ts(m.revoked_at),
-                last_used_at=_ts(m.last_used_at),
-            )
-            for m in models
-        ],
+        keys=[_api_key_summary(model) for model in models],
         total=len(models),
     )
 
@@ -470,16 +500,7 @@ def delete_api_key(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="API key not found or already revoked",
         )
-    return ApiKeySummaryResponse(
-        id=str(model.id),
-        name=model.name,
-        key_prefix=model.key_prefix,
-        status=model.status,
-        created_at=model.created_at.isoformat(),
-        expires_at=_ts(model.expires_at),
-        revoked_at=_ts(model.revoked_at),
-        last_used_at=_ts(model.last_used_at),
-    )
+    return _api_key_summary(model)
 
 
 @router.post(
@@ -506,6 +527,76 @@ def rotate_api_key_endpoint(
     )
 
 
+@router.get(
+    "/testers/{user_id}/api-keys",
+    response_model=ApiKeyListResponse,
+    summary="List API keys for a tester",
+)
+def list_tester_api_keys(
+    user_id: UUID,
+    current_user: HarnessUser = Depends(require_harness_write_access),
+    identity_gateway: IdentityGateway = Depends(get_identity_gateway),
+) -> ApiKeyListResponse:
+    """Let an admin inventory one tester's key metadata without exposing secrets."""
+    _require_admin(current_user)
+    _require_managed_tester(identity_gateway, user_id=user_id)
+    models = identity_gateway.list_api_keys(user_id=user_id)
+    return ApiKeyListResponse(
+        keys=[_api_key_summary(model) for model in models],
+        total=len(models),
+    )
+
+
+@router.delete(
+    "/testers/{user_id}/api-keys/{key_id}",
+    response_model=ApiKeySummaryResponse,
+    summary="Revoke a tester API key",
+)
+def delete_tester_api_key(
+    user_id: UUID,
+    key_id: UUID,
+    current_user: HarnessUser = Depends(require_harness_write_access),
+    identity_gateway: IdentityGateway = Depends(get_identity_gateway),
+) -> ApiKeySummaryResponse:
+    """Let an admin soft-revoke one tester key."""
+    _require_admin(current_user)
+    _require_managed_tester(identity_gateway, user_id=user_id)
+    model = identity_gateway.revoke_api_key(key_id=key_id, user_id=user_id)
+    if model is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tester API key not found or already revoked",
+        )
+    return _api_key_summary(model)
+
+
+@router.post(
+    "/testers/{user_id}/api-keys/{key_id}/rotate",
+    response_model=RotatedApiKeyResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Rotate a tester API key",
+)
+def rotate_tester_api_key(
+    user_id: UUID,
+    key_id: UUID,
+    current_user: HarnessUser = Depends(require_harness_write_access),
+    identity_gateway: IdentityGateway = Depends(get_identity_gateway),
+) -> RotatedApiKeyResponse:
+    """Let an admin replace one tester key and return the new secret once."""
+    _require_admin(current_user)
+    _require_managed_tester(identity_gateway, user_id=user_id)
+    new_key = identity_gateway.rotate_api_key(key_id=key_id, user_id=user_id)
+    if new_key is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tester API key not found or already revoked",
+        )
+    return RotatedApiKeyResponse(
+        revoked_key_id=str(key_id),
+        new_key=_issued_api_key_response(new_key),
+    )
+
+
 __all__ = [
     "ApiKeyListResponse",
     "ApiKeySummaryResponse",
@@ -521,8 +612,11 @@ __all__ = [
     "create_api_key",
     "create_tester",
     "delete_api_key",
+    "delete_tester_api_key",
     "get_auth_context",
     "list_api_keys",
+    "list_tester_api_keys",
     "rotate_api_key_endpoint",
+    "rotate_tester_api_key",
     "router",
 ]

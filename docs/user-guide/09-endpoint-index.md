@@ -77,6 +77,9 @@ Use these for identity, API keys, and membership management.
 | Create API key | `POST /v2/auth/api-keys` |
 | Revoke API key | `DELETE /v2/auth/api-keys/{key_id}` |
 | Rotate API key | `POST /v2/auth/api-keys/{key_id}/rotate` |
+| List a tester's API keys (admin) | `GET /v2/auth/testers/{user_id}/api-keys` |
+| Revoke a tester key (admin) | `DELETE /v2/auth/testers/{user_id}/api-keys/{key_id}` |
+| Rotate a tester key (admin) | `POST /v2/auth/testers/{user_id}/api-keys/{key_id}/rotate` |
 | List space members | `GET /v2/spaces/{space_id}/members` |
 | Add member | `POST /v2/spaces/{space_id}/members` |
 | Remove member | `DELETE /v2/spaces/{space_id}/members/{user_id}` |

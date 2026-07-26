@@ -87,6 +87,9 @@ The sections below are v2-first and use the public task/workflow naming.
 | `POST` | `/v2/auth/api-keys` | Creates an additional API key for the authenticated user. |
 | `DELETE` | `/v2/auth/api-keys/{key_id}` | Revokes one API key. |
 | `POST` | `/v2/auth/api-keys/{key_id}/rotate` | Rotates one API key and returns the new secret once. |
+| `GET` | `/v2/auth/testers/{user_id}/api-keys` | Lets an admin list tester key metadata without exposing secrets. |
+| `DELETE` | `/v2/auth/testers/{user_id}/api-keys/{key_id}` | Lets an admin revoke one tester key. |
+| `POST` | `/v2/auth/testers/{user_id}/api-keys/{key_id}/rotate` | Lets an admin rotate one tester key and returns the replacement secret once. |
 
 Bootstrap request body:
 

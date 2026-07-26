@@ -21,8 +21,11 @@ _DEFAULT_EMAIL = "developer@example.com"
 _DEFAULT_USERNAME = "developer"
 _DEFAULT_FULL_NAME = "Developer Example"
 _DEFAULT_API_KEY_NAME = "Default SDK Key"
+_HTTP_SUCCESS_MIN = 200
+_HTTP_SUCCESS_MAX = 300
+_HTTP_CONFLICT = 409
 _OUTPUT_CHOICES = ("shell", "json", "key")
-_MODE_CHOICES = ("auto", "bootstrap", "create")
+_MODE_CHOICES = ("auto", "bootstrap", "create", "tester")
 _ROLE_CHOICES = ("viewer", "researcher", "curator", "admin")
 
 
@@ -30,7 +33,7 @@ class KeyIssuerError(RuntimeError):
     """Raised when the key issuance flow cannot complete."""
 
 
-class APIRequestFailure(KeyIssuerError):
+class APIRequestError(KeyIssuerError):
     """Raised when the API returns a non-success response."""
 
     def __init__(self, *, action: str, status_code: int, detail: str) -> None:
@@ -45,7 +48,7 @@ class IssueApiKeyConfig:
     """Configuration for one key issuance attempt."""
 
     base_url: str
-    mode: Literal["auto", "bootstrap", "create"]
+    mode: Literal["auto", "bootstrap", "create", "tester"]
     timeout_seconds: float
     bootstrap_key: str | None
     api_key: str | None
@@ -63,7 +66,7 @@ class IssueApiKeyConfig:
 class IssuedKeyResult:
     """Normalized result returned by bootstrap or key-creation routes."""
 
-    method: Literal["bootstrap", "create"]
+    method: Literal["bootstrap", "create", "tester"]
     user_id: str
     user_email: str
     user_role: str
@@ -94,8 +97,8 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Issue one Artana Evidence API key. Use bootstrap mode for the first "
-            "key on a fresh deployment, or create mode to mint another key with "
-            "an existing credential."
+            "key on a fresh deployment, create mode to mint another key for the "
+            "current user, or tester mode for an admin to create a tester."
         ),
     )
     parser.add_argument(
@@ -107,7 +110,10 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--mode",
         choices=_MODE_CHOICES,
         default="auto",
-        help="auto tries bootstrap first when possible, then falls back to create.",
+        help=(
+            "auto tries bootstrap first when possible, then falls back to create; "
+            "tester creates a separate low-privilege user."
+        ),
     )
     parser.add_argument(
         "--timeout-seconds",
@@ -225,9 +231,9 @@ def _response_detail(response: httpx.Response) -> str:
 
 
 def _raise_if_error(response: httpx.Response, *, action: str) -> None:
-    if 200 <= response.status_code < 300:
+    if _HTTP_SUCCESS_MIN <= response.status_code < _HTTP_SUCCESS_MAX:
         return
-    raise APIRequestFailure(
+    raise APIRequestError(
         action=action,
         status_code=response.status_code,
         detail=_response_detail(response),
@@ -237,7 +243,7 @@ def _raise_if_error(response: httpx.Response, *, action: str) -> None:
 def _parse_issued_key_result(
     payload: Mapping[str, object],
     *,
-    method: Literal["bootstrap", "create"],
+    method: Literal["bootstrap", "create", "tester"],
 ) -> IssuedKeyResult:
     user_obj = payload.get("user")
     api_key_obj = payload.get("api_key")
@@ -292,7 +298,8 @@ def _auth_headers(config: IssueApiKeyConfig) -> dict[str, str]:
     if access_token is not None:
         return {"Authorization": f"Bearer {access_token}"}
     raise KeyIssuerError(
-        "Create mode requires --api-key, --access-token, ARTANA_API_KEY, or TOKEN.",
+        "Authenticated issuance requires --api-key, --access-token, "
+        "ARTANA_API_KEY, or TOKEN.",
     )
 
 
@@ -344,6 +351,21 @@ def _create_one_key(
     return _parse_issued_key_result(_json_object(response), method="create")
 
 
+def _create_tester_key(
+    client: httpx.Client,
+    config: IssueApiKeyConfig,
+) -> IssuedKeyResult:
+    if config.role == "admin":
+        raise KeyIssuerError("Tester users cannot have the admin role.")
+    response = client.post(
+        "/v2/auth/testers",
+        headers=_auth_headers(config),
+        json=_bootstrap_payload(config),
+    )
+    _raise_if_error(response, action="Tester API key issuance")
+    return _parse_issued_key_result(_json_object(response), method="tester")
+
+
 def issue_api_key_with_client(
     client: httpx.Client,
     config: IssueApiKeyConfig,
@@ -353,6 +375,8 @@ def issue_api_key_with_client(
         return _bootstrap_one_key(client, config)
     if config.mode == "create":
         return _create_one_key(client, config)
+    if config.mode == "tester":
+        return _create_tester_key(client, config)
 
     has_bootstrap = _maybe_string(config.bootstrap_key) is not None
     has_auth = _maybe_string(config.api_key) is not None or _maybe_string(
@@ -362,8 +386,8 @@ def issue_api_key_with_client(
     if has_bootstrap and not has_auth:
         try:
             return _bootstrap_one_key(client, config)
-        except APIRequestFailure as exc:
-            if exc.status_code == 409:
+        except APIRequestError as exc:
+            if exc.status_code == _HTTP_CONFLICT:
                 raise KeyIssuerError(
                     "Bootstrap has already been completed for this deployment. "
                     "Re-run with --api-key or --access-token to create another key.",
@@ -376,8 +400,8 @@ def issue_api_key_with_client(
     if has_bootstrap and has_auth:
         try:
             return _bootstrap_one_key(client, config)
-        except APIRequestFailure as exc:
-            if exc.status_code == 409:
+        except APIRequestError as exc:
+            if exc.status_code == _HTTP_CONFLICT:
                 return _create_one_key(client, config)
             raise
 

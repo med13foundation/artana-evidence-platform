@@ -357,6 +357,140 @@ def test_non_admin_cannot_create_tester_user(
     assert response.json()["detail"] == "Admin role required to create tester users"
 
 
+def test_admin_can_inventory_rotate_and_revoke_tester_api_key(
+    db_session: Session,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv(
+        "ARTANA_EVIDENCE_API_BOOTSTRAP_KEY",
+        "bootstrap-secret",
+    )
+    app = create_app()
+    app.dependency_overrides[get_session] = lambda: db_session
+    app.dependency_overrides[get_research_space_store] = (
+        lambda: SqlAlchemyHarnessResearchSpaceStore(db_session)
+    )
+
+    with TestClient(app) as client:
+        bootstrap = client.post(
+            "/v2/auth/bootstrap",
+            headers={"X-Artana-Bootstrap-Key": "bootstrap-secret"},
+            json={"email": "admin@example.com", "role": "admin"},
+        )
+        admin_key = bootstrap.json()["api_key"]["api_key"]
+        created = client.post(
+            "/v2/auth/testers",
+            headers={"X-Artana-Key": admin_key},
+            json={"email": "tester@example.com"},
+        )
+        tester_payload = created.json()
+        user_id = tester_payload["user"]["id"]
+        key_id = tester_payload["api_key"]["id"]
+        original_key = tester_payload["api_key"]["api_key"]
+
+        inventory = client.get(
+            f"/v2/auth/testers/{user_id}/api-keys",
+            headers={"X-Artana-Key": admin_key},
+        )
+        rotated = client.post(
+            f"/v2/auth/testers/{user_id}/api-keys/{key_id}/rotate",
+            headers={"X-Artana-Key": admin_key},
+        )
+
+        assert inventory.status_code == 200
+        assert inventory.json()["total"] == 1
+        assert "api_key" not in inventory.json()["keys"][0]
+        assert rotated.status_code == 201
+        replacement = rotated.json()["new_key"]
+        replacement_key = replacement["api_key"]
+        replacement_key_id = replacement["id"]
+        assert client.get(
+            "/v2/auth/me",
+            headers={"X-Artana-Key": original_key},
+        ).status_code == 401
+        assert client.get(
+            "/v2/auth/me",
+            headers={"X-Artana-Key": replacement_key},
+        ).status_code == 200
+
+        revoked = client.delete(
+            f"/v2/auth/testers/{user_id}/api-keys/{replacement_key_id}",
+            headers={"X-Artana-Key": admin_key},
+        )
+
+        assert revoked.status_code == 200
+        assert revoked.json()["status"] == "revoked"
+        assert client.get(
+            "/v2/auth/me",
+            headers={"X-Artana-Key": replacement_key},
+        ).status_code == 401
+
+
+def test_non_admin_cannot_manage_tester_api_keys(
+    db_session: Session,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv(
+        "ARTANA_EVIDENCE_API_BOOTSTRAP_KEY",
+        "bootstrap-secret",
+    )
+    app = create_app()
+    app.dependency_overrides[get_session] = lambda: db_session
+    app.dependency_overrides[get_research_space_store] = (
+        lambda: SqlAlchemyHarnessResearchSpaceStore(db_session)
+    )
+
+    with TestClient(app) as client:
+        bootstrap = client.post(
+            "/v2/auth/bootstrap",
+            headers={"X-Artana-Bootstrap-Key": "bootstrap-secret"},
+            json={"email": "admin@example.com", "role": "admin"},
+        )
+        admin_key = bootstrap.json()["api_key"]["api_key"]
+        created = client.post(
+            "/v2/auth/testers",
+            headers={"X-Artana-Key": admin_key},
+            json={"email": "tester@example.com"},
+        ).json()
+
+        response = client.get(
+            f"/v2/auth/testers/{created['user']['id']}/api-keys",
+            headers={"X-Artana-Key": created["api_key"]["api_key"]},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin role required to manage tester API keys"
+
+
+def test_admin_tester_routes_cannot_manage_another_admin(
+    db_session: Session,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv(
+        "ARTANA_EVIDENCE_API_BOOTSTRAP_KEY",
+        "bootstrap-secret",
+    )
+    app = create_app()
+    app.dependency_overrides[get_session] = lambda: db_session
+    app.dependency_overrides[get_research_space_store] = (
+        lambda: SqlAlchemyHarnessResearchSpaceStore(db_session)
+    )
+
+    with TestClient(app) as client:
+        bootstrap = client.post(
+            "/v2/auth/bootstrap",
+            headers={"X-Artana-Bootstrap-Key": "bootstrap-secret"},
+            json={"email": "admin@example.com", "role": "admin"},
+        ).json()
+        response = client.get(
+            f"/v2/auth/testers/{bootstrap['user']['id']}/api-keys",
+            headers={"X-Artana-Key": bootstrap["api_key"]["api_key"]},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Target user is not a managed tester"
+
+
 def test_owner_jwt_cannot_create_tester_user(db_session: Session) -> None:
     app = create_app()
     app.dependency_overrides[get_session] = lambda: db_session
