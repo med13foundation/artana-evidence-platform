@@ -21,6 +21,7 @@ from typing import Any
 
 import pytest
 
+from scripts.validation import check_restricted_corpus_digests
 from scripts.validation.claim_events.corpus_text import (
     RESTRICTED_CORPUS_ENV_VAR,
     RestrictedCorpusUnavailableError,
@@ -37,6 +38,13 @@ from scripts.validation.claim_events.fixture import (
     REDACTED_DEVELOPMENT_FIXTURE_SHA256,
     REDACTED_DEVELOPMENT_FIXTURE_V2_SHA256,
 )
+from scripts.validation.restricted_corpus_digests import (
+    DIGEST_PATH,
+    STRIDE,
+    WINDOW,
+    window_digest,
+)
+from scripts.validation.restricted_corpus_normalization import normalize
 
 #: Every key that ever held verbatim corpus prose.
 _TEXT_KEYS = frozenset({"source_text", "source_span", "trigger_span", "exact_span"})
@@ -257,3 +265,142 @@ def test_redacting_twice_is_refused() -> None:
 def test_rehydrating_a_text_bearing_payload_is_refused() -> None:
     with pytest.raises(ValueError, match="no restricted-text declaration"):
         rehydrate_fixture_payload(_synthetic_payload())
+
+
+def test_normalization_folds_what_copying_changes() -> None:
+    """Re-wrapping, re-casing and smart quotes must not defeat either guard.
+
+    Verbatim text rarely survives a copy byte-identical: a formatter re-wraps
+    it, a slug lower-cases it, an editor swaps hyphens and quotes for their
+    typographic forms.  A guard that compared raw bytes would miss every one of
+    those, so both halves compare this normalized form -- and they must agree
+    on it, or a digest written by one silently stops matching the other.
+    """
+
+    original = "Alpha-protein 'binds' beta   protein\nin vitro."
+    mangled = "ALPHA‐protein ‘binds’ beta protein in\tvitro."
+
+    assert normalize(original) == normalize(mangled.replace("‐", "-"))
+    assert normalize("A  B\n\tC") == "a b c"
+
+
+def test_offline_digest_set_matches_the_windows_it_declares() -> None:
+    """The committed artifact must be internally consistent.
+
+    Window size and stride are recorded in the file and also compiled into the
+    checker.  If they drift apart nothing raises -- the digests simply stop
+    matching and the gate goes quietly green, which is the worst failure mode a
+    guard has.
+    """
+
+    payload = json.loads(DIGEST_PATH.read_text(encoding="utf-8"))
+
+    assert payload["window"] == WINDOW
+    assert payload["stride"] == STRIDE
+    assert payload["guaranteed_run_length"] == WINDOW + STRIDE - 1
+    assert payload["runs"], "the digest set must pin at least one run"
+    assert len(payload["window_digests"]) == len(set(payload["window_digests"]))
+    for run in payload["runs"]:
+        assert len(run["sha256"]) == 64
+        assert run["length"] >= WINDOW
+        assert run["locator"].startswith("char:")
+
+
+def test_offline_digest_set_carries_no_recoverable_text() -> None:
+    """The artifact exists so the guard can run without shipping the corpus.
+
+    Every value in it must be a digest, an offset or a document id.  A future
+    edit that pastes a span back in "for readability" would reintroduce exactly
+    the exposure the file was built to avoid.
+    """
+
+    payload = json.loads(DIGEST_PATH.read_text(encoding="utf-8"))
+
+    for digest in payload["window_digests"]:
+        assert len(digest) == 16
+        assert int(digest, 16) >= 0
+    for run in payload["runs"]:
+        assert set(run) == {
+            "document_id",
+            "locator",
+            "length",
+            "sha256",
+            "guaranteed",
+        }
+
+
+def test_offline_guard_detects_a_reintroduced_run(tmp_path: Path) -> None:
+    """The point of the offline half, proved without needing the corpus.
+
+    A synthetic "restricted" run is indexed, then planted in a file in the
+    shapes a real re-introduction takes: verbatim, re-wrapped, and re-cased.
+    """
+
+    restricted = normalize(
+        "Alpha protein binds beta protein and thereby represses gamma factor "
+        "transcription in resting cells.",
+    )
+    assert len(restricted) >= WINDOW + STRIDE - 1
+    known = {
+        window_digest(restricted[index : index + WINDOW])
+        for index in range(len(restricted) - WINDOW + 1)
+    }
+
+    for variant in (
+        restricted,
+        restricted.upper(),
+        restricted.replace(" ", "\n   "),
+        f"prefix that is not restricted at all {restricted} and a suffix",
+    ):
+        body = normalize(variant)
+        probes = range(0, max(len(body) - WINDOW + 1, 0), STRIDE)
+        assert any(
+            window_digest(body[index : index + WINDOW]) in known for index in probes
+        ), f"missed a re-introduction shaped like {variant[:40]!r}"
+
+    innocent = normalize("Nothing in this sentence came from the corpus at all.")
+    probes = range(0, max(len(innocent) - WINDOW + 1, 0), STRIDE)
+    assert not any(
+        window_digest(innocent[index : index + WINDOW]) in known for index in probes
+    )
+
+
+def test_no_tracked_file_carries_a_known_restricted_run() -> None:
+    """The gate itself, asserted: HEAD must be clean of what we removed.
+
+    This is the offline half end to end. It cannot see corpus text that was
+    never removed -- only `make restricted-corpus-scan` can, and that needs the
+    corpus -- so a pass here is not a clean bill of health.
+    """
+
+    assert check_restricted_corpus_digests.main([]) == 0
+
+
+def test_stride_guarantee_holds_at_every_alignment() -> None:
+    """The guarantee the digest set advertises, checked exhaustively.
+
+    Probing every STRIDE-th character is what keeps the offline scan fast
+    enough for pre-commit, and it is sound only because a run of
+    `WINDOW + STRIDE - 1` characters must contain a probed window at whatever
+    offset it happens to land on.  That is an off-by-one waiting to happen, and
+    a wrong stride would not raise -- it would just miss re-introductions on
+    some alignments and pass.  So this plants the run at every offset and at
+    the exact minimum length, rather than trusting the arithmetic.
+    """
+
+    minimum = WINDOW + STRIDE - 1
+    restricted = normalize(
+        "alpha protein binds beta protein and represses gamma factor now",
+    )[:minimum]
+    assert len(restricted) == minimum
+    known = {
+        window_digest(restricted[index : index + WINDOW])
+        for index in range(len(restricted) - WINDOW + 1)
+    }
+
+    for offset in range(STRIDE * 3):
+        body = normalize("z" * offset + restricted + "z" * STRIDE * 2)
+        probes = range(0, max(len(body) - WINDOW + 1, 0), STRIDE)
+        assert any(
+            window_digest(body[index : index + WINDOW]) in known for index in probes
+        ), f"a {minimum}-character run at offset {offset} fell between probes"

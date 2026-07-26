@@ -35,10 +35,16 @@ removing `report_sha256` and matched exactly. No replacement run was made.
 
 ## Source Unit And Sealed Gold
 
-The source unit is the asserted result sentence:
+The source unit is the asserted result sentence, `109` characters long:
 
-> Interestingly, we observed a specific four-fold upregulation of Id1 mRNA in
-> BMP-6-treated B cells (Figure 7).
+> **Restricted corpus text, not republished here.** The unit is
+> `bionlp-ge-2011:PMC-1134658-06-Results-05` at `char:555-664` of the
+> normalized corpus document, SHA-256
+> `193eb99d4d17d23d990650553f3189dc7523392e2c119dad6895528d475a8065`.
+> A reader holding a licensed copy of the corpus can recover and verify it
+> exactly. See
+> [`RESTRICTED_CORPORA.md`](../../../scripts/validation/RESTRICTED_CORPORA.md);
+> rehydrate with `python3 scripts/fetch_bionlp_ge_corpus.py`.
 
 - Case: `bionlp-ge-2011:PMC-1134658-06-Results-05`
 - Expert event: `PMC-1134658-06-Results-05:E9`

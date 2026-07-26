@@ -161,7 +161,7 @@ define check_venv
 fi
 endef
 
-.PHONY: help all venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check agent-output-boundary-check graph-phase6-release-check architecture-size-check architecture-structure-check graph-service-lint graph-service-type-check graph-service-type-check-strict-imports graph-service-test graph-service-static-checks-core graph-service-static-checks graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-type-check-strict-imports artana-evidence-api-test evidence-selection-semantic-baseline-check evidence-selection-semantic-benchmark-v2-check evidence-selection-semantic-model-comparison coverage-check relation-feasibility-quality-gate artana-evidence-api-static-checks-core artana-evidence-api-static-checks artana-evidence-api-service-checks service-checks live-endpoint-contract-check live-external-api-check live-agent-relation-feasibility-check live-service-checks type-hardening-baseline run-graph-service run-artana-evidence-api-service run-artana-evidence-api-worker run-all
+.PHONY: help all venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check agent-output-boundary-check graph-phase6-release-check architecture-size-check architecture-structure-check restricted-corpus-digest-check restricted-corpus-scan restricted-corpus-digests graph-service-lint graph-service-type-check graph-service-type-check-strict-imports graph-service-test graph-service-static-checks-core graph-service-static-checks graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-type-check-strict-imports artana-evidence-api-test evidence-selection-semantic-baseline-check evidence-selection-semantic-benchmark-v2-check evidence-selection-semantic-model-comparison coverage-check relation-feasibility-quality-gate artana-evidence-api-static-checks-core artana-evidence-api-static-checks artana-evidence-api-service-checks service-checks live-endpoint-contract-check live-external-api-check live-agent-relation-feasibility-check live-service-checks type-hardening-baseline run-graph-service run-artana-evidence-api-service run-artana-evidence-api-worker run-all
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-32s %s\n", $$1, $$2}'
@@ -284,6 +284,24 @@ architecture-size-check: ## Enforce per-file architecture size budget
 architecture-structure-check: ## Enforce package structure and sprawl guardrails
 	$(call check_venv)
 	$(USE_PYTHON) scripts/validate_architecture_structure.py
+
+# Two halves, because the thorough check needs a corpus we are not allowed to
+# commit. This half runs anywhere and catches restricted runs we have already
+# removed coming back; it is blind to corpus text nobody has removed before.
+restricted-corpus-digest-check: ## Catch re-introduced restricted corpus text (offline)
+	$(call check_venv)
+	PYTHONPATH="$(CURDIR)" $(USE_PYTHON) scripts/validation/check_restricted_corpus_digests.py
+
+# The other half: every tracked file against every corpus document. Needs the
+# corpus fetched, so it cannot be in service-checks. Run it before landing
+# anything corpus-derived.
+restricted-corpus-scan: ## Scan every tracked file against the corpus (needs the corpus)
+	$(call check_venv)
+	PYTHONPATH="$(CURDIR)" $(USE_PYTHON) scripts/validation/check_restricted_corpus_text.py
+
+restricted-corpus-digests: ## Rebuild the committed digest set (needs the corpus)
+	$(call check_venv)
+	PYTHONPATH="$(CURDIR)" $(USE_PYTHON) scripts/validation/build_restricted_corpus_digests.py
 
 graph-service-lint: ## Run ruff on graph service paths
 	$(call check_venv)
@@ -415,6 +433,7 @@ service-checks: ## Run all service gates including coverage enforcement
 	@$(MAKE) -s artana-evidence-api-static-checks-core
 	@$(MAKE) -s architecture-size-check
 	@$(MAKE) -s architecture-structure-check
+	@$(MAKE) -s restricted-corpus-digest-check
 	@$(MAKE) -s relation-feasibility-quality-gate
 	@$(MAKE) -s coverage-check
 

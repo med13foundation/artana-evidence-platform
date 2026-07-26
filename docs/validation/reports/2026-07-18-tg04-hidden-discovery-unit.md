@@ -39,8 +39,16 @@ report digest was independently recomputed and matched.
 
 ## Source Unit
 
-> The addition of IL-4 to iTreg-driving conditions decreased the number of
-> FOXP3+ cells (Figure 6B).
+The frozen unit is one sentence of `98` characters:
+
+> **Restricted corpus text, not republished here.** The unit is
+> `bionlp-ge-2011:PMC-2222968-05-Results-04` at `char:1128-1226` of the
+> normalized corpus document, SHA-256
+> `14f2c9cb89a1d4091b51c8b96e4fc3cf51bd83088003913da44f345a58fd9928`.
+> A reader holding a licensed copy of the corpus can recover and verify it
+> exactly. See
+> [`RESTRICTED_CORPORA.md`](../../../scripts/validation/RESTRICTED_CORPORA.md);
+> rehydrate with `python3 scripts/fetch_bionlp_ge_corpus.py`.
 
 The hidden benchmark contains no event whose trigger begins inside this frozen
 unit. The extractor received only this text and its machine identifiers.

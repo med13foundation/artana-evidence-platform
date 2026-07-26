@@ -82,12 +82,59 @@ redistribution terms. If it restricts public use:
 2. Commit offsets and digests, never text.
 3. Gate text-dependent checks on availability, with a reason that names the
    remedy.
-4. Run `python3 scripts/validation/check_restricted_corpus_text.py` (needs the
-   corpus) to confirm no verbatim run leaked into any tracked file.
+4. Run `make restricted-corpus-scan` (needs the corpus) to confirm no verbatim
+   run leaked into any tracked file.
 
-## Known exception
+## The guard, and what each half misses
 
-Files under `docs/validation/` still quote GE sentences — the largest is a
-169-character run in the polarity adjudication record. That tree is frozen
-merged evidence and was out of scope for the redaction that produced this note.
-Removing corpus text from it is an open decision for the product owner.
+The check is in two halves because the thorough one needs a corpus we may not
+commit. Neither half alone is sufficient, and neither is a clean bill of health.
+
+| | `restricted-corpus-digest-check` | `restricted-corpus-scan` |
+| --- | --- | --- |
+| Needs the corpus | no | **yes** |
+| Wired into | pre-commit, `make service-checks`, and CI unconditionally | `make restricted-corpus-scan`, by hand, before landing corpus-derived work |
+| Compares against | committed digests of runs already removed | every document in the corpus |
+| Catches | those runs coming back — a revert, a paste out of published history, a re-wrapped or re-cased copy | any verbatim run of 40+ characters, from any document |
+| **Misses** | **any corpus text never removed before.** A fresh sentence from a document nobody has quoted is invisible to it | runs shorter than 40 characters; anything paraphrased rather than copied |
+
+Both normalize the same way before comparing — case, typographic punctuation,
+accents and whitespace all folded — so re-wrapping a paragraph or lower-casing
+it into a slug does not slip past either.
+
+The offline half indexes 32-character windows at a probe stride of 9, so
+detection is guaranteed for a run of 40 normalized characters or more. Its
+digest set is `restricted_corpus_digests.json`, rebuilt with
+`make restricted-corpus-digests` from the same locators the redacted records
+publish. The digests are one-way: they let a machine recognise restricted text,
+not reconstruct it.
+
+Neither half is path-exempt. An earlier revision of the corpus-backed scan
+skipped `docs/validation/` — the one tree that still held restricted text — and
+so printed a clean result while roughly 1.5 kB of GE prose sat at HEAD. A
+tree-shaped exemption cannot be audited. The scan now allowlists a small number
+of *phrases* that are shared scientific register rather than corpus content;
+that excuses the phrase everywhere and blinds no file.
+
+## How a record cites text it may not carry
+
+`docs/validation/` holds adjudications and reports in which the quoted sentence
+*is* the evidence for the finding. Deleting the quote would gut the record, so
+each one is replaced by a reference that a licence holder can resolve exactly:
+
+- `evidence_locator` / `char:<start>-<end>` — offsets into the **normalized**
+  text of the document named by `document_id`;
+- `evidence_sha256` — SHA-256 of the exact span those offsets address;
+- `evidence_length` — its length in characters.
+
+Fetch the corpus and the span is recoverable and verifiable byte-for-byte;
+without it, the surrounding reasoning, the labels, the polarities and the
+conclusions are all still readable. No finding, count or verdict changed when
+the text was removed.
+
+Spans shorter than 40 characters that name an entity, a trigger or a relation
+cue were kept: they are the analytical content of the record rather than
+republished prose, and replacing them with digests would leave findings a
+reader could not follow. That is a judgement about where quotation stops and
+reference begins, and it is the reason the scan's floor and the redaction rule
+are the same number.

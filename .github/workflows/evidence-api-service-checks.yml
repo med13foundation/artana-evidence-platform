@@ -160,6 +160,14 @@ jobs:
             'ARTANA_ADMIN_PASSWORD=change_me_locally1' \
             > .env.postgres
 
+      # Unconditional: this job also runs the targeted path, which skips
+      # service-checks, and restricted corpus text has no reason to correlate
+      # with the paths a change touches. It is offline and takes about a
+      # second. It catches only runs already removed -- the full scan needs the
+      # corpus. See scripts/validation/RESTRICTED_CORPORA.md.
+      - name: Check for re-introduced restricted corpus text
+        run: make restricted-corpus-digest-check
+
       - name: Run evidence API checks
         run: |
           if [ "${{ needs.plan_service_checks.outputs.full }}" = "true" ]; then

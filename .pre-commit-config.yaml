@@ -49,6 +49,19 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # Restricted corpus text reached HEAD three times, and each time the
+      # commit that introduced it also passed review. The thorough scan needs
+      # the corpus and so cannot run here; this is the half that can, and it
+      # catches the cheapest failure mode -- a revert or a paste putting back
+      # prose we already removed. It is not a clean bill of health: see
+      # scripts/validation/RESTRICTED_CORPORA.md for what it cannot see.
+      - id: restricted-corpus-digest-check
+        name: restricted corpus text
+        entry: make -s restricted-corpus-digest-check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
       # Same story as the architecture checks above, one layer out: the
       # contract checks were CI-only and cost two round-trips on #210, where
       # adding a GraphValidationCode member needs BOTH openapi.json and the

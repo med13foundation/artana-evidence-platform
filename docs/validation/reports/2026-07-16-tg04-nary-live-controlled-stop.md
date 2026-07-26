@@ -48,13 +48,17 @@ labeled `REPRESENTABILITY_STRESS` and is excluded from qualification precision,
 leakage, and repeatability.
 
 The initial inventory response contained four source-binding defects. The one
-allowed agent repair corrected three of them. Its remaining claim used this
-complete source span:
+allowed agent repair corrected three of them. Its remaining claim used one
+complete source span, a single sentence of `267` characters:
 
-> Our unexpected observations of paternal or biallelic expression of WT1 in
-> fibroblasts and lymphocytes, together with the previous findings of maternal
-> or biallelic expression in placentae and brains, suggest that the
-> allele-specific regulatory system of WT1 is unique
+> **Restricted corpus text, not republished here.** The span is
+> `bionlp-ge-2011:PMID-9361029` at `char:823-1090` of the normalized corpus
+> document, SHA-256
+> `80b9f66a011c6b50b322bab453b646ba8fa93118fb3aa2ae3c0d37218c0d36f3`.
+> A reader holding a licensed copy of the corpus can recover and verify it
+> exactly. See
+> [`RESTRICTED_CORPORA.md`](../../../scripts/validation/RESTRICTED_CORPORA.md);
+> rehydrate with `python3 scripts/fetch_bionlp_ge_corpus.py`.
 
 The claim's relation cue, `suggest that`, occurred exactly once. Its
 `GENE_OR_PROTEIN` argument was `WT1`, which occurred twice in the complete

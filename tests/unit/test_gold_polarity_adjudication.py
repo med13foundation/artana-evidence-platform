@@ -38,7 +38,6 @@ from scripts.validation.claim_events.fixture import (
     load_fixture,
 )
 
-
 #: These checks read the corpus text itself, which this public repository does
 #: not carry.  They are skipped, never deleted: the reason names the licence and
 #: the exact command that restores them.
@@ -172,7 +171,6 @@ def test_adjudication_record_backs_every_correction() -> None:
     }
 
     assert documented == set(POLARITY_ADJUDICATIONS)
-    assert all(item["evidence"].strip() for item in record["corrections"])
     assert all(item["rationale"].strip() for item in record["corrections"])
 
     rejected = {
@@ -180,6 +178,37 @@ def test_adjudication_record_backs_every_correction() -> None:
         for item in record["rejected_candidates"]
     }
     assert rejected >= _REJECTED, "rejected candidates must stay documented"
+
+
+def test_adjudication_cites_its_source_without_republishing_it() -> None:
+    """Every record must still pin the sentence it may no longer quote.
+
+    The record used to carry the source sentence verbatim, which republished
+    licence-restricted GE text from a public repository.  It now carries the
+    locator and digest instead.  That is a stricter citation than the quote
+    was, not a weaker one: the quote proved only that somebody had typed a
+    sentence, while the digest binds the claim to an exact span of an exact
+    corpus revision.  So this asserts both halves -- no text, and a resolvable
+    reference on every single record.
+    """
+
+    record: dict[str, Any] = json.loads(
+        Path(POLARITY_ADJUDICATION_RECORD).read_text(encoding="utf-8"),
+    )
+    items = [*record["corrections"], *record["rejected_candidates"]]
+
+    assert items, "the record must not be empty"
+    assert record["restricted_text"]["corpus"] == "BioNLP-ST-2011-GE"
+    for item in items:
+        assert "evidence" not in item, (
+            f"{item['document_id']}:{item['event_annotation_id']} carries "
+            f"verbatim corpus text again"
+        )
+        start, _, end = item["evidence_locator"].removeprefix("char:").partition("-")
+        assert item["evidence_locator"].startswith("char:")
+        assert int(end) - int(start) == item["evidence_length"] > 0
+        assert len(item["evidence_sha256"]) == 64
+        assert int(item["evidence_sha256"], 16) >= 0
 
 
 @pytest.mark.parametrize("key", sorted(POLARITY_ADJUDICATIONS))

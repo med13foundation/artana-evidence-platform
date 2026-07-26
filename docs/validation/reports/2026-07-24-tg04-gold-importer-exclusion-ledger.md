@@ -166,11 +166,18 @@ so a surviving child keeps `SUPPORT` / `ASSERTED` even when the corpus asserts t
 
 Three verified examples — the gold label contradicts the source text:
 
-| Record | Source text | Gold label |
-|---|---|---|
-| `PMID-9164948:E2` | "…**the failure of** p65 translocation to the nucleus…" | `SUPPORT` / `ASSERTED` |
-| `PMID-10402173:E9` | "…but **did suppress** their nuclear localization" | `SUPPORT` / `ASSERTED` |
-| `PMID-10402173:E10` | "…but **did suppress** their nuclear localization" | `SUPPORT` / `ASSERTED` |
+| Record | Source span | Negating parent trigger | Gold label |
+|---|---|---|---|
+| `PMID-9164948:E2` | `char:797-966` | `failure` (`Negative_regulation`) | `SUPPORT` / `ASSERTED` |
+| `PMID-10402173:E9` | `char:1017-1056` | `suppress` (`Negative_regulation`) | `SUPPORT` / `ASSERTED` |
+| `PMID-10402173:E10` | `char:1017-1056` | `suppress` (`Negative_regulation`) | `SUPPORT` / `ASSERTED` |
+
+The source sentences are licence-restricted BioNLP-ST 2011 GE text and are not
+republished here. Each is pinned by offsets into the normalized corpus document
+plus a SHA-256, recorded in
+[`2026-07-25-tg04-gold-polarity-inheritance-adjudication-v1.json`](../adjudications/2026-07-25-tg04-gold-polarity-inheritance-adjudication-v1.json),
+so a holder of the corpus can verify each contradiction exactly. See
+[`RESTRICTED_CORPORA.md`](../../../scripts/validation/RESTRICTED_CORPORA.md).
 
 These are wrong, not ambiguous. They should be re-polarized or excluded before the fixture is used again.
 A model that reads these sentences correctly is currently marked wrong.

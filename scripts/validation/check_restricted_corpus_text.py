@@ -3,31 +3,48 @@
 
 A `source_text` grep does not find this class of defect.  Corpus sentences have
 entered this repository as fixture fields, as quoted rationale in code comments,
-and as "realistic" test inputs -- three different shapes, one exposure.  This
-scans by content instead: every tracked text file against every document in the
-fetched corpus, reporting the longest verbatim run in each.
+as "realistic" test inputs, and as blockquoted evidence in validation reports --
+four different shapes, one exposure.  This scans by content instead: every
+tracked text file against every document in the fetched corpus, reporting every
+verbatim run in each.
 
 Needs the corpus, so it cannot run in an offline gate.  Run it before landing a
 change that touches corpus-derived material:
 
     python3 scripts/fetch_bionlp_ge_corpus.py
-    python3 scripts/validation/check_restricted_corpus_text.py
+    make restricted-corpus-scan
 
-Runs shorter than --threshold are not reported.  The default is set above the
-longest generic scientific phrasing observed in this repository ("taken
-together, these findings suggest that", 45 characters), which is shared idiom
-rather than corpus content.  That is a deliberate floor, not a safe harbour: it
-catches sentence-length quotation and bulk republication, and it will not catch
-a short but distinctive excerpt.  Read the reported runs, do not just count
-them.
+`check_restricted_corpus_digests.py` is the half that does run offline.  It
+carries committed digests of the runs already removed, so their return is caught
+everywhere; it cannot see corpus text that has never been removed before.  This
+scan is the one that finds that, and it is the reason to keep the corpus
+fetchable.
+
+Scope: every tracked file.  No path is exempt -- an earlier revision skipped
+`docs/validation/`, which was the one tree still holding restricted text, so the
+guard reported clean while ~1.5 kB of GE prose sat at HEAD.  A tree-shaped
+exemption cannot be audited; if a specific file ever genuinely needs one, list
+that file with its reason and leave everything around it scanned.
+
+On the threshold: shared scientific register and corpus prose overlap in length,
+so no cut separates them cleanly.  The longest generic idiom observed in this
+repository is 45 characters ("taken together, these findings suggest that"),
+while the shortest genuinely corpus-specific run removed was 29.  Rather than
+raise the floor above the idiom and go blind to real 40-character quotes, the
+floor sits at 40 and the handful of known-generic phrases are allowlisted by
+text in `_SHARED_IDIOM` -- an exemption that blinds no file.  Runs between the
+window size and the floor are still not reported.  That is a deliberate floor,
+not a safe harbour: it catches sentence-length quotation and bulk
+republication, and it will not catch a short but distinctive excerpt.  Read the
+reported runs, do not just count them.
 """
 
 from __future__ import annotations
 
 import argparse
-import re
 import subprocess
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -38,21 +55,24 @@ from scripts.validation.claim_events.corpus_text import (  # noqa: E402
     RestrictedCorpusUnavailableError,
     corpus_root,
 )
+from scripts.validation.restricted_corpus_normalization import (  # noqa: E402
+    normalize,
+)
 
 #: Seed length for candidate matches.  Runs are grown outward from a seed, so
 #: this bounds the work, not the reported length.
-_SEED = 24
-_DEFAULT_THRESHOLD = 48
-#: Frozen merged evidence, out of scope for the fixture redaction.  Listing it
-#: here keeps the exemption visible instead of silently unscanned.
-_KNOWN_EXCEPTIONS = ("docs/validation/",)
-_WHITESPACE = re.compile(r"\s+")
+_SEED = 16
+_DEFAULT_THRESHOLD = 40
 
-
-def _squash(text: str) -> str:
-    """Collapse whitespace so JSON escaping and line wrapping cannot hide a run."""
-
-    return _WHITESPACE.sub(" ", text).lower()
+#: Phrases that are shared scientific register rather than corpus content.  A
+#: run is not reported if it lies wholly inside one of these.  Every entry is
+#: text, not a path, so nothing is hidden: the same phrase is excused wherever
+#: it appears, and any run that extends past it is still reported in full.
+_SHARED_IDIOM: tuple[str, ...] = (
+    # Appears verbatim in scripts/validation/synthetic_article_1.txt and in this
+    # file's own docstring.  Boilerplate closing formula, not GE content.
+    "taken together, these findings suggest that",
+)
 
 
 def _tracked_files() -> list[str]:
@@ -66,46 +86,60 @@ def _tracked_files() -> list[str]:
     return listing.stdout.split()
 
 
-def _longest_run(haystack: str, documents: dict[str, str], seeds: dict[str, str]):
-    """Return the longest verbatim run shared with any corpus document."""
+def _is_shared_idiom(run: str) -> bool:
+    stripped = run.strip()
+    return any(stripped in idiom for idiom in _SHARED_IDIOM)
 
-    best_run = ""
-    best_document = ""
+
+def _runs(
+    haystack: str,
+    documents: dict[str, str],
+    seeds: dict[str, list[tuple[str, int]]],
+    threshold: int,
+) -> list[tuple[int, str, str]]:
+    """Yield every maximal verbatim run shared with any corpus document.
+
+    Each seed is grown against *every* document occurrence, not just the first.
+    Binding a seed to one arbitrary document truncates the reported run whenever
+    the same fragment appears in two documents and the longer match is in the
+    other one -- which is exactly how the earlier scan undercounted.
+    """
+
+    found: list[tuple[int, str, str]] = []
     index = 0
     while index <= len(haystack) - _SEED:
-        document_id = seeds.get(haystack[index : index + _SEED])
-        if document_id is None:
+        occurrences = seeds.get(haystack[index : index + _SEED])
+        if not occurrences:
             index += 1
             continue
-        document = documents[document_id]
-        start = document.index(haystack[index : index + _SEED])
-        left, right = start, start + _SEED
-        low, high = index, index + _SEED
-        while left > 0 and low > 0 and document[left - 1] == haystack[low - 1]:
-            left -= 1
-            low -= 1
-        while (
-            right < len(document)
-            and high < len(haystack)
-            and document[right] == haystack[high]
-        ):
-            right += 1
-            high += 1
-        if high - low > len(best_run):
-            best_run = haystack[low:high]
-            best_document = document_id
-        index += max(1, high - index - _SEED + 1)
-    return best_run, best_document
+        best: tuple[int, int, str] | None = None
+        for document_id, start in occurrences:
+            document = documents[document_id]
+            left, right = start, start + _SEED
+            low, high = index, index + _SEED
+            while left > 0 and low > 0 and document[left - 1] == haystack[low - 1]:
+                left -= 1
+                low -= 1
+            while (
+                right < len(document)
+                and high < len(haystack)
+                and document[right] == haystack[high]
+            ):
+                right += 1
+                high += 1
+            if best is None or (high - low) > (best[1] - best[0]):
+                best = (low, high, document_id)
+        low, high, document_id = best  # type: ignore[misc]
+        run = haystack[low:high]
+        if high - low >= threshold and not _is_shared_idiom(run):
+            found.append((high - low, document_id, run))
+        index = max(index + 1, high - _SEED + 1)
+    return found
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--threshold", type=int, default=_DEFAULT_THRESHOLD)
-    parser.add_argument(
-        "--include-exceptions",
-        action="store_true",
-        help="also scan docs/validation/, which is a known exception",
-    )
     arguments = parser.parse_args(argv)
 
     try:
@@ -115,44 +149,50 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     documents = {
-        path.stem: _squash(path.read_text(encoding="utf-8", errors="replace"))
+        path.stem: normalize(path.read_text(encoding="utf-8", errors="replace"))
         for path in sorted(root.glob("*.txt"))
     }
-    seeds: dict[str, str] = {}
+    seeds: dict[str, list[tuple[str, int]]] = defaultdict(list)
     for document_id, body in documents.items():
         for index in range(len(body) - _SEED + 1):
-            seeds.setdefault(body[index : index + _SEED], document_id)
+            seeds[body[index : index + _SEED]].append((document_id, index))
 
     findings: list[tuple[int, str, str, str]] = []
-    exempt = 0
+    scanned = 0
     for relative in _tracked_files():
-        if not arguments.include_exceptions and relative.startswith(_KNOWN_EXCEPTIONS):
-            exempt += 1
-            continue
         path = _REPO_ROOT / relative
         if not path.is_file():
             continue
         try:
-            body = _squash(path.read_text(encoding="utf-8"))
+            body = normalize(path.read_text(encoding="utf-8"))
         except (UnicodeDecodeError, OSError):
             continue
-        run, document_id = _longest_run(body, documents, seeds)
-        if len(run) >= arguments.threshold:
-            findings.append((len(run), relative, document_id, run))
+        scanned += 1
+        for length, document_id, run in _runs(
+            body,
+            documents,
+            seeds,
+            arguments.threshold,
+        ):
+            findings.append((length, relative, document_id, run))
 
     for length, relative, document_id, run in sorted(findings, reverse=True):
         print(f"{length:5d} chars  {relative}")
         print(f"            [{document_id}] {run[:100]!r}")
     if findings:
+        files = len({relative for _, relative, _, _ in findings})
         print(
-            f"\n{len(findings)} file(s) carry verbatim restricted corpus text.\n"
+            f"\n{len(findings)} verbatim run(s) of restricted corpus text in "
+            f"{files} file(s).\n"
+            f"Replace each with a locator and digest, as the redacted records "
+            f"under docs/validation/ do.\n"
             f"See scripts/validation/RESTRICTED_CORPORA.md.",
             file=sys.stderr,
         )
         return 1
     print(
-        f"No verbatim corpus run of {arguments.threshold}+ characters in any "
-        f"tracked file ({exempt} known-exception path(s) skipped).",
+        f"No verbatim corpus run of {arguments.threshold}+ characters in any of "
+        f"{scanned} tracked text file(s). No path is exempt.",
     )
     return 0
 

@@ -58,9 +58,20 @@ untracked external context.
 
 ## Source Unit
 
-The source states that P-selectin tethering enhanced nuclear translocation of
-NF-kappa B and identifies NF-kappa B as required for expression of MCP-1,
-TNF-alpha, and other immediate-early genes.
+The unit is one sentence of `bionlp-ge-2011:PMID-7537762`. It reports that
+tethering by one adhesion molecule raised how much of a transcription factor
+moved into the nucleus, and names that same factor as needed before a set of
+immediate-early gene products is expressed.
+
+> **Restricted corpus text, not republished here.** The two spans this report
+> reasons about are `char:923-953` (`30` characters, SHA-256
+> `e058da781bc6c581a0408737dad9c5bd27a32bf4b5e92d891cbdfe65670334d4`) and
+> `char:1030-1093` (`63` characters, SHA-256
+> `341059beec4026347caf7b6518198190424f72b25721150eeb8a12c224a49c6c`), both of
+> the normalized corpus document. A reader holding a licensed copy of the
+> corpus can recover and verify them exactly. See
+> [`RESTRICTED_CORPORA.md`](../../../scripts/validation/RESTRICTED_CORPORA.md);
+> rehydrate with `python3 scripts/fetch_bionlp_ge_corpus.py`.
 
 The first extracted event was:
 
@@ -80,7 +91,7 @@ The second extracted event was:
 - polarity: `SUPPORT`;
 - epistemic status: `ASSERTED`;
 - agent: `nuclear factor-kappa B (NF-kappa B)`;
-- theme: `expression of MCP-1, TNF-alpha, and other immediate-early genes`.
+- theme: the `63`-character process span at `char:1030-1093` (see Source Unit).
 
 The verifier returned `CANDIDATES_COMPLETE` and one `ENTAILED` decision for each
 candidate, with exact source evidence and explicit falsification conditions.
@@ -133,8 +144,9 @@ identified by the prior adjudication work, although this fresh result cannot be
 retroactively passed.
 
 There is also a genuine scientific typing weakness that the failed target gate
-did not measure. In the second event, the full process span `expression of
-MCP-1, TNF-alpha, and other immediate-early genes` was assigned the base role
+did not measure. In the second event, the full `63`-character process span at
+`char:1030-1093` -- a coordinated list of gene products under one nominalized
+expression head, not a single entity -- was assigned the base role
 `GENE_OR_PROTEIN`. The relation is textually entailed, but the argument's entity
 type is not precise enough for trusted graph projection. The independent
 verifier checked source entailment, not ontology-type correctness.
