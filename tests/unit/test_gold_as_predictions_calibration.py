@@ -16,17 +16,16 @@ deleted -- when that happens.
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any, cast
 
 import pytest
 
-from scripts.validation.claim_events.evaluation import _run_passes
 from scripts.validation.claim_events.corpus_text import (
     RESTRICTED_CORPUS_SKIP_REASON,
     corpus_is_available,
 )
+from scripts.validation.claim_events.evaluation import _run_passes
 from scripts.validation.claim_events.fixture import load_fixture, load_fixture_payload
 from scripts.validation.claim_events.scoring import score_fixture
 

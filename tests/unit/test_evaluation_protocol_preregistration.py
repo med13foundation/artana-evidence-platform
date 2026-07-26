@@ -16,11 +16,11 @@ from typing import Any
 
 import pytest
 
-from scripts.validation.claim_events.evaluation import _run_passes
 from scripts.validation.claim_events.corpus_text import (
     RESTRICTED_CORPUS_SKIP_REASON,
     corpus_is_available,
 )
+from scripts.validation.claim_events.evaluation import _run_passes
 from scripts.validation.claim_events.fixture import (
     DEVELOPMENT_FIXTURE_V2_PATH,
     FROZEN_DEVELOPMENT_FIXTURE_V2_SHA256,

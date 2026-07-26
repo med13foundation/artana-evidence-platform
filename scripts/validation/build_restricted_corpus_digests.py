@@ -185,6 +185,10 @@ def main() -> int:
             f"    {rebuilt}\n"
             f"in this commit, and say why the set changed.",
         )
+        # Non-zero, because a rebuild that forgets the pin otherwise succeeds
+        # here and fails later in the checker, where the message is about a
+        # corrupt artifact rather than about the step that was missed.
+        return 1
     return 0
 
 

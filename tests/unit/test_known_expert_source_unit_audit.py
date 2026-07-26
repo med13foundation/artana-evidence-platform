@@ -7,6 +7,10 @@ from pathlib import Path
 import pytest
 
 from scripts.run_known_expert_source_unit_audit import known_expert_report_exit_code
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitCoverageDecision,
     SourceUnitDecision,
@@ -20,11 +24,6 @@ from scripts.validation.claim_events.finite_source_unit.known_expert_runner impo
     select_known_expert_unit,
 )
 from scripts.validation.claim_events.fixture import load_fixture
-from scripts.validation.claim_events.corpus_text import (
-    RESTRICTED_CORPUS_SKIP_REASON,
-    corpus_is_available,
-)
-
 
 #: These checks read the corpus text itself, which this public repository does
 #: not carry.  They are skipped, never deleted: the reason names the licence and
