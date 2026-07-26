@@ -9,6 +9,7 @@ from artana_evidence_api.approval_store import (
     HarnessApprovalRecord,
     HarnessApprovalStore,
     HarnessRunIntentRecord,
+    SupersededApprovalDecision,
 )
 from artana_evidence_api.artifact_store import (
     HarnessArtifactStore,  # noqa: TC001
@@ -133,8 +134,8 @@ class HarnessRunIntentResponse(BaseModel):
                 for action in record.proposed_actions
             ],
             metadata=record.metadata,
-            created_at=record.created_at.isoformat(),
-            updated_at=record.updated_at.isoformat(),
+            created_at=serialize_timestamp(record.created_at),
+            updated_at=serialize_timestamp(record.updated_at),
         )
 
 
@@ -152,6 +153,10 @@ class HarnessApprovalResponse(BaseModel):
     decision_reason: str | None
     decided_by: ReviewActor | None
     metadata: JSONObject
+    # Decisions this approval replaced, oldest first. Present when a re-proposed
+    # action reused the key while describing a different write; a trail nobody
+    # can read is not much of an audit trail.
+    superseded_decisions: list[SupersededApprovalDecision]
     created_at: str
     updated_at: str
 
@@ -171,6 +176,7 @@ class HarnessApprovalResponse(BaseModel):
             decision_reason=record.decision_reason,
             decided_by=record.decided_by,
             metadata=record.metadata,
+            superseded_decisions=list(record.superseded_decisions),
             created_at=serialize_timestamp(record.created_at),
             updated_at=serialize_timestamp(record.updated_at),
         )

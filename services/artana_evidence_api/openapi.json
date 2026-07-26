@@ -5636,6 +5636,13 @@
             "title": "Status",
             "type": "string"
           },
+          "superseded_decisions": {
+            "items": {
+              "$ref": "#/components/schemas/SupersededApprovalDecision"
+            },
+            "title": "Superseded Decisions",
+            "type": "array"
+          },
           "target_id": {
             "anyOf": [
               {
@@ -5670,6 +5677,7 @@
           "decision_reason",
           "decided_by",
           "metadata",
+          "superseded_decisions",
           "created_at",
           "updated_at"
         ],
@@ -14492,6 +14500,83 @@
           "updated_at"
         ],
         "title": "StudyOutcomeResponse",
+        "type": "object"
+      },
+      "SupersededApprovalDecision": {
+        "description": "One decision that a later, different action replaced.\n\nStored in its own column rather than inside the approval's ``metadata``.\nMetadata is arbitrary caller-supplied JSON; this is a system-authored audit\nrecord.  Sharing a namespace let a caller's key be read back as decision\nhistory, and made an unchanged re-proposal compare unequal.\n\n``decided_at`` is already serialized, because the two stores disagree about\ntzinfo on ``updated_at`` and this is the point where that is resolved once.",
+        "properties": {
+          "decided_at": {
+            "title": "Decided At",
+            "type": "string"
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewActor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Reason"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Metadata",
+            "type": "object"
+          },
+          "risk_level": {
+            "title": "Risk Level",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "target_type": {
+            "title": "Target Type",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "decision_reason",
+          "decided_by",
+          "decided_at",
+          "title",
+          "risk_level",
+          "target_type",
+          "target_id",
+          "metadata"
+        ],
+        "title": "SupersededApprovalDecision",
         "type": "object"
       },
       "SupervisorArtifactKeysResponse": {

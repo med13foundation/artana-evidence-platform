@@ -9,7 +9,10 @@ from typing import TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
 import pytest
-from artana_evidence_api.approval_store import HarnessApprovalAction
+from artana_evidence_api.approval_store import (
+    HarnessApprovalAction,
+    HarnessApprovalStore,
+)
 from artana_evidence_api.models.base import Base
 from artana_evidence_api.models.harness import (
     HarnessDocumentModel,
@@ -452,15 +455,92 @@ def test_sqlalchemy_upsert_intent_reopens_an_approval_whose_action_changed(
     assert reopened.decision_reason is None
     assert reopened.decided_by is None
     assert reopened.target_id == "claim-2"
-    assert reopened.metadata["passage"] == "first"
-    history = reopened.metadata["superseded_decisions"]
-    assert isinstance(history, list)
+    assert reopened.metadata == {"passage": "first"}
+    history = reopened.superseded_decisions
     assert len(history) == 1
-    assert history[0]["status"] == "approved"
-    assert history[0]["decision_reason"] == "Checked against the source; safe to write."
-    assert history[0]["decided_by_email"] == reviewer.email
-    assert history[0]["decided_by_user_id"] == reviewer.user_id
-    assert history[0]["target_id"] == "claim-1"
+    assert history[0].status == "approved"
+    assert history[0].decision_reason == "Checked against the source; safe to write."
+    assert history[0].decided_by == reviewer
+    assert history[0].target_id == "claim-1"
+    # The parameters that were actually approved, not just the target.
+    assert history[0].metadata == {"passage": "first"}
+    # Durable rows keep naive UTC; the trail must still say which zone it is in.
+    assert history[0].decided_at.endswith("+00:00")
+
+
+def test_both_approval_stores_render_a_superseded_decision_identically(
+    session: Session,
+) -> None:
+    """The two stores disagree about tzinfo on ``updated_at``.
+
+    The durable store writes naive UTC and the in-memory store keeps the offset,
+    so a bare isoformat() renders the same audit record two different ways --
+    the exact ambiguity ``serialize_timestamp`` exists to remove.
+    """
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="claim-curation",
+        title="Timestamp parity run",
+        input_payload={},
+    )
+    reviewer = ReviewActor(
+        user_id="66666666-6666-6666-6666-666666666666",
+        email="intent-reviewer@example.com",
+    )
+    approved = HarnessApprovalAction(
+        approval_key="parity-key",
+        title="Promote candidate claim",
+        risk_level="high",
+        target_type="claim",
+        target_id="claim-1",
+        requires_approval=True,
+        metadata={},
+    )
+    changed = HarnessApprovalAction(
+        approval_key="parity-key",
+        title="Promote candidate claim",
+        risk_level="high",
+        target_type="claim",
+        target_id="claim-2",
+        requires_approval=True,
+        metadata={},
+    )
+
+    trails = []
+    for store in (SqlAlchemyHarnessApprovalStore(session), HarnessApprovalStore()):
+        store.upsert_intent(
+            space_id=space_id,
+            run_id=run.id,
+            summary="Review proposed graph updates",
+            proposed_actions=(approved,),
+            metadata={},
+        )
+        store.decide_approval(
+            space_id=space_id,
+            run_id=run.id,
+            approval_key="parity-key",
+            status="approved",
+            decision_reason="Safe to write.",
+            decided_by=reviewer,
+        )
+        store.upsert_intent(
+            space_id=space_id,
+            run_id=run.id,
+            summary="Review proposed graph updates",
+            proposed_actions=(changed,),
+            metadata={},
+        )
+        trails.append(
+            store.list_approvals(space_id=space_id, run_id=run.id)[0]
+            .superseded_decisions[0]
+            .decided_at,
+        )
+
+    durable, in_memory = trails
+    assert durable.endswith("+00:00")
+    assert in_memory.endswith("+00:00")
 
 
 def test_sqlalchemy_harness_approval_store_persists_intents_and_decisions(

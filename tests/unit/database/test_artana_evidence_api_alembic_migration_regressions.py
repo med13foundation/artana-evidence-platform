@@ -13,7 +13,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import DBAPIError
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-CURRENT_HEAD_REVISION = "026_review_decision_actor"
+CURRENT_HEAD_REVISION = "027_approval_superseded_decisions"
 _DECISION_TABLES = (
     "harness_proposals",
     "harness_review_items",
@@ -626,7 +626,7 @@ def test_026_gives_every_decision_table_a_nullable_reviewer(tmp_path: Path) -> N
     _run_alembic(
         database_url=database_url,
         command="upgrade",
-        revision=CURRENT_HEAD_REVISION,
+        revision="026_review_decision_actor",
     )
 
     engine = create_engine(database_url, future=True)
@@ -663,3 +663,32 @@ def test_026_gives_every_decision_table_a_nullable_reviewer(tmp_path: Path) -> N
         assert columns["decided_by_email"]["nullable"], table_name
     assert legacy_row["decided_by_user_id"] is None
     assert legacy_row["decided_by_email"] is None
+
+
+def test_027_gives_an_approval_its_own_superseded_decision_column(
+    tmp_path: Path,
+) -> None:
+    """The decision trail must not share a column with caller-supplied metadata.
+
+    It was first written into metadata_payload, which callers populate freely --
+    so a caller could have its own data read back as decision history.
+    """
+    database_url = f"sqlite:///{tmp_path / 'harness_027_superseded.db'}"
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision=CURRENT_HEAD_REVISION,
+    )
+
+    engine = create_engine(database_url, future=True)
+    try:
+        columns = {
+            column["name"]: column
+            for column in inspect(engine).get_columns("harness_run_approvals")
+        }
+    finally:
+        engine.dispose()
+
+    assert "superseded_decisions_payload" in columns
+    assert columns["superseded_decisions_payload"]["nullable"]
+    assert "metadata_payload" in columns

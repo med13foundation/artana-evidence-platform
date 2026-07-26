@@ -9,7 +9,7 @@ from artana_evidence_api.db_schema import (
     harness_table_options,
     qualify_harness_foreign_key_target,
 )
-from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.common import JSONObject, JSONValue  # noqa: TC001
 from sqlalchemy import (
     JSON,
     DateTime,
@@ -164,6 +164,12 @@ class HarnessApprovalModel(Base):
         JSON,
         nullable=False,
         default=dict,
+    )
+    # Kept out of metadata_payload on purpose: that column is caller-supplied
+    # JSON, and this is a system-authored audit record.
+    superseded_decisions_payload: Mapped[list[JSONValue] | None] = mapped_column(
+        JSON,
+        nullable=True,
     )
 
     run: Mapped[HarnessRunModel] = relationship(

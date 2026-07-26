@@ -17,6 +17,7 @@ from artana_evidence_api.approval_store import (
     HarnessApprovalAction,
     HarnessApprovalStore,
 )
+from artana_evidence_api.types.common import JSONObject
 from artana_evidence_api.types.review_actor import ReviewActor
 
 _REVIEWER: Final = ReviewActor(
@@ -30,6 +31,7 @@ def _action(
     *,
     target_id: str | None = None,
     title: str | None = None,
+    metadata: JSONObject | None = None,
 ) -> HarnessApprovalAction:
     """Return one proposed action.
 
@@ -45,7 +47,7 @@ def _action(
         target_type="claim",
         target_id=target_id or f"target-for-{approval_key}",
         requires_approval=True,
-        metadata={},
+        metadata={} if metadata is None else metadata,
     )
 
 
@@ -181,19 +183,109 @@ def test_a_changed_action_reopens_the_approval_instead_of_reusing_the_decision(
     assert reopened.decided_by is None
     assert reopened.target_id == "a-different-claim"
     assert reopened.title == "Approve a different claim"
-    assert reopened.metadata["superseded_decisions"] == [
-        {
-            "status": "approved",
-            "decision_reason": "Checked against the source; safe to write.",
-            "decided_by_user_id": _REVIEWER.user_id,
-            "decided_by_email": _REVIEWER.email,
-            "decided_at": reopened.metadata["superseded_decisions"][0]["decided_at"],
-            "title": "Approve decided-key",
-            "risk_level": "medium",
-            "target_type": "claim",
-            "target_id": "target-for-decided-key",
-        },
-    ]
+    assert reopened.metadata == {}
+    assert len(reopened.superseded_decisions) == 1
+    superseded = reopened.superseded_decisions[0]
+    assert superseded.status == "approved"
+    assert superseded.decision_reason == "Checked against the source; safe to write."
+    assert superseded.decided_by == _REVIEWER
+    assert superseded.title == "Approve decided-key"
+    assert superseded.risk_level == "medium"
+    assert superseded.target_type == "claim"
+    assert superseded.target_id == "target-for-decided-key"
+
+
+def test_the_superseded_entry_keeps_the_parameters_that_were_approved(
+    store: HarnessApprovalStore,
+) -> None:
+    """Recording who approved but not what they approved is not an audit trail.
+
+    The action's metadata carries the parameters of the write. If the trail
+    keeps only the title and target, a reviewer reading it later cannot tell
+    what was actually agreed to.
+    """
+    space_id, run_id = str(uuid4()), str(uuid4())
+    store.upsert_intent(
+        space_id=space_id,
+        run_id=run_id,
+        summary="Write the claim.",
+        proposed_actions=(
+            _action("decided-key", metadata={"confidence": 0.9, "passage": "first"}),
+        ),
+        metadata={},
+    )
+    store.decide_approval(
+        space_id=space_id,
+        run_id=run_id,
+        approval_key="decided-key",
+        status="approved",
+        decision_reason="Confidence is high enough.",
+        decided_by=_REVIEWER,
+    )
+
+    store.upsert_intent(
+        space_id=space_id,
+        run_id=run_id,
+        summary="Write the claim, less certain.",
+        proposed_actions=(
+            _action("decided-key", metadata={"confidence": 0.4, "passage": "first"}),
+        ),
+        metadata={},
+    )
+
+    reopened = store.list_approvals(space_id=space_id, run_id=run_id)[0]
+    assert reopened.status == "pending"
+    assert reopened.metadata == {"confidence": 0.4, "passage": "first"}
+    assert reopened.superseded_decisions[0].metadata == {
+        "confidence": 0.9,
+        "passage": "first",
+    }
+
+
+def test_caller_metadata_named_like_the_trail_does_not_reopen_the_decision(
+    store: HarnessApprovalStore,
+) -> None:
+    """Action metadata is arbitrary caller JSON and shares no namespace with us.
+
+    While the trail lived inside metadata, a caller supplying its key made an
+    unchanged re-proposal compare unequal -- spuriously reopening a decided
+    approval -- and let caller data be read back as system-authored history.
+    """
+    space_id, run_id = str(uuid4()), str(uuid4())
+    caller_metadata: JSONObject = {
+        "superseded_decisions": [{"status": "invented", "decision_reason": "forged"}],
+    }
+    unchanged = (_action("decided-key", metadata=caller_metadata),)
+    store.upsert_intent(
+        space_id=space_id,
+        run_id=run_id,
+        summary="Caller supplies its own key.",
+        proposed_actions=unchanged,
+        metadata={},
+    )
+    store.decide_approval(
+        space_id=space_id,
+        run_id=run_id,
+        approval_key="decided-key",
+        status="approved",
+        decision_reason="Fine as proposed.",
+        decided_by=_REVIEWER,
+    )
+
+    store.upsert_intent(
+        space_id=space_id,
+        run_id=run_id,
+        summary="Same action again.",
+        proposed_actions=unchanged,
+        metadata={},
+    )
+
+    kept = store.list_approvals(space_id=space_id, run_id=run_id)[0]
+    assert kept.status == "approved"
+    assert kept.decision_reason == "Fine as proposed."
+    assert kept.metadata == caller_metadata
+    # The caller's array is its own data, never read back as decision history.
+    assert kept.superseded_decisions == ()
 
 
 def test_a_superseded_decision_survives_a_later_unchanged_re_proposal(
@@ -234,11 +326,9 @@ def test_a_superseded_decision_survives_a_later_unchanged_re_proposal(
 
     reopened = store.list_approvals(space_id=space_id, run_id=run_id)[0]
     assert reopened.status == "pending"
-    history = reopened.metadata["superseded_decisions"]
-    assert isinstance(history, list)
-    assert [entry["decision_reason"] for entry in history] == [
-        "Writes to the wrong claim.",
-    ]
+    assert [
+        entry.decision_reason for entry in reopened.superseded_decisions
+    ] == ["Writes to the wrong claim."]
 
 
 def test_superseding_the_same_key_twice_keeps_both_written_reasons(
@@ -272,10 +362,9 @@ def test_superseding_the_same_key_twice_keeps_both_written_reasons(
     )
 
     reopened = store.list_approvals(space_id=space_id, run_id=run_id)[0]
-    history = reopened.metadata["superseded_decisions"]
-    assert isinstance(history, list)
-    assert [entry["decision_reason"] for entry in history] == [
+    history = reopened.superseded_decisions
+    assert [entry.decision_reason for entry in history] == [
         "First look; approved.",
         "Second look; rejected.",
     ]
-    assert [entry["status"] for entry in history] == ["approved", "rejected"]
+    assert [entry.status for entry in history] == ["approved", "rejected"]

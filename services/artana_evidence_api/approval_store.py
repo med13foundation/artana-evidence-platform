@@ -9,14 +9,40 @@ from uuid import UUID  # noqa: TC003
 
 from artana_evidence_api.types.common import (  # noqa: TC001
     JSONObject,
+    JSONValue,
     json_array_or_empty,
+    json_object,
+    json_object_or_empty,
+    serialize_timestamp,
 )
 from artana_evidence_api.types.review_actor import ReviewActor
 
 _MAX_APPROVAL_TITLE_LENGTH = 256
 _TITLE_ELLIPSIS = "..."
 
-SUPERSEDED_DECISIONS_METADATA_KEY = "superseded_decisions"
+
+@dataclass(frozen=True, slots=True)
+class SupersededApprovalDecision:
+    """One decision that a later, different action replaced.
+
+    Stored in its own column rather than inside the approval's ``metadata``.
+    Metadata is arbitrary caller-supplied JSON; this is a system-authored audit
+    record.  Sharing a namespace let a caller's key be read back as decision
+    history, and made an unchanged re-proposal compare unequal.
+
+    ``decided_at`` is already serialized, because the two stores disagree about
+    tzinfo on ``updated_at`` and this is the point where that is resolved once.
+    """
+
+    status: str
+    decision_reason: str | None
+    decided_by: ReviewActor | None
+    decided_at: str
+    title: str
+    risk_level: str
+    target_type: str
+    target_id: str | None
+    metadata: JSONObject
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +88,7 @@ class HarnessApprovalRecord:
     created_at: datetime
     updated_at: datetime
     decided_by: ReviewActor | None = None
+    superseded_decisions: tuple[SupersededApprovalDecision, ...] = ()
 
 
 class HarnessApprovalStore:
@@ -133,7 +160,8 @@ class HarnessApprovalStore:
                 target_id=action.target_id,
                 status="pending",
                 decision_reason=None,
-                metadata=pending_approval_metadata(existing=previous, action=action),
+                metadata=action.metadata,
+                superseded_decisions=carried_superseded_decisions(existing=previous),
                 created_at=previous.created_at if previous is not None else now,
                 updated_at=now,
             )
@@ -239,6 +267,10 @@ class HarnessApprovalStore:
                 decision_reason=normalized_reason,
                 decided_by=decided_by,
                 metadata=existing.metadata,
+                # Deciding a reopened approval must not drop the decisions it
+                # already supersedes; the durable store keeps the column
+                # untouched here, so this rebuild has to say so explicitly.
+                superseded_decisions=existing.superseded_decisions,
                 created_at=existing.created_at,
                 updated_at=datetime.now(UTC),
             )
@@ -275,66 +307,114 @@ def approval_still_describes_action(
         and record.risk_level == action.risk_level
         and record.target_type == action.target_type
         and record.target_id == action.target_id
-        and proposed_action_metadata(record.metadata) == action.metadata
+        and record.metadata == action.metadata
     )
 
 
-def proposed_action_metadata(metadata: JSONObject) -> JSONObject:
-    """Return a stored approval's metadata without the superseded-decision trail.
-
-    The trail is written by this module, not proposed by the run, so it must not
-    count as a content difference when comparing a stored row to a fresh action.
-    """
-    return {
-        key: value
-        for key, value in metadata.items()
-        if key != SUPERSEDED_DECISIONS_METADATA_KEY
-    }
-
-
-def pending_approval_metadata(
+def carried_superseded_decisions(
     *,
     existing: HarnessApprovalRecord | None,
-    action: HarnessApprovalAction,
-) -> JSONObject:
-    """Return the metadata a fresh pending approval should carry.
+) -> tuple[SupersededApprovalDecision, ...]:
+    """Return the decision trail a replacement approval row must carry.
 
     The run must not proceed on a decision made about a different action, but the
     reviewer's own words and identity are not ours to delete, so a row replacing
     a decision carries it forward.  A reopened row is itself pending, and pending
-    rows are replaced wholesale on every re-proposal, so the trail is carried
-    through those too -- otherwise the next intent upsert quietly drops it.
+    rows are replaced wholesale on every re-proposal, so the trail already on the
+    row is carried through those too -- otherwise the next intent upsert quietly
+    drops it.
     """
     if existing is None:
-        return action.metadata
-    history = json_array_or_empty(
-        existing.metadata.get(SUPERSEDED_DECISIONS_METADATA_KEY),
+        return ()
+    if existing.status == "pending":
+        return existing.superseded_decisions
+    return (
+        *existing.superseded_decisions,
+        SupersededApprovalDecision(
+            status=existing.status,
+            decision_reason=existing.decision_reason,
+            decided_by=existing.decided_by,
+            decided_at=serialize_timestamp(existing.updated_at),
+            title=existing.title,
+            risk_level=existing.risk_level,
+            target_type=existing.target_type,
+            target_id=existing.target_id,
+            metadata=existing.metadata,
+        ),
     )
-    if existing.status != "pending":
-        history.append(
-            {
-                "status": existing.status,
-                "decision_reason": existing.decision_reason,
-                "decided_by_user_id": (
-                    existing.decided_by.user_id
-                    if existing.decided_by is not None
-                    else None
+
+
+def carried_superseded_payload(
+    *,
+    existing: HarnessApprovalRecord | None,
+) -> list[JSONValue]:
+    """Return the durable payload for the trail a replacement row must carry."""
+    return superseded_decisions_payload(
+        carried_superseded_decisions(existing=existing),
+    )
+
+
+def superseded_decisions_payload(
+    decisions: tuple[SupersededApprovalDecision, ...],
+) -> list[JSONValue]:
+    """Serialize one decision trail for durable storage."""
+    return [
+        {
+            "status": decision.status,
+            "decision_reason": decision.decision_reason,
+            "decided_by_user_id": (
+                decision.decided_by.user_id if decision.decided_by is not None else None
+            ),
+            "decided_by_email": (
+                decision.decided_by.email if decision.decided_by is not None else None
+            ),
+            "decided_at": decision.decided_at,
+            "title": decision.title,
+            "risk_level": decision.risk_level,
+            "target_type": decision.target_type,
+            "target_id": decision.target_id,
+            "metadata": decision.metadata,
+        }
+        for decision in decisions
+    ]
+
+
+def superseded_decisions_from_payload(
+    value: object,
+) -> tuple[SupersededApprovalDecision, ...]:
+    """Rebuild one decision trail from its stored payload.
+
+    Rows written before the column existed read back as an empty trail rather
+    than as a partial one; an audit record we cannot read in full is not one we
+    should half-invent.
+    """
+    decisions: list[SupersededApprovalDecision] = []
+    for entry in json_array_or_empty(value):
+        payload = json_object(entry)
+        if payload is None:
+            continue
+        decisions.append(
+            SupersededApprovalDecision(
+                status=_stored_text(payload.get("status")) or "",
+                decision_reason=_stored_text(payload.get("decision_reason")),
+                decided_by=ReviewActor.from_stored(
+                    user_id=_stored_text(payload.get("decided_by_user_id")),
+                    email=_stored_text(payload.get("decided_by_email")),
                 ),
-                "decided_by_email": (
-                    existing.decided_by.email
-                    if existing.decided_by is not None
-                    else None
-                ),
-                "decided_at": existing.updated_at.isoformat(),
-                "title": existing.title,
-                "risk_level": existing.risk_level,
-                "target_type": existing.target_type,
-                "target_id": existing.target_id,
-            },
+                decided_at=_stored_text(payload.get("decided_at")) or "",
+                title=_stored_text(payload.get("title")) or "",
+                risk_level=_stored_text(payload.get("risk_level")) or "",
+                target_type=_stored_text(payload.get("target_type")) or "",
+                target_id=_stored_text(payload.get("target_id")),
+                metadata=json_object_or_empty(payload.get("metadata")),
+            ),
         )
-    if not history:
-        return action.metadata
-    return {**action.metadata, SUPERSEDED_DECISIONS_METADATA_KEY: history}
+    return tuple(decisions)
+
+
+def _stored_text(value: JSONValue) -> str | None:
+    """Return a stored JSON value when it is text, and None otherwise."""
+    return value if isinstance(value, str) else None
 
 
 def normalize_approval_action(action: HarnessApprovalAction) -> HarnessApprovalAction:
@@ -351,14 +431,16 @@ def normalize_approval_action(action: HarnessApprovalAction) -> HarnessApprovalA
 
 
 __all__ = [
-    "SUPERSEDED_DECISIONS_METADATA_KEY",
     "HarnessApprovalAction",
     "HarnessApprovalRecord",
     "HarnessApprovalStore",
     "HarnessRunIntentRecord",
+    "SupersededApprovalDecision",
     "approval_still_describes_action",
+    "carried_superseded_decisions",
+    "carried_superseded_payload",
     "normalize_approval_action",
     "normalize_approval_title",
-    "pending_approval_metadata",
-    "proposed_action_metadata",
+    "superseded_decisions_from_payload",
+    "superseded_decisions_payload",
 ]

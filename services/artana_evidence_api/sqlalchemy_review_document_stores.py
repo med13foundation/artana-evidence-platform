@@ -1,4 +1,10 @@
-"""SQLAlchemy review-item and document stores."""
+"""SQLAlchemy review-item, approval, and document stores.
+
+The approval and intent persistence lives here rather than in
+``sqlalchemy_stores`` because it is part of the same review surface as the
+review-item store, and because that module sits at its per-file size budget.
+``sqlalchemy_stores`` re-exports these names, so importers are unaffected.
+"""
 
 from __future__ import annotations
 
@@ -6,7 +12,20 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from artana_evidence_api.approval_store import (
+    HarnessApprovalAction,
+    HarnessApprovalRecord,
+    HarnessApprovalStore,
+    HarnessRunIntentRecord,
+    approval_still_describes_action,
+    carried_superseded_payload,
+    normalize_approval_action,
+    normalize_approval_title,
+    superseded_decisions_from_payload,
+)
+from artana_evidence_api.models.harness import HarnessIntentModel
 from artana_evidence_api.sqlalchemy_stores import (
+    HarnessApprovalModel,
     HarnessDocumentModel,
     HarnessDocumentRecord,
     HarnessDocumentStore,
@@ -14,8 +33,10 @@ from artana_evidence_api.sqlalchemy_stores import (
     HarnessReviewItemModel,
     HarnessReviewItemRecord,
     HarnessReviewItemStore,
+    _decided_by_from_model,
     _document_record_from_model,
     _json_object,
+    _json_object_list,
     _result_rowcount,
     _review_item_record_from_model,
     _SessionBackedStore,
@@ -522,3 +543,321 @@ class SqlAlchemyHarnessDocumentStore(HarnessDocumentStore, _SessionBackedStore):
         commit_or_flush(self.session)
         self.session.refresh(model)
         return _document_record_from_model(model)
+
+
+def _action_payload(action: HarnessApprovalAction) -> JSONObject:
+    normalized_action = normalize_approval_action(action)
+    return {
+        "approval_key": normalized_action.approval_key,
+        "title": normalized_action.title,
+        "risk_level": normalized_action.risk_level,
+        "target_type": normalized_action.target_type,
+        "target_id": normalized_action.target_id,
+        "requires_approval": normalized_action.requires_approval,
+        "metadata": normalized_action.metadata,
+    }
+
+
+def _action_from_payload(payload: object) -> HarnessApprovalAction | None:
+    if not isinstance(payload, dict):
+        return None
+    approval_key = payload.get("approval_key")
+    title = payload.get("title")
+    risk_level = payload.get("risk_level")
+    target_type = payload.get("target_type")
+    requires_approval = payload.get("requires_approval")
+    if not (
+        isinstance(approval_key, str)
+        and isinstance(title, str)
+        and isinstance(risk_level, str)
+        and isinstance(target_type, str)
+        and isinstance(requires_approval, bool)
+    ):
+        return None
+    target_id = payload.get("target_id")
+    normalized_target_id = target_id if isinstance(target_id, str) else None
+    metadata = payload.get("metadata")
+    return HarnessApprovalAction(
+        approval_key=approval_key,
+        title=normalize_approval_title(title),
+        risk_level=risk_level,
+        target_type=target_type,
+        target_id=normalized_target_id,
+        requires_approval=requires_approval,
+        metadata=_json_object(metadata),
+    )
+
+
+def _intent_record_from_model(model: HarnessIntentModel) -> HarnessRunIntentRecord:
+    actions = tuple(
+        action
+        for action in (
+            _action_from_payload(payload)
+            for payload in _json_object_list(model.proposed_actions_payload)
+        )
+        if action is not None
+    )
+    return HarnessRunIntentRecord(
+        space_id=model.space_id,
+        run_id=model.run_id,
+        summary=model.summary,
+        proposed_actions=actions,
+        metadata=_json_object(model.metadata_payload),
+        created_at=model.created_at,
+        updated_at=model.updated_at,
+    )
+
+
+def _approval_record_from_model(model: HarnessApprovalModel) -> HarnessApprovalRecord:
+    return HarnessApprovalRecord(
+        space_id=model.space_id,
+        run_id=model.run_id,
+        approval_key=model.approval_key,
+        title=model.title,
+        risk_level=model.risk_level,
+        target_type=model.target_type,
+        target_id=model.target_id,
+        status=model.status,
+        decision_reason=model.decision_reason,
+        decided_by=_decided_by_from_model(model),
+        metadata=_json_object(model.metadata_payload),
+        superseded_decisions=superseded_decisions_from_payload(
+            model.superseded_decisions_payload,
+        ),
+        created_at=model.created_at,
+        updated_at=model.updated_at,
+    )
+
+
+def _repoint_approval_at_action(
+    *,
+    model: HarnessApprovalModel,
+    action: HarnessApprovalAction,
+) -> None:
+    """Re-gate an approval row, keeping the decisions it replaces."""
+    record = _approval_record_from_model(model)
+    model.title = action.title
+    model.risk_level = action.risk_level
+    model.target_type = action.target_type
+    model.target_id = action.target_id
+    model.status = "pending"
+    model.decision_reason = None
+    model.decided_by_user_id = None
+    model.decided_by_email = None
+    model.metadata_payload = action.metadata
+    model.superseded_decisions_payload = carried_superseded_payload(existing=record)
+
+
+class SqlAlchemyHarnessApprovalStore(HarnessApprovalStore, _SessionBackedStore):
+    """Persist harness intent plans and approval decisions in relational storage."""
+
+    def __init__(self, session: Session | None = None) -> None:
+        _SessionBackedStore.__init__(self, session)
+
+    def upsert_intent(
+        self,
+        *,
+        space_id: UUID | str,
+        run_id: UUID | str,
+        summary: str,
+        proposed_actions: tuple[HarnessApprovalAction, ...],
+        metadata: JSONObject,
+    ) -> HarnessRunIntentRecord:
+        normalized_space_id = str(space_id)
+        normalized_run_id = str(run_id)
+        normalized_actions = tuple(
+            normalize_approval_action(action) for action in proposed_actions
+        )
+        model = self.session.get(HarnessIntentModel, normalized_run_id)
+        if model is None:
+            model = HarnessIntentModel(
+                run_id=normalized_run_id,
+                space_id=normalized_space_id,
+                summary=summary,
+                proposed_actions_payload=[
+                    _action_payload(action) for action in normalized_actions
+                ],
+                metadata_payload=metadata,
+            )
+            self.session.add(model)
+        else:
+            model.space_id = normalized_space_id
+            model.summary = summary
+            model.proposed_actions_payload = [
+                _action_payload(action) for action in normalized_actions
+            ]
+            model.metadata_payload = metadata
+
+        # Only pending approvals are replaced. A decided approval is a record of
+        # something a person did, with their written reason and their identity on
+        # it -- re-proposing the run's intent must not erase that, and
+        # decide_approval already treats a decision as final by refusing to
+        # decide twice.
+        existing_models = {
+            existing.approval_key: existing
+            for existing in self.session.execute(
+                select(HarnessApprovalModel).where(
+                    HarnessApprovalModel.run_id == normalized_run_id,
+                ),
+            )
+            .scalars()
+            .all()
+        }
+        proposed_keys: set[str] = set()
+        for action in normalized_actions:
+            if not action.requires_approval:
+                continue
+            proposed_keys.add(action.approval_key)
+            existing_model = existing_models.get(action.approval_key)
+            if existing_model is None:
+                self.session.add(
+                    HarnessApprovalModel(
+                        run_id=normalized_run_id,
+                        space_id=normalized_space_id,
+                        approval_key=action.approval_key,
+                        title=action.title,
+                        risk_level=action.risk_level,
+                        target_type=action.target_type,
+                        target_id=action.target_id,
+                        status="pending",
+                        decision_reason=None,
+                        metadata_payload=action.metadata,
+                    ),
+                )
+                continue
+            # A decision describes an action, not an approval key, so it only
+            # stands while the re-proposed action still matches it. Rows are
+            # updated rather than replaced: one row per (run_id, approval_key).
+            if existing_model.status != "pending" and approval_still_describes_action(
+                _approval_record_from_model(existing_model),
+                action,
+            ):
+                continue
+            _repoint_approval_at_action(model=existing_model, action=action)
+        for approval_key, existing_model in existing_models.items():
+            if approval_key not in proposed_keys and existing_model.status == "pending":
+                self.session.delete(existing_model)
+
+        commit_or_flush(self.session)
+        self.session.refresh(model)
+        return _intent_record_from_model(model)
+
+    def get_intent(
+        self,
+        *,
+        space_id: UUID | str,
+        run_id: UUID | str,
+    ) -> HarnessRunIntentRecord | None:
+        model = self.session.get(HarnessIntentModel, str(run_id))
+        if model is None or model.space_id != str(space_id):
+            return None
+        return _intent_record_from_model(model)
+
+    def list_approvals(
+        self,
+        *,
+        space_id: UUID | str,
+        run_id: UUID | str,
+    ) -> list[HarnessApprovalRecord]:
+        stmt = (
+            select(HarnessApprovalModel)
+            .where(
+                HarnessApprovalModel.space_id == str(space_id),
+                HarnessApprovalModel.run_id == str(run_id),
+            )
+            .order_by(HarnessApprovalModel.created_at.asc())
+        )
+        models = self.session.execute(stmt).scalars().all()
+        return [_approval_record_from_model(model) for model in models]
+
+    def list_space_approvals(
+        self,
+        *,
+        space_id: UUID | str,
+        status: str | None = None,
+        run_id: UUID | str | None = None,
+    ) -> list[HarnessApprovalRecord]:
+        stmt = select(HarnessApprovalModel).where(
+            HarnessApprovalModel.space_id == str(space_id),
+        )
+        if isinstance(status, str) and status.strip() != "":
+            stmt = stmt.where(HarnessApprovalModel.status == status.strip())
+        if run_id is not None:
+            stmt = stmt.where(HarnessApprovalModel.run_id == str(run_id))
+        stmt = stmt.order_by(HarnessApprovalModel.updated_at.desc())
+        models = self.session.execute(stmt).scalars().all()
+        return [_approval_record_from_model(model) for model in models]
+
+    def decide_approval(
+        self,
+        *,
+        space_id: UUID | str,
+        run_id: UUID | str,
+        approval_key: str,
+        status: str,
+        decision_reason: str | None,
+        decided_by: ReviewActor | None,
+    ) -> HarnessApprovalRecord | None:
+        normalized_status = status.strip().lower()
+        if normalized_status not in {"approved", "rejected"}:
+            message = f"Unsupported approval status '{status}'"
+            raise ValueError(message)
+        normalized_space_id = str(space_id)
+        normalized_run_id = str(run_id)
+        normalized_reason = (
+            decision_reason.strip()
+            if isinstance(decision_reason, str) and decision_reason.strip() != ""
+            else None
+        )
+        status_stmt = select(HarnessApprovalModel.status).where(
+            HarnessApprovalModel.space_id == normalized_space_id,
+            HarnessApprovalModel.run_id == normalized_run_id,
+            HarnessApprovalModel.approval_key == approval_key,
+        )
+        current_status = self.session.execute(status_stmt).scalars().first()
+        if current_status is None:
+            return None
+        if current_status != "pending":
+            message = (
+                f"Approval '{approval_key}' is already decided with status "
+                f"'{current_status}'"
+            )
+            raise ValueError(message)
+        update_result = self.session.execute(
+            update(HarnessApprovalModel)
+            .where(
+                HarnessApprovalModel.space_id == normalized_space_id,
+                HarnessApprovalModel.run_id == normalized_run_id,
+                HarnessApprovalModel.approval_key == approval_key,
+                HarnessApprovalModel.status == "pending",
+            )
+            .values(
+                status=normalized_status,
+                decision_reason=normalized_reason,
+                decided_by_user_id=(
+                    decided_by.user_id if decided_by is not None else None
+                ),
+                decided_by_email=(
+                    decided_by.email if decided_by is not None else None
+                ),
+            ),
+        )
+        if _result_rowcount(update_result) != 1:
+            refreshed_status = self.session.execute(status_stmt).scalars().first()
+            if refreshed_status is None:
+                return None
+            message = (
+                f"Approval '{approval_key}' is already decided with status "
+                f"'{refreshed_status}'"
+            )
+            raise ValueError(message)
+        commit_or_flush(self.session)
+        stmt = select(HarnessApprovalModel).where(
+            HarnessApprovalModel.space_id == normalized_space_id,
+            HarnessApprovalModel.run_id == normalized_run_id,
+            HarnessApprovalModel.approval_key == approval_key,
+        )
+        model = self.session.execute(stmt).scalars().first()
+        if model is None:
+            return None
+        return _approval_record_from_model(model)
