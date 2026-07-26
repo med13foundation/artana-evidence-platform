@@ -367,6 +367,102 @@ def test_sqlalchemy_upsert_intent_preserves_decided_approvals(
     assert approvals["pending-key"].status == "pending"
 
 
+def test_sqlalchemy_upsert_intent_reopens_an_approval_whose_action_changed(
+    session: Session,
+) -> None:
+    """A decision describes one action, not one approval key.
+
+    ``uq_harness_run_approvals_run_id_approval_key`` allows exactly one row per
+    (run, key), so keeping the decided row when a re-proposed action reuses the
+    key with different content leaves the run with nothing pending -- it would
+    proceed on a human decision made about a different action.
+    """
+    approval_store = SqlAlchemyHarnessApprovalStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="claim-curation",
+        title="Changed action run",
+        input_payload={},
+    )
+    reviewer = ReviewActor(
+        user_id="66666666-6666-6666-6666-666666666666",
+        email="intent-reviewer@example.com",
+    )
+
+    approval_store.upsert_intent(
+        space_id=space_id,
+        run_id=run.id,
+        summary="Review proposed graph updates",
+        proposed_actions=(
+            HarnessApprovalAction(
+                approval_key="decided-key",
+                title="Promote candidate claim",
+                risk_level="high",
+                target_type="claim",
+                target_id="claim-1",
+                requires_approval=True,
+                metadata={"passage": "first"},
+            ),
+        ),
+        metadata={},
+    )
+    approval_store.decide_approval(
+        space_id=space_id,
+        run_id=run.id,
+        approval_key="decided-key",
+        status="approved",
+        decision_reason="Checked against the source; safe to write.",
+        decided_by=reviewer,
+    )
+
+    changed = (
+        HarnessApprovalAction(
+            approval_key="decided-key",
+            title="Promote candidate claim",
+            risk_level="high",
+            target_type="claim",
+            target_id="claim-2",
+            requires_approval=True,
+            metadata={"passage": "first"},
+        ),
+    )
+    approval_store.upsert_intent(
+        space_id=space_id,
+        run_id=run.id,
+        summary="Review proposed graph updates",
+        proposed_actions=changed,
+        metadata={},
+    )
+    # A reopened row is pending, and pending rows are replaced on every
+    # re-proposal -- the carried decision has to survive that too.
+    approval_store.upsert_intent(
+        space_id=space_id,
+        run_id=run.id,
+        summary="Review proposed graph updates",
+        proposed_actions=changed,
+        metadata={},
+    )
+
+    approvals = approval_store.list_approvals(space_id=space_id, run_id=run.id)
+    assert len(approvals) == 1
+    reopened = approvals[0]
+    assert reopened.status == "pending"
+    assert reopened.decision_reason is None
+    assert reopened.decided_by is None
+    assert reopened.target_id == "claim-2"
+    assert reopened.metadata["passage"] == "first"
+    history = reopened.metadata["superseded_decisions"]
+    assert isinstance(history, list)
+    assert len(history) == 1
+    assert history[0]["status"] == "approved"
+    assert history[0]["decision_reason"] == "Checked against the source; safe to write."
+    assert history[0]["decided_by_email"] == reviewer.email
+    assert history[0]["decided_by_user_id"] == reviewer.user_id
+    assert history[0]["target_id"] == "claim-1"
+
+
 def test_sqlalchemy_harness_approval_store_persists_intents_and_decisions(
     session: Session,
 ) -> None:

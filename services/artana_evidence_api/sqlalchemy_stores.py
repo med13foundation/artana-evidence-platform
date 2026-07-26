@@ -11,8 +11,10 @@ from artana_evidence_api.approval_store import (
     HarnessApprovalRecord,
     HarnessApprovalStore,
     HarnessRunIntentRecord,
+    approval_still_describes_action,
     normalize_approval_action,
     normalize_approval_title,
+    pending_approval_metadata,
 )
 from artana_evidence_api.models import (
     HarnessApprovalModel,
@@ -279,6 +281,24 @@ def _approval_record_from_model(model: HarnessApprovalModel) -> HarnessApprovalR
         created_at=model.created_at,
         updated_at=model.updated_at,
     )
+
+
+def _repoint_approval_at_action(
+    *,
+    model: HarnessApprovalModel,
+    action: HarnessApprovalAction,
+) -> None:
+    """Re-gate an approval row, carrying any decision it replaces into metadata."""
+    record = _approval_record_from_model(model)
+    model.title = action.title
+    model.risk_level = action.risk_level
+    model.target_type = action.target_type
+    model.target_id = action.target_id
+    model.status = "pending"
+    model.decision_reason = None
+    model.decided_by_user_id = None
+    model.decided_by_email = None
+    model.metadata_payload = pending_approval_metadata(existing=record, action=action)
 
 
 def _decided_by_from_model(
@@ -581,39 +601,50 @@ class SqlAlchemyHarnessApprovalStore(HarnessApprovalStore, _SessionBackedStore):
         # it -- re-proposing the run's intent must not erase that, and
         # decide_approval already treats a decision as final by refusing to
         # decide twice.
-        decided_keys = set(
-            self.session.execute(
-                select(HarnessApprovalModel.approval_key).where(
+        existing_models = {
+            existing.approval_key: existing
+            for existing in self.session.execute(
+                select(HarnessApprovalModel).where(
                     HarnessApprovalModel.run_id == normalized_run_id,
-                    HarnessApprovalModel.status != "pending",
                 ),
             )
             .scalars()
-            .all(),
-        )
-        self.session.execute(
-            delete(HarnessApprovalModel).where(
-                HarnessApprovalModel.run_id == normalized_run_id,
-                HarnessApprovalModel.status == "pending",
-            ),
-        )
+            .all()
+        }
+        proposed_keys: set[str] = set()
         for action in normalized_actions:
-            if not action.requires_approval or action.approval_key in decided_keys:
+            if not action.requires_approval:
                 continue
-            self.session.add(
-                HarnessApprovalModel(
-                    run_id=normalized_run_id,
-                    space_id=normalized_space_id,
-                    approval_key=action.approval_key,
-                    title=action.title,
-                    risk_level=action.risk_level,
-                    target_type=action.target_type,
-                    target_id=action.target_id,
-                    status="pending",
-                    decision_reason=None,
-                    metadata_payload=action.metadata,
-                ),
-            )
+            proposed_keys.add(action.approval_key)
+            existing_model = existing_models.get(action.approval_key)
+            if existing_model is None:
+                self.session.add(
+                    HarnessApprovalModel(
+                        run_id=normalized_run_id,
+                        space_id=normalized_space_id,
+                        approval_key=action.approval_key,
+                        title=action.title,
+                        risk_level=action.risk_level,
+                        target_type=action.target_type,
+                        target_id=action.target_id,
+                        status="pending",
+                        decision_reason=None,
+                        metadata_payload=action.metadata,
+                    ),
+                )
+                continue
+            # A decision describes an action, not an approval key, so it only
+            # stands while the re-proposed action still matches it. Rows are
+            # updated rather than replaced: one row per (run_id, approval_key).
+            if existing_model.status != "pending" and approval_still_describes_action(
+                _approval_record_from_model(existing_model),
+                action,
+            ):
+                continue
+            _repoint_approval_at_action(model=existing_model, action=action)
+        for approval_key, existing_model in existing_models.items():
+            if approval_key not in proposed_keys and existing_model.status == "pending":
+                self.session.delete(existing_model)
 
         commit_or_flush(self.session)
         self.session.refresh(model)

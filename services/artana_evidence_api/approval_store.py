@@ -7,11 +7,16 @@ from datetime import UTC, datetime
 from threading import Lock
 from uuid import UUID  # noqa: TC003
 
-from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.common import (  # noqa: TC001
+    JSONObject,
+    json_array_or_empty,
+)
 from artana_evidence_api.types.review_actor import ReviewActor
 
 _MAX_APPROVAL_TITLE_LENGTH = 256
 _TITLE_ELLIPSIS = "..."
+
+SUPERSEDED_DECISIONS_METADATA_KEY = "superseded_decisions"
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,22 +98,30 @@ class HarnessApprovalStore:
             updated_at=now,
         )
         with self._lock:
-            existing = self._approvals.get(
-                (normalized_space_id, normalized_run_id),
-                {},
+            existing = dict(
+                self._approvals.get((normalized_space_id, normalized_run_id), {}),
             )
-            # Only pending approvals are replaced. A decided approval is a record
-            # of something a person did, with their written reason and their
-            # identity on it -- re-proposing the run's intent must not erase
-            # that, and decide_approval already treats a decision as final by
-            # refusing to decide twice.
-            approval_records: dict[str, HarnessApprovalRecord] = {
-                key: record
-                for key, record in existing.items()
-                if record.status != "pending"
-            }
+        # Only pending approvals are replaced. A decided approval is a record of
+        # something a person did, with their written reason and their identity on
+        # it -- re-proposing the run's intent must not erase that, and
+        # decide_approval already treats a decision as final by refusing to
+        # decide twice.
+        approval_records: dict[str, HarnessApprovalRecord] = {
+            key: record
+            for key, record in existing.items()
+            if record.status != "pending"
+        }
         for action in normalized_actions:
-            if not action.requires_approval or action.approval_key in approval_records:
+            if not action.requires_approval:
+                continue
+            previous = existing.get(action.approval_key)
+            # A decision describes an action, not an approval key. It only stands
+            # while the re-proposed action still matches what was decided.
+            if (
+                previous is not None
+                and previous.status != "pending"
+                and approval_still_describes_action(previous, action)
+            ):
                 continue
             approval_records[action.approval_key] = HarnessApprovalRecord(
                 space_id=normalized_space_id,
@@ -120,8 +133,8 @@ class HarnessApprovalStore:
                 target_id=action.target_id,
                 status="pending",
                 decision_reason=None,
-                metadata=action.metadata,
-                created_at=now,
+                metadata=pending_approval_metadata(existing=previous, action=action),
+                created_at=previous.created_at if previous is not None else now,
                 updated_at=now,
             )
         with self._lock:
@@ -247,6 +260,83 @@ def normalize_approval_title(title: str) -> str:
     return f"{truncated}{_TITLE_ELLIPSIS}"
 
 
+def approval_still_describes_action(
+    record: HarnessApprovalRecord,
+    action: HarnessApprovalAction,
+) -> bool:
+    """Return whether a stored approval is still about the proposed action.
+
+    A decision is about an action, not about an approval key.  When a re-proposed
+    action reuses a decided key but writes somewhere else, or at a different risk
+    level, the stored decision no longer describes what the run would now do.
+    """
+    return (
+        record.title == action.title
+        and record.risk_level == action.risk_level
+        and record.target_type == action.target_type
+        and record.target_id == action.target_id
+        and proposed_action_metadata(record.metadata) == action.metadata
+    )
+
+
+def proposed_action_metadata(metadata: JSONObject) -> JSONObject:
+    """Return a stored approval's metadata without the superseded-decision trail.
+
+    The trail is written by this module, not proposed by the run, so it must not
+    count as a content difference when comparing a stored row to a fresh action.
+    """
+    return {
+        key: value
+        for key, value in metadata.items()
+        if key != SUPERSEDED_DECISIONS_METADATA_KEY
+    }
+
+
+def pending_approval_metadata(
+    *,
+    existing: HarnessApprovalRecord | None,
+    action: HarnessApprovalAction,
+) -> JSONObject:
+    """Return the metadata a fresh pending approval should carry.
+
+    The run must not proceed on a decision made about a different action, but the
+    reviewer's own words and identity are not ours to delete, so a row replacing
+    a decision carries it forward.  A reopened row is itself pending, and pending
+    rows are replaced wholesale on every re-proposal, so the trail is carried
+    through those too -- otherwise the next intent upsert quietly drops it.
+    """
+    if existing is None:
+        return action.metadata
+    history = json_array_or_empty(
+        existing.metadata.get(SUPERSEDED_DECISIONS_METADATA_KEY),
+    )
+    if existing.status != "pending":
+        history.append(
+            {
+                "status": existing.status,
+                "decision_reason": existing.decision_reason,
+                "decided_by_user_id": (
+                    existing.decided_by.user_id
+                    if existing.decided_by is not None
+                    else None
+                ),
+                "decided_by_email": (
+                    existing.decided_by.email
+                    if existing.decided_by is not None
+                    else None
+                ),
+                "decided_at": existing.updated_at.isoformat(),
+                "title": existing.title,
+                "risk_level": existing.risk_level,
+                "target_type": existing.target_type,
+                "target_id": existing.target_id,
+            },
+        )
+    if not history:
+        return action.metadata
+    return {**action.metadata, SUPERSEDED_DECISIONS_METADATA_KEY: history}
+
+
 def normalize_approval_action(action: HarnessApprovalAction) -> HarnessApprovalAction:
     """Return an approval action with a persistence-safe title."""
     return HarnessApprovalAction(
@@ -261,10 +351,14 @@ def normalize_approval_action(action: HarnessApprovalAction) -> HarnessApprovalA
 
 
 __all__ = [
+    "SUPERSEDED_DECISIONS_METADATA_KEY",
     "HarnessApprovalAction",
     "HarnessApprovalRecord",
     "HarnessApprovalStore",
     "HarnessRunIntentRecord",
+    "approval_still_describes_action",
     "normalize_approval_action",
     "normalize_approval_title",
+    "pending_approval_metadata",
+    "proposed_action_metadata",
 ]
