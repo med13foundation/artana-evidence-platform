@@ -9,11 +9,11 @@ from artana_evidence_api.artifact_store import (
     HarnessArtifactStore,  # noqa: TC001
 )
 from artana_evidence_api.dependencies import (
+    ReviewActorDependency,
     get_artifact_store,
     get_graph_api_gateway,
     get_harness_execution_services,
     get_proposal_store,
-    get_review_actor,
     get_run_registry,
     require_harness_space_read_access,
 )
@@ -59,7 +59,6 @@ _RUN_REGISTRY_DEPENDENCY = Depends(get_run_registry)
 _ARTIFACT_STORE_DEPENDENCY = Depends(get_artifact_store)
 _GRAPH_API_GATEWAY_DEPENDENCY = Depends(get_graph_api_gateway)
 _HARNESS_EXECUTION_SERVICES_DEPENDENCY = Depends(get_harness_execution_services)
-_REVIEW_ACTOR_DEPENDENCY = Depends(get_review_actor)
 _STATUS_QUERY = Query(default=None, alias="status", min_length=1, max_length=32)
 _PROPOSAL_TYPE_QUERY = Query(default=None, min_length=1, max_length=64)
 _RUN_ID_QUERY = Query(default=None)
@@ -238,7 +237,7 @@ def promote_proposal(  # noqa: PLR0913
     proposal_id: UUID,
     request: HarnessProposalDecisionRequest | None = Body(default=None),
     *,
-    decided_by: ReviewActor = _REVIEW_ACTOR_DEPENDENCY,
+    decided_by: ReviewActorDependency,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
@@ -394,7 +393,7 @@ def reject_proposal(  # noqa: PLR0913
     proposal_id: UUID,
     request: HarnessProposalDecisionRequest | None = Body(default=None),
     *,
-    decided_by: ReviewActor = _REVIEW_ACTOR_DEPENDENCY,
+    decided_by: ReviewActorDependency,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,

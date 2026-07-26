@@ -498,6 +498,41 @@ def test_serialized_timestamps_are_explicitly_utc() -> None:
         assert item["decided_at"].endswith("+00:00")
 
 
+def test_deciding_a_task_approval_through_v2_records_the_reviewer() -> None:
+    """The v2 surface reuses the v1 handler as a plain Python function.
+
+    ``decide_approval`` declares the reviewer as ``= Depends(get_review_actor)``,
+    which only FastAPI resolves.  ``decide_task_approval`` called it directly and
+    omitted the argument, so the store was handed the ``Depends`` sentinel and
+    reading ``.user_id`` off it raised -- every v2 approval decision was a 500.
+    """
+    fixture = _Fixture()
+    fixture.add_approval(approval_key="approval-v2-1")
+
+    response = fixture.client.post(
+        f"/v2/spaces/{fixture.space_id}/tasks/{fixture.run_id}"
+        f"/approvals/approval-v2-1/decision",
+        json={"decision": "approved", "reason": "Checked the source; safe to write."},
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == _HTTP_OK, response.text
+    assert response.json()["decided_by"] == {
+        "user_id": _TEST_USER_ID,
+        "email": _TEST_USER_EMAIL,
+    }
+    stored = next(
+        approval
+        for approval in fixture.approval_store.list_approvals(
+            space_id=fixture.space_id,
+            run_id=fixture.run_id,
+        )
+        if approval.approval_key == "approval-v2-1"
+    )
+    assert stored.decided_by is not None
+    assert stored.decided_by.email == _TEST_USER_EMAIL
+
+
 def test_malformed_queue_item_id_is_not_found_rather_than_a_server_error() -> None:
     fixture = _Fixture()
 

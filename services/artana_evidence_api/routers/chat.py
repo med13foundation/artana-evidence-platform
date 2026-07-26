@@ -35,6 +35,7 @@ from artana_evidence_api.chat_workflow import (
 )
 from artana_evidence_api.config import get_settings
 from artana_evidence_api.dependencies import (
+    ReviewActorDependency,
     get_artifact_store,
     get_chat_session_store,
     get_document_store,
@@ -43,7 +44,6 @@ from artana_evidence_api.dependencies import (
     get_harness_execution_services,
     get_proposal_store,
     get_research_state_store,
-    get_review_actor,
     get_run_registry,
     require_harness_space_read_access,
     require_harness_space_write_access,
@@ -129,7 +129,6 @@ from artana_evidence_api.transparency import (
 from artana_evidence_api.types.common import (  # noqa: TC001
     JSONObject,
 )
-from artana_evidence_api.types.review_actor import ReviewActor
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse, StreamingResponse
 
@@ -159,7 +158,6 @@ _DOCUMENT_STORE_DEPENDENCY = Depends(get_document_store)
 _PROPOSAL_STORE_DEPENDENCY = Depends(get_proposal_store)
 _RESEARCH_STATE_STORE_DEPENDENCY = Depends(get_research_state_store)
 _HARNESS_EXECUTION_SERVICES_DEPENDENCY = Depends(get_harness_execution_services)
-_REVIEW_ACTOR_DEPENDENCY = Depends(get_review_actor)
 _CHAT_STREAM_TERMINAL_STATUSES = frozenset({"completed", "failed", "paused"})
 
 
@@ -913,7 +911,7 @@ def review_chat_graph_write_candidate(  # noqa: PLR0913
     candidate_index: int,
     request: ChatGraphWriteCandidateDecisionRequest,
     *,
-    decided_by: ReviewActor = _REVIEW_ACTOR_DEPENDENCY,
+    decided_by: ReviewActorDependency,
     chat_session_store: HarnessChatSessionStore = _CHAT_SESSION_STORE_DEPENDENCY,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,

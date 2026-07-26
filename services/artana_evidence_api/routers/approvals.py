@@ -14,9 +14,9 @@ from artana_evidence_api.artifact_store import (
     HarnessArtifactStore,  # noqa: TC001
 )
 from artana_evidence_api.dependencies import (
+    ReviewActorDependency,
     get_approval_store,
     get_artifact_store,
-    get_review_actor,
     get_run_registry,
     require_harness_space_read_access,
     require_harness_space_write_access,
@@ -41,7 +41,6 @@ router = APIRouter(
 _RUN_REGISTRY_DEPENDENCY = Depends(get_run_registry)
 _APPROVAL_STORE_DEPENDENCY = Depends(get_approval_store)
 _ARTIFACT_STORE_DEPENDENCY = Depends(get_artifact_store)
-_REVIEW_ACTOR_DEPENDENCY = Depends(get_review_actor)
 
 
 class HarnessIntentActionRequest(BaseModel):
@@ -346,7 +345,7 @@ def decide_approval(  # noqa: PLR0913
     approval_key: str,
     request: HarnessApprovalDecisionRequest,
     *,
-    decided_by: ReviewActor = _REVIEW_ACTOR_DEPENDENCY,
+    decided_by: ReviewActorDependency,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     approval_store: HarnessApprovalStore = _APPROVAL_STORE_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,

@@ -19,6 +19,7 @@ from artana_evidence_api.chat_graph_write_workflow import (
 )
 from artana_evidence_api.config import get_settings
 from artana_evidence_api.dependencies import (
+    ReviewActorDependency,
     get_approval_store,
     get_artifact_store,
     get_chat_session_store,
@@ -28,7 +29,6 @@ from artana_evidence_api.dependencies import (
     get_harness_execution_services,
     get_proposal_store,
     get_research_state_store,
-    get_review_actor,
     get_run_registry,
     get_schedule_store,
     require_harness_space_read_access,
@@ -118,7 +118,6 @@ from artana_evidence_api.transparency import (
     ensure_run_transparency_seed,
 )
 from artana_evidence_api.types.common import JSONObject, json_value
-from artana_evidence_api.types.review_actor import ReviewActor
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from fastapi.responses import JSONResponse
 
@@ -142,7 +141,6 @@ _GRAPH_SNAPSHOT_STORE_DEPENDENCY = Depends(get_graph_snapshot_store)
 _SCHEDULE_STORE_DEPENDENCY = Depends(get_schedule_store)
 _GRAPH_CHAT_RUNNER_DEPENDENCY = Depends(get_graph_chat_runner)
 _HARNESS_EXECUTION_SERVICES_DEPENDENCY = Depends(get_harness_execution_services)
-_REVIEW_ACTOR_DEPENDENCY = Depends(get_review_actor)
 _PARENT_GRAPH_API_GATEWAY_DEPENDENCY = Depends(get_graph_api_gateway, use_cache=False)
 _BOOTSTRAP_GRAPH_API_GATEWAY_DEPENDENCY = Depends(
     get_graph_api_gateway,
@@ -451,7 +449,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
     candidate_index: int,
     request: ChatGraphWriteCandidateDecisionRequest,
     *,
-    decided_by: ReviewActor = _REVIEW_ACTOR_DEPENDENCY,
+    decided_by: ReviewActorDependency,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,

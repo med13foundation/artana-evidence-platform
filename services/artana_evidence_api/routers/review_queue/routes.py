@@ -10,12 +10,12 @@ from artana_evidence_api.artifact_store import (
     HarnessArtifactStore,  # noqa: TC001
 )
 from artana_evidence_api.dependencies import (
+    ReviewActorDependency,
     get_approval_store,
     get_artifact_store,
     get_graph_api_gateway,
     get_harness_execution_services,
     get_proposal_store,
-    get_review_actor,
     get_review_item_store,
     get_run_registry,
     require_harness_space_read_access,
@@ -37,7 +37,6 @@ from artana_evidence_api.routers.proposals import (
     reject_proposal,
 )
 from artana_evidence_api.run_registry import HarnessRunRegistry  # noqa: TC001
-from artana_evidence_api.types.review_actor import ReviewActor
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 
 from .conversion import (
@@ -69,7 +68,6 @@ _RUN_REGISTRY_DEPENDENCY = Depends(get_run_registry)
 _ARTIFACT_STORE_DEPENDENCY = Depends(get_artifact_store)
 _GRAPH_API_GATEWAY_DEPENDENCY = Depends(get_graph_api_gateway)
 _HARNESS_EXECUTION_SERVICES_DEPENDENCY = Depends(get_harness_execution_services)
-_REVIEW_ACTOR_DEPENDENCY = Depends(get_review_actor)
 _ITEM_TYPE_QUERY = Query(default=None, min_length=1, max_length=32)
 _KIND_QUERY = Query(default=None, min_length=1, max_length=64)
 _STATUS_QUERY = Query(
@@ -530,7 +528,7 @@ def act_on_review_queue_item(  # noqa: PLR0913
     item_id: str,
     request: HarnessReviewQueueActionRequest = Body(...),
     *,
-    decided_by: ReviewActor = _REVIEW_ACTOR_DEPENDENCY,
+    decided_by: ReviewActorDependency,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
     review_item_store: HarnessReviewItemStore = _REVIEW_ITEM_STORE_DEPENDENCY,
     approval_store: HarnessApprovalStore = _APPROVAL_STORE_DEPENDENCY,
@@ -709,7 +707,7 @@ def act_on_review_queue_items_bulk(  # noqa: PLR0913
     space_id: UUID,
     request: HarnessReviewQueueBulkDecisionRequest = Body(...),
     *,
-    decided_by: ReviewActor = _REVIEW_ACTOR_DEPENDENCY,
+    decided_by: ReviewActorDependency,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
     review_item_store: HarnessReviewItemStore = _REVIEW_ITEM_STORE_DEPENDENCY,
     approval_store: HarnessApprovalStore = _APPROVAL_STORE_DEPENDENCY,

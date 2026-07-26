@@ -5195,6 +5195,57 @@ def test_supervisor_can_directly_review_briefing_chat_candidate() -> None:
     assert detail_payload["progress"]["status"] == "completed"
 
 
+def test_deciding_a_suggested_update_through_v2_records_the_reviewer() -> None:
+    """The v2 surface reuses the v1 handler as a plain Python function.
+
+    ``review_supervisor_chat_graph_write_candidate`` declares the reviewer as
+    ``= Depends(get_review_actor)``, which only FastAPI resolves.
+    ``decide_full_research_suggested_update`` called it directly and omitted the
+    argument, so the proposal store was handed the ``Depends`` sentinel instead
+    of a person -- every v2 suggested-update decision was a 500.
+    """
+    client = _build_client()
+    space_id = str(uuid4())
+
+    create_response = client.post(
+        f"/v1/spaces/{space_id}/agents/supervisor/runs",
+        json={
+            "objective": "Map MED13 mechanism evidence.",
+            "seed_entity_ids": ["11111111-1111-1111-1111-111111111111"],
+            "include_curation": False,
+        },
+        headers=_auth_headers(),
+    )
+    assert create_response.status_code == 201
+    create_payload = create_response.json()
+    supervisor_run_id = create_payload["run"]["id"]
+    chat_run_id = create_payload["chat"]["run"]["id"]
+
+    decision_response = client.post(
+        (
+            f"/v2/spaces/{space_id}/workflows/full-research/tasks/"
+            f"{supervisor_run_id}/suggested-updates/0/decision"
+        ),
+        json={"decision": "reject", "reason": "Not supported by the passage."},
+        headers=_auth_headers(),
+    )
+
+    assert decision_response.status_code == 200, decision_response.text
+
+    proposals_response = client.get(
+        f"/v1/spaces/{space_id}/proposals",
+        params={"run_id": chat_run_id},
+        headers=_auth_headers(role="viewer"),
+    )
+    assert proposals_response.status_code == 200
+    proposals = proposals_response.json()["proposals"]
+    assert [proposal["status"] for proposal in proposals] == ["rejected"]
+    assert proposals[0]["decided_by"] == {
+        "user_id": _TEST_USER_ID,
+        "email": _TEST_USER_EMAIL,
+    }
+
+
 def test_supervisor_summary_accumulates_direct_chat_review_history() -> None:
     """Supervisor summary should keep direct briefing-chat review history."""
     client = _build_client(

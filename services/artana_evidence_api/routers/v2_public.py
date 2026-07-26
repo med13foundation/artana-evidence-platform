@@ -14,6 +14,7 @@ from artana_evidence_api.auth import (
 )
 from artana_evidence_api.chat_sessions import HarnessChatSessionStore
 from artana_evidence_api.dependencies import (
+    ReviewActorDependency,
     get_approval_store,
     get_artifact_store,
     get_chat_session_store,
@@ -1076,6 +1077,7 @@ def decide_task_approval(
     approval_key: str,
     request: HarnessApprovalDecisionRequest,
     *,
+    decided_by: ReviewActorDependency,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     approval_store: HarnessApprovalStore = _APPROVAL_STORE_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
@@ -1086,6 +1088,7 @@ def decide_task_approval(
         run_id=task_id,
         approval_key=approval_key,
         request=request,
+        decided_by=decided_by,
         run_registry=run_registry,
         approval_store=approval_store,
         artifact_store=artifact_store,
@@ -1169,6 +1172,7 @@ def decide_full_research_suggested_update(
     candidate_index: int,
     request: chat.ChatGraphWriteCandidateDecisionRequest,
     *,
+    decided_by: ReviewActorDependency,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     proposal_store: HarnessProposalStore = Depends(get_proposal_store),
@@ -1181,6 +1185,7 @@ def decide_full_research_suggested_update(
         run_id=task_id,
         candidate_index=candidate_index,
         request=request,
+        decided_by=decided_by,
         run_registry=run_registry,
         artifact_store=artifact_store,
         proposal_store=proposal_store,
