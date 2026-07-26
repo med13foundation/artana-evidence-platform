@@ -13,6 +13,7 @@ from artana_evidence_api.document_extraction_support.proposal_relation_type_guar
 )
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
+from artana_evidence_api.types.review_actor import ReviewActor
 from artana_evidence_api.types.source_provenance import ClaimSourceProvenance
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,36 @@ _PENDING_REVIEW_STATUS = "pending_review"
 #: on, and not something to discard.  See ART-DATA-001.
 IDENTITY_PENDING_STATUS = "identity_pending"
 _DECISION_STATUSES = frozenset({"promoted", "rejected"})
+
+
+def undecidable_proposal_message(*, proposal_id: object, status: str) -> str:
+    """Return an accurate reason one proposal cannot be decided right now.
+
+    A parked proposal used to report "is already decided with status
+    'identity_pending'", which is false in the way that matters: nobody decided
+    anything, and there is no decision for a reviewer to look up.  Both cases
+    are still a 409 -- they conflict with the record's current state -- but a
+    reviewer reading the message needs to be able to tell them apart.
+    """
+    if status == IDENTITY_PENDING_STATUS:
+        return (
+            f"Proposal '{proposal_id}' is parked awaiting identity adjudication "
+            "and cannot be decided. It is a second independent observation whose "
+            "identity has not been resolved against the existing one (ART-DATA-001); "
+            "no decision has been made about it."
+        )
+    return f"Proposal '{proposal_id}' is already decided with status '{status}'"
+
+
+def is_undecidable_proposal_error(exc: ValueError) -> bool:
+    """Return whether one store error means "conflicts with the current state".
+
+    The routers map store ValueErrors onto status codes by inspecting the text,
+    so the parked wording has to be recognized here or a parked proposal would
+    start reporting 400 instead of 409.
+    """
+    text = str(exc)
+    return "already decided" in text or "parked awaiting identity" in text
 _MAX_PROPOSAL_TITLE_LENGTH = 256
 _TITLE_ELLIPSIS = "..."
 
@@ -100,6 +131,7 @@ class HarnessProposalRecord:
     claim_fingerprint: str | None = None
     evidence_grade: str | None = None
     source_provenance: ClaimSourceProvenance | None = None
+    decided_by: ReviewActor | None = None
 
 
 class HarnessProposalStore:
@@ -373,9 +405,15 @@ class HarnessProposalStore:
         proposal_id: UUID | str,
         status: str,
         decision_reason: str | None,
+        decided_by: ReviewActor | None,
         metadata: JSONObject | None = None,
     ) -> HarnessProposalRecord | None:
-        """Promote or reject one proposal."""
+        """Promote or reject one proposal.
+
+        ``decided_by`` has no default so that every caller has to say who is
+        deciding.  Passing None is allowed -- some decisions really are made by
+        the system -- but it has to be said out loud rather than defaulted into.
+        """
         normalized_status = status.strip().lower()
         if normalized_status not in _DECISION_STATUSES:
             message = f"Unsupported proposal status '{status}'"
@@ -385,11 +423,12 @@ class HarnessProposalStore:
             if proposal is None or proposal.space_id != str(space_id):
                 return None
             if proposal.status != _PENDING_REVIEW_STATUS:
-                message = (
-                    f"Proposal '{proposal_id}' is already decided with status "
-                    f"'{proposal.status}'"
+                raise ValueError(
+                    undecidable_proposal_message(
+                        proposal_id=proposal_id,
+                        status=proposal.status,
+                    ),
                 )
-                raise ValueError(message)
             decision_timestamp = datetime.now(UTC)
             updated = HarnessProposalRecord(
                 id=proposal.id,
@@ -417,6 +456,8 @@ class HarnessProposalStore:
                     else None
                 ),
                 decided_at=decision_timestamp,
+                decided_by=decided_by,
+                source_provenance=proposal.source_provenance,
                 created_at=proposal.created_at,
                 updated_at=decision_timestamp,
             )
@@ -470,6 +511,7 @@ class HarnessProposalStore:
                         evidence_grade=p.evidence_grade,
                         decision_reason=reason,
                         decided_at=now,
+                        source_provenance=p.source_provenance,
                         created_at=p.created_at,
                         updated_at=now,
                     )

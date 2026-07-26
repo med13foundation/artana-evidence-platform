@@ -9,13 +9,13 @@ from artana_evidence_api.artifact_store import (
     HarnessArtifactStore,  # noqa: TC001
 )
 from artana_evidence_api.dependencies import (
+    ReviewActorDependency,
     get_artifact_store,
     get_graph_api_gateway,
     get_harness_execution_services,
     get_proposal_store,
     get_run_registry,
     require_harness_space_read_access,
-    require_harness_space_write_access,
 )
 from artana_evidence_api.graph_client import GraphTransportBundle  # noqa: TC001
 from artana_evidence_api.graph_integration.source_provenance import (
@@ -32,10 +32,16 @@ from artana_evidence_api.proposal_actions import (
 from artana_evidence_api.proposal_store import (  # noqa: TC001
     HarnessProposalRecord,
     HarnessProposalStore,
+    undecidable_proposal_message,
 )
 from artana_evidence_api.run_registry import HarnessRunRegistry  # noqa: TC001
 from artana_evidence_api.transparency import append_manual_review_decision
-from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.common import (  # noqa: TC001
+    JSONObject,
+    serialize_optional_timestamp,
+    serialize_timestamp,
+)
+from artana_evidence_api.types.review_actor import ReviewActor
 from artana_evidence_api.types.source_provenance import ClaimSourceProvenance
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -87,6 +93,7 @@ class HarnessProposalResponse(BaseModel):
     evidence_grade: str | None
     decision_reason: str | None
     decided_at: str | None
+    decided_by: ReviewActor | None
     created_at: str
     updated_at: str
 
@@ -113,11 +120,10 @@ class HarnessProposalResponse(BaseModel):
             metadata=record.metadata,
             evidence_grade=record.evidence_grade,
             decision_reason=record.decision_reason,
-            decided_at=(
-                record.decided_at.isoformat() if record.decided_at is not None else None
-            ),
-            created_at=record.created_at.isoformat(),
-            updated_at=record.updated_at.isoformat(),
+            decided_at=serialize_optional_timestamp(record.decided_at),
+            decided_by=record.decided_by,
+            created_at=serialize_timestamp(record.created_at),
+            updated_at=serialize_timestamp(record.updated_at),
         )
 
 
@@ -225,13 +231,13 @@ def get_proposal(
         "review-queue action endpoint when you want the product-facing review "
         "surface; use this route when you need the raw proposal primitive."
     ),
-    dependencies=[Depends(require_harness_space_write_access)],
 )
 def promote_proposal(  # noqa: PLR0913
     space_id: UUID,
     proposal_id: UUID,
     request: HarnessProposalDecisionRequest | None = Body(default=None),
     *,
+    decided_by: ReviewActorDependency,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
@@ -250,9 +256,9 @@ def promote_proposal(  # noqa: PLR0913
     if proposal.status != "pending_review":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                f"Proposal '{proposal.id}' is already decided with status "
-                f"'{proposal.status}'"
+            detail=undecidable_proposal_message(
+                proposal_id=proposal.id,
+                status=proposal.status,
             ),
         )
     try:
@@ -319,6 +325,7 @@ def promote_proposal(  # noqa: PLR0913
         proposal_id=proposal_id,
         decision_status="promoted",
         decision_reason=decision_request.reason,
+        decided_by=decided_by,
         request_metadata=decision_request.metadata,
         proposal_store=proposal_store,
         run_registry=run_registry,
@@ -345,6 +352,7 @@ def promote_proposal(  # noqa: PLR0913
         ),
         decision="promote",
         reason=decision_request.reason,
+        decided_by=decided_by,
         artifact_key=(
             "candidate_hypothesis_pack"
             if proposal.proposal_type == "mechanism_candidate"
@@ -379,13 +387,13 @@ def promote_proposal(  # noqa: PLR0913
         "the review-queue action endpoint when you want the unified review "
         "surface."
     ),
-    dependencies=[Depends(require_harness_space_write_access)],
 )
 def reject_proposal(  # noqa: PLR0913
     space_id: UUID,
     proposal_id: UUID,
     request: HarnessProposalDecisionRequest | None = Body(default=None),
     *,
+    decided_by: ReviewActorDependency,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
@@ -400,6 +408,7 @@ def reject_proposal(  # noqa: PLR0913
         proposal_id=proposal_id,
         decision_status="rejected",
         decision_reason=decision_request.reason,
+        decided_by=decided_by,
         request_metadata=decision_request.metadata,
         proposal_store=proposal_store,
         run_registry=run_registry,
@@ -411,6 +420,7 @@ def reject_proposal(  # noqa: PLR0913
         tool_name="proposal_review",
         decision="reject",
         reason=decision_request.reason,
+        decided_by=decided_by,
         artifact_key=(
             "candidate_hypothesis_pack"
             if updated.proposal_type == "mechanism_candidate"

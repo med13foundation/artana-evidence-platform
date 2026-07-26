@@ -19,6 +19,7 @@ from artana_evidence_api.chat_graph_write_workflow import (
 )
 from artana_evidence_api.config import get_settings
 from artana_evidence_api.dependencies import (
+    ReviewActorDependency,
     get_approval_store,
     get_artifact_store,
     get_chat_session_store,
@@ -441,7 +442,6 @@ def get_supervisor_run(
     "/{space_id}/agents/supervisor/runs/{run_id}/chat-graph-write-candidates/{candidate_index}/review",
     response_model=SupervisorChatGraphWriteCandidateDecisionResponse,
     summary="Promote or reject one supervisor briefing-chat graph-write candidate",
-    dependencies=[Depends(require_harness_space_write_access)],
 )
 def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
     space_id: UUID,
@@ -449,6 +449,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
     candidate_index: int,
     request: ChatGraphWriteCandidateDecisionRequest,
     *,
+    decided_by: ReviewActorDependency,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
@@ -512,6 +513,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
                 proposal_id=proposal.id,
                 decision_status="promoted",
                 decision_reason=request.reason,
+                decided_by=decided_by,
                 request_metadata=request_metadata,
                 proposal_store=proposal_store,
                 run_registry=run_registry,
@@ -540,6 +542,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
                 tool_name="create_graph_claim",
                 decision="promote",
                 reason=request.reason,
+                decided_by=decided_by,
                 artifact_key="supervisor_chat_graph_write_review",
                 metadata={
                     "candidate_index": candidate_index,
@@ -559,6 +562,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
                 proposal_id=proposal.id,
                 decision_status="rejected",
                 decision_reason=request.reason,
+                decided_by=decided_by,
                 request_metadata=request_metadata,
                 proposal_store=proposal_store,
                 run_registry=run_registry,
@@ -574,6 +578,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
                 tool_name="supervisor_chat_graph_write_review",
                 decision="reject",
                 reason=request.reason,
+                decided_by=decided_by,
                 artifact_key="supervisor_chat_graph_write_review",
                 metadata={
                     "candidate_index": candidate_index,

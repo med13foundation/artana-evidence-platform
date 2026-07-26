@@ -165,6 +165,7 @@ class TestCreationTimeDedup:
             proposal_id=created[0].id,
             status="promoted",
             decision_reason="Good claim",
+            decided_by=None,
         )
         # Try to create same claim — should be skipped (status=promoted)
         duplicates = store.create_proposals(
@@ -188,6 +189,7 @@ class TestCreationTimeDedup:
             proposal_id=created[0].id,
             status="rejected",
             decision_reason="Not relevant",
+            decided_by=None,
         )
         # Rejected — new evidence may change the decision, allow re-creation
         new_proposals = store.create_proposals(
@@ -269,6 +271,7 @@ class TestAutoRejectOnPromotion:
             proposal_id=p1[0].id,
             status="promoted",
             decision_reason="Best evidence",
+            decided_by=None,
         )
 
         # No pending duplicates to reject (only 1 proposal exists)
@@ -319,6 +322,7 @@ class TestAutoRejectOnPromotion:
             proposal_id=p1[0].id,
             status="promoted",
             decision_reason="Good",
+            decided_by=None,
         )
         # Reject duplicates — p2 has different fingerprint, shouldn't be affected
         count = store.reject_pending_duplicates(
@@ -388,6 +392,7 @@ class TestAutoRejectOnPromotion:
             proposal_id=first_id,
             status="promoted",
             decision_reason="Best",
+            decided_by=None,
         )
         count = store.reject_pending_duplicates(
             space_id=SPACE_ID,

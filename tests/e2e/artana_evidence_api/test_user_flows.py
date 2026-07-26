@@ -1005,6 +1005,7 @@ async def _execute_e2e_run(  # noqa: PLR0912
                 proposal_id=proposal_id,
                 status=final_status,
                 decision_reason="Applied during claim-curation resume.",
+                decided_by=None,
                 metadata={"applied_by": "e2e-claim-curation"},
             )
         services.artifact_store.put_artifact(

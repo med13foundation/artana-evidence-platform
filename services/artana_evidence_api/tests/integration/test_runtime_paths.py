@@ -1700,6 +1700,7 @@ def test_transparency_endpoints_return_capabilities_and_policy_history(
             tool_name="create_graph_claim",
             decision="promote",
             reason="Approved after integration review",
+            decided_by=None,
             artifact_key="graph_write_candidate_suggestions",
             metadata={"proposal_id": "proposal-integration-1"},
             artifact_store=services.artifact_store,

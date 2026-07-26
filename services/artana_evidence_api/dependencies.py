@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from contextlib import contextmanager
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
 from artana_evidence_api.artana_stores import (
@@ -103,6 +103,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     SqlAlchemyHarnessScheduleStore,
 )
 from artana_evidence_api.study_outcomes import SqlAlchemyStudyOutcomeStore
+from artana_evidence_api.types.review_actor import ReviewActor
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import desc, select
 
@@ -404,6 +405,37 @@ def require_harness_space_owner_access(
     return current_user
 
 
+_SPACE_WRITE_ACCESS_DEPENDENCY = Depends(require_harness_space_write_access)
+
+
+def get_review_actor(
+    current_user: HarnessUser = _SPACE_WRITE_ACCESS_DEPENDENCY,
+) -> ReviewActor:
+    """Return the authenticated reviewer as an attributable decision actor.
+
+    Decision routes previously declared space write access as a route-level
+    dependency, which authorizes the request but throws the identity away.
+    Depending on this instead keeps the same authorization check -- FastAPI
+    caches it, so it still runs once -- while handing the handler the person
+    to record.
+    """
+    return ReviewActor(user_id=str(current_user.id), email=str(current_user.email))
+
+
+ReviewActorDependency = Annotated[ReviewActor, Depends(get_review_actor)]
+"""The authenticated reviewer, injected by FastAPI and required of every caller.
+
+Spelled as ``Annotated`` metadata rather than as a ``= Depends(get_review_actor)``
+default on purpose.  A default makes the parameter optional to Python, and the v2
+surface reuses several v1 decision handlers as plain functions; when one of those
+calls omitted the argument the handler received the ``Depends`` sentinel and wrote
+it where a person belongs, which is how ``'Depends' object has no attribute
+'user_id'`` reached production as a 500.  With no default FastAPI still injects the
+actor on a real request -- ``Annotated`` metadata is how it is meant to be declared
+-- while mypy rejects any direct call that forgets to pass one.
+"""
+
+
 def get_research_state_store(
     session: Session = _SESSION_DEPENDENCY,
 ) -> HarnessResearchStateStore:
@@ -665,6 +697,7 @@ def get_harness_execution_services(  # noqa: PLR0913
 
 
 __all__ = [
+    "ReviewActorDependency",
     "get_approval_store",
     "get_artifact_store",
     "get_document_binary_store",
@@ -695,6 +728,7 @@ __all__ = [
     "get_proposal_store",
     "get_research_space_store",
     "get_research_state_store",
+    "get_review_actor",
     "get_run_registry",
     "get_schedule_store",
     "get_source_search_handoff_store",

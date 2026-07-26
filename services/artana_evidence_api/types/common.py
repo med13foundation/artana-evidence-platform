@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from datetime import UTC, datetime
 from typing import Literal, TypedDict
 
 JSONPrimitive = str | int | float | bool | None
@@ -83,6 +84,27 @@ def json_float(value: object, default: float = 0.0) -> float:
         except (TypeError, ValueError):
             return default
     return default
+
+
+def serialize_timestamp(value: datetime) -> str:
+    """Serialize one stored timestamp as an unambiguous UTC instant.
+
+    The durable stores write naive UTC (``datetime.now(UTC).replace(tzinfo=None)``)
+    while the in-memory stores keep the offset, so the same record could be
+    rendered with or without a ``+00:00`` suffix depending on which store served
+    it.  Both are UTC; only one of them said so.  The review queue sorts items
+    on this string, so the inconsistency was not merely cosmetic.
+    """
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC).isoformat()
+    return value.astimezone(UTC).isoformat()
+
+
+def serialize_optional_timestamp(value: datetime | None) -> str | None:
+    """Serialize an optional stored timestamp, preserving None."""
+    if value is None:
+        return None
+    return serialize_timestamp(value)
 
 
 class RelationAutoPromotionSettings(TypedDict, total=False):
@@ -174,4 +196,6 @@ __all__ = [
     "json_object_or_empty",
     "json_string_list",
     "json_value",
+    "serialize_optional_timestamp",
+    "serialize_timestamp",
 ]

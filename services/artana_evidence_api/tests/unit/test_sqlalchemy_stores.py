@@ -9,7 +9,10 @@ from typing import TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
 import pytest
-from artana_evidence_api.approval_store import HarnessApprovalAction
+from artana_evidence_api.approval_store import (
+    HarnessApprovalAction,
+    HarnessApprovalStore,
+)
 from artana_evidence_api.models.base import Base
 from artana_evidence_api.models.harness import (
     HarnessDocumentModel,
@@ -42,7 +45,9 @@ from artana_evidence_api.sqlalchemy_stores import (
 from artana_evidence_api.sqlalchemy_unit_of_work import session_unit_of_work
 from artana_evidence_api.study_outcomes import SqlAlchemyStudyOutcomeStore
 from artana_evidence_api.study_outcomes.contracts import StudyOutcomeDraft
+from artana_evidence_api.types.review_actor import ReviewActor
 from artana_evidence_api.types.source_provenance import (
+    UNRECORDED_PROVENANCE_REASON,
     ClaimSourceProvenance,
     ExactEvidenceLocator,
     SourceIdentity,
@@ -227,6 +232,317 @@ def test_sqlalchemy_harness_proposal_store_retains_unique_conflict_race() -> Non
     assert session.rolled_back is True
 
 
+def test_a_proposal_without_provenance_reads_back_as_explicitly_unverified(
+    session: Session,
+) -> None:
+    """Absent provenance must not reach a reviewer as an empty field.
+
+    Migration 025 records source_provenance_status on every row even when no
+    envelope is written. The read path ignored it and returned None, so "never
+    computed" and "computed and rejected" looked identical next to a claim
+    someone is being asked to accept.
+    """
+    proposal_store = SqlAlchemyHarnessProposalStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="document-extraction",
+        title="Provenance-free run",
+        input_payload={},
+    )
+
+    created = proposal_store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="entity_candidate",
+                source_kind="document_extraction",
+                source_key="doc:entity:1",
+                title="Candidate entity",
+                summary="No provenance was computed for this type",
+                confidence=0.7,
+                ranking_score=0.7,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={},
+                metadata={},
+            ),
+        ),
+    )
+
+    provenance = created[0].source_provenance
+    assert provenance is not None, "absent provenance must not serialize as null"
+    assert provenance.status == "unverified"
+    assert provenance.reason_code == UNRECORDED_PROVENANCE_REASON
+    assert provenance.source_identity is None
+    assert provenance.evidence_locator is None
+
+    reloaded = proposal_store.get_proposal(
+        space_id=space_id,
+        proposal_id=created[0].id,
+    )
+    assert reloaded is not None
+    assert reloaded.source_provenance == provenance
+
+
+def test_sqlalchemy_upsert_intent_preserves_decided_approvals(
+    session: Session,
+) -> None:
+    """Re-proposing a run's intent must not erase decisions already made.
+
+    upsert_intent deleted every approval for the run and recreated them all as
+    pending, so a second POST of the intent destroyed the written reason and the
+    reviewer identity on anything a person had already decided.
+    """
+    approval_store = SqlAlchemyHarnessApprovalStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="claim-curation",
+        title="Intent replay run",
+        input_payload={},
+    )
+    actions = (
+        HarnessApprovalAction(
+            approval_key="decided-key",
+            title="Promote candidate claim",
+            risk_level="high",
+            target_type="claim",
+            target_id="claim-1",
+            requires_approval=True,
+            metadata={},
+        ),
+        HarnessApprovalAction(
+            approval_key="pending-key",
+            title="Persist curation summary",
+            risk_level="low",
+            target_type="artifact",
+            target_id="summary-1",
+            requires_approval=True,
+            metadata={},
+        ),
+    )
+    reviewer = ReviewActor(
+        user_id="66666666-6666-6666-6666-666666666666",
+        email="intent-reviewer@example.com",
+    )
+
+    approval_store.upsert_intent(
+        space_id=space_id,
+        run_id=run.id,
+        summary="Review proposed graph updates",
+        proposed_actions=actions,
+        metadata={},
+    )
+    approval_store.decide_approval(
+        space_id=space_id,
+        run_id=run.id,
+        approval_key="decided-key",
+        status="approved",
+        decision_reason="Checked against the source; safe to write.",
+        decided_by=reviewer,
+    )
+
+    approval_store.upsert_intent(
+        space_id=space_id,
+        run_id=run.id,
+        summary="Review proposed graph updates",
+        proposed_actions=actions,
+        metadata={},
+    )
+
+    approvals = {
+        approval.approval_key: approval
+        for approval in approval_store.list_approvals(
+            space_id=space_id,
+            run_id=run.id,
+        )
+    }
+    assert approvals["decided-key"].status == "approved"
+    assert (
+        approvals["decided-key"].decision_reason
+        == "Checked against the source; safe to write."
+    )
+    assert approvals["decided-key"].decided_by == reviewer
+    assert approvals["pending-key"].status == "pending"
+
+
+def test_sqlalchemy_upsert_intent_reopens_an_approval_whose_action_changed(
+    session: Session,
+) -> None:
+    """A decision describes one action, not one approval key.
+
+    ``uq_harness_run_approvals_run_id_approval_key`` allows exactly one row per
+    (run, key), so keeping the decided row when a re-proposed action reuses the
+    key with different content leaves the run with nothing pending -- it would
+    proceed on a human decision made about a different action.
+    """
+    approval_store = SqlAlchemyHarnessApprovalStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="claim-curation",
+        title="Changed action run",
+        input_payload={},
+    )
+    reviewer = ReviewActor(
+        user_id="66666666-6666-6666-6666-666666666666",
+        email="intent-reviewer@example.com",
+    )
+
+    approval_store.upsert_intent(
+        space_id=space_id,
+        run_id=run.id,
+        summary="Review proposed graph updates",
+        proposed_actions=(
+            HarnessApprovalAction(
+                approval_key="decided-key",
+                title="Promote candidate claim",
+                risk_level="high",
+                target_type="claim",
+                target_id="claim-1",
+                requires_approval=True,
+                metadata={"passage": "first"},
+            ),
+        ),
+        metadata={},
+    )
+    approval_store.decide_approval(
+        space_id=space_id,
+        run_id=run.id,
+        approval_key="decided-key",
+        status="approved",
+        decision_reason="Checked against the source; safe to write.",
+        decided_by=reviewer,
+    )
+
+    changed = (
+        HarnessApprovalAction(
+            approval_key="decided-key",
+            title="Promote candidate claim",
+            risk_level="high",
+            target_type="claim",
+            target_id="claim-2",
+            requires_approval=True,
+            metadata={"passage": "first"},
+        ),
+    )
+    approval_store.upsert_intent(
+        space_id=space_id,
+        run_id=run.id,
+        summary="Review proposed graph updates",
+        proposed_actions=changed,
+        metadata={},
+    )
+    # A reopened row is pending, and pending rows are replaced on every
+    # re-proposal -- the carried decision has to survive that too.
+    approval_store.upsert_intent(
+        space_id=space_id,
+        run_id=run.id,
+        summary="Review proposed graph updates",
+        proposed_actions=changed,
+        metadata={},
+    )
+
+    approvals = approval_store.list_approvals(space_id=space_id, run_id=run.id)
+    assert len(approvals) == 1
+    reopened = approvals[0]
+    assert reopened.status == "pending"
+    assert reopened.decision_reason is None
+    assert reopened.decided_by is None
+    assert reopened.target_id == "claim-2"
+    assert reopened.metadata == {"passage": "first"}
+    history = reopened.superseded_decisions
+    assert len(history) == 1
+    assert history[0].status == "approved"
+    assert history[0].decision_reason == "Checked against the source; safe to write."
+    assert history[0].decided_by == reviewer
+    assert history[0].target_id == "claim-1"
+    # The parameters that were actually approved, not just the target.
+    assert history[0].metadata == {"passage": "first"}
+    # Durable rows keep naive UTC; the trail must still say which zone it is in.
+    assert history[0].decided_at.endswith("+00:00")
+
+
+def test_both_approval_stores_render_a_superseded_decision_identically(
+    session: Session,
+) -> None:
+    """The two stores disagree about tzinfo on ``updated_at``.
+
+    The durable store writes naive UTC and the in-memory store keeps the offset,
+    so a bare isoformat() renders the same audit record two different ways --
+    the exact ambiguity ``serialize_timestamp`` exists to remove.
+    """
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="claim-curation",
+        title="Timestamp parity run",
+        input_payload={},
+    )
+    reviewer = ReviewActor(
+        user_id="66666666-6666-6666-6666-666666666666",
+        email="intent-reviewer@example.com",
+    )
+    approved = HarnessApprovalAction(
+        approval_key="parity-key",
+        title="Promote candidate claim",
+        risk_level="high",
+        target_type="claim",
+        target_id="claim-1",
+        requires_approval=True,
+        metadata={},
+    )
+    changed = HarnessApprovalAction(
+        approval_key="parity-key",
+        title="Promote candidate claim",
+        risk_level="high",
+        target_type="claim",
+        target_id="claim-2",
+        requires_approval=True,
+        metadata={},
+    )
+
+    trails = []
+    for store in (SqlAlchemyHarnessApprovalStore(session), HarnessApprovalStore()):
+        store.upsert_intent(
+            space_id=space_id,
+            run_id=run.id,
+            summary="Review proposed graph updates",
+            proposed_actions=(approved,),
+            metadata={},
+        )
+        store.decide_approval(
+            space_id=space_id,
+            run_id=run.id,
+            approval_key="parity-key",
+            status="approved",
+            decision_reason="Safe to write.",
+            decided_by=reviewer,
+        )
+        store.upsert_intent(
+            space_id=space_id,
+            run_id=run.id,
+            summary="Review proposed graph updates",
+            proposed_actions=(changed,),
+            metadata={},
+        )
+        trails.append(
+            store.list_approvals(space_id=space_id, run_id=run.id)[0]
+            .superseded_decisions[0]
+            .decided_at,
+        )
+
+    durable, in_memory = trails
+    assert durable.endswith("+00:00")
+    assert in_memory.endswith("+00:00")
+
+
 def test_sqlalchemy_harness_approval_store_persists_intents_and_decisions(
     session: Session,
 ) -> None:
@@ -284,6 +600,7 @@ def test_sqlalchemy_harness_approval_store_persists_intents_and_decisions(
         approval_key="promote-claim-1",
         status="approved",
         decision_reason="Evidence is sufficient",
+        decided_by=None,
     )
     assert decided is not None
     assert decided.status == "approved"
@@ -296,6 +613,7 @@ def test_sqlalchemy_harness_approval_store_persists_intents_and_decisions(
             approval_key="promote-claim-1",
             status="rejected",
             decision_reason="Trying to override the first decision",
+            decided_by=None,
         )
 
 
@@ -1062,6 +1380,7 @@ def test_sqlalchemy_harness_proposal_store_persists_and_decides_proposals(
         proposal_id=created[0].id,
         status="promoted",
         decision_reason="Evidence is strong",
+        decided_by=None,
         metadata={"reviewed_by": "tester"},
     )
     assert promoted is not None
@@ -1075,6 +1394,7 @@ def test_sqlalchemy_harness_proposal_store_persists_and_decides_proposals(
             proposal_id=created[0].id,
             status="rejected",
             decision_reason="Attempt to override the first decision",
+            decided_by=None,
             metadata={"reviewed_by": "reviewer-2"},
         )
 
@@ -1083,6 +1403,7 @@ def test_sqlalchemy_harness_proposal_store_persists_and_decides_proposals(
         proposal_id=created[1].id,
         status="rejected",
         decision_reason="Needs more support",
+        decided_by=None,
         metadata={"reviewed_by": "tester"},
     )
     assert rejected is not None
@@ -1629,6 +1950,7 @@ def test_sqlalchemy_harness_approval_store_rejects_stale_cross_session_override(
             approval_key="promote-cross-session",
             status="approved",
             decision_reason="Primary reviewer approved it.",
+            decided_by=None,
         )
         assert decided is not None
         assert decided.status == "approved"
@@ -1640,6 +1962,7 @@ def test_sqlalchemy_harness_approval_store_rejects_stale_cross_session_override(
                 approval_key="promote-cross-session",
                 status="rejected",
                 decision_reason="Secondary reviewer attempted an override.",
+                decided_by=None,
             )
 
         verified = approval_store_verifier.list_approvals(
@@ -1704,6 +2027,7 @@ def test_sqlalchemy_harness_proposal_store_rejects_stale_cross_session_override(
             proposal_id=proposal.id,
             status="promoted",
             decision_reason="Primary reviewer promoted it.",
+            decided_by=None,
             metadata={"reviewed_by": "primary"},
         )
         assert promoted is not None
@@ -1715,6 +2039,7 @@ def test_sqlalchemy_harness_proposal_store_rejects_stale_cross_session_override(
                 proposal_id=proposal.id,
                 status="rejected",
                 decision_reason="Secondary reviewer attempted an override.",
+                decided_by=None,
                 metadata={"reviewed_by": "secondary"},
             )
 
@@ -1918,6 +2243,7 @@ def test_sqlalchemy_harness_review_item_store_filters_counts_and_decides(
             review_item_id=created[0].id,
             status="needs_more_magic",
             decision_reason=None,
+            decided_by=None,
         )
 
     decided = review_store.decide_review_item(
@@ -1925,6 +2251,7 @@ def test_sqlalchemy_harness_review_item_store_filters_counts_and_decides(
         review_item_id=created[0].id,
         status="resolved",
         decision_reason=" accepted ",
+        decided_by=None,
         metadata={"reviewed_by": "unit-test"},
         linked_proposal_id=f" {uuid4()} ",
         linked_approval_key=" approval-1 ",
@@ -1942,6 +2269,7 @@ def test_sqlalchemy_harness_review_item_store_filters_counts_and_decides(
             review_item_id=created[0].id,
             status="dismissed",
             decision_reason="duplicate",
+            decided_by=None,
         )
     assert (
         review_store.decide_review_item(
@@ -1949,6 +2277,7 @@ def test_sqlalchemy_harness_review_item_store_filters_counts_and_decides(
             review_item_id=str(uuid4()),
             status="dismissed",
             decision_reason="missing",
+            decided_by=None,
         )
         is None
     )

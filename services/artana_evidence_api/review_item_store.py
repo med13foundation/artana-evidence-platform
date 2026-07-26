@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
+from artana_evidence_api.types.review_actor import ReviewActor
 
 _PENDING_REVIEW_STATUS = "pending_review"
 _DECISION_STATUSES = frozenset({"resolved", "dismissed"})
@@ -67,6 +68,7 @@ class HarnessReviewItemRecord:
     updated_at: datetime
     review_fingerprint: str | None = None
     evidence_grade: str | None = None
+    decided_by: ReviewActor | None = None
 
 
 class HarnessReviewItemStore:
@@ -339,11 +341,16 @@ class HarnessReviewItemStore:
         review_item_id: UUID | str,
         status: str,
         decision_reason: str | None,
+        decided_by: ReviewActor | None,
         metadata: JSONObject | None = None,
         linked_proposal_id: str | None = None,
         linked_approval_key: str | None = None,
     ) -> HarnessReviewItemRecord | None:
-        """Resolve or dismiss one review item."""
+        """Resolve or dismiss one review item.
+
+        ``decided_by`` is required-but-nullable so that no caller can drop the
+        reviewer by omission; see :class:`ReviewActor`.
+        """
         normalized_status = status.strip().lower()
         if normalized_status not in _DECISION_STATUSES:
             msg = f"Unsupported review item status '{status}'"
@@ -385,6 +392,7 @@ class HarnessReviewItemStore:
                     else None
                 ),
                 decided_at=decision_timestamp,
+                decided_by=decided_by,
                 linked_proposal_id=(
                     linked_proposal_id.strip()
                     if isinstance(linked_proposal_id, str)

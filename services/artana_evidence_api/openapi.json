@@ -5600,6 +5600,16 @@
             "title": "Created At",
             "type": "string"
           },
+          "decided_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewActor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "decision_reason": {
             "anyOf": [
               {
@@ -5625,6 +5635,13 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "superseded_decisions": {
+            "items": {
+              "$ref": "#/components/schemas/SupersededApprovalDecision"
+            },
+            "title": "Superseded Decisions",
+            "type": "array"
           },
           "target_id": {
             "anyOf": [
@@ -5658,7 +5675,9 @@
           "target_id",
           "status",
           "decision_reason",
+          "decided_by",
           "metadata",
+          "superseded_decisions",
           "created_at",
           "updated_at"
         ],
@@ -6539,6 +6558,16 @@
             ],
             "title": "Decided At"
           },
+          "decided_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewActor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "decision_reason": {
             "anyOf": [
               {
@@ -6679,6 +6708,7 @@
           "evidence_grade",
           "decision_reason",
           "decided_at",
+          "decided_by",
           "created_at",
           "updated_at"
         ],
@@ -7080,6 +7110,16 @@
             ],
             "title": "Decided At"
           },
+          "decided_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewActor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "decision_reason": {
             "anyOf": [
               {
@@ -7257,6 +7297,7 @@
           "source_provenance",
           "decision_reason",
           "decided_at",
+          "decided_by",
           "created_at",
           "updated_at"
         ],
@@ -13404,6 +13445,30 @@
         "title": "ResearchStateResponse",
         "type": "object"
       },
+      "ReviewActor": {
+        "additionalProperties": false,
+        "description": "One accountable identity attached to a recorded review decision.",
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "minLength": 1,
+            "title": "Email",
+            "type": "string"
+          },
+          "user_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "email"
+        ],
+        "title": "ReviewActor",
+        "type": "object"
+      },
       "RotatedApiKeyResponse": {
         "description": "Response after rotating an API key \u2014 includes the new full key once.",
         "properties": {
@@ -14435,6 +14500,83 @@
           "updated_at"
         ],
         "title": "StudyOutcomeResponse",
+        "type": "object"
+      },
+      "SupersededApprovalDecision": {
+        "description": "One decision that a later, different action replaced.\n\nStored in its own column rather than inside the approval's ``metadata``.\nMetadata is arbitrary caller-supplied JSON; this is a system-authored audit\nrecord.  Sharing a namespace let a caller's key be read back as decision\nhistory, and made an unchanged re-proposal compare unequal.\n\n``decided_at`` is already serialized, because the two stores disagree about\ntzinfo on ``updated_at`` and this is the point where that is resolved once.",
+        "properties": {
+          "decided_at": {
+            "title": "Decided At",
+            "type": "string"
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewActor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Reason"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Metadata",
+            "type": "object"
+          },
+          "risk_level": {
+            "title": "Risk Level",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "target_type": {
+            "title": "Target Type",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "decision_reason",
+          "decided_by",
+          "decided_at",
+          "title",
+          "risk_level",
+          "target_type",
+          "target_id",
+          "metadata"
+        ],
+        "title": "SupersededApprovalDecision",
         "type": "object"
       },
       "SupervisorArtifactKeysResponse": {
@@ -22235,7 +22377,7 @@
     },
     "/v1/spaces/{space_id}/review-queue": {
       "get": {
-        "description": "Return the unified review queue for one space. By default this shows pending proposals, pending review-only items, and pending approvals. Use filters such as kind, run_id, document_id, or source_family when you want one slice of the queue. Use the lower-level proposal and approval routes when you need the specialized primitive records directly.",
+        "description": "Return the unified review queue for one space. By default this shows pending proposals, pending review-only items, and pending approvals. Pass status=decided to read the audit trail -- everything promoted, rejected, approved, resolved, or dismissed, each with its written decision_reason and the reviewer who made it -- or a comma-separated list such as status=promoted,rejected for one slice of it. Order the trail with order_by=decided_at. Use the lower-level proposal and approval routes when you need the specialized primitive records directly.",
         "operationId": "list_review_queue_v1_spaces__space_id__review_queue_get",
         "parameters": [
           {
@@ -22285,21 +22427,61 @@
             }
           },
           {
+            "description": "Statuses to return. Repeat the parameter or comma-join the values, and use the group name 'pending' or 'decided' for a whole family of them. Defaults to the pending work in each family.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Statuses to return. Repeat the parameter or comma-join the values, and use the group name 'pending' or 'decided' for a whole family of them. Defaults to the pending work in each family.",
+              "title": "Status"
+            }
+          },
+          {
+            "deprecated": true,
+            "description": "Deprecated spelling of 'status', used only when 'status' is absent. It now resolves identically, so status_filter=pending returns the whole pending queue rather than only pending approvals.",
             "in": "query",
             "name": "status_filter",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 32,
-                  "minLength": 1,
-                  "type": "string"
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
                 },
                 {
                   "type": "null"
                 }
               ],
+              "deprecated": true,
+              "description": "Deprecated spelling of 'status', used only when 'status' is absent. It now resolves identically, so status_filter=pending returns the whole pending queue rather than only pending approvals.",
               "title": "Status Filter"
+            }
+          },
+          {
+            "description": "Order results by 'ranking' (default) or 'decided_at'.",
+            "in": "query",
+            "name": "order_by",
+            "required": false,
+            "schema": {
+              "default": "ranking",
+              "description": "Order results by 'ranking' (default) or 'decided_at'.",
+              "maxLength": 32,
+              "minLength": 1,
+              "title": "Order By",
+              "type": "string"
             }
           },
           {
@@ -27204,7 +27386,7 @@
     },
     "/v2/spaces/{space_id}/review-items": {
       "get": {
-        "description": "Return the unified review queue for one space. By default this shows pending proposals, pending review-only items, and pending approvals. Use filters such as kind, run_id, document_id, or source_family when you want one slice of the queue. Use the lower-level proposal and approval routes when you need the specialized primitive records directly.",
+        "description": "Return the unified review queue for one space. By default this shows pending proposals, pending review-only items, and pending approvals. Pass status=decided to read the audit trail -- everything promoted, rejected, approved, resolved, or dismissed, each with its written decision_reason and the reviewer who made it -- or a comma-separated list such as status=promoted,rejected for one slice of it. Order the trail with order_by=decided_at. Use the lower-level proposal and approval routes when you need the specialized primitive records directly.",
         "operationId": "v2_list_review_queue_v2_spaces__space_id__review_items_get",
         "parameters": [
           {
@@ -27254,21 +27436,61 @@
             }
           },
           {
+            "description": "Statuses to return. Repeat the parameter or comma-join the values, and use the group name 'pending' or 'decided' for a whole family of them. Defaults to the pending work in each family.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Statuses to return. Repeat the parameter or comma-join the values, and use the group name 'pending' or 'decided' for a whole family of them. Defaults to the pending work in each family.",
+              "title": "Status"
+            }
+          },
+          {
+            "deprecated": true,
+            "description": "Deprecated spelling of 'status', used only when 'status' is absent. It now resolves identically, so status_filter=pending returns the whole pending queue rather than only pending approvals.",
             "in": "query",
             "name": "status_filter",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 32,
-                  "minLength": 1,
-                  "type": "string"
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
                 },
                 {
                   "type": "null"
                 }
               ],
+              "deprecated": true,
+              "description": "Deprecated spelling of 'status', used only when 'status' is absent. It now resolves identically, so status_filter=pending returns the whole pending queue rather than only pending approvals.",
               "title": "Status Filter"
+            }
+          },
+          {
+            "description": "Order results by 'ranking' (default) or 'decided_at'.",
+            "in": "query",
+            "name": "order_by",
+            "required": false,
+            "schema": {
+              "default": "ranking",
+              "description": "Order results by 'ranking' (default) or 'decided_at'.",
+              "maxLength": 32,
+              "minLength": 1,
+              "title": "Order By",
+              "type": "string"
             }
           },
           {

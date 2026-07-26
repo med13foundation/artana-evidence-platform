@@ -76,8 +76,8 @@
   "package_module_counts": [
     {
       "path": "services/artana_evidence_api/routers",
-      "max_modules": 36,
-      "reason": "Evidence API routers are an existing package family; future route moves should ratchet this count down.",
+      "max_modules": 35,
+      "reason": "Evidence API routers are an existing package family; future route moves should ratchet this count down. Ratcheted 36 -> 35 when the review-queue router became a package.",
       "tracking_ref": "docs/architecture/module-packaging-plan.md"
     },
     {

@@ -15,6 +15,7 @@ from artana_evidence_api.tool_catalog import (
     visible_tool_names_for_harness,
 )
 from artana_evidence_api.types.common import JSONObject, json_value
+from artana_evidence_api.types.review_actor import ReviewActor  # noqa: TC001
 
 if TYPE_CHECKING:
     from artana_evidence_api.artifact_store import HarnessArtifactStore
@@ -504,13 +505,19 @@ def append_manual_review_decision(  # noqa: PLR0913
     tool_name: str,
     decision: str,
     reason: str | None,
+    decided_by: ReviewActor | None,
     artifact_key: str | None,
     metadata: JSONObject,
     artifact_store: HarnessArtifactStore,
     run_registry: HarnessRunRegistry,
     runtime: GraphHarnessKernelRuntime,
 ) -> None:
-    """Append one manual-review record to the policy decision artifact for a source run."""
+    """Append one manual-review record to the policy decision artifact for a source run.
+
+    ``decision_source`` on these records is ``manual_review``, which asserts a
+    human was involved.  ``decided_by`` names which one, so the assertion is
+    checkable rather than taken on faith.
+    """
     current = sync_policy_decisions_artifact(
         space_id=space_id,
         run_id=run_id,
@@ -531,6 +538,8 @@ def append_manual_review_decision(  # noqa: PLR0913
             "decision_source": "manual_review",
             "tool_name": tool_name,
             "decision": decision,
+            "decided_by_user_id": decided_by.user_id if decided_by else None,
+            "decided_by_email": decided_by.email if decided_by else None,
             "reason": reason or "manual_review",
             "status": "completed",
             "event_id": None,

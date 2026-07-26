@@ -9,7 +9,7 @@ from artana_evidence_api.db_schema import (
     harness_table_options,
     qualify_harness_foreign_key_target,
 )
-from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.common import JSONObject, JSONValue  # noqa: TC001
 from sqlalchemy import (
     JSON,
     DateTime,
@@ -155,10 +155,21 @@ class HarnessApprovalModel(Base):
     target_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    decided_by_user_id: Mapped[str | None] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=True,
+    )
+    decided_by_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     metadata_payload: Mapped[JSONObject] = mapped_column(
         JSON,
         nullable=False,
         default=dict,
+    )
+    # Kept out of metadata_payload on purpose: that column is caller-supplied
+    # JSON, and this is a system-authored audit record.
+    superseded_decisions_payload: Mapped[list[JSONValue] | None] = mapped_column(
+        JSON,
+        nullable=True,
     )
 
     run: Mapped[HarnessRunModel] = relationship(
@@ -253,6 +264,11 @@ class HarnessProposalModel(Base):
     claim_fingerprint: Mapped[str | None] = mapped_column(String(32), nullable=True)
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
+    decided_by_user_id: Mapped[str | None] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=True,
+    )
+    decided_by_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
 
     run: Mapped[HarnessRunModel] = relationship(
         "HarnessRunModel",
@@ -363,6 +379,11 @@ class HarnessReviewItemModel(Base):
     review_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
+    decided_by_user_id: Mapped[str | None] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=True,
+    )
+    decided_by_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     linked_proposal_id: Mapped[str | None] = mapped_column(
         PGUUID(as_uuid=False),
         nullable=True,

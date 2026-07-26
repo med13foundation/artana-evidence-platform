@@ -176,6 +176,14 @@ class ExactEvidenceLocator(BaseModel):
         return self
 
 
+#: Why a stored proposal carries no provenance envelope at all.
+#:
+#: Distinct from a provenance check that ran and failed: nothing was ever
+#: recorded for this proposal, so there is no source identity or locator to
+#: show and none was rejected either.
+UNRECORDED_PROVENANCE_REASON = "no_persisted_source_provenance"
+
+
 class ClaimSourceProvenance(BaseModel):
     """Frozen proposal-time source envelope; legacy absence is unverified."""
 
@@ -323,6 +331,22 @@ def _require_non_empty(value: str | None, field_name: str) -> str:
     return value.strip()
 
 
+def unrecorded_source_provenance(
+    status: SourceProvenanceStatus = "unverified",
+) -> ClaimSourceProvenance:
+    """Return the explicit stand-in for a proposal with no provenance envelope.
+
+    A bare ``null`` cannot tell a reviewer whether provenance was never computed,
+    was computed and rejected, or does not apply to this proposal type -- three
+    very different things to see next to a claim you are being asked to accept.
+    Saying "unverified, because nothing was recorded" says one of them.
+    """
+    return ClaimSourceProvenance(
+        status=status,
+        reason_code=UNRECORDED_PROVENANCE_REASON,
+    )
+
+
 __all__ = [
     "ClaimSourceProvenance",
     "ExactEvidenceLocator",
@@ -331,4 +355,6 @@ __all__ = [
     "SourceEvidenceUpstream",
     "SourceKind",
     "SourceProvenanceStatus",
+    "UNRECORDED_PROVENANCE_REASON",
+    "unrecorded_source_provenance",
 ]

@@ -13,7 +13,12 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import DBAPIError
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-CURRENT_HEAD_REVISION = "025_proposal_source_provenance"
+CURRENT_HEAD_REVISION = "027_approval_superseded_decisions"
+_DECISION_TABLES = (
+    "harness_proposals",
+    "harness_review_items",
+    "harness_run_approvals",
+)
 HARNESS_ALEMBIC_VERSION_TABLE = "alembic_version_artana_evidence_api"
 _ALEMBIC_SUBPROCESS_TEMPLATE = """
 import os
@@ -584,3 +589,106 @@ def test_025_makes_proposal_source_provenance_immutable(
     assert row["title"] == "Review title may change"
     assert row["source_provenance_status"] == "unverified"
     assert row["source_provenance_payload"] is None
+
+
+def test_026_gives_every_decision_table_a_nullable_reviewer(tmp_path: Path) -> None:
+    """Decisions carried a written reason but no author until 026.
+
+    The columns are nullable on purpose: rows decided before the migration have
+    no attribution, and inventing one would be worse than admitting the gap.
+    """
+    database_url = f"sqlite:///{tmp_path / 'harness_026_actor.db'}"
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision="025_proposal_source_provenance",
+    )
+    space_id = str(uuid4())
+    run_id = str(uuid4())
+    proposal_id = str(uuid4())
+    _seed_harness_run_and_duplicate_proposals(
+        database_url=database_url,
+        space_id=space_id,
+        run_id=run_id,
+        claim_fingerprint="f" * 32,
+        proposals=(
+            {
+                "id": proposal_id,
+                "source_key": "pre-attribution",
+                "title": "Decided before anyone was recorded",
+                "status": "pending_review",
+                "created_at": "2026-07-03 10:00:00",
+                "updated_at": "2026-07-03 10:00:00",
+            },
+        ),
+    )
+
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision="026_review_decision_actor",
+    )
+
+    engine = create_engine(database_url, future=True)
+    try:
+        inspector = inspect(engine)
+        columns_by_table = {
+            table_name: {
+                column["name"]: column for column in inspector.get_columns(table_name)
+            }
+            for table_name in _DECISION_TABLES
+        }
+        with engine.connect() as connection:
+            legacy_row = (
+                connection.execute(
+                    text(
+                        """
+                        SELECT decided_by_user_id, decided_by_email
+                        FROM harness_proposals
+                        WHERE id = :proposal_id
+                        """,
+                    ),
+                    {"proposal_id": proposal_id},
+                )
+                .mappings()
+                .one()
+            )
+    finally:
+        engine.dispose()
+
+    for table_name, columns in columns_by_table.items():
+        assert "decided_by_user_id" in columns, table_name
+        assert "decided_by_email" in columns, table_name
+        assert columns["decided_by_user_id"]["nullable"], table_name
+        assert columns["decided_by_email"]["nullable"], table_name
+    assert legacy_row["decided_by_user_id"] is None
+    assert legacy_row["decided_by_email"] is None
+
+
+def test_027_gives_an_approval_its_own_superseded_decision_column(
+    tmp_path: Path,
+) -> None:
+    """The decision trail must not share a column with caller-supplied metadata.
+
+    It was first written into metadata_payload, which callers populate freely --
+    so a caller could have its own data read back as decision history.
+    """
+    database_url = f"sqlite:///{tmp_path / 'harness_027_superseded.db'}"
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision=CURRENT_HEAD_REVISION,
+    )
+
+    engine = create_engine(database_url, future=True)
+    try:
+        columns = {
+            column["name"]: column
+            for column in inspect(engine).get_columns("harness_run_approvals")
+        }
+    finally:
+        engine.dispose()
+
+    assert "superseded_decisions_payload" in columns
+    assert columns["superseded_decisions_payload"]["nullable"]
+    assert "metadata_payload" in columns

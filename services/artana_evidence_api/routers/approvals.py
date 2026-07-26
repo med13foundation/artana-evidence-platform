@@ -9,11 +9,13 @@ from artana_evidence_api.approval_store import (
     HarnessApprovalRecord,
     HarnessApprovalStore,
     HarnessRunIntentRecord,
+    SupersededApprovalDecision,
 )
 from artana_evidence_api.artifact_store import (
     HarnessArtifactStore,  # noqa: TC001
 )
 from artana_evidence_api.dependencies import (
+    ReviewActorDependency,
     get_approval_store,
     get_artifact_store,
     get_run_registry,
@@ -24,7 +26,11 @@ from artana_evidence_api.run_registry import (  # noqa: TC001
     HarnessRunRecord,
     HarnessRunRegistry,
 )
-from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.common import (  # noqa: TC001
+    JSONObject,
+    serialize_timestamp,
+)
+from artana_evidence_api.types.review_actor import ReviewActor
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -128,8 +134,8 @@ class HarnessRunIntentResponse(BaseModel):
                 for action in record.proposed_actions
             ],
             metadata=record.metadata,
-            created_at=record.created_at.isoformat(),
-            updated_at=record.updated_at.isoformat(),
+            created_at=serialize_timestamp(record.created_at),
+            updated_at=serialize_timestamp(record.updated_at),
         )
 
 
@@ -145,7 +151,12 @@ class HarnessApprovalResponse(BaseModel):
     target_id: str | None
     status: str
     decision_reason: str | None
+    decided_by: ReviewActor | None
     metadata: JSONObject
+    # Decisions this approval replaced, oldest first. Present when a re-proposed
+    # action reused the key while describing a different write; a trail nobody
+    # can read is not much of an audit trail.
+    superseded_decisions: list[SupersededApprovalDecision]
     created_at: str
     updated_at: str
 
@@ -163,9 +174,11 @@ class HarnessApprovalResponse(BaseModel):
             target_id=record.target_id,
             status=record.status,
             decision_reason=record.decision_reason,
+            decided_by=record.decided_by,
             metadata=record.metadata,
-            created_at=record.created_at.isoformat(),
-            updated_at=record.updated_at.isoformat(),
+            superseded_decisions=list(record.superseded_decisions),
+            created_at=serialize_timestamp(record.created_at),
+            updated_at=serialize_timestamp(record.updated_at),
         )
 
 
@@ -235,6 +248,12 @@ def record_intent(  # noqa: PLR0913
         metadata=request.metadata,
     )
     approvals = approval_store.list_approvals(space_id=space_id, run_id=run_id)
+    # A decided approval is retained as a record of what a person did, not as a
+    # live gate. Counting those as pending re-paused the run on an idempotent or
+    # narrower re-post and reported approvals no reviewer could act on.
+    pending_approvals = [
+        approval for approval in approvals if approval.status == "pending"
+    ]
     run_registry.record_event(
         space_id=space_id,
         run_id=run_id,
@@ -243,9 +262,10 @@ def record_intent(  # noqa: PLR0913
         payload={
             "summary": request.summary,
             "approval_count": len(approvals),
+            "pending_approval_count": len(pending_approvals),
         },
     )
-    if approvals and run.status != "failed":
+    if pending_approvals and run.status != "failed":
         current_progress = run_registry.get_progress(space_id=space_id, run_id=run_id)
         run_registry.set_run_status(
             space_id=space_id,
@@ -270,14 +290,14 @@ def record_intent(  # noqa: PLR0913
                 current_progress.total_steps if current_progress is not None else None
             ),
             resume_point="approval_gate",
-            metadata={"pending_approvals": len(approvals)},
+            metadata={"pending_approvals": len(pending_approvals)},
         )
         run_registry.record_event(
             space_id=space_id,
             run_id=run_id,
             event_type="run.paused",
             message="Run paused at approval gate.",
-            payload={"pending_approvals": len(approvals)},
+            payload={"pending_approvals": len(pending_approvals)},
         )
         artifact_store.patch_workspace(
             space_id=space_id,
@@ -285,7 +305,7 @@ def record_intent(  # noqa: PLR0913
             patch={
                 "status": "paused",
                 "resume_point": "approval_gate",
-                "pending_approvals": len(approvals),
+                "pending_approvals": len(pending_approvals),
             },
         )
     return HarnessRunIntentResponse.from_record(intent)
@@ -331,7 +351,6 @@ def list_approvals(
         "Set the approval decision for one gated run action. Use the unified "
         "review queue when you want the product-facing review surface."
     ),
-    dependencies=[Depends(require_harness_space_write_access)],
 )
 def decide_approval(  # noqa: PLR0913
     space_id: UUID,
@@ -339,6 +358,7 @@ def decide_approval(  # noqa: PLR0913
     approval_key: str,
     request: HarnessApprovalDecisionRequest,
     *,
+    decided_by: ReviewActorDependency,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     approval_store: HarnessApprovalStore = _APPROVAL_STORE_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
@@ -352,6 +372,7 @@ def decide_approval(  # noqa: PLR0913
             approval_key=approval_key,
             status=request.decision,
             decision_reason=request.reason,
+            decided_by=decided_by,
         )
     except ValueError as exc:
         raise HTTPException(

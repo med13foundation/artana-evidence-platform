@@ -64,6 +64,7 @@ from artana_evidence_api.proposal_entity_payloads import (
     resolve_entity_reference_value,
     resolve_existing_entity_from_candidate_payload,
 )
+from artana_evidence_api.proposal_store import is_undecidable_proposal_error
 from artana_evidence_api.run_registry import HarnessRunRegistry  # noqa: TC001
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 from artana_evidence_api.types.graph_contracts import (
@@ -75,6 +76,7 @@ from artana_evidence_api.types.graph_contracts import (
     KernelRelationCreateRequest,
 )
 from artana_evidence_api.types.graph_fact_assessment import assessment_confidence
+from artana_evidence_api.types.review_actor import ReviewActor  # noqa: TC001
 from fastapi import HTTPException, status
 
 if TYPE_CHECKING:
@@ -1045,6 +1047,7 @@ def decide_proposal(  # noqa: PLR0913
     proposal_id: UUID | str,
     decision_status: str,
     decision_reason: str | None,
+    decided_by: ReviewActor | None,
     request_metadata: JSONObject,
     proposal_store: HarnessProposalStore,
     run_registry: HarnessRunRegistry,
@@ -1069,13 +1072,14 @@ def decide_proposal(  # noqa: PLR0913
             proposal_id=proposal_id,
             status=decision_status,
             decision_reason=decision_reason,
+            decided_by=decided_by,
             metadata=merged_metadata,
         )
     except ValueError as exc:
         raise HTTPException(
             status_code=(
                 status.HTTP_409_CONFLICT
-                if "already decided" in str(exc)
+                if is_undecidable_proposal_error(exc)
                 else status.HTTP_400_BAD_REQUEST
             ),
             detail=str(exc),
