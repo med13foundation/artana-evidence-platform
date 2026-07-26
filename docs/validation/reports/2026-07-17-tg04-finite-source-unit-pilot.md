@@ -70,9 +70,12 @@ event key.
 
 Important near misses show why exact recovery failed:
 
-1. Luna found `TGF-beta-mediated induction of FOXP3` with the correct trigger,
-   type, and participants, but assigned TGF-beta the event role `AGENT` instead
-   of the expert role `CAUSE`.
+1. Luna found the induction event at `PMC-2222968-04-Results-03` `char:431-467`
+   with the correct trigger, type, and participants, but assigned TGF-beta the
+   event role `AGENT` instead of the expert role `CAUSE`. (The span is
+   licence-restricted corpus text, not republished; SHA-256
+   `974b8af6d41a1c67f93984c4f9076b7240462a5aaea196abdb0030ac1029568e`. See
+   [`RESTRICTED_CORPORA.md`](../../../scripts/validation/RESTRICTED_CORPORA.md).)
 2. Luna found `GATA3 ... repressing FOXP3`, but promoted the expert
    `UNCERTAIN` polarity and epistemic status to `SUPPORT` and `HYPOTHESIS`.
    This is a real scientific qualification failure, not a string mismatch.

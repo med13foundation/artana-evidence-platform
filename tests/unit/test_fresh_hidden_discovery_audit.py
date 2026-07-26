@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from scripts.run_fresh_hidden_discovery_audit import fresh_discovery_exit_code
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitCoverageDecision,
     SourceUnitDecision,
@@ -25,6 +30,14 @@ from scripts.validation.claim_events.finite_source_unit.discovery.fresh_unit imp
     select_fresh_hidden_unit,
 )
 from scripts.validation.claim_events.fixture import load_fixture
+
+#: These checks read the corpus text itself, which this public repository does
+#: not carry.  They are skipped, never deleted: the reason names the licence and
+#: the exact command that restores them.
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
+)
 
 _FIXTURE_PATH = Path(
     "scripts/validation/claim_events/fixtures/tg04_bionlp_ge_development_v1.json",
@@ -115,6 +128,7 @@ def test_fresh_discovery_gate_fails_closed_on_every_boundary() -> None:
         )
 
 
+@requires_corpus
 def test_fresh_unit_is_frozen_unexposed_and_has_no_local_gold() -> None:
     selection = select_fresh_hidden_unit(load_fixture(_FIXTURE_PATH))
 
@@ -126,21 +140,40 @@ def test_fresh_unit_is_frozen_unexposed_and_has_no_local_gold() -> None:
     assert selection.unit.input_sha256 == (
         "517b4ab2c503e65ce9d1b11f6b77e2361215f642cd0c54eec6abbb785a88c905"
     )
-    assert "P-selectin specifically enhanced nuclear translocation" in (
-        selection.unit.text
+    # The corpus sentence is licence-restricted, so it is pinned by digest
+    # rather than quoted.  See scripts/validation/RESTRICTED_CORPORA.md.
+    assert hashlib.sha256(selection.unit.text.encode("utf-8")).hexdigest() == (
+        "7470319518ed1ce44e7195841143cfc1f91e4799babe8676f46d3a2255e148d3"
     )
     assert len(selection.exposure_registry_sha256) == 64
     assert selection.authoritative_article_url.endswith("/7537762/")
 
 
 def test_target_requires_both_specific_material_arguments() -> None:
+    """The matcher keys on entity names, so the inputs here are entity names.
+
+    This case used to paste the argument surface exactly as the source document
+    writes it -- name, space, parenthesised abbreviation.  That is a quoted span
+    rather than the name of a thing, and the rule in
+    `scripts/validation/RESTRICTED_CORPORA.md` covers a test input as squarely
+    as it covers a fixture field.  The bare names exercise the same two
+    branches, and the third case keeps the substring branch honest with a
+    surface the corpus does not contain.
+    """
+
     complete = (
         {"exact_span": "P-selectin"},
-        {"exact_span": "nuclear factor-kappa B (NF-kappa B)"},
+        {"exact_span": "nuclear factor-kappa B"},
     )
     assert _target_arguments_preserved(complete)
     assert _target_arguments_preserved(
         ({"exact_span": "P-selectin"}, {"exact_span": "NF-kappa B"}),
+    )
+    assert _target_arguments_preserved(
+        (
+            {"exact_span": "P-selectin"},
+            {"exact_span": "synthetic nuclear factor-kappa B surface"},
+        ),
     )
     assert not _target_arguments_preserved(complete[:1])
     assert not _target_arguments_preserved(
@@ -149,8 +182,17 @@ def test_target_requires_both_specific_material_arguments() -> None:
 
 
 def test_fresh_authorization_report_is_hash_pinned(tmp_path: Path) -> None:
+    """The pin moved when the report was redacted; see `fresh_authorization`.
+
+    It is the same report and the same authorization -- two clauses that quoted
+    restricted corpus prose were reworded, and no requirement, count or verdict
+    in it changed.  The superseded digest and the reason are recorded next to
+    the constant, because a pin that can be bumped without explanation pins
+    nothing.
+    """
+
     assert verify_fresh_discovery_authorization() == (
-        "61b5ca507a26b6cfe20f02c28b29b71ac09ffcff2a58c056d149a18286823978"
+        "00968ba249fbffc85f016953ba762108042eabd77ef7d0653c3acc8f921ba568"
     )
 
     changed = tmp_path / "changed.md"

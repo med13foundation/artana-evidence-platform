@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
 
 import pytest
+from artana_evidence_api.document_extraction import normalize_text_document
 
 from scripts.run_controlled_event_replay import controlled_event_replay_exit_code
 from scripts.run_controlled_event_trial import controlled_event_trial_exit_code
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitCoverageDecision,
     SourceUnitDecision,
@@ -34,6 +40,14 @@ from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.s
 from scripts.validation.claim_events.fixture import (
     DEFAULT_DEVELOPMENT_FIXTURE_PATH,
     load_fixture,
+)
+
+#: These checks read the corpus text itself, which this public repository does
+#: not carry.  They are skipped, never deleted: the reason names the licence and
+#: the exact command that restores them.
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
 )
 
 
@@ -70,6 +84,7 @@ def _baseline_gate() -> ControlledEventTrialGateInputs:
     )
 
 
+@requires_corpus
 def test_controlled_event_trial_selection_is_frozen_and_fresh() -> None:
     selection = select_controlled_event_trial(
         load_fixture(DEFAULT_DEVELOPMENT_FIXTURE_PATH),
@@ -77,9 +92,10 @@ def test_controlled_event_trial_selection_is_frozen_and_fresh() -> None:
 
     assert selection.case_id == "bionlp-ge-2011:PMC-2222968-06-Results-05"
     assert selection.unit.index == 11
-    assert selection.unit.text == (
-        "As described for the human cells, TGF-beta dramatically up-regulated "
-        "Foxp3 in the DO11.10 littermate control mice."
+    # The corpus sentence is licence-restricted, so it is pinned by digest
+    # rather than quoted.  See scripts/validation/RESTRICTED_CORPORA.md.
+    assert hashlib.sha256(selection.unit.text.encode("utf-8")).hexdigest() == (
+        "e305c7e19ea6e6e2a7014b3a3a021623b5e5ec756477c81cf5716e8861e0dc04"
     )
     assert len(selection.expert_events) == 1
     assert selection.expert_events[0].trigger_span == "up-regulated"
@@ -151,11 +167,43 @@ def test_structure_replay_authorization_requires_successful_exact_report() -> No
         _verify_authorization_payload(failed_gate)
 
 
+@requires_corpus
 def test_expert_core_matching_preserves_valid_additional_arguments() -> None:
-    selection = select_controlled_event_trial(
-        load_fixture(DEFAULT_DEVELOPMENT_FIXTURE_PATH),
-    )
+    """A *valid* extra argument, and the validity is checked rather than assumed.
+
+    The matcher accepts a prediction whose arguments are a superset of the
+    expert's, so the additional argument here is the whole subject: it has to
+    be one a trusted extractor could actually have produced, which means its
+    span has to occur in the source at the offset it declares.
+
+    The 2026-07-25 redaction broke exactly that and nothing noticed.  The
+    corpus wording was replaced with a paraphrase while `source_start` kept
+    pointing at the offset of `DO11.10`, so the declared span no longer
+    occurred at the declared offset -- and the test still passed, because a
+    superset check ignores extra arguments whether they are well formed or
+    not.  What survived was a demonstration that the matcher tolerates a
+    *malformed* extra argument, under the name of one about a valid one.
+
+    So the binding is now asserted, against the case document rather than
+    against the substring search that produced the offset.  `DO11.10` is a
+    strain name, which `scripts/validation/RESTRICTED_CORPORA.md` commits, and
+    it occurs where it says it does.
+    """
+
+    fixture = load_fixture(DEFAULT_DEVELOPMENT_FIXTURE_PATH)
+    selection = select_controlled_event_trial(fixture)
     expert = selection.expert_events[0]
+
+    case = next(item for item in fixture.cases if item.case_id == selection.case_id)
+    document = normalize_text_document(case.source_text)
+    additional_span = "DO11.10"
+    additional_start = selection.unit.source_start + selection.unit.text.index(
+        additional_span,
+    )
+    assert document[additional_start : additional_start + len(additional_span)] == (
+        additional_span
+    ), "the additional argument must be source-bound, or it tests nothing"
+
     predicted = {
         "trigger_span": expert.trigger_span,
         "trigger_source_start": expert.trigger_source_start,
@@ -175,9 +223,8 @@ def test_expert_core_matching_preserves_valid_additional_arguments() -> None:
             {
                 "event_role": "CONTEXT",
                 "role": "POPULATION",
-                "exact_span": "DO11.10 littermate control mice",
-                "source_start": selection.unit.source_start
-                + selection.unit.text.index("DO11.10"),
+                "exact_span": additional_span,
+                "source_start": additional_start,
             },
         ],
     }

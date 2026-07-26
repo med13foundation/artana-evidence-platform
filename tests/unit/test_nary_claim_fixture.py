@@ -20,11 +20,23 @@ from scripts.validation.claim_events.contracts import (
     ValueStatus,
     validate_event_type_parity,
 )
+from scripts.validation.claim_events.corpus_text import (
+    RESTRICTED_CORPUS_SKIP_REASON,
+    corpus_is_available,
+)
 from scripts.validation.claim_events.fixture import (
     DEFAULT_DEVELOPMENT_FIXTURE_PATH,
     SCHEMA_VERSION,
     load_fixture,
     require_frozen_development_fixture,
+)
+
+#: These checks read the corpus text itself, which this public repository does
+#: not carry.  They are skipped, never deleted: the reason names the licence and
+#: the exact command that restores them.
+requires_corpus = pytest.mark.skipif(
+    not corpus_is_available(),
+    reason=RESTRICTED_CORPUS_SKIP_REASON,
 )
 
 JsonObject = dict[str, object]
@@ -47,6 +59,7 @@ _EVENT_TYPES: Final = {
 }
 
 
+@requires_corpus
 def test_repository_development_fixture_is_frozen_and_expert_derived() -> None:
     fixture = load_fixture(DEFAULT_DEVELOPMENT_FIXTURE_PATH)
 

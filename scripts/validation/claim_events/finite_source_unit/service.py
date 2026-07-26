@@ -40,7 +40,27 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v5"
+#: v6 because the prompt bytes changed and v5 did not.
+#:
+#: The 2026-07-25 redaction rewrote the illustrative phrase in CONTROLLED-EVENT
+#: DECOMPOSITION -- the old one reproduced 44 characters of restricted corpus
+#: prose -- and left this constant alone.  `extract_source_unit` derives its
+#: deterministic step key from this version, the model id, the unit hash and
+#: the execution namespace, and from nothing about the prompt body, so two
+#: materially different instructions were being issued under one identity: a
+#: replay would match, a comparison across the redaction would silently be a
+#: comparison of two different inputs.  In a repository whose claim is that
+#: provenance is checkable, an experiment's inputs must not be able to change
+#: without their name changing.
+#:
+#: Every finite-source-unit run recorded before 2026-07-25 -- the #175, #176,
+#: #177 and pilot reports -- ran the pre-redaction v5 prompt.  Those records
+#: are accounts of runs that happened and are left exactly as they are; the
+#: bytes they consumed remain reachable in published history.  What is fixed
+#: here is that no *future* run reuses their name for a different prompt.
+#: `test_extraction_prompt_bytes_match_their_declared_version` pins the body to
+#: this version so the next silent edit fails instead of aliasing.
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v6"
 _VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v5"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
@@ -309,8 +329,8 @@ represent the outer event as POSITIVE_REGULATION, NEGATIVE_REGULATION, or
 REGULATION rather than collapsing it into the controlled event type. Preserve
 the controlled event or process as a BIOLOGICAL_PROCESS argument and preserve
 each material participant of that controlled event as its own correctly typed
-argument. A phrase such as "enhanced nuclear translocation of NF-kappa B" must
-not become only a LOCALIZATION event that leaves "enhanced" unstructured. A
+argument. A phrase such as "enhanced import of NF-kappa B into the nucleus"
+must not become only a LOCALIZATION event that leaves "enhanced" unstructured. A
 process span such as "expression of MCP-1 and TNF-alpha" is BIOLOGICAL_PROCESS;
 the named genes or proteins are separate GENE_OR_PROTEIN arguments. Do not label
 a process as GENE_OR_PROTEIN merely because its span contains gene names.

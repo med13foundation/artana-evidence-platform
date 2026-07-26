@@ -11,7 +11,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Analysis of BMP-6 messenger RNA (mRNA) expression\nEndogenous expression of the BMP-6 gene was examined by reverse transcription-polymerase chain reaction. Total RNA was isolated using Absolutely RNAtrade RT-PCR Miniprep Kit (Stratagene Europe, Amsterdam, Netherland) according to the manufacturers instructions. Quantification of the isolated total RNA was achieved by using spectrophotometric OD260 measurements. Equal amounts of RNA were then reverse transcribed to cDNA with TaqMan(R) Reverse Transcription Reagents (Applied Biosystems, Foster City, CA, U.S.A). To measure mRNA expression of BMP6, Id1-Id4 and PGK1 PCR were carried out with TaqMan(R) universal master mix. Primers and probes were provided by Assay-on-Demand (Applied Biosystems). PCR reactions were carried out in a final volume of 25 mul (BMP-6) or 20 mul (ID1). The cDNA added to each reaction was equivalent to the input of 20 ng of total RNA. The gene expression was quantified using the standard curve method (BMP6), or the comparative CT method (Id1) as described in ABI7700 User Bulletin 2 (Applied Biosystems). The expression was then normalized to the expression level of PGK1. PGK1 was chosen, because it has been shown to have low expression variability among lymphocyte specimens [56]. Expression levels in B cells were then related to the expression levels in Ramos cells.",
+      "source_length": 1355,
+      "source_sha256": "a387ccf233445c720d53d213898b2d596f6c9474a181dd89b8de2b134ab424e9",
       "title": "PMC-1134658-15-Methods-06"
     },
     {
@@ -25,7 +26,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Supplementary Material\n[Supplemental Material]",
+      "source_length": 46,
+      "source_sha256": "6d5a04976d4db0079e559402e2ed26f8c3d919e9b20623cdabafc10f1f59a2dc",
       "title": "PMC-2806624-09-Supplementary_Material"
     },
     {
@@ -39,7 +41,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Paternal expression of WT1 in human fibroblasts and lymphocytes.\nThe Wilms' tumor suppressor gene ( WT1 ) was previously identified as being imprinted, with frequent maternal expression in human placentae and fetal brains. We examined the allele-specific expression of WT1 in cultured human fibroblasts from 15 individuals. Seven of 15 fibroblast lines were heterozygous for polymorphic alleles, and the expression patterns were variable, i.e., equal, unequal or monoallelic paternal expression in three, two and two cases, respectively. Exclusive paternal expression of WT1 was also shown in non-cultured peripheral lymphocytes from the latter two individuals. The allele-specific expression profiles of other imprinted genes, IGF2 and H19, on human chromosome 11 were constant and consistent with those in other tissues. Our unexpected observations of paternal or biallelic expression of WT1 in fibroblasts and lymphocytes, together with the previous findings of maternal or biallelic expression in placentae and brains, suggest that the allele-specific regulatory system of WT1 is unique and may be controlled by a putative tissue- and individual-specific modifier.",
+      "source_length": 1168,
+      "source_sha256": "55abdfb1e37d1191c7af3cb3bad23b56742770da82dd6080405687ee037dc79e",
       "title": "PMID-9361029"
     },
     {
@@ -60,16 +63,14 @@
             {
               "argument_id": "T1",
               "event_role": "THEME",
-              "exact_span": "RelA",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 696
+              "source_locator": "char:696-700"
             },
             {
               "argument_id": "T2",
               "event_role": "THEME",
-              "exact_span": "NFkappaB1",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 701
+              "source_locator": "char:701-710"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -80,10 +81,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:696-718",
-          "source_span": "RelA/NFkappaB1-binding",
           "supported_projections": [],
-          "trigger_source_start": 711,
-          "trigger_span": "binding",
+          "trigger_locator": "char:711-718",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -101,16 +100,14 @@
             {
               "argument_id": "T5",
               "event_role": "THEME",
-              "exact_span": "NF-kappaB1",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1002
+              "source_locator": "char:1002-1012"
             },
             {
               "argument_id": "T14",
               "event_role": "TOLOC",
-              "exact_span": "nuclear",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1036
+              "source_locator": "char:1036-1043"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -121,10 +118,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1002-1056",
-          "source_span": "NF-kappaB1 but did suppress their nuclear localization",
           "supported_projections": [],
-          "trigger_source_start": 1044,
-          "trigger_span": "localization",
+          "trigger_locator": "char:1044-1056",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -142,16 +137,14 @@
             {
               "argument_id": "T4",
               "event_role": "THEME",
-              "exact_span": "RelA",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 993
+              "source_locator": "char:993-997"
             },
             {
               "argument_id": "T14",
               "event_role": "TOLOC",
-              "exact_span": "nuclear",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1036
+              "source_locator": "char:1036-1043"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -162,10 +155,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:993-1056",
-          "source_span": "RelA and NF-kappaB1 but did suppress their nuclear localization",
           "supported_projections": [],
-          "trigger_source_start": 1044,
-          "trigger_span": "localization",
+          "trigger_locator": "char:1044-1056",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -177,7 +168,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Suppression of NF-kappaB activation in normal T cells by supernatant fluid from human renal cell carcinomas.\nT lymphocytes from patients with renal cell carcinoma (RCC) show reduced immune function and impaired activation of the transcription factor, NF-kappaB. We determined the mechanism of NF-kappaB suppression in T cells of RCC patient and determined whether supernatant fluid from RCC explants (RCC-S) induced the same phenotype of NF-kappaB suppression in normal T cells that is observed in patient T cells. The pattern of kappaB-binding activity in T cells of RCC patient was altered as compared to that seen in T cells obtained from normal volunteers. In some patients, no activation of RelA/NFkappaB1-binding activity was detectable, while in others kappaB-binding activity was modestly induced but the duration was reduced. IkappaBalpha was degraded normally following stimulation in both normal controls and T cells from RCC patients. RCC-S did not alter the cytoplasmic levels of RelA and NF-kappaB1 but did suppress their nuclear localization and inhibited the activation of RelA/NF-kappaB1 binding complexes. These results show that RCC-S can induce in normal T cells the same phenotype of impaired NF-kappaB activation that is detected in T cells of RCC patient. It also appears that NF-kappaB suppression by RCC-S may contribute to the immunosuppression of host immunity.",
+      "source_length": 1388,
+      "source_sha256": "a3373f43f94b696ad2ac9830707eae96aa17e6e2e0bc4185f87d768169ca2272",
       "title": "PMID-10402173"
     },
     {
@@ -191,7 +183,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "FOXP3 and GATA3 Kinetics in Differentiating Cells\nThe limited capacity of differentiated effector cells to induce FOXP3 expression suggests that iTreg induction has to occur before effector T cell differentiation occurs. Therefore, we analyzed the expression of FOXP3 and GATA3 during the differentiation of naive CD4 T cells into Th0 (neutral, anti-IL-4, anti-IFN-gamma, and anti IL-12), Th2, and iTreg phenotypes. After initiation of the differentiation process, FOXP3 and GATA3 showed a similar expression kinetic within the first 3 d, which are considered to be critical in T cell commitment [18]. Under Th2 differentiation conditions, FOXP3 mRNA expression increased only marginally (Figure 4A, left panel). Thus, although GATA3 and FOXP3 showed similar kinetics, their expression polarizes at the end of the differentiation process when cells were cultured towards Th2 or iTreg cells, respectively (Figure 4A and 4B). Interestingly, the Th0 cells were expressing more FOXP3 than the Th2 cells, but expressed low levels of GATA3; however, the protein expression slightly differed from mRNA expression, suggesting also posttranslational regulation and degradation as potential additional mechanisms in the differentiation process. The phenotype of iTreg cells included an anergic phenotype upon anti-CD3 re-stimulation (Figure S1A), CD103, CTLA-4, GITR, and PD-1 surface expression (Figure S1B). On the single-cell level, it can be seen that cells progress through a transition phase, where GATA3 and FOXP3 expression coexist to some degree in the same cells, which is resolved in iTreg cells after 7 d (Figure 4B). Taken together, these data demonstrated that Th2 cells have lost their capacity to express FOXP3 and showed that Th2 and iTreg cells arise from two different differentiation pathways.",
+      "source_length": 1803,
+      "source_sha256": "deed6cf46a6f438c96da4b682b9a008ffa7ce6b5350578c770ad012d628b93e4",
       "title": "PMC-2222968-03-Results-02"
     },
     {
@@ -205,7 +198,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Constitutive activation of NF-kappaB in primary adult T-cell leukemia cells.\nHuman T-cell leukemia virus type I (HTLV-I) is an etiologic agent of adult T-cell leukemia (ATL). The viral protein Tax induces the activation and nuclear translocalization of transcription factor NF-kappaB, which is proposed to play a crucial role in the transformation of T cells by HTLV-I. However, the HTLV-I genes including Tax are not expressed significantly in primary leukemic cells from ATL patients. In this study, we examined the basis for NF-kappaB activation in freshly isolated leukemic cells from ATL patients. We found that leukemic cells from ATL patients, like HTLV-I-infected T-cell lines, display constitutive NF-kappaB DNA binding activity and increased degradation of IkappaBalpha (an inhibitor of NF-kappaB). Whereas the NF-kappaB binding activity in Tax-expressing T-cell lines consisted mostly of p50/c-Rel, fresh ATL samples contained p50/p50 and p50/p65 heterodimers. One T-cell line derived from ATL leukemic cells, TL-Om1, displayed constitutive NF-kappaB activity, as well as enhanced degradation of IkappaBalpha, despite the lack of detectable Tax expression. Interestingly, the NF-kappaB in TL-Om1 consists of p50/p50 and p50/p65 like that in fresh primary leukemic cells. Our results suggest that activation of NF-kappaB occurs through a Tax-independent mechanism in leukemic cells of ATL patients, possibly due to differential NF-kappaB subunit activation.",
+      "source_length": 1467,
+      "source_sha256": "c70bf3a48b12de4b839f5558d097e1ae9ba9ffbff89a0243d9cb738e8105ee0b",
       "title": "PMID-10090947"
     },
     {
@@ -219,7 +213,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Administration of cytokines and antibodies in vivo.\nAge- and gender-matched normal B6 mice received every other day intraperitoneal (ip) injections of PBS, 1.5 mug rmIL-4, 50 mug anti-IL-4 mAb (11B11 or MAB404), or a mixture of 1.5 mug rmIL-4 plus 50 mug anti-IL-4 mAb (11B11 or MAB404) for 7 d. Thereafter, spleen and lymph node cells were analyzed by flow cytometry for CD3, CD4, and CD25 expression. The anti-mouse IL-4 mAb MAB404 was obtained from R&D Systems, the second anti-mouse IL-4 mAb 11B11 was purchased from eBioscience.",
+      "source_length": 533,
+      "source_sha256": "cb3d1a55071987f035de5af5736178a58c26919eac111ea516109c826bb739af",
       "title": "PMC-2222968-22-Materials_and_Methods-14"
     },
     {
@@ -233,7 +228,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Mice.\nNormal B6 mice were purchased from the Jackson Laboratories (Bar Harbor, Maine). Transgenic DO11.10 mice, expressing a T cell receptor for OVA323-339 peptide in the context of H-2d, were backcrossed with mice expressing GATA-3, driven by the human CD2 locus control region (CD2-GATA3) [22], resulting in DO11.10xCD2-GATA3 mice. Mice used for experiments were backcrossed on a BALB/c background for a minimum of eight generations and used at an age of 8-12 wk. Mice were housed under specific pathogen-free conditions and all animal studies were performed according to institutional and state guidelines.",
+      "source_length": 609,
+      "source_sha256": "804405833a6bd677e916af8363d5be6e8f1b6f1bb16fc13b2ea9ed7db1259357",
       "title": "PMC-2222968-09-Materials_and_Methods-01"
     },
     {
@@ -247,7 +243,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "A hydrophobic domain of Ca2+-modulating cyclophilin ligand modulates calcium influx signaling in T lymphocytes.\nCa2+-modulating cyclophilin ligand (CAML) was originally described as a cyclophilin B-binding protein whose overexpression in T cells causes a rise in intracellular calcium, thus activating transcription factors responsible for the early immune response. As reported here, structure-function analysis of the CAML gene in Jurkat T cells indicates that two of CAML's putative membrane-spanning domains are necessary and sufficient for the modulation of intracellular calcium. We propose that the hydrophobic C-terminal tail of CAML forms its effector domain, thus implicating the N-terminal hydrophilic domain in a regulatory role. These findings define a novel protein motif that functions in intracellular calcium signaling.",
+      "source_length": 836,
+      "source_sha256": "ece81f9c528a19154ef867811fe68d93bffa1ffe3a572bd55bfa10e17c1aed82",
       "title": "PMID-8621480"
     },
     {
@@ -268,16 +265,14 @@
             {
               "argument_id": "T8",
               "event_role": "THEME",
-              "exact_span": "FOXP3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 189
+              "source_locator": "char:189-194"
             },
             {
               "argument_id": "T7",
               "event_role": "CAUSE",
-              "exact_span": "TGF-beta",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 158
+              "source_locator": "char:158-166"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -288,10 +283,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:158-194",
-          "source_span": "TGF-beta-mediated induction of FOXP3",
           "supported_projections": [],
-          "trigger_source_start": 176,
-          "trigger_span": "induction",
+          "trigger_locator": "char:176-185",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -309,16 +302,14 @@
             {
               "argument_id": "T24",
               "event_role": "THEME",
-              "exact_span": "CD25",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 975
+              "source_locator": "char:975-979"
             },
             {
               "argument_id": "T25",
               "event_role": "CAUSE",
-              "exact_span": "TGF-beta",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1002
+              "source_locator": "char:1002-1010"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -329,10 +320,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:975-1010",
-          "source_span": "CD25 was down-regulated in TGF-beta",
           "supported_projections": [],
-          "trigger_source_start": 984,
-          "trigger_span": "down-regulated",
+          "trigger_locator": "char:984-998",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -350,16 +339,14 @@
             {
               "argument_id": "T40",
               "event_role": "THEME",
-              "exact_span": "FOXP3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1861
+              "source_locator": "char:1861-1866"
             },
             {
               "argument_id": "T39",
               "event_role": "CAUSE",
-              "exact_span": "GATA3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1801
+              "source_locator": "char:1801-1806"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -370,10 +357,8 @@
           "polarity": "UNCERTAIN",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1801-1866",
-          "source_span": "GATA3 inhibits the development of iTreg cells by repressing FOXP3",
           "supported_projections": [],
-          "trigger_source_start": 1850,
-          "trigger_span": "repressing",
+          "trigger_locator": "char:1850-1860",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -391,16 +376,14 @@
             {
               "argument_id": "T44",
               "event_role": "THEME",
-              "exact_span": "GATA3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 2068
+              "source_locator": "char:2068-2073"
             },
             {
               "argument_id": "T41",
               "event_role": "CAUSE",
-              "exact_span": "IL-4",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1894
+              "source_locator": "char:1894-1898"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -411,10 +394,8 @@
           "polarity": "UNCERTAIN",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1894-2083",
-          "source_span": "IL-4 acts in vitro as an inhibitor of FOXP3 expression, without interfering with TGF-beta signaling, probably acting at the level of transcription factors, and possibly by a GATA3-dependent",
           "supported_projections": [],
-          "trigger_source_start": 2074,
-          "trigger_span": "dependent",
+          "trigger_locator": "char:2074-2083",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -426,7 +407,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "The Role of TGF-beta in T Cell Differentiation\nAlthough TGF-beta-reduced CD25, IL-4 expression, and CD25 expression (Figure 6B), IL-4 significantly inhibited TGF-beta-mediated induction of FOXP3 in naive T cells driven toward FOXP3+ T cells, as shown by FACS analysis (Figure 6A). It is known that IL-4 is a potent growth factor and may therefore favor the proliferation of FOXP3- cells and thus decrease the relative percentage of FOXP3+ cells. However, analysis of cell division kinetics by CFSE-labeling demonstrated that IL-4 did not differentially promote cell growth of FOXP3+ over that of FOXP3-. In fact both populations showed similarly enhanced proliferation (Figure 6A). Furthermore the TGF-beta-mediated induction of FOXP3 expression was not caused by overgrowth of a CD25-FOXP3+ minority, since the number of FOXP3+ cells was low/absent in the purified CD4+CD45RA+ T cells (between 0% and 1%), and the FOXP3+ cells were not confined to the highly divided cells. CD25 was down-regulated in TGF-beta-treated cells compare to activated T cells, which was even more pronounced in cells cultured with TGF-beta and IL-4.\nThe addition of IL-4 to iTreg-driving conditions decreased the number of FOXP3+ cells (Figure 6B). In line with the previous findings, the IL-4-producing cells and the FOXP3 expressing cells are nonoverlapping populations. Since FOXP3 is known to act as a repressor of cytokine expression [20], we therefore analyzed GATA3 and FOXP3 expression. The expression kinetic of naive T cells exposed to IL-4 and TGF-beta demonstrated that GATA3 and FOXP3 are initially found in separate populations (day 2), but transiently co-express both factors (days 4-8), before establishing separate populations at the end of the differentiation process (day 10; Figure 6C), suggesting that GATA3 inhibits the development of iTreg cells by repressing FOXP3.\nThese results showed that IL-4 acts in vitro as an inhibitor of FOXP3 expression, without interfering with TGF-beta signaling, probably acting at the level of transcription factors, and possibly by a GATA3-dependent mechanism.",
+      "source_length": 2094,
+      "source_sha256": "556f9b14b806cabd01967ac49f73b5ac4127740fab7c88e63ed1784baabd2931",
       "title": "PMC-2222968-05-Results-04"
     },
     {
@@ -447,16 +429,14 @@
             {
               "argument_id": "T26",
               "event_role": "THEME",
-              "exact_span": "Foxp3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 897
+              "source_locator": "char:897-902"
             },
             {
               "argument_id": "T25",
               "event_role": "CAUSE",
-              "exact_span": "TGF-beta",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 880
+              "source_locator": "char:880-888"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -467,10 +447,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:880-902",
-          "source_span": "TGF-beta induced Foxp3",
           "supported_projections": [],
-          "trigger_source_start": 889,
-          "trigger_span": "induced",
+          "trigger_locator": "char:889-896",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -488,16 +466,14 @@
             {
               "argument_id": "T44",
               "event_role": "THEME",
-              "exact_span": "Foxp3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1412
+              "source_locator": "char:1412-1417"
             },
             {
               "argument_id": "T43",
               "event_role": "CAUSE",
-              "exact_span": "TGF-beta",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1390
+              "source_locator": "char:1390-1398"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -508,10 +484,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1390-1417",
-          "source_span": "TGF-beta induction of Foxp3",
           "supported_projections": [],
-          "trigger_source_start": 1399,
-          "trigger_span": "induction",
+          "trigger_locator": "char:1399-1408",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -523,7 +497,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Role of CBFbeta in the induction of Foxp3\nCBFbeta, a common cofactor of all RUNX proteins, stabilizes and increases the binding of the runt domain to target DNA sequences. To target all Runx proteins that might be involved in the induction of Foxp3, we used mice in which loxP-flanked Cbfb alleles were inactivated in T cells through expression of a CD4-cre transgene. Retinoic acid and TGF-beta synergize in the induction of Foxp3 in naive T cells (Kang et al., 2007). To investigate whether Runx-mediated induction of Foxp3 is dependent on the expression of CBFbeta, naive CD4+ CD8- T cells from CbfbF/F CD4-cre and control CbfbF/+ CD4-cre mice were stimulated with anti-CD3/28 mAbs, retinoic acid, and increasing concentrations of TGF-beta. After 3 d in culture, the cells were restimulated with PMA and ionomycin and analyzed for intracellular Foxp3 and IFN-gamma expression. TGF-beta induced Foxp3 in CbfbF/+ CD4-cre cells in a dose dependent manner, and this was significantly reduced in CbfbF/F CD4-cre cells. Retinoic acid enhanced Foxp3 expression even in 20 pg/ml of TGF-beta and more than 95% of the CD4+ T cells from CbfbF/+ CD4-cre mice became Foxp3+ in 100 and 500 pg/ml TGF-beta doses. The induction of Foxp3 was again significantly lower in CbfbF/F CD4-cre CD4+ T cells even in the presence of retinoic acid, demonstrating that deficiency in Runx binding to DNA affects the TGF-beta induction of Foxp3 in T reg cells (Fig. 5 A). There was no difference in the induction of Foxp3 when endogenous IL-4 and IFN-gamma were neutralized (Fig. S6).\nThe importance of RUNX transcription factors for the in vivo conversion of naive CD4+ T cells into iT reg cells was examined. Control CbfbF/F or CbfbF/F CD4-cre naive T cells, harboring a Foxp3-IRES-GFP allele were adoptively transferred into Rag2-/- mice. 6 wk later, CD4+ T cells in spleen, mesenteric lymph node, and lamina propria of the small intestine were analyzed for Foxp3-GFP expression (Fig. 5 B). There was a consistently lower percentage of CD4+ T cells that had developed Foxp3 expression in the mesenteric lymph node and lamina propria of mice transferred with CbfbF/F CD4-cre cells compared with control cells (Fig. 5, B and C). These data affirm the significance of RUNX proteins for the in vivo generation of CD4+ Foxp3+ T cells.",
+      "source_length": 2305,
+      "source_sha256": "ab0322de4eb313be491e0bd0cfe2a6fef122ef8fa9b425c947d21b7ecb8e9da3",
       "title": "PMC-2806624-05-RESULTS-04"
     },
     {
@@ -537,7 +512,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Transfections and reporter gene assays.\nT cells were rested in serum-free AIM-V medium (Life Technologies) overnight. 3.5 mug of the FOXP3 promoter luciferase reporter vector and 0.5 mug phRL-TK were added to 3 x 106 CD4+ T cells resuspended in 100 muL of Nucleofector solution (Amaxa Biosystems) and electroporated using the U-15 program of the Nucleofector. After a 24-h culture in serum-free conditions and stimuli as indicated in the figures, luciferase activity was measured by the dual luciferase assay system (Promega Biotech) according to the manufacturer's instructions. Data were normalized by the activity of renilla luciferase.",
+      "source_length": 639,
+      "source_sha256": "8c70e5630df645efc17849504461d7ac2b9c00d39a5a27b1a0c992d9d09b8e77",
       "title": "PMC-2222968-15-Materials_and_Methods-07"
     },
     {
@@ -551,7 +527,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "IL-2-mediated cell cycle progression and inhibition of apoptosis does not require NF-kappa B or activating protein-1 activation in primary human T cells.\nThe IL-2 growth hormone is the major growth factor of activated T lymphocytes during a developing immune response. IL-2 is required not only for cell cycle progression but also to protect Ag-activated T cells from programmed cell death. In several cell types, activation of NF-kappa B and/or activating protein-1 (AP-1) has been demonstrated to be extremely important in blocking apoptosis. To determine whether either or both of these transcription factors are involved in cell survival or cell cycle progression in response to IL-2, primary human T cells responsive to the growth factor were analyzed for NF-kappa B and AP-1 activation. The current study clearly demonstrates that IL-2 does not induce I kappa B alpha degradation or NF-kappa B activation in primary human T cells that respond to IL-2 by entering the cell cycle and avoiding apoptosis. Similarly, IL-2 neither activates JNK nor increases AP-1 binding activity to a consensus o-tetradecanoylphorbol 13-acetate (TPA) response element. On the other hand, the growth factor does induce the activation of STAT3 and STAT5 in these cells, as has been previously demonstrated. These data show that neither NF-kappa B nor AP-1 activation is required for IL-2-mediated survival or cell cycle progression in activated primary human T cells.",
+      "source_length": 1451,
+      "source_sha256": "2eda3374afee08ba49de26e2f1e6b2c622f1b029ccc9bca6640c2c387f3f86d5",
       "title": "PMID-10092783"
     },
     {
@@ -565,7 +542,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Schematic Structure of the FOXP3 Gene and Location of the GATA3 Sites\nThe scheme shows the location of the 11 exons spaced by a large intron (6000 bp) from the 5'untranslated region (UTR). Human, murine, and rat sequences are aligned and transcription start site (TSS) is indicated with an arrow.\n(529 KB AI).",
+      "source_length": 309,
+      "source_sha256": "5095e98b9f3830242ce973241306ba29c6fcfbcf552354f1716fcbef63c83e36",
       "title": "PMC-2222968-40-caption-15"
     },
     {
@@ -587,23 +565,20 @@
             {
               "argument_id": "T1",
               "event_role": "THEME",
-              "exact_span": "Sp1",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 0
+              "source_locator": "char:0-3"
             },
             {
               "argument_id": "T3",
               "event_role": "THEME",
-              "exact_span": "A3G",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 46
+              "source_locator": "char:46-49"
             },
             {
               "argument_id": "T22",
               "event_role": "SITE",
-              "exact_span": "GC-box",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 24
+              "source_locator": "char:24-30"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -614,10 +589,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:0-49",
-          "source_span": "Sp1 and Sp3 bind to the GC-box present in the A3G",
           "supported_projections": [],
-          "trigger_source_start": 12,
-          "trigger_span": "bind",
+          "trigger_locator": "char:12-16",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -636,23 +609,20 @@
             {
               "argument_id": "T2",
               "event_role": "THEME",
-              "exact_span": "Sp3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 8
+              "source_locator": "char:8-11"
             },
             {
               "argument_id": "T3",
               "event_role": "THEME",
-              "exact_span": "A3G",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 46
+              "source_locator": "char:46-49"
             },
             {
               "argument_id": "T22",
               "event_role": "SITE",
-              "exact_span": "GC-box",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 24
+              "source_locator": "char:24-30"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -663,10 +633,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:8-49",
-          "source_span": "Sp3 bind to the GC-box present in the A3G",
           "supported_projections": [],
-          "trigger_source_start": 12,
-          "trigger_span": "bind",
+          "trigger_locator": "char:12-16",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -678,7 +646,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Sp1 and Sp3 bind to the GC-box present in the A3G promoter. (A) Nuclear extracts of A3.01 T cells were incubated with a 32P-labeled commercial Sp1 oligonucleotide probe (Sp1cons) or labeled probes homologous to the unmodified or mutated E2 region (see Figure 1) of the A3G promoter (APO-Sp1/3 and APO-Sp1/3mut). Protein-DNA complexes were separated by polyacrylamide electrophoresis and detected by autoradiography. EMSA was performed with a 1- or 30-fold molar excess of unlabeled APO-Sp1/3 probe (competitor, lanes 6 and 7) or APO-Sp1/3mut probe (competitor mut., lanes 12 and 13). (B) Sp1- and Sp3-specific antibodies were added to the EMSA reactions resulting in a supershift (ss) of the respective antibody-protein-oligo complexes (lanes 3, 4, 7, 8, 11, 12). (C) ChIP assay was performed with DNA from A3.01 T cells. Immunoprecipitation was performed with antibodies against Sp1, Sp3 or actin. PCR primer pairs specific for the A3G promoter (upper panel) or the A3G gene (lower panel) were used. As positive controls, the sheared and cross-linked DNA before the immunoprecipitation step (input) or a plasmid carrying the target sequence (plasmid) was used as template.",
+      "source_length": 1173,
+      "source_sha256": "d6237959954b6b5d3fca75682e0e8843aa92bc99188c0d5b38e5b9db11d14bad",
       "title": "PMC-1920263-21-caption-06"
     },
     {
@@ -692,7 +661,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Synergism between the CD3 antigen- and CD2 antigen-derived signals. Exploration at the level of induction of DNA-binding proteins and characterization of the inhibitory activity of cyclosporine.\nWe have demonstrated earlier that the crosslinkage of the CD3/TCR complex with the CD2 antigen results in the proliferation of normal human T cells. The effect of this synergism was perceptible at the level of induction of the IL-2 gene, a process critical for T cell growth. To further understand the molecular and nuclear basis for this synergism, we have explored the induction of DNA-binding proteins in highly purified normal human T cells signaled via the CD3 and/or CD2 proteins. The effect of transmembrane signaling of T cells with ionomycin, and/or sn-1,2 dioctanoyl glycerol, was also determined. The emergence of nuclear binding proteins was investigated using interleukin-2 sequence specific oligonucleotide probes in the electrophoretic mobility shift assay. Our studies demonstrate for the first time that CD3 antigen-derived signals and CD2 antigen-derived signals are synergistic in inducing the emergence of transcription factors that bind to the NF-AT1, AP-1, and NF-kB sites located in the promoter/enhancer region of the IL-2 gene. Moreover, cyclosporine, at concentrations readily accomplished in clinical practice, was found to inhibit the emergence of these DNA-binding proteins in normal human T cells signaled via cell surface proteins implicated in antigen-dependent T cell activation and in T cells stimulated by mobilization of cellular calcium and activation of protein kinase C.",
+      "source_length": 1604,
+      "source_sha256": "3b2861bdbc483c5ea3cfa7ae96eb9855abc98ee972a01a4cb8904a1b6e0c6c74",
       "title": "PMID-8098881"
     },
     {
@@ -713,16 +683,14 @@
             {
               "argument_id": "T18",
               "event_role": "THEME",
-              "exact_span": "p50",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1176
+              "source_locator": "char:1176-1179"
             },
             {
               "argument_id": "T19",
               "event_role": "THEME",
-              "exact_span": "p65",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1180
+              "source_locator": "char:1180-1183"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -733,10 +701,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1176-1195",
-          "source_span": "p50-p65 heterodimer",
           "supported_projections": [],
-          "trigger_source_start": 1184,
-          "trigger_span": "heterodimer",
+          "trigger_locator": "char:1184-1195",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -754,16 +720,14 @@
             {
               "argument_id": "T21",
               "event_role": "THEME",
-              "exact_span": "c-Rel",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1228
+              "source_locator": "char:1228-1233"
             },
             {
               "argument_id": "T22",
               "event_role": "THEME",
-              "exact_span": "p65",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1234
+              "source_locator": "char:1234-1237"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -774,10 +738,8 @@
           "polarity": "UNCERTAIN",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1228-1249",
-          "source_span": "c-Rel-p65 heterodimer",
           "supported_projections": [],
-          "trigger_source_start": 1238,
-          "trigger_span": "heterodimer",
+          "trigger_locator": "char:1238-1249",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -789,7 +751,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Activation of primary human T-lymphocytes through CD2 plus CD28 adhesion molecules induces long-term nuclear expression of NF-kappa B.\nStimulation of highly purified human T-cells via CD2 and CD28 adhesion molecules induces and maintains proliferation for more than 3 weeks. This potent interleukin 2 (IL-2)-dependent activation does not require monocytes or accessory cells. Long-lasting IL-2 receptivity is associated with high-level expression of the inducible IL-2 receptor alpha chain (IL-2R alpha) gene that is regulated at both transcriptional and posttranscriptional levels. Increase of IL-2R alpha gene transcription involves the enhanced binding of the transcription factor NF-kappa B to its consensus sequence in the 5'-regulatory region of the IL-2R alpha gene. To dissect the molecular basis for the unusually persistent transcription of the IL-2R alpha gene, we analyzed nuclear NF-kappa B binding to a radiolabeled IL-2R alpha kappa B-specific oligonucleotide probe during the time course of CD2 + CD28 activation. Resting T-cell nuclear extracts contained KBF1/p50 homodimer. After stimulation, two new kappa B-specific complexes were identified as NF-kappa B p50-p65 heterodimer and putative c-Rel homodimer or c-Rel-p65 heterodimer. Both inducible complexes persisted for at least 3 weeks. Their relative levels were very similar for the duration of proliferation. In parallel, CD2 + CD28 activation triggered a significant intracellular thiol decrease, suggesting that oxygen radicals are involved in the signaling pathway of adhesion molecules. Finally, micromolar amounts of pyrrolidine dithiocarbamate, an oxygen radical scavenger that efficiently blocked the nuclear appearance of NF-kappa B in T-lymphocytes, also inhibited IL-2 secretion, IL-2R alpha cell surface expression, and T-cell proliferation. Together, these results suggest that NF-kappa B plays an important role in long-term activation of human primary T-lymphocytes via CD2 + CD28.",
+      "source_length": 1969,
+      "source_sha256": "0547911d6f69acf812364dceb5501c6942d048eeab3c3000a9d3935dc4542a28",
       "title": "PMID-8098618"
     },
     {
@@ -803,7 +766,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "RNA interference and western blot analysis\nSp1 and Sp3 translation was silenced in HeLa cells using the siRNA duplexes Hs_SP1_1_HP and Hs_SP3_1_HP (Qiagen). A nonspecific siRNA (Qiagen) was used as control. HeLa cells were transfected with 150 or 300 ng siRNA per 6-well, using the HiPerfect transfection reagent (Qiagen) according to the manufacturer's protocol for reverse transfection of adherent cells in 6-well plates.\nForty-eight hours after transfection, HeLa cells were harvested for detection of Sp1 and Sp3 proteins. Cells were washed in PBS, lysed in RIPA (25 mM Tris pH 8.0, 137 mM NaCl, 1% Glycerol, 0.5% sodium deoxycholate, 1% NP-40, 2 mM EDTA pH 8, 0.1% SDS and protease inhibitors) and lysates were cleared by centrifugation. After boiling with Laemmli's buffer, samples were subjected to SDS-polyacrylamide gel electrophoresis followed by transfer to a nitrocellulose membrane. Sp1 and Sp3 proteins were detected using alpha-Sp1(Pep2) antibody (sc-59, Santa Cruz) or alpha-Sp3(D-20) antibody (sc-644, Santa Cruz) followed by incubation with alpha-rabbit-HRP (Amersham Biosciences). For detection of tubulin, alpha-tubulin (B5-1-2, Sigma) and alpha-mouse-HRP (Amersham Biosciences) antibodies were used. Signals were visualized by enhanced chemiluminescence (ECL, Amersham Biosciences).",
+      "source_length": 1303,
+      "source_sha256": "e26a52e76709096c580fc80d2daf7b2c046897c47acf8e6e0ec6d637736f4257",
       "title": "PMC-1920263-08-MATERIALS_AND_METHODS-07"
     },
     {
@@ -817,7 +781,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Nuclear appearance of a factor that binds the CD28 response element within the interleukin-2 enhancer correlates with interleukin-2 production.\nActivation of T lymphocytes requires the combined signaling of the T cell receptor and costimulatory molecules such as CD28. The ability of T cells to produce interleukin-2 (IL-2) is a critical control point in T lymphocyte activation. The IL-2 enhancer contains a functional motif named CD28 response element (CD28RE) that serves a role as a target for mitogenic T cell activation signals. The CD28RE sequence reveals similarity to the consensus kappaB binding motif. Here we demonstrate that CD28RE binds an inducible protein with a molecular mass of approximately 35 kDa called nuclear factor of mitogenic-activated T cells (NF-MATp35) that is clearly different from the known NF- kappaB/Rel family members. Induction of NF-MATp35 was shown to depend on de novo protein synthesis and was restricted to T cells that received a mitogenic combination of T cell stimuli, not necessarily including CD28 signaling. Nonmitogenic T cell stimulation did not result in appearance of NF-MATp35. These results indicate that mitogenic combinations of T cell activation signals are integrated at the level of NF-MATp35 induction. Similar to its effect on IL-2 production, cyclosporin A inhibited the induction of NF-MATp35. Taken together, these data demonstrate that the nuclear appearance of NF-MATp35 shows excellent correlation with IL-2 production, which is a unique characteristic among nuclear factors implicated in the control of IL-2 gene expression.",
+      "source_length": 1592,
+      "source_sha256": "6f029e9958facb4bbbf642f355bfd2495c8e71df91f5ffcaf2f79a7f0fdabe83",
       "title": "PMID-8626528"
     },
     {
@@ -831,7 +796,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Phenotype of In Vitro Differentiated T Cells\nAfter two round of differentiation cultures, T cells were stimulated by plate-immobilized anti-CD3/CD28 and 3H-thymidine incorporation as measurement of proliferation was analyzed after 3 d of culture (A). In parallel, T cells were analyzed for Treg relevant surface receptor expression as indicated on the x-axis (B).\n(1.0 MB AI).",
+      "source_length": 376,
+      "source_sha256": "2c480db523a117ae33188b475ebe3e4c8d09a3d1b47c46a4710021c4098ea627",
       "title": "PMC-2222968-34-caption-09"
     },
     {
@@ -845,7 +811,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "A nongenomic mechanism for progesterone-mediated immunosuppression: inhibition of K+ channels, Ca2+ signaling, and gene expression in T lymphocytes.\nThe mechanism by which progesterone causes localized suppression of the immune response during pregnancy has remained elusive. Using human T lymphocytes and T cell lines, we show that progesterone, at concentrations found in the placenta, rapidly and reversibly blocks voltage-gated and calcium-activated K+ channels (KV and KCa, respectively), resulting in depolarization of the membrane potential. As a result, Ca2+ signaling and nuclear factor of activated T cells (NF-AT)-driven gene expression are inhibited. Progesterone acts distally to the initial steps of T cell receptor (TCR)-mediated signal transduction, since it blocks sustained Ca2+ signals after thapsigargin stimulation, as well as oscillatory Ca2+ signals, but not the Ca2+ transient after TCR stimulation. K+ channel blockade by progesterone is specific; other steroid hormones had little or no effect, although the progesterone antagonist RU 486 also blocked KV and KCa channels. Progesterone effectively blocked a broad spectrum of K+ channels, reducing both Kv1.3 and charybdotoxin-resistant components of KV current and KCa current in T cells, as well as blocking several cloned KV channels expressed in cell lines. Progesterone had little or no effect on a cloned voltage-gated Na+ channel, an inward rectifier K+ channel, or on lymphocyte Ca2+ and Cl- channels. We propose that direct inhibition of K+ channels in T cells by progesterone contributes to progesterone-induced immunosuppression.",
+      "source_length": 1616,
+      "source_sha256": "c8f9023435255d48d58bd15892c2033e61ddab59f8c7a1c2a8a744ea39903946",
       "title": "PMID-9802971"
     },
     {
@@ -859,7 +826,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "IL-2-induced growth of CD8+ T cell prolymphocytic leukemia cells mediated by NF-kappaB induction and IL-2 receptor alpha expression.\nThe binding of interleukin-2 (IL-2) to its receptor on normal T cells induces nuclear expression of nuclear factor kappaB (NF-kappaB), activation of the IL-2 receptor (IL-2R) alpha chain gene, and cell proliferation. In the present study, the role of IL-2R signaling in the growth of CD8+ T cell prolymphocytic leukemia (T-PLL) cells has been investigated. Flow cytometry revealed that primary leukemia cells from a patient with CD8+ T-PLL expressed IL-2Ralpha and beta chains, and the cells showed a proliferative response and an increase in IL-2Ralpha expression on culture with exogeneous IL-2. Northern blot analysis failed to detect IL-2 mRNA, suggesting that IL-2 may act in a paracrine manner in vivo. Electrophoretic mobility-shift assays revealed that recombinant IL-2 increased NF-kappaB binding activity in nuclear extracts of the leukemia cells, and Northern blot analysis showed that IL-2 increased the abundance of mRNAs encoding the NF-kappaB components c-Rel and KBF1 in these cells. IL-2 binding analysis demonstrated that IL-2 markedly increased the number of low affinity IL-2Rs on the leukemia cells, without an effect on the number of high-affinity IL-2Rs. These results show that IL-2 is capable of inducing the nuclear expression of NF-kappaB in primary CD8+ T-PLL cells, and that this effect is mediated, at least in part, at a pretranslational level.",
+      "source_length": 1508,
+      "source_sha256": "df3ce3fa313a8b4fa055c4d490e7717593ab97d814ec9d9a894a09d9a0073dfe",
       "title": "PMID-9619918"
     },
     {
@@ -873,7 +841,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Interferons induce normal and aberrant retinoic-acid receptors type alpha in acute promyelocytic leukemia cells: potentiation of the induction of retinoid-dependent differentiation markers.\nTreatment of the acute promyelocytic (APL) cell line NB4 with interferon alpha (IFN(alpha)), as well as IFN(beta) and gamma, results in an increased expression of the transcripts coding for retinoic-acid receptor type alpha (RAR(alpha)) and the leukemia-specific retinoic acid receptor PML-RAR. Transcriptional induction of the RAR(alpha) and PML-RAR mRNAs is rapid and it is parallelled by an increase in the corresponding proteins. Up-regulation of RAR(alpha) and PML-RAR gene expression by IFN(alpha) is accompanied by a strong potentiation in the induction of 2 retinoid-dependent granulocytic markers, i.e., granulocyte-colony-stimulating factor receptor mRNA and leukocyte alkaline phosphatase. However, IFN(alpha) does not have any effects on the retinoid-dependent regulation of the myeloid surface markers CD11b and CD33. The IFN-dependent increase in RAR(alpha) levels and the enhancing effect of the cytokine on retinoid-dependent granulocytic markers expression may be a characteristic of PML-RAR positive cells, since the phenomena are not observed in HL-60 promyelocytes. Interferons as well as retinoids inhibit the growth of NB4 cells, although the 2 classes of compounds do not significantly interact in terms of anti-proliferative activity. These results suggest the possible use of combinations between IFNs and retinoic acid in the cyto-differentiating treatment of APL patients.",
+      "source_length": 1589,
+      "source_sha256": "bd339c21cdc20c02b78bc26111fffa2160a034882fa7efd4a8db6b1ad099cc1d",
       "title": "PMID-8895544"
     },
     {
@@ -894,16 +863,14 @@
             {
               "argument_id": "T14",
               "event_role": "THEME",
-              "exact_span": "GATA3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 529
+              "source_locator": "char:529-534"
             },
             {
               "argument_id": "T69",
               "event_role": "SITE",
-              "exact_span": "DNA-binding domain",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 547
+              "source_locator": "char:547-565"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -914,10 +881,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:529-565",
-          "source_span": "GATA3 lacking the DNA-binding domain",
           "supported_projections": [],
-          "trigger_source_start": 535,
-          "trigger_span": "lacking",
+          "trigger_locator": "char:535-542",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -935,16 +900,14 @@
             {
               "argument_id": "T25",
               "event_role": "THEME",
-              "exact_span": "GATA3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1020
+              "source_locator": "char:1020-1025"
             },
             {
               "argument_id": "T72",
               "event_role": "SITE",
-              "exact_span": "DNA-binding domain",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 969
+              "source_locator": "char:969-987"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -955,10 +918,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:969-1025",
-          "source_span": "DNA-binding domain truncated version (TAT-DeltaDBD-GATA3",
           "supported_projections": [],
-          "trigger_source_start": 988,
-          "trigger_span": "truncated",
+          "trigger_locator": "char:988-997",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -976,16 +937,14 @@
             {
               "argument_id": "T28",
               "event_role": "THEME",
-              "exact_span": "FOXP3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1181
+              "source_locator": "char:1181-1186"
             },
             {
               "argument_id": "T27",
               "event_role": "CAUSE",
-              "exact_span": "GATA3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1172
+              "source_locator": "char:1172-1177"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -996,10 +955,8 @@
           "polarity": "UNCERTAIN",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1151-1186",
-          "source_span": "inhibitory effect of GATA3 on FOXP3",
           "supported_projections": [],
-          "trigger_source_start": 1151,
-          "trigger_span": "inhibitory effect",
+          "trigger_locator": "char:1151-1168",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -1017,16 +974,14 @@
             {
               "argument_id": "T46",
               "event_role": "THEME",
-              "exact_span": "Foxp3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1852
+              "source_locator": "char:1852-1857"
             },
             {
               "argument_id": "T45",
               "event_role": "CAUSE",
-              "exact_span": "TGF-beta",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1817
+              "source_locator": "char:1817-1825"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1037,10 +992,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1817-1857",
-          "source_span": "TGF-beta dramatically up-regulated Foxp3",
           "supported_projections": [],
-          "trigger_source_start": 1839,
-          "trigger_span": "up-regulated",
+          "trigger_locator": "char:1839-1851",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -1058,16 +1011,14 @@
             {
               "argument_id": "T55",
               "event_role": "THEME",
-              "exact_span": "GATA3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 2297
+              "source_locator": "char:2297-2302"
             },
             {
               "argument_id": "T54",
               "event_role": "CAUSE",
-              "exact_span": "IL-4",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 2284
+              "source_locator": "char:2284-2288"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1078,10 +1029,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:2284-2302",
-          "source_span": "IL-4-induced GATA3",
           "supported_projections": [],
-          "trigger_source_start": 2289,
-          "trigger_span": "induced",
+          "trigger_locator": "char:2289-2296",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -1093,7 +1042,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "GATA3 Is a Negative Regulator of FOXP3 Expression\nFOXP3 expression decreased once GATA3 expression is high; therefore, we hypothesized a potential role for GATA3 in repressing FOXP3. Besides GATA3's well-known positive effect on gene regulation, GATA3's repressive capabilities were previously shown to restrict Th1 commitment by inhibiting STAT4 expression [2,21], and therefore GATA3 prevents differentiation into Th1 cells. To investigate whether GATA3 can directly inhibit FOXP3 induction, we transduced GATA3 or a truncated GATA3 lacking the DNA-binding domain in human primary CD4+CD45RA+ T cells using a TAT-fused, recombinantly expressed GATA3. After transduction, the cells were activated with soluble anti-CD3/CD28 in the presence or absence of TGF-beta. TAT-GATA3 was successfully transduced in a homogeneous and dose-dependent manner into human CD4+ T cells (Figure 7A, upper panel). TAT-GATA3 reduced FOXP3 expression in a dose-dependent manner, whereas a DNA-binding domain truncated version (TAT-DeltaDBD-GATA3) did not affect FOXP3 expression as compared with expression in untransduced cells (Figure 7A). In addition, we analyzed the inhibitory effect of GATA3 on FOXP3 in transgenic DO11.10 mice, constitutively overexpressing GATA3 under the control of the CD2 locus control region (DO11.10xCD2-GATA3). The thymic selection into the CD4 lineage is largely intact in DO11.10xCD2-GATA3 (RW Hendriks, unpublished data). These mice develop lymphomas at an older age, but signs of autoimmune disease were not described [22]. To investigate the effect of GATA3 on iTreg, CD4+CD62L+CD25- cells were isolated, activated with OVA in the presence or absence of TGF-beta, and Foxp3 expression was analyzed after 4 d. The naive CD4+CD25- cells were Foxp3- (unpublished data). As described for the human cells, TGF-beta dramatically up-regulated Foxp3 in the DO11.10 littermate control mice. In contrast, cells from the CD2-GATA3xDO11.10 mice showed dramatically reduced Foxp3 expression when activated with TGF-beta and OVA (Figure 7B). All mice produced similar amounts of TGF-beta; in addition, Smad7 was equally expressed [23] in T cells of both mice strains (Figure 7C), indicating intact TGF-beta signaling.\nTaken together, these results demonstrated a repressive role of IL-4-induced GATA3 transcription factor in the generation of iTreg cells.",
+      "source_length": 2357,
+      "source_sha256": "ecdada19b46e778707b2b0804ba4f75098678a0f2dac65aedd458c55fb3ff2ba",
       "title": "PMC-2222968-06-Results-05"
     },
     {
@@ -1114,16 +1064,14 @@
             {
               "argument_id": "T7",
               "event_role": "THEME",
-              "exact_span": "p65",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 867
+              "source_locator": "char:867-870"
             },
             {
               "argument_id": "T14",
               "event_role": "TOLOC",
-              "exact_span": "nucleus",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 892
+              "source_locator": "char:892-899"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1134,10 +1082,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:867-899",
-          "source_span": "p65 translocation to the nucleus",
           "supported_projections": [],
-          "trigger_source_start": 871,
-          "trigger_span": "translocation",
+          "trigger_locator": "char:871-884",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -1149,7 +1095,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Sequential development of structural and functional alterations in T cells from tumor-bearing mice.\nThe TCR alpha beta or -gamma delta chains bind the peptide ligand, whereas the associated CD3 deltaepsilongamma and TCR zeta subunits couple the TCR to intracellular signal transduction components. Recently, several groups have described marked alterations in signal transduction elements in T cells from cancer patients or in mice bearing tumor for a few weeks (>26 days). The sequence in which these alterations develop is unknown. The aim of this study was to explore the kinetics of the development of alterations in signal transduction molecules (TCR zeta chain, NF kappaB family proteins, and tyrosine kinase p56(lck)) in mice bearing MC38 colon adenocarcinoma. The results demonstrate that alterations in NF kappaB family proteins, specifically the failure of p65 translocation to the nucleus, occur earlier and more frequently than the decrease in zeta-chain. These defects are paralleled by an impaired ability to produce Th1 cytokines (IL-2 and IFN-gamma). These initial changes are followed by the eventual loss of TCR zeta chain and p56(lck) and a marked decrease in cytotoxic function. An increased rate of lysosomal degradation is one of the mechanisms responsible for the loss of zeta-chain.",
+      "source_length": 1306,
+      "source_sha256": "90e1515a743a77bddc009051b1341e931d49c9d1a2090bc2d3cc64ccc087ad9d",
       "title": "PMID-9164948"
     },
     {
@@ -1163,7 +1110,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "5'-RACE analysis of the A3G cDNA. Agarose gel electrophoresis of size marker and A3G 5'-RACE products after nested PCR with primer RACE-APO3Gnest (see Figure 1 for primer details). Arrowheads indicate the three resulting DNA bands which were cloned and sequenced.",
+      "source_length": 263,
+      "source_sha256": "9c4c6566aab3b491e84a7e7ce4f244cb927fcc4ef762e23bc09b57c480d1e820",
       "title": "PMC-1920263-17-caption-02"
     },
     {
@@ -1184,16 +1132,14 @@
             {
               "argument_id": "T7",
               "event_role": "THEME",
-              "exact_span": "IL-6",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1041
+              "source_locator": "char:1041-1045"
             },
             {
               "argument_id": "T21",
               "event_role": "SITE",
-              "exact_span": "promoter",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1046
+              "source_locator": "char:1046-1054"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1204,10 +1150,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1031-1054",
-          "source_span": "inducible IL-6 promoter",
           "supported_projections": [],
-          "trigger_source_start": 1031,
-          "trigger_span": "inducible",
+          "trigger_locator": "char:1031-1040",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -1225,16 +1169,14 @@
             {
               "argument_id": "T11",
               "event_role": "THEME",
-              "exact_span": "IL-6",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1620
+              "source_locator": "char:1620-1624"
             },
             {
               "argument_id": "T24",
               "event_role": "SITE",
-              "exact_span": "promoter",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1625
+              "source_locator": "char:1625-1633"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1245,10 +1187,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1604-1633",
-          "source_span": "inducibility of IL-6 promoter",
           "supported_projections": [],
-          "trigger_source_start": 1604,
-          "trigger_span": "inducibility",
+          "trigger_locator": "char:1604-1616",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -1260,7 +1200,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Activation of the interleukin 6 gene by Mycobacterium tuberculosis or lipopolysaccharide is mediated by nuclear factors NF-IL6 and NF-kappa B [published erratum appears in Proc Natl Acad Sci U S A 1995 Apr 11;92(8):3632]\nThe host response to Mycobacterium tuberculosis includes granuloma formation at sites of infection and systemic symptoms. Cytokines have been identified by immunohistochemistry in granulomas in animal models of bacillus Calmette-Guerin (BCG) infection and are released by mononuclear phagocytes upon stimulation by mycobacterial proteins. In this regard, the cytokine interleukin 6 (IL-6) may play a role in the clinical manifestations and pathological events of tuberculosis infection. We have demonstrated that lipoarabinomannan (LAM) from the mycobacterial cell wall, which was virtually devoid of lipopolysaccharide (LPS), stimulated mononuclear phagocytes to release IL-6 in a dose-response manner. LAM and LPS were potent inducers of IL-6 gene expression in peripheral blood monocytes. Both LAM- and LPS-inducible IL-6 promoter activity was localized to a DNA fragment, positions -158 to -49, by deletion analysis and chloramphenicol acetyltransferase assay. Two nuclear factor NF-IL6 (positions -153 to -145 and -83 to -75) and one nuclear factor NF-kappa B (positions -72 to -63) motifs are present within this fragment. Site-directed mutagenesis of one or more of these motifs within the IL-6 promoter demonstrated that each has positive regulatory activity and that they could act in a function- and orientation-independent manner. Deletion of all three elements abolished inducibility of IL-6 promoter activity by both LAM and LPS. We conclude that the NF-IL6 and NF-kappa B sites mediate IL-6 induction in response to both LPS and LAM, acting as bacterial or mycobacterial response elements.",
+      "source_length": 1824,
+      "source_sha256": "1b732f914589aebbdff2d1a0674db3d0ad2bb11a2cd2897f74b3d194d04b85ba",
       "title": "PMID-8134378"
     },
     {
@@ -1281,16 +1222,14 @@
             {
               "argument_id": "T16",
               "event_role": "THEME",
-              "exact_span": "IL-1beta",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1576
+              "source_locator": "char:1576-1584"
             },
             {
               "argument_id": "T31",
               "event_role": "SITE",
-              "exact_span": "promoter",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1585
+              "source_locator": "char:1585-1593"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1301,10 +1240,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1564-1593",
-          "source_span": "binding the IL-1beta promoter",
           "supported_projections": [],
-          "trigger_source_start": 1564,
-          "trigger_span": "binding",
+          "trigger_locator": "char:1564-1571",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -1316,7 +1253,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Regulation of interleukin-1beta transcription by Epstein-Barr virus involves a number of latent proteins via their interaction with RBP.\nEpstein-Barr virus (EBV) infects B cells, resulting in the outgrowth of immortalised lymphoblastoid cell lines (LCLs). Here, we demonstrate through the use of intracellular staining that interleukin-1beta (IL-1beta) is expressed in LCLs and investigate the influence of the individual latent proteins on the expression of IL-1beta. Using RT-PCR, IL-1beta was shown to be up-regulated in EBV-transformed LCLs as well as in group III Burkitt's lymphoma (BL) cell lines, compared with group I BL cell lines. The up-regulation of IL-1beta message could be mediated by the latent membrane protein-1, EBV nuclear proteins 2, 3, 4, and 6 genes. Electrophoretic mobility shift assays (EMSAs) demonstrated that the -300 region of the IL-1beta promoter, which contains a nuclear factor-kappaB (NF-kappaB) binding site, contained a functional RBP binding site. Binding of RBP to this site could be inhibited by addition of EBV nuclear proteins 3 and 6, suggesting that these proteins displace RBP from its recognition sequence, removing transcriptional repression and allowing gene transcription to occur. In group I BL cells, containing low levels of NF-kappaB, only RBP binding was observed in EMSAs, whereas NF-kappaB binding could be demonstrated in EBV-transformed B cell lines containing high levels of activated NF-kappaB. In addition, the expression of latent membrane protein-1 led to activation of NF-kappaB that was capable of binding the IL-1beta promoter. The study demonstrates that EBV can up-regulate IL-1beta expression, possibly by using RBP, NF-kappaB, or both. Copyright 1998 Academic Press.",
+      "source_length": 1737,
+      "source_sha256": "0f7aeada8a3fb7cc84d9bb5c974e864e6664659938e4871fa4de647c86527431",
       "title": "PMID-9878621"
     },
     {
@@ -1337,16 +1275,14 @@
             {
               "argument_id": "T5",
               "event_role": "THEME",
-              "exact_span": "DR alpha",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1021
+              "source_locator": "char:1021-1029"
             },
             {
               "argument_id": "T10",
               "event_role": "SITE",
-              "exact_span": "S",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1004
+              "source_locator": "char:1004-1005"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1357,10 +1293,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:951-1029",
-          "source_span": "transactivation of multiple cis elements, especially S and X2, of the DR alpha",
           "supported_projections": [],
-          "trigger_source_start": 951,
-          "trigger_span": "transactivation",
+          "trigger_locator": "char:951-966",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -1378,16 +1312,14 @@
             {
               "argument_id": "T5",
               "event_role": "THEME",
-              "exact_span": "DR alpha",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1021
+              "source_locator": "char:1021-1029"
             },
             {
               "argument_id": "T11",
               "event_role": "SITE",
-              "exact_span": "X2",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1010
+              "source_locator": "char:1010-1012"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1398,10 +1330,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:951-1029",
-          "source_span": "transactivation of multiple cis elements, especially S and X2, of the DR alpha",
           "supported_projections": [],
-          "trigger_source_start": 951,
-          "trigger_span": "transactivation",
+          "trigger_locator": "char:951-966",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -1413,7 +1343,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Human MHC class II gene transcription directed by the carboxyl terminus of CIITA, one of the defective genes in type II MHC combined immune deficiency.\nType II major histocompatibility complex combined immune deficiency (type II MHC CID or bare lymphocyte syndrome) is a congenital immunodeficiency disease characterized by absent MHC class II expression. Four distinct complementation groups have been identified. Recently, the defective gene in group II type II MHC CID has been isolated and termed CIITA. Here, we demonstrate that CIITA is an MHC class II gene-specific transcription activator. The transcription activation function is provided by the N-terminal acidic domain (amino acids 26-137), which is experimentally exchangeable with a heterologous viral transcription-activating domain. The specificity of CIITA for three major MHC class II genes, DR, DQ and DP, is mediated by its remaining C-terminal residues (amino acids 317-1130). The transactivation of multiple cis elements, especially S and X2, of the DR alpha proximal promoter in group II CID cells is CIITA dependent. Since CIITA overexpression in normal cells did not increase class II expression, we propose that initiation of CIITA expression serves as the on-off switch, while availability of downstream interactor(s) limits transcription.",
+      "source_length": 1315,
+      "source_sha256": "eefce4e2ad6534850548c2403662e03b4afe75829c2650ed27a9333a7ec903e5",
       "title": "PMID-7749985"
     },
     {
@@ -1427,7 +1358,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Cytokine rescue from glucocorticoid induced apoptosis in T cells is mediated through inhibition of IkappaBalpha.\nWe previously reported that dexamethasone (DEX), a synthetic glucocorticoid, causes apoptosis in mature Th cell lines, and that this induction of cell death is prevented by specific cytokines, namely, by IL-2 in Th1 cells and by IL-4 in Th2 cells. We now show that this differential rescue by specific cytokines in Th cells correlates with the level of IkappaBalpha that is regulated by DEX and cytokines. In both cell types the cellular levels of IkappaBalpha mRNA and protein were evaluated by DEX treatment. Interestingly, the DEX-mediated IkappaBalpha induction was completely inhibited by IL-2, but not IL-4, in Th1 cells, while the reverse profile was seen in Th2 cells. In both cell types, the cytokine that inhibits the induction of IkappaBalpha by DEX, also rescues these cells from DEX-induced apoptosis, although the rescue cytokine is different in Th1 and Th2 cells. Our results imply that T cells need to maintain a certain level of NF-kappaB transcriptional activity in order to survive; up- or down-regulation of nuclear NF kappaB through modulation of IkappaBalpha expression by cytokines or DEX may lead to cell survival or cell death, respectively.",
+      "source_length": 1279,
+      "source_sha256": "770538c2ac73e4b3dbb3025a1fe864e182e4a23425fa553bd2ef387ca174db3b",
       "title": "PMID-9488049"
     },
     {
@@ -1441,7 +1373,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Stimulation of CD40 on immunogenic human malignant melanomas augments their cytotoxic T lymphocyte-mediated lysis and induces apoptosis.\nHere, we report the functional expression of CD40 on human malignant melanomas (MMs). Comparison of tumor specimen from MM precursor lesions, primary tumors, and metastases revealed that CD40 surface expression is down-regulated during tumor progression. CD40 expression was confirmed in 7 human MM cell lines established from immunogenic primary tumors or metastases, whereas 11 cell lines established from advanced stages were CD40 negative. CD40 expression could be enhanced in CD40-positive MM by stimulation with IFN-gamma and tumor necrosis factor-alpha but not by interleukin (IL)-1beta or CD40 triggering. CD40 ligation on MM by CD40L-transfected murine L-cells or by a soluble CD40L fusion protein up-regulated their expression of intercellular adhesion molecule-1 and MHC class I and class II molecules and their secretion of IL-6, IL-8, tumor necrosis factor-a, and granulocyte macrophage colony-stimulating factor and also induced a rapid activation of the transcription factor nuclear factor kappaB. Furthermore, CD40 ligation of a HLA-A2+, MelanA/MART1+ MM cell line enhanced its susceptibility to specific lysis by a HLA-A2-restricted, MelanA/MART-1-specific CTL clone. Finally, CD40 ligation induced growth inhibition and apoptosis in MM. These results indicate that CD40-CD40L interactions may play an important role in augmenting antitumor immunity and inducing apoptosis in some CD40-positive immunogenic human MMs.",
+      "source_length": 1571,
+      "source_sha256": "5a4b0783908e772321904e6aec2153d466916b9f95457a37249d01428e963335",
       "title": "PMID-10096561"
     },
     {
@@ -1462,16 +1395,14 @@
             {
               "argument_id": "T18",
               "event_role": "THEME",
-              "exact_span": "Akt",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1544
+              "source_locator": "char:1544-1547"
             },
             {
               "argument_id": "T17",
               "event_role": "CAUSE",
-              "exact_span": "p21ras",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1508
+              "source_locator": "char:1508-1514"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1482,10 +1413,8 @@
           "polarity": "REFUTE",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1508-1547",
-          "source_span": "p21ras signals are unable to induce Akt",
           "supported_projections": [],
-          "trigger_source_start": 1537,
-          "trigger_span": "induce",
+          "trigger_locator": "char:1537-1543",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -1497,7 +1426,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "p21ras initiates Rac-1 but not phosphatidyl inositol 3 kinase/PKB, mediated signaling pathways in T lymphocytes.\np21ras is activated by the T cell antigen receptor (TCR) and then co-ordinates important signaling pathways for T lymphocyte activation. Effector pathways for this guanine nucleotide binding protein in T cells are mediated by the serine/threonine kinase Raf-1 and the Ras-related GTPase Rac-1. In fibroblasts, an important effector for the Ras oncogene is Phosphatidylinositol 3-kinase (PtdIns 3-kinase). Activation of this lipid kinase is able to induce critical Rac-1 signaling pathways and can couple p21ras to cell survival mechanisms via the serine/threonine kinase Akt/PKB. The role of PtdIns 3-kinase in Ras signaling in T cells has not been explored. In the present study, we examined the ability of PtdIns 3-kinase to initiate the Rac-1 signaling pathways important for T cell activation. We also examined the possibility that Akt/PKB is regulated by Ras signaling pathways in T lymphocytes. The results show that Ras can initiate a Rac-1 mediated pathway that regulates the transcriptional function of AP-1 complexes. PtdIns 3-kinase signals cannot mimic p21ras and induce the Rac mediated responses of AP-1 transcriptional activation. Moreover, neither TCR or Ras activation of AP-1 is dependent on PtdIns 3-kinase. PKB is activated in response to triggering of the T cell antigen receptor; PtdIns 3-kinase activity is both required and sufficient for this TCR response. In contrast, p21ras signals are unable to induce Akt/PKB activity in T cell nor is Ras function required for Akt/PKB activation in response to the TCR. The present data thus highlight that PtdIns 3-kinase and Akt/PKB are not universal Ras effector molecules. Ras can initiate Rac-1 regulated signaling pathways in the context of T cell antigen receptor function independently of PtdIns 3-kinase activity.",
+      "source_length": 1899,
+      "source_sha256": "b4a667bab64cd2d2726909e3a42056355a6a8455f83f98812d0c9f4f20caf5f2",
       "title": "PMID-9796702"
     },
     {
@@ -1518,16 +1448,14 @@
             {
               "argument_id": "T2",
               "event_role": "THEME",
-              "exact_span": "HSP27",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1040
+              "source_locator": "char:1040-1045"
             },
             {
               "argument_id": "T11",
               "event_role": "SITE",
-              "exact_span": "serine 82",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1049
+              "source_locator": "char:1049-1058"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1538,10 +1466,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1021-1058",
-          "source_span": "phosphorylation of HSP27 on serine 82",
           "supported_projections": [],
-          "trigger_source_start": 1021,
-          "trigger_span": "phosphorylation",
+          "trigger_locator": "char:1021-1036",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -1559,16 +1485,14 @@
             {
               "argument_id": "T2",
               "event_role": "THEME",
-              "exact_span": "HSP27",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1040
+              "source_locator": "char:1040-1045"
             },
             {
               "argument_id": "T11",
               "event_role": "SITE",
-              "exact_span": "serine 82",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1049
+              "source_locator": "char:1049-1058"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1579,10 +1503,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1040-1100",
-          "source_span": "HSP27 on serine 82, a site previously identified as a target",
           "supported_projections": [],
-          "trigger_source_start": 1094,
-          "trigger_span": "target",
+          "trigger_locator": "char:1094-1100",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -1594,7 +1516,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Discussion\nProtein kinase D serine kinases have been proposed to regulate diverse cellular functions including the phosphorylation and nuclear localisation of class II HDACs and the phosphorylation of HSP27. It has also been suggested that PKDs act as mitochondrial sensors for oxidative stress and play a role in regulating NFkappaB transcription factors [41]. Most of the data about the function of PKDs has come from experiments that ectopically express active or inhibitory PKD mutants or that use RNAi to reduce PKD expression. We have used gene targeting to specifically delete PKD alleles in DT40 chicken B cells and can thus use PKD-null DT40 cells to assess the relative contribution of individual PKD isoforms in class II HDAC control versus oxidative stress responses and NFkappaB regulation in lymphocytes. We have previously used these PKD-null DT40 cells to define an essential role for PKDs in regulation of class II HDACs, the present report now describes an indispensable role for PKDs in regulating the phosphorylation of HSP27 on serine 82, a site previously identified as a target for the p38-MAPKAPK2 signalling cascade [42]. However, studies of PKD-null DT40 cells reveal that PKD family kinases are not essential for oxidative stress survival responses nor are they required for activation of NFkappaB transcription factors. These latter findings are in striking contrast to previous observations in HeLa and epithelial cell lines where overexpression/RNAi approaches have implicated PKD1/2 in the control of proliferation, survival and NFkappaB activation [20,23]. Hence, the present report shows that the proposed roles for PKDs as key sensors that modulate survival pathways in response to oxidative stress and regulate cell survival and proliferation are not ubiquitous and may be restricted to certain cell lineages. Taken together, these data indicate that loss of expression of PKD family members does not globally impact on early BCR-regulated signalling pathways.",
+      "source_length": 1995,
+      "source_sha256": "2849b3259de415deb5df3ae4e3bdf2dd2cfdc22982aa3e884f5e8f018460e137",
       "title": "PMC-1942070-07-Discussion"
     },
     {
@@ -1615,16 +1538,14 @@
             {
               "argument_id": "T7",
               "event_role": "THEME",
-              "exact_span": "I kappa B alpha",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 781
+              "source_locator": "char:781-796"
             },
             {
               "argument_id": "T8",
               "event_role": "THEME",
-              "exact_span": "p65",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 802
+              "source_locator": "char:802-805"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1635,10 +1556,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:744-805",
-          "source_span": "Association of the newly synthesized I kappa B alpha with p65",
           "supported_projections": [],
-          "trigger_source_start": 744,
-          "trigger_span": "Association",
+          "trigger_locator": "char:744-755",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -1650,7 +1569,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "NF-kappa B controls expression of inhibitor I kappa B alpha: evidence for an inducible autoregulatory pathway.\nThe eukaryotic transcription factor nuclear factor-kappa B (NF-kappa B) participates in many parts of the genetic program mediating T lymphocyte activation and growth. Nuclear expression of NF-kappa B occurs after its induced dissociation from its cytoplasmic inhibitor I kappa B alpha. Phorbol ester and tumor necrosis factor-alpha induction of nuclear NF-kappa B is associated with both the degradation of performed I kappa B alpha and the activation of I kappa B alpha gene expression. Transfection studies indicate that the I kappa B alpha gene is specifically induced by the 65-kilodalton transactivating subunit of NF-kappa B. Association of the newly synthesized I kappa B alpha with p65 restores intracellular inhibition of NF-kappa B DNA binding activity and prolongs the survival of this labile inhibitor. Together, these results show that NF-kappa B controls the expression of I kappa B alpha by means of an inducible autoregulatory pathway.",
+      "source_length": 1063,
+      "source_sha256": "b571253f5c2dac89ccdb13c866e15da635adcce7ce8ee379a722e370a554a4ad",
       "title": "PMID-8096091"
     },
     {
@@ -1671,16 +1591,14 @@
             {
               "argument_id": "T1",
               "event_role": "THEME",
-              "exact_span": "interleukin 2",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 30
+              "source_locator": "char:30-43"
             },
             {
               "argument_id": "T21",
               "event_role": "SITE",
-              "exact_span": "enhancer",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 51
+              "source_locator": "char:51-59"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1691,10 +1609,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:13-59",
-          "source_span": "bind to a distal interleukin 2 (IL-2) enhancer",
           "supported_projections": [],
-          "trigger_source_start": 13,
-          "trigger_span": "bind",
+          "trigger_locator": "char:13-17",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -1712,16 +1628,14 @@
             {
               "argument_id": "T11",
               "event_role": "THEME",
-              "exact_span": "IL-2",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 831
+              "source_locator": "char:831-835"
             },
             {
               "argument_id": "T29",
               "event_role": "SITE",
-              "exact_span": "promoter-enhancer",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 836
+              "source_locator": "char:836-853"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1732,10 +1646,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:805-853",
-          "source_span": "induction of the proximal IL-2 promoter-enhancer",
           "supported_projections": [],
-          "trigger_source_start": 805,
-          "trigger_span": "induction",
+          "trigger_locator": "char:805-814",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -1753,16 +1665,14 @@
             {
               "argument_id": "T11",
               "event_role": "THEME",
-              "exact_span": "IL-2",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 831
+              "source_locator": "char:831-835"
             },
             {
               "argument_id": "T29",
               "event_role": "SITE",
-              "exact_span": "promoter-enhancer",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 836
+              "source_locator": "char:836-853"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1773,10 +1683,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:831-874",
-          "source_span": "IL-2 promoter-enhancer, since it is induced",
           "supported_projections": [],
-          "trigger_source_start": 867,
-          "trigger_span": "induced",
+          "trigger_locator": "char:867-874",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -1794,16 +1702,14 @@
             {
               "argument_id": "T11",
               "event_role": "THEME",
-              "exact_span": "IL-2",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 831
+              "source_locator": "char:831-835"
             },
             {
               "argument_id": "T29",
               "event_role": "SITE",
-              "exact_span": "promoter-enhancer",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 836
+              "source_locator": "char:836-853"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1814,10 +1720,8 @@
           "polarity": "REFUTE",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:831-914",
-          "source_span": "IL-2 promoter-enhancer, since it is induced by phorbol esters alone and independent",
           "supported_projections": [],
-          "trigger_source_start": 903,
-          "trigger_span": "independent",
+          "trigger_locator": "char:903-914",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -1835,16 +1739,14 @@
             {
               "argument_id": "T14",
               "event_role": "THEME",
-              "exact_span": "IL-2",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1295
+              "source_locator": "char:1295-1299"
             },
             {
               "argument_id": "T35",
               "event_role": "SITE",
-              "exact_span": "promoter-enhancer",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1300
+              "source_locator": "char:1300-1317"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1855,10 +1757,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1247-1317",
-          "source_span": "induction of the distal enhancer and the entire IL-2 promoter-enhancer",
           "supported_projections": [],
-          "trigger_source_start": 1247,
-          "trigger_span": "induction",
+          "trigger_locator": "char:1247-1256",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -1876,16 +1776,14 @@
             {
               "argument_id": "T15",
               "event_role": "THEME",
-              "exact_span": "IL-2",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1374
+              "source_locator": "char:1374-1378"
             },
             {
               "argument_id": "T39",
               "event_role": "SITE",
-              "exact_span": "promoter-enhancer",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1379
+              "source_locator": "char:1379-1396"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1896,10 +1794,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1374-1406",
-          "source_span": "IL-2 promoter-enhancer induction",
           "supported_projections": [],
-          "trigger_source_start": 1397,
-          "trigger_span": "induction",
+          "trigger_locator": "char:1397-1406",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -1911,7 +1807,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "GABP factors bind to a distal interleukin 2 (IL-2) enhancer and contribute to c-Raf-mediated increase in IL-2 induction.\nTriggering of the T-cell receptor-CD3 complex activates two major signal cascades in T lymphocytes, (i) Ca2+-dependent signal cascades and (ii) protein kinase cascades. Both signal cascades contribute to the induction of the interleukin 2 (IL-2) gene during T-cell activation. Prominent protein kinase cascades are those that activate mitogen-activated protein (MAP) kinases. We show here that c-Raf, which is at the helm of the classic MAP-Erk cascade, contributes to IL-2 induction through a distal enhancer element spanning the nucleotides from positions -502 to -413 in front of the transcriptional start site of the IL-2 gene. Induction of this distal IL-2 enhancer differs from induction of the proximal IL-2 promoter-enhancer, since it is induced by phorbol esters alone and independent from Ca2+ signals. In DNA-protein binding studies, we detected the binding of transcription factors GABP alpha and -beta to a dyad symmetry element (DSE) of the distal enhancer, which is formed by palindromic binding sites of Ets-like factors. Introduction of point mutations suppressing GABP binding to the DSE interfered with the induction of the distal enhancer and the entire IL-2 promoter-enhancer, while overexpression of both GABP factors enhanced the IL-2 promoter-enhancer induction. Overexpression of BXB, a constitutive active version of c-Raf, and of further members of the Ras-Raf-Erk signal cascade exerted an increase of GABP-mediated promoter-enhancer induction. In conjunction with previously published data on c-Raf-induced phosphorylation of GABP factors (E.Flory, A. Hoffmeyer, U.Smola, U.R.Rapp, and J.T.Bruder, J.Virol.70:2260- 2268, 1996), these results indicate a contribution of GABP factors to the Raf-mediated enhancement of IL-2 induction during T-cell activation.",
+      "source_length": 1907,
+      "source_sha256": "dd8f529cbb15710b334d432647e5e44844eb3950576e0658e365cdded15ff23b",
       "title": "PMID-9234696"
     },
     {
@@ -1932,16 +1829,14 @@
             {
               "argument_id": "T1",
               "event_role": "THEME",
-              "exact_span": "granulocyte-macrophage colony-stimulating factor",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 36
+              "source_locator": "char:36-84"
             },
             {
               "argument_id": "T27",
               "event_role": "SITE",
-              "exact_span": "promoter",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 85
+              "source_locator": "char:85-93"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1952,10 +1847,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:13-93",
-          "source_span": "negative regulation of granulocyte-macrophage colony-stimulating factor promoter",
           "supported_projections": [],
-          "trigger_source_start": 13,
-          "trigger_span": "negative regulation",
+          "trigger_locator": "char:13-32",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -1973,16 +1866,14 @@
             {
               "argument_id": "T1",
               "event_role": "THEME",
-              "exact_span": "granulocyte-macrophage colony-stimulating factor",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 36
+              "source_locator": "char:36-84"
             },
             {
               "argument_id": "T27",
               "event_role": "SITE",
-              "exact_span": "promoter",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 85
+              "source_locator": "char:85-93"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -1993,10 +1884,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:22-93",
-          "source_span": "regulation of granulocyte-macrophage colony-stimulating factor promoter",
           "supported_projections": [],
-          "trigger_source_start": 22,
-          "trigger_span": "regulation",
+          "trigger_locator": "char:22-32",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2015,23 +1904,20 @@
             {
               "argument_id": "T8",
               "event_role": "THEME",
-              "exact_span": "GM-CSF",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 702
+              "source_locator": "char:702-708"
             },
             {
               "argument_id": "T6",
               "event_role": "CAUSE",
-              "exact_span": "alpha B1",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 625
+              "source_locator": "char:625-633"
             },
             {
               "argument_id": "T29",
               "event_role": "SITE",
-              "exact_span": "promoter",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 709
+              "source_locator": "char:709-717"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2042,10 +1928,8 @@
           "polarity": "UNCERTAIN",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:625-717",
-          "source_span": "alpha B1 and alpha B2 (two alpha B-encoded isomers) for their effects on the GM-CSF promoter",
           "supported_projections": [],
-          "trigger_source_start": 687,
-          "trigger_span": "effects",
+          "trigger_locator": "char:687-694",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2064,23 +1948,20 @@
             {
               "argument_id": "T8",
               "event_role": "THEME",
-              "exact_span": "GM-CSF",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 702
+              "source_locator": "char:702-708"
             },
             {
               "argument_id": "T5",
               "event_role": "CAUSE",
-              "exact_span": "alpha A1",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 586
+              "source_locator": "char:586-594"
             },
             {
               "argument_id": "T29",
               "event_role": "SITE",
-              "exact_span": "promoter",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 709
+              "source_locator": "char:709-717"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2091,10 +1972,8 @@
           "polarity": "UNCERTAIN",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:586-717",
-          "source_span": "alpha A1 (an alpha A-gene product) and alpha B1 and alpha B2 (two alpha B-encoded isomers) for their effects on the GM-CSF promoter",
           "supported_projections": [],
-          "trigger_source_start": 687,
-          "trigger_span": "effects",
+          "trigger_locator": "char:687-694",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2113,23 +1992,20 @@
             {
               "argument_id": "T8",
               "event_role": "THEME",
-              "exact_span": "GM-CSF",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 702
+              "source_locator": "char:702-708"
             },
             {
               "argument_id": "T7",
               "event_role": "CAUSE",
-              "exact_span": "alpha B2",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 638
+              "source_locator": "char:638-646"
             },
             {
               "argument_id": "T29",
               "event_role": "SITE",
-              "exact_span": "promoter",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 709
+              "source_locator": "char:709-717"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2140,10 +2016,8 @@
           "polarity": "UNCERTAIN",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:638-717",
-          "source_span": "alpha B2 (two alpha B-encoded isomers) for their effects on the GM-CSF promoter",
           "supported_projections": [],
-          "trigger_source_start": 687,
-          "trigger_span": "effects",
+          "trigger_locator": "char:687-694",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2162,23 +2036,20 @@
             {
               "argument_id": "T11",
               "event_role": "THEME",
-              "exact_span": "alpha B2",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 749
+              "source_locator": "char:749-757"
             },
             {
               "argument_id": "T12",
               "event_role": "THEME",
-              "exact_span": "GM-CSF",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 805
+              "source_locator": "char:805-811"
             },
             {
               "argument_id": "T31",
               "event_role": "SITE",
-              "exact_span": "PEBP2 site",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 777
+              "source_locator": "char:777-787"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2189,10 +2060,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:749-811",
-          "source_span": "alpha B2 proteins bound the PEBP2 site within the mouse GM-CSF",
           "supported_projections": [],
-          "trigger_source_start": 767,
-          "trigger_span": "bound",
+          "trigger_locator": "char:767-772",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2211,23 +2080,20 @@
             {
               "argument_id": "T10",
               "event_role": "THEME",
-              "exact_span": "alpha B1",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 735
+              "source_locator": "char:735-743"
             },
             {
               "argument_id": "T12",
               "event_role": "THEME",
-              "exact_span": "GM-CSF",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 805
+              "source_locator": "char:805-811"
             },
             {
               "argument_id": "T31",
               "event_role": "SITE",
-              "exact_span": "PEBP2 site",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 777
+              "source_locator": "char:777-787"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2238,10 +2104,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:735-811",
-          "source_span": "alpha B1, and alpha B2 proteins bound the PEBP2 site within the mouse GM-CSF",
           "supported_projections": [],
-          "trigger_source_start": 767,
-          "trigger_span": "bound",
+          "trigger_locator": "char:767-772",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2260,23 +2124,20 @@
             {
               "argument_id": "T9",
               "event_role": "THEME",
-              "exact_span": "PEBP2 alpha A1",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 719
+              "source_locator": "char:719-733"
             },
             {
               "argument_id": "T12",
               "event_role": "THEME",
-              "exact_span": "GM-CSF",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 805
+              "source_locator": "char:805-811"
             },
             {
               "argument_id": "T31",
               "event_role": "SITE",
-              "exact_span": "PEBP2 site",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 777
+              "source_locator": "char:777-787"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2287,10 +2148,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:719-811",
-          "source_span": "PEBP2 alpha A1, alpha B1, and alpha B2 proteins bound the PEBP2 site within the mouse GM-CSF",
           "supported_projections": [],
-          "trigger_source_start": 767,
-          "trigger_span": "bound",
+          "trigger_locator": "char:767-772",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2308,16 +2167,14 @@
             {
               "argument_id": "T24",
               "event_role": "THEME",
-              "exact_span": "GM-CSF",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1536
+              "source_locator": "char:1536-1542"
             },
             {
               "argument_id": "T38",
               "event_role": "SITE",
-              "exact_span": "promoter",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1543
+              "source_locator": "char:1543-1551"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2328,10 +2185,8 @@
           "polarity": "UNCERTAIN",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1515-1551",
-          "source_span": "role of PEBP2 in the GM-CSF promoter",
           "supported_projections": [],
-          "trigger_source_start": 1515,
-          "trigger_span": "role",
+          "trigger_locator": "char:1515-1519",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2349,16 +2204,14 @@
             {
               "argument_id": "T24",
               "event_role": "THEME",
-              "exact_span": "GM-CSF",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1536
+              "source_locator": "char:1536-1542"
             },
             {
               "argument_id": "T38",
               "event_role": "SITE",
-              "exact_span": "promoter",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 1543
+              "source_locator": "char:1543-1551"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2369,10 +2222,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1536-1671",
-          "source_span": "GM-CSF promoter activity, the present findings suggested the importance of the relative ratio of different PEBP2 isoforms in regulating",
           "supported_projections": [],
-          "trigger_source_start": 1661,
-          "trigger_span": "regulating",
+          "trigger_locator": "char:1661-1671",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -2384,7 +2235,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Positive and negative regulation of granulocyte-macrophage colony-stimulating factor promoter activity by AML1-related transcription factor, PEBP2.\nThe granulocyte-macrophage colony-stimulating factor (GM-CSF) gene promoter contains a consensus sequence for the polyomavirus enhancer binding-protein 2 (PEBP2) transcription factor, which consists of alpha and beta subunits. There are at least two genes, alpha A and alpha B, encoding the alpha subunit. alpha B is the mouse homologue of human AML1 gene detected at the breakpoints of t(8;21) and t(3;21) myeloid leukemias. We examined alpha A1 (an alpha A-gene product) and alpha B1 and alpha B2 (two alpha B-encoded isomers) for their effects on the GM-CSF promoter. PEBP2 alpha A1, alpha B1, and alpha B2 proteins bound the PEBP2 site within the mouse GM-CSF promoter. PEBP2 alpha A1 and alpha B1 enhanced the expression of the GM-CSF promoter-driven reporter plasmid in unstimulated and 12-O-tetradecanoylphorbol 13-acetate/phytohemagglutinin-stimulated human Jurkat T cells. In contrast, the promoter activity was suppressed by alpha B2. Coexpression of alpha B1 and alpha B2 showed that the promoter activity could be determined by the alpha B1/alpha B2 ratio. Jurkat cell extract contained PEBP2 site-binding protein(s) that cross-reacted with antimouse alpha A1 antibodies. Northern blot analysis indicated the expression of human PEBP2 alpha A, alpha B (AML1), and beta genes in Jurkat cells. Although further studies are required to determine the precise role of PEBP2 in the GM-CSF promoter activity, the present findings suggested the importance of the relative ratio of different PEBP2 isoforms in regulating the levels of the promoter activity.",
+      "source_length": 1708,
+      "source_sha256": "673b6cc45eff1fe166e37aafd48e6cd586002e9a7be55a9b49021c1f530a84fb",
       "title": "PMID-7605990"
     },
     {
@@ -2398,7 +2250,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Monocyte tethering by P-selectin regulates monocyte chemotactic protein-1 and tumor necrosis factor-alpha secretion. Signal integration and NF-kappa B translocation [see comments]\nAdhesion molecules that tether circulating leukocytes to endothelial cells may also transduce or modulate outside-in signals for cellular activation, providing an initial regulatory point in the inflammatory response. Adhesion of human monocytes to P-selectin, the most rapidly expressed endothelial tethering factor, increased the secretion of monocyte chemotactic protein-1 (MCP-1) and tumor necrosis factor-alpha (TNF-alpha) by the leukocytes when they were stimulated with platelet-activating factor. Increased cytokine secretion was specifically inhibited by G1, an anti-P-selectin mAb that prevents P-selectin from binding to its ligand (P-selectin glycoprotein ligand-1) on myeloid cells. Moreover, tethering by P-selectin specifically enhanced nuclear translocation of nuclear factor-kappa B (NF-kappa B), a transcription factor required for expression of MCP-1, TNF-alpha, and other immediate-early genes. These results demonstrate that P-selectin, through its ligands on monocytes, may locally regulate cytokine secretion in inflamed tissues.",
+      "source_length": 1232,
+      "source_sha256": "363b49c8071440e28f2d89c86814e1c9e370ffd27d0cc08969703eadea0922e4",
       "title": "PMID-7537762"
     },
     {
@@ -2420,23 +2273,20 @@
             {
               "argument_id": "T1",
               "event_role": "THEME",
-              "exact_span": "Luciferase",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 0
+              "source_locator": "char:0-10"
             },
             {
               "argument_id": "T2",
               "event_role": "CAUSE",
-              "exact_span": "A3G",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 25
+              "source_locator": "char:25-28"
             },
             {
               "argument_id": "T13",
               "event_role": "CSITE",
-              "exact_span": "promoter",
               "participant_role": "OTHER_ENTITY",
-              "source_start": 29
+              "source_locator": "char:29-37"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2447,10 +2297,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:0-37",
-          "source_span": "Luciferase activities of A3G promoter",
           "supported_projections": [],
-          "trigger_source_start": 11,
-          "trigger_span": "activities",
+          "trigger_locator": "char:11-21",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -2462,7 +2310,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Luciferase activities of A3G promoter constructs in different cell lines. (A) A3G promoter 5' deletion constructs of different sizes were cloned into pGL3-Basic luciferase reporter plasmids. Numbering is relative to the major TSS. A putative Sp1/Sp3 consensus site (gray square) is depicted. (B) A3.01 T cells were transiently transfected with the A3G promoter deletion constructs. Numbers on the x-axis refer to the length of the A3G promoter fragments in bp. (C) A3G promoter plasmids were transfected into U937, HepG2 and Huh7 cell lines. Numbers in the legends refer to the length of the A3G promoter fragments in bp. After 48 h, cells were harvested for luciferase assay. Firefly luciferase activities were normalized to coexpressed renilla luciferase activities. Mean values (+/-SD) of a representative experiment performed in triplicate are shown.",
+      "source_length": 854,
+      "source_sha256": "51f1208f5d9aa5a88b3735c9ab279cf59cd1370b8bfffa9da4468e9f314baf35",
       "title": "PMC-1920263-18-caption-03"
     },
     {
@@ -2483,16 +2332,14 @@
             {
               "argument_id": "T10",
               "event_role": "THEME",
-              "exact_span": "Id1",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 619
+              "source_locator": "char:619-622"
             },
             {
               "argument_id": "T11",
               "event_role": "CAUSE",
-              "exact_span": "BMP-6",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 631
+              "source_locator": "char:631-636"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2503,10 +2350,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:603-636",
-          "source_span": "upregulation of Id1 mRNA in BMP-6",
           "supported_projections": [],
-          "trigger_source_start": 603,
-          "trigger_span": "upregulation",
+          "trigger_locator": "char:603-615",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2524,16 +2369,14 @@
             {
               "argument_id": "T12",
               "event_role": "THEME",
-              "exact_span": "Id1",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 686
+              "source_locator": "char:686-689"
             },
             {
               "argument_id": "T13",
               "event_role": "CAUSE",
-              "exact_span": "BMP-6",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 800
+              "source_locator": "char:800-805"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2544,10 +2387,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:669-805",
-          "source_span": "up-regulation of Id1 mRNA was characteristic of an early inducible gene, with maximal upregulation two hours after the addition of BMP-6",
           "supported_projections": [],
-          "trigger_source_start": 669,
-          "trigger_span": "up-regulation",
+          "trigger_locator": "char:669-682",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2565,16 +2406,14 @@
             {
               "argument_id": "T12",
               "event_role": "THEME",
-              "exact_span": "Id1",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 686
+              "source_locator": "char:686-689"
             },
             {
               "argument_id": "T13",
               "event_role": "CAUSE",
-              "exact_span": "BMP-6",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 800
+              "source_locator": "char:800-805"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2585,10 +2424,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:686-805",
-          "source_span": "Id1 mRNA was characteristic of an early inducible gene, with maximal upregulation two hours after the addition of BMP-6",
           "supported_projections": [],
-          "trigger_source_start": 755,
-          "trigger_span": "upregulation",
+          "trigger_locator": "char:755-767",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2606,16 +2443,14 @@
             {
               "argument_id": "T14",
               "event_role": "THEME",
-              "exact_span": "Id2",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 901
+              "source_locator": "char:901-904"
             },
             {
               "argument_id": "T13",
               "event_role": "CAUSE",
-              "exact_span": "BMP-6",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 800
+              "source_locator": "char:800-805"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2626,10 +2461,8 @@
           "polarity": "REFUTE",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:800-904",
-          "source_span": "BMP-6 and returned to baseline after 24 hours. In contrast, no significant changes were observed for Id2",
           "supported_projections": [],
-          "trigger_source_start": 875,
-          "trigger_span": "changes",
+          "trigger_locator": "char:875-882",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2647,16 +2480,14 @@
             {
               "argument_id": "T15",
               "event_role": "THEME",
-              "exact_span": "Id3",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 909
+              "source_locator": "char:909-912"
             },
             {
               "argument_id": "T13",
               "event_role": "CAUSE",
-              "exact_span": "BMP-6",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 800
+              "source_locator": "char:800-805"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2667,10 +2498,8 @@
           "polarity": "REFUTE",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:800-912",
-          "source_span": "BMP-6 and returned to baseline after 24 hours. In contrast, no significant changes were observed for Id2 and Id3",
           "supported_projections": [],
-          "trigger_source_start": 875,
-          "trigger_span": "changes",
+          "trigger_locator": "char:875-882",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2688,16 +2517,14 @@
             {
               "argument_id": "T16",
               "event_role": "THEME",
-              "exact_span": "Id4",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 927
+              "source_locator": "char:927-930"
             },
             {
               "argument_id": "T13",
               "event_role": "CAUSE",
-              "exact_span": "BMP-6",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 800
+              "source_locator": "char:800-805"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2708,10 +2535,8 @@
           "polarity": "REFUTE",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:800-962",
-          "source_span": "BMP-6 and returned to baseline after 24 hours. In contrast, no significant changes were observed for Id2 and Id3 mRNA, whereas Id4-transcripts were not detectable",
           "supported_projections": [],
-          "trigger_source_start": 952,
-          "trigger_span": "detectable",
+          "trigger_locator": "char:952-962",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2729,16 +2554,14 @@
             {
               "argument_id": "T20",
               "event_role": "THEME",
-              "exact_span": "Id1",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1148
+              "source_locator": "char:1148-1151"
             },
             {
               "argument_id": "T21",
               "event_role": "CAUSE",
-              "exact_span": "BMP-6",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1231
+              "source_locator": "char:1231-1236"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2749,10 +2572,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1148-1236",
-          "source_span": "Id1 protein level was detectable after one hour and increased until 24 hours after BMP-6",
           "supported_projections": [],
-          "trigger_source_start": 1200,
-          "trigger_span": "increased",
+          "trigger_locator": "char:1200-1209",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         },
@@ -2770,16 +2591,14 @@
             {
               "argument_id": "T20",
               "event_role": "THEME",
-              "exact_span": "Id1",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1148
+              "source_locator": "char:1148-1151"
             },
             {
               "argument_id": "T21",
               "event_role": "CAUSE",
-              "exact_span": "BMP-6",
               "participant_role": "GENE_OR_PROTEIN",
-              "source_start": 1231
+              "source_locator": "char:1231-1236"
             }
           ],
           "eligible_for_event_metrics": true,
@@ -2790,10 +2609,8 @@
           "polarity": "SUPPORT",
           "projection_adjudication": "UNADJUDICATED",
           "source_locator": "char:1148-1277",
-          "source_span": "Id1 protein level was detectable after one hour and increased until 24 hours after BMP-6 addition, showing a 16-fold upregulation",
           "supported_projections": [],
-          "trigger_source_start": 1265,
-          "trigger_span": "upregulation",
+          "trigger_locator": "char:1265-1277",
           "value_reason": "Source corpus does not annotate Artana decision value.",
           "value_status": "UNADJUDICATED"
         }
@@ -2805,7 +2622,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "BMP-6 induces upregulation of Id1\nNext, we wanted to explore whether the BMP-6 induced phosphorylation of Smad 1/5/8 also could induce transcriptional changes of target genes. In this regard, the inhibitors of DNA binding proteins (Ids) are considered to be some of the major target genes for Smad-signalling [17]. Thus, B cells were pre-incubated over night in X-VIVO 15, and then cultured in medium alone or in the presence of BMP-6 for various time points before preparation of total RNA. The amount of Id1-Id4 mRNA was quantified by real-time RT-PCR. Interestingly, we observed a specific four-fold upregulation of Id1 mRNA in BMP-6-treated B cells (Figure 7). The up-regulation of Id1 mRNA was characteristic of an early inducible gene, with maximal upregulation two hours after the addition of BMP-6 and returned to baseline after 24 hours. In contrast, no significant changes were observed for Id2 and Id3 mRNA, whereas Id4-transcripts were not detectable (Figure 7, data not shown).\nWestern blot analysis revealed that the BMP-6-induced upregulation of Id1 mRNA also was correlated with upregulation of Id1 protein as well. The increase in Id1 protein level was detectable after one hour and increased until 24 hours after BMP-6 addition, showing a 16-fold upregulation compared with t0 (p </= 0.020, n = 4) (Figure 8 and 9). In line with the mRNA data, no consistent change in the amounts of Id2 and Id3 protein could be observed (Figure 8 and 9). We were able to block the Id1 specific band with a blocking peptide (data not shown). Taken together, these data suggest that Id1 could be a possible target gene for mediating the effects of BMP-6 in human B cells, whereas Id2 and Id3 not seem to be involved.",
+      "source_length": 1716,
+      "source_sha256": "e66a26ed71602bae299ace232435d612b4f1585d572c3aaaf5bec86021344c1b",
       "title": "PMC-1134658-06-Results-05"
     },
     {
@@ -2819,7 +2637,8 @@
         "mapping_version": "bionlp-ge-to-artana-event.v2",
         "source_url": "https://bionlp-st.dbcls.jp/GE/2011/downloads/BioNLP-ST_2011_genia_devel_data_rev1.tar.gz"
       },
-      "source_text": "Active suppression of the class II transactivator-encoding AIR-1 locus is responsible for the lack of major histocompatibility complex class II gene expression observed during differentiation from B cells to plasma cells.\nIn this study the genetic control of major histocompatibility complex (MHC) class II gene expression during the transition from B cell to plasma cell has been analyzed. Class II molecules are not expressed in plasma cells because of an active suppression resulting in the abrogation of class II gene transcription. We show here that the plasma cell-specific repressor function, designated SIR (suppressor of immune response genes), does not act directly on the transcription of class II genes, but instead on the transcription of the AIR-1 gene, whose product, the class II transactivator (CIITA), is fundamental for the regulation of the constitutive and inducible expression of MHC class II genes. This was unambiguously demonstrated by the fact that plasmacytoma x B cell hybrids carrying an AIR-1 locus derived from CIITA-expressing cells do not express CIITA-specific transcripts. Transfection of a cDNA containing the human CIITA coding sequence under the control of an heterologous promoter restores expression of human MHC class II genes in the hybrids and is responsible for de novo expression of mouse MHC class II genes in both the mouse plasmacytoma cell line and the hybrids. These results confirm and extend the notion of the functional conservation of the AIR-1 gene product across species barriers. Interestingly, in CIITA-transfected cell hybrids, cell surface expression of the human HLA-DQ heterodimer was not observed. This result was not attributable to lack of HLA-DQ alpha or -DQ beta transcription, because both transcripts were present in the CIITA-transfected hybrids, although at reduced levels. These findings further support our previous observations on the distinct regulation of expression of the human HLA-DQ class II subset, which may be thus controlled at the posttranscriptional level by a CIITA-independent mechanism.",
+      "source_length": 2075,
+      "source_sha256": "f41e124e633f2da3f5c5811cfecb94ced7b2b22b05bcfb7b5fb7f0817fd23a7a",
       "title": "PMID-8898960"
     }
   ],
@@ -7698,6 +7517,12 @@
       "PMC-1920263-17-caption-02"
     ],
     "value_labels": "unadjudicated"
+  },
+  "restricted_text": {
+    "archive_sha256": "f70e5f6d6e2a7f7fcdb5c8671715f3909a77662a6238015b2916ce939f2a890f",
+    "corpus": "BioNLP-ST-2011-GE",
+    "policy": "fetch-on-demand; see scripts/validation/RESTRICTED_CORPORA.md",
+    "rehydrated_sha256": "26d67408a7a2446de5d36fca3f8a80a732b6519afe00e303c893eef3c824268d"
   },
   "schema_version": "tg04_nary_claim_benchmark.v1"
 }

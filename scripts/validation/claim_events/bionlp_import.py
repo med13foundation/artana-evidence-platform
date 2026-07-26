@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 
+from scripts.validation.claim_events.corpus_text import normalized_characters
+
 _EVENT_TYPE_MAP: Final = {
     "Gene_expression": "EXPRESSION",
     "Transcription": "TRANSCRIPTION",
@@ -42,19 +44,18 @@ POLARITY_ADJUDICATION_RECORD: Final = (
 #: Each was read against its own source sentence; the rationale and the two
 #: rejected candidates are recorded in `POLARITY_ADJUDICATION_RECORD`.  This is
 #: deliberately a table and not a rule -- see `_adjudicated_epistemic_categories`.
+#:
+#: Each entry used to be annotated with the corpus sentence that justified it.
+#: Those quotes were verbatim restricted text and have been removed; the
+#: adjudication record holds the reasoning, and the sentence itself can be read
+#: at the event's own offsets once the corpus is fetched.
 POLARITY_ADJUDICATIONS: Final[dict[tuple[str, str], tuple[str, str]]] = {
-    # "the failure of p65 translocation to the nucleus"
     ("PMID-9164948", "E2"): ("REFUTE", "ASSERTED"),
-    # "did suppress their nuclear localization"
     ("PMID-10402173", "E9"): ("REFUTE", "ASSERTED"),
     ("PMID-10402173", "E10"): ("REFUTE", "ASSERTED"),
-    # "no activation of RelA/NFkappaB1-binding activity was detectable"
     ("PMID-10402173", "E2"): ("REFUTE", "ASSERTED"),
-    # "IL-4 significantly inhibited TGF-beta-mediated induction of FOXP3"
     ("PMC-2222968-05-Results-04", "E8"): ("REFUTE", "ASSERTED"),
-    # "Deletion of all three elements abolished inducibility"
     ("PMID-8134378", "E9"): ("REFUTE", "ASSERTED"),
-    # "interfered with the induction of the distal enhancer"
     ("PMID-9234696", "E14"): ("REFUTE", "ASSERTED"),
 }
 TG04_BIONLP_SOURCE_URL: Final = (
@@ -202,11 +203,11 @@ def _normalize_text_bounds(
     raw_source_text: str,
     raw_text_bounds: dict[str, TextBoundAnnotation],
 ) -> tuple[str, dict[str, TextBoundAnnotation]]:
-    normalized_characters = _normalized_characters(raw_source_text)
-    normalized_source = "".join(character for character, _ in normalized_characters)
+    characters = normalized_characters(raw_source_text)
+    normalized_source = "".join(character for character, _ in characters)
     normalized_index_by_raw = {
         raw_index: normalized_index
-        for normalized_index, (_, raw_index) in enumerate(normalized_characters)
+        for normalized_index, (_, raw_index) in enumerate(characters)
     }
     normalized_bounds: dict[str, TextBoundAnnotation] = {}
     for annotation_id, bound in raw_text_bounds.items():
@@ -230,39 +231,6 @@ def _normalize_text_bounds(
             text=bound.text,
         )
     return normalized_source, normalized_bounds
-
-
-def _normalized_characters(source_text: str) -> list[tuple[str, int]]:
-    newline_normalized: list[tuple[str, int]] = []
-    raw_index = 0
-    while raw_index < len(source_text):
-        if source_text.startswith("\r\n", raw_index):
-            newline_normalized.append(("\n", raw_index + 1))
-            raw_index += 2
-            continue
-        newline_normalized.append((source_text[raw_index], raw_index))
-        raw_index += 1
-
-    lines: list[list[tuple[str, int]]] = [[]]
-    newline_indices: list[int] = []
-    for character in newline_normalized:
-        if character[0] == "\n":
-            newline_indices.append(character[1])
-            lines.append([])
-        else:
-            lines[-1].append(character)
-    normalized: list[tuple[str, int]] = []
-    for line_index, line in enumerate(lines):
-        while line and line[-1][0].isspace():
-            line.pop()
-        normalized.extend(line)
-        if line_index < len(newline_indices):
-            normalized.append(("\n", newline_indices[line_index]))
-    while normalized and normalized[0][0].isspace():
-        normalized.pop(0)
-    while normalized and normalized[-1][0].isspace():
-        normalized.pop()
-    return normalized
 
 
 def build_bionlp_fixture(

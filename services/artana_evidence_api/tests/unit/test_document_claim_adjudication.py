@@ -294,7 +294,7 @@ async def test_same_claim_is_preserved_as_review_only_relation() -> None:
 
 @pytest.mark.asyncio
 async def test_bundled_or_unverified_claims_fail_closed_deterministically() -> None:
-    sentence = "IL-4 inhibits FOXP3 without interfering with TGF-beta signaling."
+    sentence = "IL-4 inhibits FOXP3 while leaving upstream TGF-beta signaling intact."
     draft = _draft(
         subject="IL-4",
         relation="INHIBITS",

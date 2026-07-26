@@ -35,8 +35,12 @@ _REPO_ROOT: Final = Path(__file__).resolve().parents[5]
 _PR177_REPORT_PATH: Final = (
     _REPO_ROOT / "docs/validation/reports/2026-07-18-tg04-fresh-hidden-discovery.md"
 )
+#: Moved once, by the 2026-07-25 redaction, which replaced quoted source spans
+#: in the report with locators and digests and changed no finding, count or
+#: verdict in it.  The redaction did not update this pin.  Superseded digest:
+#: `9928865a22846c22def452370c74c05246668b41d6bb53da8564235185e2aea6`.
 _PR177_REPORT_SHA256: Final = (
-    "9928865a22846c22def452370c74c05246668b41d6bb53da8564235185e2aea6"
+    "c330d1da1bd0dc04d98812cf94e825b14ae543664593e395113515cddf7f1231"
 )
 _PR177_ARTIFACT_SHA256: Final = (
     "b547b677af93b36dc3f3a5c950f913b918d54cbfd9ed63c26c2ccc6fa07d5ffc"

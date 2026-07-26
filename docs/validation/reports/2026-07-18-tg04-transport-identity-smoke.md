@@ -78,8 +78,8 @@ Every deterministic transport requirement passed:
 - fallback count: `0`.
 
 The extractor returned one `FINDING` with a `DECREASE` event. It preserved
-`IL-4` as `CAUSE`, `iTreg-driving conditions` as `CONTEXT`, and the number of
-FOXP3+ cells as the affected outcome. The independent verifier returned
+`IL-4` as `CAUSE`, `iTreg-driving conditions` as `CONTEXT`, and the count of
+FOXP3-positive cells as the affected outcome. The independent verifier returned
 `CANDIDATES_COMPLETE` and `ENTAILED`, citing the trigger and all three material
 arguments.
 

@@ -7,7 +7,6 @@ import json
 from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
-from typing import Any
 
 import pytest
 from artana_evidence_api.full_ai_orchestrator_runtime import (
@@ -85,7 +84,7 @@ def _facade_symbol_matches_canonical(
 def test_old_shadow_planner_monkeypatch_seams_still_reach_canonical_runtime(
     monkeypatch: pytest.MonkeyPatch,
     name: str,
-    replacement: Callable[[], Any],
+    replacement: Callable[[], object],
     expected: object | None,
 ) -> None:
     facade = importlib.import_module(

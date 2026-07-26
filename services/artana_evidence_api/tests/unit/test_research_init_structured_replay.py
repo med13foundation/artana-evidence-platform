@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -419,7 +419,7 @@ class _ResolvingGraphGateway:
 
 def _label_resolver(
     labels: dict[str, str],
-) -> Any:
+) -> Callable[..., dict[str, str] | None]:
     def _resolve_graph_entity_label(
         *,
         space_id: object,

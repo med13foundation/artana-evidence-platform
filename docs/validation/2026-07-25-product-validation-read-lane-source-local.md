@@ -587,12 +587,12 @@ Every element of that sentence is a quantity this design produces, with its unce
 All computed read-only, at zero provider cost, using the **real importer** (`scripts/validation/claim_events/bionlp_import.py`) against the digest-verified corpus fetched into a scratch directory. **No file in the repository was modified.** Reproduce with:
 
 ```
-cd /Users/alvaro/Documents/Code/artana-evidence-platform/.claude/worktrees/reviewer-surface-pt1-d0c60c
-set -a; . /Users/alvaro/Documents/Code/artana-evidence-platform/.env.postgres; set +a
+cd <repository checkout>
+set -a; . .env.postgres; set +a
 export PYTHONPATH="$PWD/services"
-/Users/alvaro/Documents/Code/artana-evidence-platform/.venv/bin/python3 <scratch>/final_counts.py
-/Users/alvaro/Documents/Code/artana-evidence-platform/.venv/bin/python3 <scratch>/strata.py
-/Users/alvaro/Documents/Code/artana-evidence-platform/.venv/bin/python3 <scratch>/final_chunks.py
+venv/bin/python3 <scratch>/final_counts.py
+venv/bin/python3 <scratch>/strata.py
+venv/bin/python3 <scratch>/final_chunks.py
 ```
 
 **Corpus.** 259 documents; archive SHA-256 `f70e5f6d…a890f` verifies clean. Text-bound annotation types across the split: `Protein` 4,526, `Entity` 179 (both mapped by the crosswalk), plus event-trigger types. **Zero `N` (normalization) lines** across all `.a1`/`.a2` files.
