@@ -106,6 +106,7 @@ ARTANA_EVIDENCE_API_TEST_PATHS := \
 	 tests/e2e/artana_evidence_api \
 	 services/artana_evidence_api/tests/integration \
 	 services/artana_evidence_api/tests/unit \
+	 tests/unit/database \
 	 tests/unit/test_finite_source_unit_audit.py \
 	 tests/unit/test_nary_claim_evaluation.py \
 	 tests/unit/test_nary_claim_runner.py \
