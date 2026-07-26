@@ -13,7 +13,7 @@ demand and only *derived* artifacts enter git:
 | -------------------------------------------------- | -------------------------------------------------------- |
 | Character offsets and locators                     | Document text                                            |
 | SHA-256 digests of text, spans and archives        | Any verbatim run of 40 normalized characters or more     |
-| Our event-type, role and polarity mappings         | Any span reproduced *as* a span, at any length           |
+| Our event-type, role and polarity mappings         | Any span reproduced *as* a span, at any length (one disclosed exception below) |
 | Adjudications, exclusion ledgers, counts           | Any span field in a fixture, whatever its length         |
 | The bare name of an entity, trigger or relation cue |                                                          |
 
