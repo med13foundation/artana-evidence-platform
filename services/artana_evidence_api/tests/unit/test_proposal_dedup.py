@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from typing import cast
 
+import pytest
 from artana_evidence_api.claim_fingerprint import compute_claim_fingerprint
 from artana_evidence_api.proposal_store import (
     IDENTITY_PENDING_STATUS,
@@ -438,3 +440,59 @@ class TestAutoRejectOnPromotion:
         )
         assert len(rejected) == 1
         assert "Auto-rejected" in (rejected[0].decision_reason or "")
+
+
+class TestBulkRejectRefusesAnAbsentFingerprint:
+    """No fingerprint must mean "reject nothing", not "reject the unfingerprinted".
+
+    Both stores matched every fingerprint-less pending proposal when handed no
+    fingerprint -- the in-memory one because ``None == None``, the durable one
+    because SQLAlchemy renders ``column == None`` as ``IS NULL`` rather than as
+    a comparison that never matches.  They agreed on the wrong answer, which is
+    why nobody caught it: a single call rejected unrelated evidence in bulk and
+    stamped each row with a reason saying it duplicated something.
+    """
+
+    def test_a_null_fingerprint_is_refused_before_anything_is_rejected(
+        self,
+    ) -> None:
+        store = HarnessProposalStore()
+        created = store.create_proposals(
+            space_id=SPACE_ID,
+            run_id=RUN_A,
+            proposals=(
+                _make_draft(source_key="no-fp-1", fingerprint=False),
+                _make_draft(source_key="no-fp-2", fingerprint=False),
+                _make_draft(source_key="no-fp-3", fingerprint=False),
+            ),
+        )
+        assert len(created) == 3
+
+        with pytest.raises(ValueError, match="requires a non-empty"):
+            store.reject_pending_duplicates(
+                space_id=SPACE_ID,
+                claim_fingerprint=cast("str", None),
+                exclude_id=created[0].id,
+                reason="Auto-rejected: equivalent claim promoted",
+            )
+
+        assert [
+            record.status
+            for record in store.list_proposals(space_id=SPACE_ID)
+        ] == ["pending_review"] * 3, "nothing may be rejected"
+
+    def test_a_blank_fingerprint_is_refused_too(self) -> None:
+        store = HarnessProposalStore()
+        created = store.create_proposals(
+            space_id=SPACE_ID,
+            run_id=RUN_A,
+            proposals=(_make_draft(source_key="no-fp-1", fingerprint=False),),
+        )
+
+        with pytest.raises(ValueError, match="requires a non-empty"):
+            store.reject_pending_duplicates(
+                space_id=SPACE_ID,
+                claim_fingerprint="   ",
+                exclude_id=created[0].id,
+                reason="Auto-rejected",
+            )

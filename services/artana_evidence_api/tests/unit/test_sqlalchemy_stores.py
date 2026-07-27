@@ -500,7 +500,7 @@ def _create_extraction_document(
 def _race_draft(
     *,
     source_key: str,
-    fingerprint: str,
+    fingerprint: str | None,
     document_id: str | None = None,
 ) -> HarnessProposalDraft:
     return HarnessProposalDraft(
@@ -727,6 +727,50 @@ def test_two_drafts_of_different_documents_sharing_a_fingerprint_park_only_one(
     assert parked.decision_reason is not None
     assert "a different document" in parked.decision_reason
     assert len(store.list_proposals(space_id=space_id, run_id=run.id)) == 2
+
+
+def test_bulk_rejecting_duplicates_refuses_an_absent_fingerprint(
+    db_session: Session,
+) -> None:
+    """``column == None`` is ``IS NULL`` here, not a comparison that never matches.
+
+    The durable store was assumed to be the safe one of the pair -- SQL's
+    ``= NULL`` matches nothing -- but SQLAlchemy rewrites ``column == None`` into
+    ``IS NULL``, so the UPDATE swept every fingerprint-less pending proposal in
+    the space and stamped each with a reason saying it duplicated something. The
+    in-memory store did the same thing through ``None == None``. Both stores
+    agreed, which is exactly why this survived.
+    """
+
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        db_session,
+        space_id=space_id,
+        harness_id="document_extraction",
+        title="Three claims, no fingerprints",
+        input_payload={},
+    )
+    store = SqlAlchemyHarnessProposalStore(db_session)
+    created = store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=tuple(
+            _race_draft(source_key=f"claim-{index}", fingerprint=None)
+            for index in range(3)
+        ),
+    )
+    assert [record.claim_fingerprint for record in created] == [None] * 3
+
+    with pytest.raises(ValueError, match="requires a non-empty"):
+        store.reject_pending_duplicates(
+            space_id=space_id,
+            claim_fingerprint=cast("str", None),
+            exclude_id=created[0].id,
+            reason="Auto-rejected: equivalent claim promoted",
+        )
+
+    persisted = store.list_proposals(space_id=space_id, run_id=run.id)
+    assert [record.status for record in persisted] == ["pending_review"] * 3
 
 
 def test_a_proposal_without_provenance_reads_back_as_explicitly_unverified(

@@ -86,6 +86,40 @@ def missing_duplicate_counterpart_message(*, proposal_id: object) -> str:
     )
 
 
+def require_fingerprint_for_bulk_reject(claim_fingerprint: str | None) -> str:
+    """Return one usable fingerprint, or refuse to run a bulk rejection.
+
+    ``reject_pending_duplicates`` rejects every pending proposal in a space that
+    matches one fingerprint.  Handed no fingerprint, both implementations
+    matched every proposal that *has* no fingerprint: the in-memory store
+    because ``None == None``, and the durable store because SQLAlchemy renders
+    ``column == None`` as ``IS NULL`` rather than as a never-true comparison.
+    The two agreed, on the wrong answer -- a single call would have rejected
+    every fingerprint-less pending proposal in the space, each with a reason
+    saying it duplicated something.
+
+    No caller passes None today; the signature says ``str``.  That is why this
+    refuses rather than returning 0: a caller that reached here has lost track
+    of what it is deduplicating, and quietly doing nothing would hide it just as
+    effectively as quietly doing everything.
+    """
+
+    if not isinstance(claim_fingerprint, str) or claim_fingerprint.strip() == "":
+        raise ValueError(missing_fingerprint_bulk_reject_message())
+    return claim_fingerprint
+
+
+def missing_fingerprint_bulk_reject_message() -> str:
+    """Return why a bulk duplicate rejection cannot run without a fingerprint."""
+
+    return (
+        "reject_pending_duplicates requires a non-empty claim_fingerprint. "
+        "Without one the query matches every pending proposal that has no "
+        "fingerprint, which is a bulk rejection of unrelated evidence rather "
+        "than a deduplication."
+    )
+
+
 def build_identity_adjudication(
     *,
     resolution: str,
@@ -784,7 +818,11 @@ class HarnessProposalStore:
 
         Returns the number of proposals rejected.  Used after promotion to
         clean up duplicate proposals that can never be approved.
+
+        Refuses an absent fingerprint (see
+        ``missing_fingerprint_bulk_reject_message``).
         """
+        require_fingerprint_for_bulk_reject(claim_fingerprint)
         normalized_space_id = str(space_id)
         normalized_exclude_id = str(exclude_id)
         count = 0
@@ -829,6 +867,8 @@ __all__ = [
     "in_batch_identity_collision_reason",
     "is_undecidable_proposal_error",
     "missing_duplicate_counterpart_message",
+    "missing_fingerprint_bulk_reject_message",
+    "require_fingerprint_for_bulk_reject",
     "normalize_identity_resolution",
     "unadjudicable_proposal_message",
     "undecidable_proposal_message",

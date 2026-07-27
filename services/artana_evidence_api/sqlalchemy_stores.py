@@ -80,6 +80,7 @@ from .proposal_store import (
     in_batch_identity_collision_reason,
     missing_duplicate_counterpart_message,
     normalize_identity_resolution,
+    require_fingerprint_for_bulk_reject,
     unadjudicable_proposal_message,
     undecidable_proposal_message,
 )
@@ -1053,7 +1054,14 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         exclude_id: UUID | str,
         reason: str,
     ) -> int:
-        """Reject all pending_review proposals with the same fingerprint."""
+        """Reject all pending_review proposals with the same fingerprint.
+
+        Refuses an absent fingerprint.  ``column == None`` is not a comparison
+        that never matches here -- SQLAlchemy renders it ``IS NULL`` -- so the
+        UPDATE would have swept every fingerprint-less pending proposal in the
+        space.  See ``require_fingerprint_for_bulk_reject``.
+        """
+        require_fingerprint_for_bulk_reject(claim_fingerprint)
         decision_timestamp = datetime.now(UTC).replace(tzinfo=None)
         result = self.session.execute(
             update(HarnessProposalModel)
