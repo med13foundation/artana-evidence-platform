@@ -11,7 +11,21 @@ This repository contains two Python backend services:
 
 The services are intentionally separated. Keep orchestration and user workflow concerns in `services/artana_evidence_api`; keep graph persistence, dictionary governance, and graph validation concerns in `services/artana_evidence_db`.
 
-There is no active frontend package in this repository. Do not add UI work here unless explicitly asked; this repo is for backend services, contracts, scripts, tests, docs, and migrations.
+**This repository builds backend capability only. No UI is built here — not a
+page, not a component, not a template, and not "just a small screen to see it
+working."** It contains backend services, contracts, scripts, tests, docs and
+migrations, and nothing that renders.
+
+The rule is unconditional on purpose. It previously read "unless explicitly
+asked", and that escape hatch conflicted with the product track in
+`docs/artana-vision-and-direction.md`, which described a reviewer *screen* — so
+the two documents disagreed about whether a screen belonged here. It does not.
+
+A capability is delivered here when its API expresses it: the endpoint exists,
+its contract is in `openapi.json`, and a test drives it end to end. Whether
+anything renders it is a separate question answered in a separate repository.
+If a task seems to need a screen to be demonstrable, the demonstration is a test
+or a scripted API call, not a page.
 
 ## Working Rules
 

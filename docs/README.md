@@ -11,8 +11,14 @@ truth in this checkout is two Python services:
 - `services/artana_evidence_db`: governed graph, dictionary, claims,
   relations, provenance, graph views, workflows, and graph admin sync.
 
-Not present in this checkout: a frontend app, the old top-level `src/` package,
-or `packages/artana_api`.
+Not present in this checkout: the old top-level `src/` package or
+`packages/artana_api`.
+
+**No frontend, and not by accident.** This repository builds backend capability
+only — no page, component or template is added here, and a capability is
+delivered when its API expresses it and a test drives it end to end. The rule is
+in `AGENTS.md`; the product track in `artana-vision-and-direction.md` is written
+against it, so every phase there is an API capability rather than a screen.
 
 ## Start Here
 
