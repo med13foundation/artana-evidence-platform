@@ -182,7 +182,7 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
         "document_extraction.claim_pipeline.v17:claim_inventory.v11+"
         "claim_inventory_completeness.v12+claim_inventory_recovery.v11+"
-        "claim_framing.v7+claim_falsification.v1+claim_repair.v1"
+        "claim_framing.v8+claim_falsification.v1+claim_repair.v1"
     )
 
 

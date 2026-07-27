@@ -223,7 +223,7 @@ def _configure_llm_extraction_test_runtime(
 
 
 def test_llm_extraction_prompt_covers_rare_disease_gene_variant_associations() -> None:
-    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v12"
+    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v13"
     assert (
         "FBN1 loss-of-function variants ASSOCIATED_WITH Marfan syndrome"
         in LLM_EXTRACTION_SYSTEM_PROMPT

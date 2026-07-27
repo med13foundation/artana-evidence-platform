@@ -32,6 +32,9 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     is_positive_projection_eligible,
     normalize_claim_frame,
 )
+from artana_evidence_api.document_extraction_support.claim_frames.arguments import (
+    ARGUMENT_SPAN_MAX_LENGTH,
+)
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     llm_relations_to_candidates,
     merge_duplicate_relation_candidates,
@@ -1065,3 +1068,32 @@ def test_draft_preserves_frame_and_does_not_split_qualified_object(
     assert wider_boundary_frame.semantic_fingerprint != frame.semantic_fingerprint
     assert wider_boundary_frame.dedupe_identity == frame.dedupe_identity
     assert wider_drafts[0].claim_fingerprint == drafts[0].claim_fingerprint
+
+def test_a_framed_endpoint_can_express_any_inventory_argument_span() -> None:
+    """The framing stage must be able to restate what inventory can produce.
+
+    `_require_inventory_consistency` accepts a framed relation only when its
+    endpoints are string-equal to an inventory argument's span. The framing
+    schema capped endpoints at 50 characters while `ClaimArgument.exact_span`
+    allowed 1000, so any argument longer than 50 could not be framed at all --
+    not by a better model and not on retry. Recorded framing traffic showed 11
+    of 56 argument spans over the cap, longest 123, and 10 of 62 endpoints
+    sitting exactly on it.
+
+    Equality is the invariant, not a particular number: a framing cap below the
+    argument limit re-creates the defect, and one above it lets an endpoint be
+    submitted that no argument could ever match.
+    """
+
+    schema = build_llm_guarded_extraction_output_schema(
+        max_relations=5,
+    ).model_json_schema()
+    relation = schema["$defs"]["LLMRelation"]
+
+    for endpoint in ("subject", "object"):
+        assert relation["properties"][endpoint]["maxLength"] == (
+            ARGUMENT_SPAN_MAX_LENGTH
+        ), (
+            f"framed {endpoint} must express any inventory argument span; "
+            f"a narrower cap makes long arguments unframeable"
+        )

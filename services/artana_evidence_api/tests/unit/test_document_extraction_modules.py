@@ -288,7 +288,7 @@ def test_llm_extraction_prompt_prioritizes_specific_sensitizes_relation() -> Non
 
 
 def test_llm_extraction_prompt_version_changes_for_review_only_schema() -> None:
-    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v12"
+    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v13"
 
 
 def test_llm_extraction_schema_accepts_review_only_lane_fields() -> None:

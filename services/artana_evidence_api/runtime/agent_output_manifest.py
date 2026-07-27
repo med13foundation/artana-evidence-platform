@@ -643,9 +643,9 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_framing.v2",
         schema_names=("LLMSingleClaimFramingResult",),
-        shape_hash="79f83b484546c7f14f337684943fd1cd46c5d65656a481f4ba78d5b7cd9a84db",
+        shape_hash="0c573bd352cdb747de8ddbf16b58b615e51d49b7250727f4f421c3af41ca1c92",
         producer_paths=("document_extraction_support/llm_extraction/claim_framing.py",),
-        prompt_identifiers=("document_extraction.claim_framing.v7",),
+        prompt_identifiers=("document_extraction.claim_framing.v8",),
         numeric_fields=(
             NumericFieldPolicy(
                 path="$.relations[].source_measurements[].value",
@@ -752,7 +752,7 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.relation.v3",
         schema_names=("LLMExtractionResult",),
-        shape_hash="b4027c5eae4151e644bbfc057b89a9aa166ffdaeeded22b77b97a6f81891330a",
+        shape_hash="5dd8e8d2412bc195cce2d1828b29c8ed62e2b4f1c1898b1aa3a3eb9e84d707da",
         producer_paths=("document_extraction_support/llm_fulltext_extraction.py",),
         prompt_identifiers=("document_extraction.relation.v3",),
         numeric_fields=(

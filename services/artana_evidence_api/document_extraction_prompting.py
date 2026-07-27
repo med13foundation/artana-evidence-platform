@@ -25,6 +25,9 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     MissingClaimRecoveryDecision,
     Polarity,
 )
+from artana_evidence_api.document_extraction_support.claim_frames.arguments import (
+    ARGUMENT_SPAN_MAX_LENGTH,
+)
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -184,11 +187,14 @@ def _build_llm_extraction_output_schema(
         subject: str = Field(
             ...,
             min_length=1,
-            max_length=50,
+            max_length=ARGUMENT_SPAN_MAX_LENGTH,
             description=(
-                "Concise source-native entity span copied exactly from the "
-                "evidence clause; do not paraphrase, canonicalize, or reorder "
-                "its words. Preserve material subtype and state modifiers."
+                "Source-native entity span copied exactly from the evidence "
+                "clause; do not paraphrase, canonicalize, or reorder its "
+                "words. Preserve material subtype and state modifiers. It must "
+                "match one typed inventory argument's span character for "
+                "character -- copy it whole rather than shortening it, "
+                "however long it is."
             ),
         )
         subject_curie: str | None = Field(
@@ -230,11 +236,14 @@ def _build_llm_extraction_output_schema(
         object: str = Field(
             ...,
             min_length=1,
-            max_length=50,
+            max_length=ARGUMENT_SPAN_MAX_LENGTH,
             description=(
-                "Concise source-native entity span copied exactly from the "
-                "evidence clause; do not paraphrase, canonicalize, or reorder "
-                "its words. Preserve material subtype and state modifiers."
+                "Source-native entity span copied exactly from the evidence "
+                "clause; do not paraphrase, canonicalize, or reorder its "
+                "words. Preserve material subtype and state modifiers. It must "
+                "match one typed inventory argument's span character for "
+                "character -- copy it whole rather than shortening it, "
+                "however long it is."
             ),
         )
         object_curie: str | None = Field(
