@@ -715,7 +715,8 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         flush.  The whole batch used to be parked for it -- one collision took
         every unrelated claim from the same document out of the review queue
         with it, which on BC5CDR would have removed 241 drafts across 66
-        documents from view.  Re-planning after the rollback sees the winner's
+        documents from view under the mention-label rule -- and nothing at all
+        under MeSH labels.  Re-planning after the rollback sees the winner's
         committed row, so only the draft that collided with it is parked.
 
         Nothing is dropped either way: if the re-plan loses another race, the

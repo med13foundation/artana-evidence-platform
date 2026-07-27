@@ -554,7 +554,9 @@ def test_losing_one_fingerprint_race_parks_only_the_proposal_that_lost() -> None
     single contested fingerprint removed every unrelated claim extracted from
     the same document from the review queue.  On BC5CDR that pattern would have
     parked 241 drafts across the 66 documents (4.4%) that contain a colliding
-    pair.
+    pair under the mention-label rule -- and 0 drafts across 0 documents (0.0%)
+    under MeSH labels.  The exposure is a property of which label rule keys the
+    fingerprint, not of the corpus, so neither figure travels without the other.
     """
 
     contested = "contestedfingerprint000000000001"

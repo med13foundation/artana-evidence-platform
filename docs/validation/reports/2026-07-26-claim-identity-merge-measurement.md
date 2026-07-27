@@ -248,6 +248,16 @@ Measured on BC5CDR: **66 of 1500 documents (4.4%)** would trip this, parking
 pass also reported that 2.2% of drafts already lose identity to a same-document
 sibling under current code. That figure is not re-derived here.)
 
+**The 4.4% belongs to the label rule, not to the corpus. Never cite it alone.**
+The same script over the same 1500 documents reports **0 documents (0.0%)** and
+**0 drafts** when the fingerprint keys on MeSH ids instead of mention text —
+`supplementary.json::intra_document_collisions_mesh_labels`. Both rows are
+computed from the same collision test; the only thing that changes is what the
+label is. So 4.4% is not "how often this happens", it is "how often this happens
+when identity keys on raw surface labels", which is the very decision §B says
+#217 does not currently name. Quoting 4.4% without 0.0% next to it turns a
+consequence of an unmade design decision into a property of the data.
+
 None of these is about identity design. All three sit in front of it.
 
 ---

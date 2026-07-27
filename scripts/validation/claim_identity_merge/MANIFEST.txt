@@ -39,7 +39,9 @@ a3c48d5f35bdfce20c2371778abedc9fd24d1da092207072e5181ad53c8d0e2f  CDR_TestSet.Pu
 # main sweep, 4 arms x 6 identity variants:
 977606902c32ad55f95c48078644c3da7caade33a6bcb14784e64da108bc604a  2026-07-26-claim-identity-merge-measurement.json
 # surface-form census, intra-document collisions:
-ba7fb414e54d2383ee8eae689e58a4a96334495a1efe9fd27877b6922821f1c5  2026-07-26-claim-identity-merge-supplementary.json
+1ec3048513acdbfef3594078e289e37d69fdb5263c2ffddbf29d5304078a67e7  2026-07-26-claim-identity-merge-supplementary.json
+#   (was ba7fb414e54d2383ee8eae689e58a4a96334495a1efe9fd27877b6922821f1c5
+#    before the READ_FIRST key was added; no measured value changed.)
 # real model-authored labels from the audit trail:
 fc3ccf8e4278e0bb1d98f1cea9a0c3fb0931b38e481d2d02384311983bfe7145  2026-07-26-claim-identity-merge-model-labels.json
 #

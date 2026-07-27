@@ -1,4 +1,5 @@
 {
+  "READ_FIRST": "docs/validation/reports/2026-07-26-claim-identity-merge-measurement.md, section 'Do not quote these numbers' -- and, for the intra_document_collisions blocks specifically, blocker B3. The mention-label block reports 4.4% of documents and the mesh-label block reports 0.0% over the same 1500 documents and the same collision test; the only difference is which label keys the fingerprint. Neither figure may be quoted without the other, because the exposure belongs to the label rule and not to the corpus.",
   "corpus_digests": {
     "CDR_DevelopmentSet.PubTator.txt": "9e18d8e700168887a7919e62f67ac2ce2357e3f409a48ee992906abdd80fe3e5",
     "CDR_TestSet.PubTator.txt": "a3c48d5f35bdfce20c2371778abedc9fd24d1da092207072e5181ad53c8d0e2f",

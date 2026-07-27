@@ -213,6 +213,17 @@ def main() -> None:
     corpus = bc5cdr.load(args.corpus)
     ambiguity, variety = surface_form_census(corpus)
     report: dict = {
+        "READ_FIRST": (
+            "docs/validation/reports/"
+            "2026-07-26-claim-identity-merge-measurement.md, section 'Do not "
+            "quote these numbers' -- and, for the intra_document_collisions "
+            "blocks specifically, blocker B3. The mention-label block reports "
+            "4.4% of documents and the mesh-label block reports 0.0% over the "
+            "same 1500 documents and the same collision test; the only "
+            "difference is which label keys the fingerprint. Neither figure may "
+            "be quoted without the other, because the exposure belongs to the "
+            "label rule and not to the corpus."
+        ),
         "corpus_digests": corpus.digests,
         "surface_form_ambiguity": ambiguity,
         "surface_form_variety": variety,
