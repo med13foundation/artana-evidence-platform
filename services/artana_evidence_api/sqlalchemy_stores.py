@@ -560,9 +560,11 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         Migration 024 makes (space_id, claim_fingerprint) unique while the
         status is active, so a colliding proposal cannot also be
         `pending_review`.  It is planned as IDENTITY_PENDING instead: outside
-        that partial index, so it coexists; outside the review queue, so it is
-        never acted on; and fully queryable, so the second independent
-        observation survives with its own provenance.
+        that partial index, so it coexists; outside the *default* review queue,
+        so it is never promoted or rejected while its identity is unsettled; and
+        fully queryable, so the second independent observation survives with its
+        own provenance.  It is reachable -- a reviewer asks for `status=parked`
+        and answers `resolve_as_duplicate` or `release_as_distinct`.
 
         Retain first, merge later.  Deciding whether two proposals are the same
         assertion needs the identity model that does not exist yet, and a wrong

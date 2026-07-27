@@ -132,10 +132,11 @@ _DECIDED_STATUSES = (
 )
 #: Held back from review rather than pending or decided.
 #:
-#: A cross-document fingerprint collision is parked here (ART-DATA-001): a second
-#: independent observation whose identity has not been adjudicated against the
-#: first.  Nobody can act on it yet, but it is not nothing either, so it needs a
-#: name a reviewer can ask for.
+#: A fingerprint collision is parked here (ART-DATA-001): a second observation
+#: whose identity has not been adjudicated against the first.  It cannot be
+#: promoted or rejected while that is unsettled, but it is not terminal either --
+#: a reviewer asks for this status and answers `resolve_as_duplicate` or
+#: `release_as_distinct`, which is why it needs a name of its own.
 _PARKED_STATUSES = ("identity_pending",)
 _STATUS_GROUPS = {
     "pending": _PENDING_STATUSES,
