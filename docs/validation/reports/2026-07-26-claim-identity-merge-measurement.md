@@ -260,6 +260,39 @@ consequence of an unmade design decision into a property of the data.
 
 None of these is about identity design. All three sit in front of it.
 
+### The blocker fixes, run against real Postgres
+
+CI runs migrations nowhere: the suite creates its schema from
+`Base.metadata.create_all`, so a migration can be wrong in every way that
+matters and stay green. The evidence API's own alembic history was applied to
+the dev database (`artana_dev`, container
+`artana-evidence-platform-postgres-1`) to close that gap.
+
+At revision `026_review_decision_actor`, `harness_proposals.claim_fingerprint`
+was `character varying(32)` and the production
+`SqlAlchemyHarnessProposalStore.create_proposals` refused a 64-character
+fingerprint with `psycopg2.errors.StringDataRightTruncation: value too long for
+type character varying(32)` — B1, reproduced against the live column rather than
+inferred from it.
+
+Migrations `027` → `030` then applied cleanly. The column is
+`character varying(128)`; the same insert stores all 64 characters and reads
+them back unchanged; and both partial unique indexes
+(`uq_harness_proposals_active_space_claim_fingerprint`,
+`uq_harness_review_items_space_review_fingerprint`) survive, as `028` claimed
+they would.
+
+`028`'s downgrade guard also fires for real: with one 64-character fingerprint
+stored, `alembic downgrade 027_approval_superseded_decisions` refuses with
+"Cannot narrow … 1 row(s) hold a longer fingerprint", and the transactional DDL
+leaves the database at `030` with `029`'s and `030`'s columns intact.
+
+And the B3 shape end to end: two drafts of one pass over one document, sharing a
+fingerprint, produce **two rows** in Postgres — one `pending_review`, one
+`identity_pending` keeping its 64-character fingerprint and carrying an
+`identity_collision_payload` naming its counterpart's id, title, document and
+`origin: same_batch`.
+
 ---
 
 ## Redaction: what was stripped before committing
