@@ -87,9 +87,15 @@ audit trail *before* validation. `model-labels.json` says so in its
 
 This is the ordering inside the `mesh_id/doc` arm. Entity labels are held
 perfect and identical across documents, so anything short of 100% is the frame
-body's remaining per-document text and nothing else:
+body's remaining per-document text and nothing else.
 
-| Identity variant | What it strips | Recall |
+The arm name belongs to the table, not only to this sentence: "the arm where
+entity labels are held perfect" does not pick it out. `mesh_id/min` holds labels
+just as perfect and reports 1.0 for every row below `a_today`, because it has no
+arguments and no qualifier content left to strip. Quoting these numbers without
+`mesh_id/doc` attached makes them unreproducible.
+
+| Identity variant (arm `mesh_id/doc`) | What it strips | Recall |
 |---|---|---:|
 | `a_today` | nothing (today's `dedupe_identity`) | 0.0% |
 | `b_drop_source_evidence` | `source_evidence` | 31.7% |
@@ -202,9 +208,28 @@ verified in code, not inferred.
 and the live column is `character varying(32)`. `ClaimFrame.dedupe_identity`
 returns a full `hashlib.sha256(...).hexdigest()` — 64 characters. The fallback
 `compute_claim_fingerprint` returns `hexdigest()[:32]` and fits. So the frame
-branch of the expression in §B writes 64 characters into a 32-character column.
-This also explains the fail-closed promotion error
-`qualified_claim_persistence_not_ready`.
+branch of the expression in §B writes 64 characters into a 32-character column,
+and every such insert raises `StringDataRightTruncation` on Postgres.
+
+> **Retracted, 2026-07-26.** An earlier version of this paragraph, of the #217
+> comment, and of the commit message of `ab7b547b` said the column width "also
+> explains" — or "is the storage half of" — the fail-closed promotion error
+> `qualified_claim_persistence_not_ready`. That is false, and it was asserted
+> under a heading claiming everything below it was verified in code. It was not
+> verified; it was inferred from the two failures being nearby.
+>
+> What is true: `promote_to_graph_claim` in `proposal_actions.py` raises that
+> error **unconditionally**, as the last statement of the function, once its
+> preflight checks pass. No column, no width and no fingerprint is consulted on
+> the way there. It is a deliberate fail-closed stop — the graph contract cannot
+> yet persist a complete `ClaimFrame` without loss — and widening the column
+> does not move it by one line. The two defects do not even meet: the column
+> stops a proposal being *staged*, and the promotion error is raised on a
+> proposal that has already been staged and reviewed.
+>
+> The column width was a real defect on its own terms and needed no causal story
+> attached to it. B1 below stands; only the sentence linking it to the promotion
+> error is withdrawn.
 
 **B2 — `identity_pending` is terminal.** A fingerprint collision parks the
 second proposal there. There is no adjudication endpoint, no unpark path, it is
