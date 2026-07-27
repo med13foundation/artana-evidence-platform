@@ -1,0 +1,49 @@
+{
+  "provenance": "recorded framing prompts and outputs replayed from artana.kernel_events against current code; no new provider calls",
+  "inventory_claims_replayed": 14,
+  "relations_in_those_answers": 17,
+  "documents_that_reached_framing": 9,
+  "documents_with_at_least_one_surviving_frame": 3,
+  "frames_reaching_the_write_path": 3,
+  "distinct_frame_dedupe_identities": 3,
+  "distinct_triple_fingerprints": 3,
+  "cross_document_triple_agreements": 0,
+  "first_rejecting_stage": {
+    "inventory_consistency": 9,
+    "frame_dropped_in_candidate_build": 5,
+    "survived": 3,
+    "frames_lost_to_a_sibling_relation": 0
+  },
+  "rejection_reasons": {
+    "inventory_consistency: framed relation endpoints must come from typed inventory arguments": 7,
+    "candidate_build: Dropping invalid qualified claim frame: intervention qualifier cannot duplicate the claim subject": 4,
+    "inventory_consistency: framed relation dropped OUTCOME argument '<span redacted>'": 2,
+    "candidate_build: Dropping invalid qualified claim frame: outcome qualifier cannot duplicate the claim object": 1
+  },
+  "surviving_frames": [
+    {
+      "subject": "Synthesis of N-pyrimidinyl-2-phenoxyacetamides",
+      "predicate": "TARGETS",
+      "object": "adenosine A2A receptor",
+      "dedupe_identity": "a5a3d2ba087e0ef8f10124dd39944c5970411ff9ae735925f2536825d5e0e36d",
+      "triple_fingerprint": "cd8e61d7aaac0625a6b823ec2f9fa7c0",
+      "document_sha256": "559a4f63672ceb564f3855c28f645164936d4e14aa786198c5b75a1e76cfc6db"
+    },
+    {
+      "subject": "the dopaminergic system",
+      "predicate": "REGULATES",
+      "object": "manipulation of the serotonergic system",
+      "dedupe_identity": "9d2abfd691d56ee03e08338cd1c3cee065e9dabb8e68f4f19a53871eedba5fea",
+      "triple_fingerprint": "51883326108899596d64086909fca344",
+      "document_sha256": "9b91e7382d71e6910e33aab6a3065c2e61704871a2c9b53887259c7ecdde3a46"
+    },
+    {
+      "subject": "rTMS of supplementary motor area",
+      "predicate": "MODULATES",
+      "object": "therapy-induced dyskinesias",
+      "dedupe_identity": "6a025b0c17806167ffb7f358fd79efc23eaeae6b694dcf26bc5a964595d2d61e",
+      "triple_fingerprint": "656adcbaa5ae02fa789056c9fab6b2fe",
+      "document_sha256": "3239520c415b5659704bb8e13c112d389be9841640b6a931a1bd59838bbef67b"
+    }
+  ]
+}

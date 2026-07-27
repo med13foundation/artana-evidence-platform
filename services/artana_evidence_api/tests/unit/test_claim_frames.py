@@ -9,6 +9,7 @@ from typing import cast
 from uuid import uuid4
 
 import pytest
+from artana_evidence_api.claim_fingerprint import compute_claim_fingerprint
 from artana_evidence_api.document_extraction_contracts import (
     ExtractedRelationCandidate,
     LLMExtractionResultLike,
@@ -574,6 +575,107 @@ def test_qualifier_stripping_changes_identity() -> None:
 
     assert complete.semantic_fingerprint != stripped.semantic_fingerprint
     assert complete.dedupe_identity != stripped.dedupe_identity
+
+
+def test_frame_identity_separates_a_finding_from_its_refutation() -> None:
+    """Polarity and epistemic status must stay inside the frame identity.
+
+    Issue #217 proposed moving the frame branch of the fingerprint expression in
+    ``document_extraction_drafts.py`` onto ``compute_claim_fingerprint``, to let
+    two papers asserting the same fact share an identity. That function takes
+    only (subject, relation_type, object), so making the swap would drop
+    ``polarity`` and ``epistemic_status`` out of the identity entirely and give
+    a claim and its own refutation the same fingerprint.
+
+    Since #217's collision handling now parks the second proposal and offers a
+    reviewer ``resolve_as_duplicate``, that would be a one-click path to
+    discarding a refutation as a duplicate of the claim it refutes. This test
+    pins the property that any replacement identity has to keep.
+    """
+
+    supported = _frame(polarity=Polarity.SUPPORT)
+    refuted = _frame(polarity=Polarity.REFUTE)
+    asserted = _frame(epistemic_status=EpistemicStatus.ASSERTED)
+    hypothesized = _frame(epistemic_status=EpistemicStatus.HYPOTHESIS)
+
+    assert supported.dedupe_identity != refuted.dedupe_identity
+    assert asserted.dedupe_identity != hypothesized.dedupe_identity
+
+    # The triple alone cannot tell these apart, which is exactly why the frame
+    # branch must not be reduced to it.
+    assert (supported.subject, supported.predicate, supported.object) == (
+        refuted.subject,
+        refuted.predicate,
+        refuted.object,
+    )
+    assert compute_claim_fingerprint(
+        supported.subject,
+        supported.predicate,
+        supported.object,
+    ) == compute_claim_fingerprint(
+        refuted.subject,
+        refuted.predicate,
+        refuted.object,
+    )
+
+
+def test_draft_fingerprints_separate_a_finding_from_its_refutation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Guard the fingerprint expression itself, not just the frame contract.
+
+    ``test_frame_identity_separates_a_finding_from_its_refutation`` pins the
+    property on ``ClaimFrame``. This one pins it at the call site in
+    ``document_extraction_drafts.py`` that #217 proposed to edit, so replacing
+    the frame branch with a triple-only fingerprint fails here even though the
+    frame contract itself would be untouched.
+    """
+
+    monkeypatch.setattr(
+        "artana_evidence_api.document_extraction_drafts.resolve_entity_label",
+        lambda **_kwargs: None,
+    )
+    document_store = HarnessDocumentStore()
+    space_id = uuid4()
+    document = document_store.create_document(
+        space_id=space_id,
+        created_by=uuid4(),
+        title="Qualified claim source",
+        source_type="pubmed",
+        filename=None,
+        media_type="text/plain",
+        sha256=hashlib.sha256(SOURCE.encode()).hexdigest(),
+        byte_size=len(SOURCE),
+        page_count=None,
+        text_content=SOURCE,
+        raw_storage_key=None,
+        enriched_storage_key=None,
+        ingestion_run_id="issue-217-polarity",
+        last_enrichment_run_id=None,
+        enrichment_status="skipped",
+        extraction_status="not_started",
+        metadata={"pubmed": {"pmid": "12345678"}},
+    )
+
+    def _fingerprint_for(polarity: Polarity) -> str:
+        # ``_frame`` carries the unresolved predicate ``responds_to``; the draft
+        # path needs a canonical relation type, which the framing stage would
+        # otherwise have supplied.
+        candidate = replace(
+            _candidate_with_frame(_frame(polarity=polarity)),
+            relation_type="ASSOCIATED_WITH",
+        )
+        drafts, skipped = build_document_extraction_drafts(
+            space_id=space_id,
+            document=document,
+            candidates=[candidate],
+            graph_api_gateway=cast("GraphTransportBundle", object()),
+        )
+        assert skipped == []
+        assert len(drafts) == 1
+        return drafts[0].claim_fingerprint
+
+    assert _fingerprint_for(Polarity.SUPPORT) != _fingerprint_for(Polarity.REFUTE)
 
 
 def test_free_form_rationale_does_not_change_semantic_identity() -> None:
