@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 from uuid import UUID
@@ -73,8 +74,10 @@ from .proposal_store import (
     HarnessProposalRecord,
     HarnessProposalStore,
     _is_same_document_rederivation,
+    _is_same_known_document,
     build_identity_adjudication,
     clean_decision_reason,
+    in_batch_identity_collision_reason,
     missing_duplicate_counterpart_message,
     normalize_identity_resolution,
     unadjudicable_proposal_message,
@@ -93,6 +96,8 @@ from .schedule_store import (
     HarnessScheduleRecord,
     HarnessScheduleStore,
 )
+
+logger = logging.getLogger(__name__)
 
 _ASSIGNABLE_MEMBER_ROLE_VALUES = frozenset(
     role.value for role in MembershipRoleEnum if role is not MembershipRoleEnum.OWNER
@@ -567,8 +572,17 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         They used to reach the database undetected -- the pre-check queried
         committed rows and the session does not autoflush -- so the unique index
         rejected the insert and the whole batch was parked.  One extraction
-        producing two claims with the same fingerprint is ordinary: on BC5CDR it
-        happens in 4.4% of documents.
+        producing two claims with the same fingerprint is ordinary: under the
+        mention-label rule it happens in 4.4% of BC5CDR documents (0.0% under
+        MeSH labels; the figure is a property of the label rule, not the corpus).
+
+        Both drafts are kept whichever document they came from.  Two drafts of
+        one extraction pass are not one document read twice: each carries its
+        own evidence bundle, spans and provenance, and the fingerprint is
+        exactly what cannot tell them apart.  Only a collision with an
+        *already-stored* proposal from the same document is a re-derivation, and
+        only that one drops -- with a log line, because a proposal that leaves
+        no row must still leave a trace.
         """
 
         planned: list[tuple[HarnessProposalDraft, str, str | None]] = []
@@ -582,18 +596,13 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
             decision_reason: str | None = None
             if fingerprint:
                 if fingerprint in claimed_in_batch:
-                    if _is_same_document_rederivation(
-                        existing_document_id=claimed_in_batch[fingerprint],
-                        incoming_document_id=normalized_proposal.document_id,
-                    ):
-                        continue
                     status = IDENTITY_PENDING_STATUS
-                    decision_reason = (
-                        "Retained by ART-DATA-001: claim fingerprint "
-                        f"{fingerprint} is already claimed by an earlier "
-                        "proposal in this same batch, from a different "
-                        "document. Awaiting identity adjudication; not "
-                        "auto-merged."
+                    decision_reason = in_batch_identity_collision_reason(
+                        claim_fingerprint=fingerprint,
+                        same_document=_is_same_known_document(
+                            existing_document_id=claimed_in_batch[fingerprint],
+                            incoming_document_id=normalized_proposal.document_id,
+                        ),
                     )
                 else:
                     holder = self._active_fingerprint_holder(
@@ -605,9 +614,18 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
                             existing_document_id=holder[2],
                             incoming_document_id=normalized_proposal.document_id,
                         ):
-                            # Re-extracting one document is the same observation
-                            # arriving twice, not a second source.  Retaining it
-                            # would accumulate a row on every re-extraction.
+                            # Re-extracting a stored document is the same
+                            # observation arriving twice, not a second source.
+                            # Retaining it would add a row on every
+                            # re-extraction.  Logged so the drop is countable.
+                            logger.info(
+                                "Dropping re-derived proposal from the "
+                                "already-stored document (fingerprint=%s, "
+                                "existing=%s, source_key=%s)",
+                                fingerprint[:12],
+                                holder[0],
+                                normalized_proposal.source_key,
+                            )
                             continue
                         status = IDENTITY_PENDING_STATUS
                         decision_reason = (

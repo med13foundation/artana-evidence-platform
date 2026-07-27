@@ -95,6 +95,36 @@ class TestSameDocumentRederivation:
         assert corroborating[0].document_id == "doc-xyz"
         assert len(store.list_proposals(space_id=SPACE_ID)) == 2
 
+    def test_two_drafts_of_one_pass_over_one_document_are_both_kept(self) -> None:
+        """One pass emitting two colliding claims is not a re-extraction.
+
+        The re-derivation rule reads a shared document_id as "this observation
+        already arrived".  That is only true against an already-stored proposal.
+        Within a single call the two drafts were produced together, each with
+        its own evidence, so dropping the second deletes evidence that the first
+        does not carry -- and it would do so with no row and no log.
+        """
+
+        store = HarnessProposalStore()
+        first = replace(_make_draft(source_key="doc:1"), document_id="doc-abc")
+        second = replace(_make_draft(source_key="doc:2"), document_id="doc-abc")
+
+        created = store.create_proposals(
+            space_id=SPACE_ID,
+            run_id=RUN_A,
+            proposals=(first, second),
+        )
+
+        assert len(created) == 2, "nothing may be dropped"
+        by_source_key = {record.source_key: record for record in created}
+        assert by_source_key["doc:1"].status == "pending_review"
+        parked = by_source_key["doc:2"]
+        assert parked.status == IDENTITY_PENDING_STATUS
+        assert parked.claim_fingerprint == first.claim_fingerprint
+        assert parked.decision_reason is not None
+        assert "the same document" in parked.decision_reason
+        assert len(store.list_proposals(space_id=SPACE_ID)) == 2
+
     def test_unknown_provenance_is_retained_rather_than_assumed_duplicate(
         self,
     ) -> None:

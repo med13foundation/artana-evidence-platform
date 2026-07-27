@@ -157,26 +157,68 @@ _MAX_PROPOSAL_TITLE_LENGTH = 256
 _TITLE_ELLIPSIS = "..."
 
 
-def _is_same_document_rederivation(
+def _is_same_known_document(
     *,
     existing_document_id: str | None,
     incoming_document_id: str | None,
 ) -> bool:
-    """Return whether a fingerprint collision is one document seen twice.
+    """Return whether two proposals are known to come from one document.
 
-    Re-extracting a document reproduces its own claims, so a collision within a
-    single document is the same observation arriving again -- deduplicating it
-    loses nothing.  A collision across two documents is a genuine second
-    source and must be retained (ART-DATA-001).
-
-    Unknown provenance is treated as a distinct source: when either side has no
-    document, the safe reading is that evidence might be lost, so the record is
-    kept.
+    Unknown provenance is never "the same": when either side has no document,
+    the safe reading is that they may be two sources, so they are treated as
+    two.
     """
 
     if existing_document_id is None or incoming_document_id is None:
         return False
     return str(existing_document_id) == str(incoming_document_id)
+
+
+def _is_same_document_rederivation(
+    *,
+    existing_document_id: str | None,
+    incoming_document_id: str | None,
+) -> bool:
+    """Return whether a collision with a *stored* proposal is a re-extraction.
+
+    Re-extracting an already-persisted document reproduces its own claims, so
+    the incoming copy is the same observation arriving again -- deduplicating it
+    loses nothing, and retaining it would add a row on every re-extraction.  A
+    collision across two documents is a genuine second source and must be
+    retained (ART-DATA-001).
+
+    This reading holds only against a proposal that was already committed.  Two
+    drafts of *one* extraction pass that share a document are not one
+    observation arriving twice; see ``in_batch_identity_collision_reason``.
+    """
+
+    return _is_same_known_document(
+        existing_document_id=existing_document_id,
+        incoming_document_id=incoming_document_id,
+    )
+
+
+def in_batch_identity_collision_reason(
+    *,
+    claim_fingerprint: str,
+    same_document: bool,
+) -> str:
+    """Return why one draft was parked against an earlier draft in its batch.
+
+    Both cases park (ART-DATA-001), including the same-document one.  A single
+    extraction pass emitting two drafts under one fingerprint is not that
+    document being read twice: the two drafts carry their own evidence bundles,
+    spans and provenance, and the fingerprint is precisely the thing that cannot
+    tell them apart.  Dropping the second would delete an observation with no
+    row and no log, which is the failure this rule exists to prevent.
+    """
+
+    origin = "the same document" if same_document else "a different document"
+    return (
+        f"Retained by ART-DATA-001: claim fingerprint {claim_fingerprint} is "
+        "already claimed by an earlier proposal in this same batch, from "
+        f"{origin}. Awaiting identity adjudication; not auto-merged."
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -312,55 +354,41 @@ class HarnessProposalStore:
         proposal matching a *rejected* one is admitted normally, since the
         rejection was an explicit human decision that new evidence may revisit.
 
+        Two drafts of this same call that collide are both kept, whichever
+        document they came from: one extraction pass emitting two claims under
+        one fingerprint is ordinary, and the second one's evidence is not the
+        first one's.
+
         See ART-DATA-001.  This mirrors the durable store so the two
         implementations cannot diverge on whether data survives.
         """
         normalized_space_id = str(space_id)
         normalized_run_id = str(run_id)
         created_records: list[HarnessProposalRecord] = []
+        # Fingerprints this call has already planned as pending_review, which
+        # are the ones that take the active-identity slot.  Without this the
+        # second draft of one extraction pass looks indistinguishable from a
+        # re-extraction of an already-stored document, and gets dropped.
+        claimed_in_batch: dict[str, str | None] = {}
         now = datetime.now(UTC)
         with self._lock:
             for proposal in proposals:
                 normalized_proposal = self.normalize_proposal_draft(proposal)
-                status = _PENDING_REVIEW_STATUS
-                decision_reason: str | None = None
-                if normalized_proposal.claim_fingerprint:
-                    existing = self._fingerprint_exists(
-                        normalized_space_id,
-                        normalized_proposal.claim_fingerprint,
+                planned = self._plan_one_proposal(
+                    space_id=normalized_space_id,
+                    normalized_proposal=normalized_proposal,
+                    claimed_in_batch=claimed_in_batch,
+                )
+                if planned is None:
+                    continue
+                status, decision_reason = planned
+                if (
+                    status == _PENDING_REVIEW_STATUS
+                    and normalized_proposal.claim_fingerprint
+                ):
+                    claimed_in_batch[normalized_proposal.claim_fingerprint] = (
+                        normalized_proposal.document_id
                     )
-                    if existing and existing.status in (
-                        _PENDING_REVIEW_STATUS,
-                        "promoted",
-                    ):
-                        if _is_same_document_rederivation(
-                            existing_document_id=existing.document_id,
-                            incoming_document_id=normalized_proposal.document_id,
-                        ):
-                            logger.info(
-                                "Skipping re-derived proposal from the same "
-                                "document (fingerprint=%s, existing=%s)",
-                                normalized_proposal.claim_fingerprint[:12],
-                                existing.id,
-                            )
-                            continue
-                        status = IDENTITY_PENDING_STATUS
-                        decision_reason = (
-                            "Retained by ART-DATA-001: claim fingerprint "
-                            f"{normalized_proposal.claim_fingerprint} already "
-                            f"has an active proposal {existing.id} with status "
-                            f"'{existing.status}' from a different document in "
-                            "this space. Awaiting identity adjudication; not "
-                            "auto-merged."
-                        )
-                        logger.info(
-                            "Retaining cross-document duplicate proposal as %s "
-                            "(fingerprint=%s, existing=%s status=%s)",
-                            IDENTITY_PENDING_STATUS,
-                            normalized_proposal.claim_fingerprint[:12],
-                            existing.id,
-                            existing.status,
-                        )
 
                 record = HarnessProposalRecord(
                     id=str(uuid4()),
@@ -395,6 +423,70 @@ class HarnessProposalStore:
         return sorted(
             created_records,
             key=lambda record: (-record.ranking_score, record.created_at),
+        )
+
+    def _plan_one_proposal(
+        self,
+        *,
+        space_id: str,
+        normalized_proposal: HarnessProposalDraft,
+        claimed_in_batch: dict[str, str | None],
+    ) -> tuple[str, str | None] | None:
+        """Decide one draft's status, or return None to drop it.
+
+        Dropping is reserved for a single case -- re-extracting a document whose
+        claim is already stored -- and it is logged, because a proposal that
+        leaves no row must at least leave a trace (ART-DATA-001).
+        """
+
+        fingerprint = normalized_proposal.claim_fingerprint
+        if not fingerprint:
+            return (_PENDING_REVIEW_STATUS, None)
+        if fingerprint in claimed_in_batch:
+            return (
+                IDENTITY_PENDING_STATUS,
+                in_batch_identity_collision_reason(
+                    claim_fingerprint=fingerprint,
+                    same_document=_is_same_known_document(
+                        existing_document_id=claimed_in_batch[fingerprint],
+                        incoming_document_id=normalized_proposal.document_id,
+                    ),
+                ),
+            )
+        existing = self._fingerprint_exists(space_id, fingerprint)
+        if existing is None or existing.status not in (
+            _PENDING_REVIEW_STATUS,
+            "promoted",
+        ):
+            return (_PENDING_REVIEW_STATUS, None)
+        if _is_same_document_rederivation(
+            existing_document_id=existing.document_id,
+            incoming_document_id=normalized_proposal.document_id,
+        ):
+            logger.info(
+                "Dropping re-derived proposal from the already-stored document "
+                "(fingerprint=%s, existing=%s, source_key=%s)",
+                fingerprint[:12],
+                existing.id,
+                normalized_proposal.source_key,
+            )
+            return None
+        logger.info(
+            "Retaining cross-document duplicate proposal as %s "
+            "(fingerprint=%s, existing=%s status=%s)",
+            IDENTITY_PENDING_STATUS,
+            fingerprint[:12],
+            existing.id,
+            existing.status,
+        )
+        return (
+            IDENTITY_PENDING_STATUS,
+            (
+                "Retained by ART-DATA-001: claim fingerprint "
+                f"{fingerprint} already has an active proposal {existing.id} "
+                f"with status '{existing.status}' from a different document in "
+                "this space. Awaiting identity adjudication; not auto-merged."
+            ),
         )
 
     def list_proposals(
@@ -734,6 +826,7 @@ __all__ = [
     "HarnessProposalRecord",
     "HarnessProposalStore",
     "build_identity_adjudication",
+    "in_batch_identity_collision_reason",
     "is_undecidable_proposal_error",
     "missing_duplicate_counterpart_message",
     "normalize_identity_resolution",

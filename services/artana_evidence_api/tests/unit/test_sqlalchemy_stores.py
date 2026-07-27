@@ -467,7 +467,42 @@ class _LostRaceSession:
         model.updated_at = model.updated_at or model.created_at
 
 
-def _race_draft(*, source_key: str, fingerprint: str) -> HarnessProposalDraft:
+def _create_extraction_document(
+    session: Session,
+    *,
+    space_id: str,
+    run_id: str,
+    title: str,
+) -> HarnessDocumentModel:
+    """Persist one source document a proposal can point its document_id at."""
+
+    model = HarnessDocumentModel(
+        space_id=space_id,
+        created_by=str(uuid4()),
+        title=title,
+        source_type="text",
+        media_type="text/plain",
+        sha256=hashlib.sha256(title.encode()).hexdigest(),
+        byte_size=len(title),
+        text_content="One abstract.",
+        text_excerpt="One abstract.",
+        ingestion_run_id=run_id,
+        enrichment_status="skipped",
+        extraction_status="succeeded",
+        metadata_payload={},
+    )
+    session.add(model)
+    session.commit()
+    session.refresh(model)
+    return model
+
+
+def _race_draft(
+    *,
+    source_key: str,
+    fingerprint: str,
+    document_id: str | None = None,
+) -> HarnessProposalDraft:
     return HarnessProposalDraft(
         proposal_type="candidate_claim",
         source_kind="document_extraction",
@@ -480,6 +515,7 @@ def _race_draft(*, source_key: str, fingerprint: str) -> HarnessProposalDraft:
         evidence_bundle=[],
         payload={"proposed_claim_type": "ASSOCIATED_WITH"},
         metadata={},
+        document_id=document_id,
         claim_fingerprint=fingerprint,
     )
 
@@ -547,16 +583,24 @@ def test_losing_one_fingerprint_race_parks_only_the_proposal_that_lost() -> None
     ] == ["claim-0", "claim-2", "claim-3"]
 
 
-def test_two_drafts_in_one_batch_sharing_a_fingerprint_park_only_one(
+def test_two_drafts_of_one_document_sharing_a_fingerprint_park_only_one(
     db_session: Session,
 ) -> None:
-    """A collision inside one batch must cost one draft, not the batch.
+    """A collision inside one document's batch must cost one draft, not either.
 
-    The pre-check queried committed rows and the session does not autoflush, so
-    a sibling draft in the same batch was invisible to it: both were planned as
-    pending_review, the partial unique index rejected the insert, and the whole
-    batch was retained as IDENTITY_PENDING -- unreviewable.  One extraction pass
-    producing two claims with the same fingerprint is ordinary, not exceptional.
+    This is the shape every production extraction takes: one pass over one
+    document, so every draft carries the *same* ``document_id``.  The pre-check
+    queried committed rows and the session does not autoflush, so a sibling
+    draft was invisible to it -- both were planned as pending_review, the partial
+    unique index rejected the insert, and the whole batch was parked.  The first
+    repair then read the shared document_id as a re-derivation and dropped the
+    second draft outright: no row, no log, and less evidence retained than
+    before the repair.
+
+    Two drafts of one extraction pass are not one document read twice.  Each
+    carries its own evidence bundle and provenance, and the fingerprint is
+    exactly the thing that cannot tell them apart, so the second is parked for
+    adjudication (ART-DATA-001) rather than deleted.
     """
 
     space_id = str(uuid4())
@@ -567,6 +611,12 @@ def test_two_drafts_in_one_batch_sharing_a_fingerprint_park_only_one(
         title="One document, four claims",
         input_payload={},
     )
+    document = _create_extraction_document(
+        db_session,
+        space_id=space_id,
+        run_id=run.id,
+        title="One abstract, four claims",
+    )
     store = SqlAlchemyHarnessProposalStore(db_session)
     shared = "sharedwithinbatch00000000000001"
 
@@ -574,27 +624,107 @@ def test_two_drafts_in_one_batch_sharing_a_fingerprint_park_only_one(
         space_id=space_id,
         run_id=run.id,
         proposals=(
-            _race_draft(source_key="claim-0", fingerprint="distinct000000000000000000000a"),
-            _race_draft(source_key="claim-1", fingerprint=shared),
-            _race_draft(source_key="claim-2", fingerprint=shared),
-            _race_draft(source_key="claim-3", fingerprint="distinct000000000000000000000b"),
+            _race_draft(
+                source_key="claim-0",
+                fingerprint="distinct000000000000000000000a",
+                document_id=document.id,
+            ),
+            _race_draft(
+                source_key="claim-1",
+                fingerprint=shared,
+                document_id=document.id,
+            ),
+            _race_draft(
+                source_key="claim-2",
+                fingerprint=shared,
+                document_id=document.id,
+            ),
+            _race_draft(
+                source_key="claim-3",
+                fingerprint="distinct000000000000000000000b",
+                document_id=document.id,
+            ),
         ),
     )
 
     assert len(created) == 4, "nothing may be dropped"
-    statuses = {record.source_key: record.status for record in created}
-    assert statuses["claim-0"] == "pending_review"
-    assert statuses["claim-3"] == "pending_review"
-    assert sorted([statuses["claim-1"], statuses["claim-2"]]) == [
-        IDENTITY_PENDING_STATUS,
-        "pending_review",
-    ]
+    by_source_key = {record.source_key: record for record in created}
+    assert by_source_key["claim-0"].status == "pending_review"
+    assert by_source_key["claim-3"].status == "pending_review"
+    assert sorted(
+        [by_source_key["claim-1"].status, by_source_key["claim-2"].status],
+    ) == [IDENTITY_PENDING_STATUS, "pending_review"]
+
+    parked = next(
+        record for record in created if record.status == IDENTITY_PENDING_STATUS
+    )
+    assert parked.claim_fingerprint == shared, "the parked draft keeps its identity"
+    assert parked.decision_reason is not None
+    assert "the same document" in parked.decision_reason, (
+        "the reason must say the collision was inside one document, not invent "
+        "a second source"
+    )
 
     persisted = store.list_proposals(space_id=space_id, run_id=run.id)
-    assert len(persisted) == 4
+    assert len(persisted) == 4, "the parked draft must reach the database"
     assert (
         sum(1 for record in persisted if record.status == "pending_review")
     ) == 3, "three of the four must still be reviewable"
+
+
+def test_two_drafts_of_different_documents_sharing_a_fingerprint_park_only_one(
+    db_session: Session,
+) -> None:
+    """The cross-document in-batch collision parks the second, and says so."""
+
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        db_session,
+        space_id=space_id,
+        harness_id="document_extraction",
+        title="Two documents, one run",
+        input_payload={},
+    )
+    first_document = _create_extraction_document(
+        db_session,
+        space_id=space_id,
+        run_id=run.id,
+        title="First abstract",
+    )
+    second_document = _create_extraction_document(
+        db_session,
+        space_id=space_id,
+        run_id=run.id,
+        title="Second abstract",
+    )
+    store = SqlAlchemyHarnessProposalStore(db_session)
+    shared = "sharedacrossdocs0000000000000001"
+
+    created = store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=(
+            _race_draft(
+                source_key="doc-a:claim-0",
+                fingerprint=shared,
+                document_id=first_document.id,
+            ),
+            _race_draft(
+                source_key="doc-b:claim-0",
+                fingerprint=shared,
+                document_id=second_document.id,
+            ),
+        ),
+    )
+
+    assert len(created) == 2, "a second source may never be dropped"
+    parked = next(
+        record for record in created if record.status == IDENTITY_PENDING_STATUS
+    )
+    assert parked.source_key == "doc-b:claim-0"
+    assert parked.decision_reason is not None
+    assert "a different document" in parked.decision_reason
+    assert len(store.list_proposals(space_id=space_id, run_id=run.id)) == 2
 
 
 def test_a_proposal_without_provenance_reads_back_as_explicitly_unverified(
