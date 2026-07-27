@@ -410,13 +410,37 @@ def test_resolving_a_parked_proposal_as_duplicate_names_its_counterpart(
 
 
 class _NoDuplicateResult:
-    def first(self) -> None:
+    def scalar_one_or_none(self) -> None:
         return None
 
 
 class _ConflictingHolderResult:
-    def first(self) -> tuple[str, str, None]:
-        return ("concurrent-proposal", "pending_review", None)
+    """The concurrent writer's row, as the retry's pre-check now sees it.
+
+    A whole row rather than a tuple of columns: a parked proposal records what
+    it collided with -- title and source document included -- so the fake has to
+    carry the same thing the real query returns.
+    """
+
+    def scalar_one_or_none(self) -> HarnessProposalModel:
+        return HarnessProposalModel(
+            id="concurrent-proposal",
+            space_id=str(uuid4()),
+            run_id=str(uuid4()),
+            proposal_type="candidate_claim",
+            source_kind="document_extraction",
+            source_key="concurrent:claim",
+            document_id=None,
+            title="Claim the concurrent writer staged first",
+            summary="Won the fingerprint race.",
+            status="pending_review",
+            confidence=0.8,
+            ranking_score=0.8,
+            reasoning_path={},
+            evidence_bundle_payload=[],
+            payload={},
+            metadata_payload={},
+        )
 
 
 class _LostRaceSession:

@@ -72,6 +72,11 @@ class HarnessReviewQueueItemResponse(BaseModel):
     evidence_grade: str | None
     evidence_bundle: list[JSONObject]
     source_provenance: ClaimSourceProvenance | None
+    #: What a parked proposal collided with: id, title, source document, status,
+    #: the shared fingerprint, and whether the counterpart arrived in the same
+    #: batch or was already stored.  Without it `resolve_as_duplicate` asks a
+    #: reviewer to judge two things the same when only one of them is on screen.
+    identity_collision: JSONObject | None = None
     identity_adjudication: JSONObject | None = None
     decision_reason: str | None
     decided_at: str | None
@@ -107,6 +112,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
             evidence_grade=proposal.evidence_grade,
             evidence_bundle=proposal.evidence_bundle,
             source_provenance=proposal.source_provenance,
+            identity_collision=proposal.identity_collision,
             identity_adjudication=proposal.identity_adjudication,
             decision_reason=proposal.decision_reason,
             decided_at=serialize_optional_timestamp(proposal.decided_at),

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from artana_evidence_api.models import (
     HarnessApprovalModel,
@@ -67,16 +67,21 @@ from .graph_snapshot import (
     HarnessGraphSnapshotStore,
 )
 from .proposal_store import (
+    ALREADY_PERSISTED_COLLISION,
     DUPLICATE_RESOLUTION,
     DUPLICATE_STATUS,
     IDENTITY_PENDING_STATUS,
+    SAME_BATCH_COLLISION,
     HarnessProposalDraft,
     HarnessProposalRecord,
     HarnessProposalStore,
+    PlannedProposal,
     _is_same_document_rederivation,
     _is_same_known_document,
     build_identity_adjudication,
+    build_identity_collision,
     clean_decision_reason,
+    collision_counterpart_id,
     in_batch_identity_collision_reason,
     missing_duplicate_counterpart_message,
     normalize_identity_resolution,
@@ -273,16 +278,18 @@ def _proposal_record_from_model(model: HarnessProposalModel) -> HarnessProposalR
         updated_at=model.updated_at,
         claim_fingerprint=getattr(model, "claim_fingerprint", None),
         source_provenance=_source_provenance_from_model(model),
-        identity_adjudication=_identity_adjudication_from_model(model),
+        identity_adjudication=_json_column_or_none(
+            model,
+            "identity_adjudication_payload",
+        ),
+        identity_collision=_json_column_or_none(model, "identity_collision_payload"),
     )
 
 
-def _identity_adjudication_from_model(
-    model: HarnessProposalModel,
-) -> JSONObject | None:
-    """Read one proposal's identity adjudication, or None if never adjudicated."""
+def _json_column_or_none(model: HarnessProposalModel, name: str) -> JSONObject | None:
+    """Read one nullable JSON column, or None when it was never written."""
 
-    payload = getattr(model, "identity_adjudication_payload", None)
+    payload = getattr(model, name, None)
     if not isinstance(payload, dict):
         return None
     return cast("JSONObject", payload)
@@ -486,13 +493,13 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         *,
         space_id: str,
         run_id: str,
-        normalized_proposal: HarnessProposalDraft,
-        status: str,
-        decision_reason: str | None,
+        planned: PlannedProposal,
     ) -> HarnessProposalModel:
         """Build one proposal row so both write paths stay identical."""
 
+        normalized_proposal = planned.draft
         return HarnessProposalModel(
+            id=planned.proposal_id,
             space_id=space_id,
             run_id=run_id,
             proposal_type=normalized_proposal.proposal_type,
@@ -501,7 +508,7 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
             document_id=normalized_proposal.document_id,
             title=normalized_proposal.title,
             summary=normalized_proposal.summary,
-            status=status,
+            status=planned.status,
             confidence=normalized_proposal.confidence,
             ranking_score=normalized_proposal.ranking_score,
             reasoning_path=normalized_proposal.reasoning_path,
@@ -520,7 +527,8 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
             ),
             evidence_grade=normalized_proposal.evidence_grade,
             claim_fingerprint=normalized_proposal.claim_fingerprint,
-            decision_reason=decision_reason,
+            identity_collision_payload=planned.identity_collision,
+            decision_reason=planned.decision_reason,
             decided_at=None,
         )
 
@@ -529,32 +537,25 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         *,
         space_id: str,
         claim_fingerprint: str,
-    ) -> tuple[str, str, str | None] | None:
-        """Return (id, status, document_id) of whoever actively holds one fingerprint."""
+    ) -> HarnessProposalModel | None:
+        """Return whoever actively holds one fingerprint in this space."""
 
-        row = self.session.execute(
-            select(
-                HarnessProposalModel.id,
-                HarnessProposalModel.status,
-                HarnessProposalModel.document_id,
-            )
+        return self.session.execute(
+            select(HarnessProposalModel)
             .where(
                 HarnessProposalModel.space_id == space_id,
                 HarnessProposalModel.claim_fingerprint == claim_fingerprint,
                 HarnessProposalModel.status.in_(["pending_review", "promoted"]),
             )
             .limit(1),
-        ).first()
-        if row is None:
-            return None
-        return (str(row[0]), str(row[1]), row[2])
+        ).scalar_one_or_none()
 
     def _plan_batch(
         self,
         *,
         space_id: str,
         proposals: tuple[HarnessProposalDraft, ...],
-    ) -> list[tuple[HarnessProposalDraft, str, str | None]]:
+    ) -> list[PlannedProposal]:
         """Decide each draft's status before anything is written.
 
         ART-DATA-001: a fingerprint collision is retained, never dropped.
@@ -586,61 +587,94 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         *already-stored* proposal from the same document is a re-derivation, and
         only that one drops -- with a log line, because a proposal that leaves
         no row must still leave a trace.
+
+        A parked draft also records *what* it collided with, snapshotted here
+        (see ``build_identity_collision``).  Ids are assigned in the plan rather
+        than by the insert, because the intra-batch counterpart has to be
+        nameable before either row exists.
         """
 
-        planned: list[tuple[HarnessProposalDraft, str, str | None]] = []
-        # fingerprint -> document_id of the draft in this batch already planned
-        # as pending_review, which is the one that will take the index slot.
-        claimed_in_batch: dict[str, str | None] = {}
+        planned: list[PlannedProposal] = []
+        # fingerprint -> the draft in this batch already planned as
+        # pending_review, which is the one that will take the index slot.
+        claimed_in_batch: dict[str, PlannedProposal] = {}
         for proposal in proposals:
             normalized_proposal = self.normalize_proposal_draft(proposal)
             fingerprint = normalized_proposal.claim_fingerprint
             status = "pending_review"
             decision_reason: str | None = None
+            collision: JSONObject | None = None
             if fingerprint:
-                if fingerprint in claimed_in_batch:
+                claimant = claimed_in_batch.get(fingerprint)
+                holder = (
+                    self._active_fingerprint_holder(
+                        space_id=space_id,
+                        claim_fingerprint=fingerprint,
+                    )
+                    if claimant is None
+                    else None
+                )
+                if claimant is not None:
                     status = IDENTITY_PENDING_STATUS
                     decision_reason = in_batch_identity_collision_reason(
                         claim_fingerprint=fingerprint,
                         same_document=_is_same_known_document(
-                            existing_document_id=claimed_in_batch[fingerprint],
+                            existing_document_id=claimant.draft.document_id,
                             incoming_document_id=normalized_proposal.document_id,
                         ),
                     )
-                else:
-                    holder = self._active_fingerprint_holder(
-                        space_id=space_id,
+                    collision = build_identity_collision(
+                        counterpart_proposal_id=claimant.proposal_id,
+                        counterpart_title=claimant.draft.title,
+                        counterpart_document_id=claimant.draft.document_id,
+                        counterpart_status=claimant.status,
                         claim_fingerprint=fingerprint,
+                        origin=SAME_BATCH_COLLISION,
                     )
-                    if holder is not None:
-                        if _is_same_document_rederivation(
-                            existing_document_id=holder[2],
-                            incoming_document_id=normalized_proposal.document_id,
-                        ):
-                            # Re-extracting a stored document is the same
-                            # observation arriving twice, not a second source.
-                            # Retaining it would add a row on every
-                            # re-extraction.  Logged so the drop is countable.
-                            logger.info(
-                                "Dropping re-derived proposal from the "
-                                "already-stored document (fingerprint=%s, "
-                                "existing=%s, source_key=%s)",
-                                fingerprint[:12],
-                                holder[0],
-                                normalized_proposal.source_key,
-                            )
-                            continue
-                        status = IDENTITY_PENDING_STATUS
-                        decision_reason = (
-                            "Retained by ART-DATA-001: claim fingerprint "
-                            f"{fingerprint} already has an active proposal "
-                            f"{holder[0]} with status '{holder[1]}' from a "
-                            "different document in this space. Awaiting "
-                            "identity adjudication; not auto-merged."
+                elif holder is not None:
+                    if _is_same_document_rederivation(
+                        existing_document_id=holder.document_id,
+                        incoming_document_id=normalized_proposal.document_id,
+                    ):
+                        # Re-extracting a stored document is the same
+                        # observation arriving twice, not a second source.
+                        # Retaining it would add a row on every re-extraction.
+                        # Logged so the drop is countable.
+                        logger.info(
+                            "Dropping re-derived proposal from the "
+                            "already-stored document (fingerprint=%s, "
+                            "existing=%s, source_key=%s)",
+                            fingerprint[:12],
+                            holder.id,
+                            normalized_proposal.source_key,
                         )
-                if status == "pending_review":
-                    claimed_in_batch[fingerprint] = normalized_proposal.document_id
-            planned.append((normalized_proposal, status, decision_reason))
+                        continue
+                    status = IDENTITY_PENDING_STATUS
+                    decision_reason = (
+                        "Retained by ART-DATA-001: claim fingerprint "
+                        f"{fingerprint} already has an active proposal "
+                        f"{holder.id} with status '{holder.status}' from a "
+                        "different document in this space. Awaiting "
+                        "identity adjudication; not auto-merged."
+                    )
+                    collision = build_identity_collision(
+                        counterpart_proposal_id=holder.id,
+                        counterpart_title=holder.title,
+                        counterpart_document_id=holder.document_id,
+                        counterpart_status=holder.status,
+                        claim_fingerprint=fingerprint,
+                        origin=ALREADY_PERSISTED_COLLISION,
+                    )
+            entry = PlannedProposal(
+                proposal_id=str(uuid4()),
+                draft=normalized_proposal,
+                status=status,
+                decision_reason=decision_reason,
+                identity_collision=collision,
+            )
+            if fingerprint and status == "pending_review":
+                claimed_in_batch[fingerprint] = entry
+            planned.append(entry)
         return planned
 
     def _persist_planned_batch(
@@ -648,17 +682,15 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         *,
         space_id: str,
         run_id: str,
-        planned: list[tuple[HarnessProposalDraft, str, str | None]],
+        planned: list[PlannedProposal],
     ) -> list[HarnessProposalModel]:
         models = [
             self._build_proposal_model(
                 space_id=space_id,
                 run_id=run_id,
-                normalized_proposal=normalized_proposal,
-                status=status,
-                decision_reason=decision_reason,
+                planned=entry,
             )
-            for normalized_proposal, status, decision_reason in planned
+            for entry in planned
         ]
         for model in models:
             self.session.add(model)
@@ -764,16 +796,21 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
             space_id=space_id,
             run_id=run_id,
             planned=[
-                (
-                    self.normalize_proposal_draft(proposal),
-                    IDENTITY_PENDING_STATUS,
-                    (
+                PlannedProposal(
+                    proposal_id=str(uuid4()),
+                    draft=self.normalize_proposal_draft(proposal),
+                    status=IDENTITY_PENDING_STATUS,
+                    decision_reason=(
                         "Retained by ART-DATA-001: concurrent writers kept "
                         "claiming claim fingerprint "
                         f"{proposal.claim_fingerprint} for this space while "
                         "this batch was being written. Awaiting identity "
                         "adjudication; not auto-merged."
                     ),
+                    # No counterpart is recorded here on purpose: the racing
+                    # writer's row was never read, so naming one would be a
+                    # guess, and a guessed pointer is worse than none.
+                    identity_collision=None,
                 )
                 for proposal in proposals
             ],
@@ -1003,7 +1040,12 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         else:
             model.identity_adjudication_payload = build_identity_adjudication(
                 resolution=normalized_resolution,
-                duplicate_of_proposal_id=None,
+                # Kept through release: clearing the fingerprint also removes
+                # the only way to find the counterpart again, so dropping the
+                # pointer here would leave a decision with no subject.
+                duplicate_of_proposal_id=collision_counterpart_id(
+                    _json_column_or_none(model, "identity_collision_payload"),
+                ),
                 released_claim_fingerprint=model.claim_fingerprint,
                 reason=reason,
                 decided_by=decided_by,

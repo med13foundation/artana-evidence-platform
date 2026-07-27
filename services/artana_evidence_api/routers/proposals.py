@@ -91,6 +91,8 @@ class HarnessProposalResponse(BaseModel):
     payload: JSONObject
     metadata: JSONObject
     evidence_grade: str | None
+    #: What this proposal collided with when it was parked, if it was.
+    identity_collision: JSONObject | None = None
     identity_adjudication: JSONObject | None = None
     decision_reason: str | None
     decided_at: str | None
@@ -120,6 +122,7 @@ class HarnessProposalResponse(BaseModel):
             payload=record.payload,
             metadata=record.metadata,
             evidence_grade=record.evidence_grade,
+            identity_collision=record.identity_collision,
             identity_adjudication=record.identity_adjudication,
             decision_reason=record.decision_reason,
             decided_at=serialize_optional_timestamp(record.decided_at),

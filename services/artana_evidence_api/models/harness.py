@@ -275,6 +275,17 @@ class HarnessProposalModel(Base):
         JSON,
         nullable=True,
     )
+    #: What this proposal collided with, snapshotted when it was parked.
+    #:
+    #: Separate from the adjudication above because it records what the system
+    #: observed, not what a reviewer concluded, and it has to exist before any
+    #: reviewer sees the record.  Snapshotted rather than resolved on read: the
+    #: intra-batch counterpart has no row yet when this is decided, and
+    #: releasing as distinct clears the fingerprint that would find it later.
+    identity_collision_payload: Mapped[JSONObject | None] = mapped_column(
+        JSON,
+        nullable=True,
+    )
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
     decided_by_user_id: Mapped[str | None] = mapped_column(

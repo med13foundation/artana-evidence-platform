@@ -6629,6 +6629,20 @@
             ],
             "title": "Identity Adjudication"
           },
+          "identity_collision": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Output"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity Collision"
+          },
           "metadata": {
             "additionalProperties": {
               "$ref": "#/components/schemas/JSONValue-Output"
@@ -7194,6 +7208,20 @@
               }
             ],
             "title": "Identity Adjudication"
+          },
+          "identity_collision": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Output"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity Collision"
           },
           "item_type": {
             "title": "Item Type",

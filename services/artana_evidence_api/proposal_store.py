@@ -306,6 +306,79 @@ class HarnessProposalRecord:
     decided_by: ReviewActor | None = None
     #: System-authored trail of how this record's parked identity was settled.
     identity_adjudication: JSONObject | None = None
+    #: What this record collided with when it was parked, snapshotted then.
+    identity_collision: JSONObject | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PlannedProposal:
+    """One draft with the identity decision taken about it, before any write.
+
+    Carries a pre-assigned ``proposal_id`` because the intra-batch collision has
+    to name its counterpart, and the counterpart has no row yet.  Both stores
+    plan the whole batch before writing any of it, so the id has to come from
+    the plan rather than from the insert.
+    """
+
+    proposal_id: str
+    draft: HarnessProposalDraft
+    status: str
+    decision_reason: str | None
+    identity_collision: JSONObject | None
+
+
+def build_identity_collision(
+    *,
+    counterpart_proposal_id: str,
+    counterpart_title: str,
+    counterpart_document_id: str | None,
+    counterpart_status: str,
+    claim_fingerprint: str,
+    origin: str,
+) -> JSONObject:
+    """Return what a parked proposal collided with, as of the moment it parked.
+
+    A reviewer asked to say whether two proposals are the same fact cannot
+    answer from a bare id, and until now that is all there was -- an id inside a
+    prose ``decision_reason`` on one path, and nothing at all on the intra-batch
+    path.  An action without the evidence to decide on does not produce a
+    decision; it produces a decision record.
+
+    Snapshotted rather than looked up on read, for three reasons.  The
+    intra-batch counterpart has no committed row when the decision is taken.
+    ``release_as_distinct`` clears the claim fingerprint, so afterwards no query
+    can find the counterpart again.  And what the reviewer needs is what
+    collided, at the time it collided, not whatever currently holds that
+    fingerprint.
+
+    ``origin`` is ``same_batch`` or ``already_persisted`` -- the difference
+    between "one extraction pass said this twice" and "the space already held
+    it", which changes what the reviewer is being asked.
+    """
+
+    return {
+        "proposal_id": counterpart_proposal_id,
+        "title": counterpart_title,
+        "document_id": counterpart_document_id,
+        "status": counterpart_status,
+        "claim_fingerprint": claim_fingerprint,
+        "origin": origin,
+    }
+
+
+#: The counterpart was planned in the same ``create_proposals`` call.
+SAME_BATCH_COLLISION = "same_batch"
+#: The counterpart was already committed before this call ran.
+ALREADY_PERSISTED_COLLISION = "already_persisted"
+
+
+def collision_counterpart_id(identity_collision: JSONObject | None) -> str | None:
+    """Return the id a parked proposal collided with, if one was recorded."""
+
+    if not isinstance(identity_collision, dict):
+        return None
+    counterpart_id = identity_collision.get("proposal_id")
+    return counterpart_id if isinstance(counterpart_id, str) else None
 
 
 class HarnessProposalStore:
@@ -403,7 +476,7 @@ class HarnessProposalStore:
         # are the ones that take the active-identity slot.  Without this the
         # second draft of one extraction pass looks indistinguishable from a
         # re-extraction of an already-stored document, and gets dropped.
-        claimed_in_batch: dict[str, str | None] = {}
+        claimed_in_batch: dict[str, PlannedProposal] = {}
         now = datetime.now(UTC)
         with self._lock:
             for proposal in proposals:
@@ -415,17 +488,14 @@ class HarnessProposalStore:
                 )
                 if planned is None:
                     continue
-                status, decision_reason = planned
                 if (
-                    status == _PENDING_REVIEW_STATUS
+                    planned.status == _PENDING_REVIEW_STATUS
                     and normalized_proposal.claim_fingerprint
                 ):
-                    claimed_in_batch[normalized_proposal.claim_fingerprint] = (
-                        normalized_proposal.document_id
-                    )
+                    claimed_in_batch[normalized_proposal.claim_fingerprint] = planned
 
                 record = HarnessProposalRecord(
-                    id=str(uuid4()),
+                    id=planned.proposal_id,
                     space_id=normalized_space_id,
                     run_id=normalized_run_id,
                     proposal_type=normalized_proposal.proposal_type,
@@ -434,7 +504,7 @@ class HarnessProposalStore:
                     document_id=normalized_proposal.document_id,
                     title=normalized_proposal.title,
                     summary=normalized_proposal.summary,
-                    status=status,
+                    status=planned.status,
                     confidence=normalized_proposal.confidence,
                     ranking_score=normalized_proposal.ranking_score,
                     reasoning_path=normalized_proposal.reasoning_path,
@@ -444,8 +514,9 @@ class HarnessProposalStore:
                     claim_fingerprint=normalized_proposal.claim_fingerprint,
                     evidence_grade=normalized_proposal.evidence_grade,
                     source_provenance=normalized_proposal.source_provenance,
-                    decision_reason=decision_reason,
+                    decision_reason=planned.decision_reason,
                     decided_at=None,
+                    identity_collision=planned.identity_collision,
                     created_at=now,
                     updated_at=now,
                 )
@@ -464,8 +535,8 @@ class HarnessProposalStore:
         *,
         space_id: str,
         normalized_proposal: HarnessProposalDraft,
-        claimed_in_batch: dict[str, str | None],
-    ) -> tuple[str, str | None] | None:
+        claimed_in_batch: dict[str, PlannedProposal],
+    ) -> PlannedProposal | None:
         """Decide one draft's status, or return None to drop it.
 
         Dropping is reserved for a single case -- re-extracting a document whose
@@ -473,26 +544,47 @@ class HarnessProposalStore:
         leaves no row must at least leave a trace (ART-DATA-001).
         """
 
+        proposal_id = str(uuid4())
         fingerprint = normalized_proposal.claim_fingerprint
         if not fingerprint:
-            return (_PENDING_REVIEW_STATUS, None)
-        if fingerprint in claimed_in_batch:
-            return (
-                IDENTITY_PENDING_STATUS,
-                in_batch_identity_collision_reason(
+            return PlannedProposal(
+                proposal_id=proposal_id,
+                draft=normalized_proposal,
+                status=_PENDING_REVIEW_STATUS,
+                decision_reason=None,
+                identity_collision=None,
+            )
+        claimant = claimed_in_batch.get(fingerprint)
+        if claimant is not None:
+            return PlannedProposal(
+                proposal_id=proposal_id,
+                draft=normalized_proposal,
+                status=IDENTITY_PENDING_STATUS,
+                decision_reason=in_batch_identity_collision_reason(
                     claim_fingerprint=fingerprint,
                     same_document=_is_same_known_document(
-                        existing_document_id=claimed_in_batch[fingerprint],
+                        existing_document_id=claimant.draft.document_id,
                         incoming_document_id=normalized_proposal.document_id,
                     ),
                 ),
+                identity_collision=build_identity_collision(
+                    counterpart_proposal_id=claimant.proposal_id,
+                    counterpart_title=claimant.draft.title,
+                    counterpart_document_id=claimant.draft.document_id,
+                    counterpart_status=claimant.status,
+                    claim_fingerprint=fingerprint,
+                    origin=SAME_BATCH_COLLISION,
+                ),
             )
         existing = self._fingerprint_exists(space_id, fingerprint)
-        if existing is None or existing.status not in (
-            _PENDING_REVIEW_STATUS,
-            "promoted",
-        ):
-            return (_PENDING_REVIEW_STATUS, None)
+        if existing is None or existing.status not in _ACTIVE_STATUSES:
+            return PlannedProposal(
+                proposal_id=proposal_id,
+                draft=normalized_proposal,
+                status=_PENDING_REVIEW_STATUS,
+                decision_reason=None,
+                identity_collision=None,
+            )
         if _is_same_document_rederivation(
             existing_document_id=existing.document_id,
             incoming_document_id=normalized_proposal.document_id,
@@ -513,13 +605,23 @@ class HarnessProposalStore:
             existing.id,
             existing.status,
         )
-        return (
-            IDENTITY_PENDING_STATUS,
-            (
+        return PlannedProposal(
+            proposal_id=proposal_id,
+            draft=normalized_proposal,
+            status=IDENTITY_PENDING_STATUS,
+            decision_reason=(
                 "Retained by ART-DATA-001: claim fingerprint "
                 f"{fingerprint} already has an active proposal {existing.id} "
                 f"with status '{existing.status}' from a different document in "
                 "this space. Awaiting identity adjudication; not auto-merged."
+            ),
+            identity_collision=build_identity_collision(
+                counterpart_proposal_id=existing.id,
+                counterpart_title=existing.title,
+                counterpart_document_id=existing.document_id,
+                counterpart_status=existing.status,
+                claim_fingerprint=fingerprint,
+                origin=ALREADY_PERSISTED_COLLISION,
             ),
         )
 
@@ -718,6 +820,13 @@ class HarnessProposalStore:
         just said that fingerprint groups two different facts, so it does not
         identify this one, and leaving it would collide with the counterpart
         under migration 024's active unique index.
+
+        Both answers keep ``duplicate_of_proposal_id``.  Releasing used to write
+        None there while also clearing the fingerprint, which erased the only
+        remaining record of what the reviewer had been comparing against -- the
+        decision survived and its subject did not.  The field names what the
+        fingerprint said collided; ``resolution`` names what the reviewer said
+        about it, and those are different claims.
         """
 
         normalized_resolution = normalize_identity_resolution(resolution)
@@ -773,7 +882,9 @@ class HarnessProposalStore:
                     decided_by=None,
                     identity_adjudication=build_identity_adjudication(
                         resolution=normalized_resolution,
-                        duplicate_of_proposal_id=None,
+                        duplicate_of_proposal_id=collision_counterpart_id(
+                            proposal.identity_collision,
+                        ),
                         released_claim_fingerprint=proposal.claim_fingerprint,
                         reason=reason,
                         decided_by=decided_by,
@@ -855,15 +966,20 @@ class HarnessProposalStore:
 
 
 __all__ = [
+    "ALREADY_PERSISTED_COLLISION",
     "DISTINCT_RESOLUTION",
     "DUPLICATE_RESOLUTION",
     "DUPLICATE_STATUS",
     "IDENTITY_PENDING_STATUS",
     "IDENTITY_RESOLUTIONS",
+    "SAME_BATCH_COLLISION",
     "HarnessProposalDraft",
     "HarnessProposalRecord",
     "HarnessProposalStore",
+    "PlannedProposal",
     "build_identity_adjudication",
+    "build_identity_collision",
+    "collision_counterpart_id",
     "in_batch_identity_collision_reason",
     "is_undecidable_proposal_error",
     "missing_duplicate_counterpart_message",

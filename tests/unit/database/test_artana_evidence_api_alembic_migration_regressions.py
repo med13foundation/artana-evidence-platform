@@ -13,7 +13,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import DBAPIError
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-CURRENT_HEAD_REVISION = "029_proposal_identity_adjudication"
+CURRENT_HEAD_REVISION = "030_proposal_identity_collision"
 _DECISION_TABLES = (
     "harness_proposals",
     "harness_review_items",
@@ -846,3 +846,53 @@ def test_029_gives_a_parked_proposal_its_own_adjudication_column(
     assert "identity_adjudication_payload" in columns
     assert columns["identity_adjudication_payload"]["nullable"]
     assert "metadata_payload" in columns
+
+
+def test_030_records_what_a_parked_proposal_collided_with(
+    tmp_path: Path,
+) -> None:
+    """A reviewer cannot judge "same fact?" against a counterpart nobody stored.
+
+    Migration 029 gave a parked proposal an exit; the evidence to take it lived
+    only in a prose decision_reason on one path and nowhere at all on the
+    intra-batch path. The collision gets its own column, separate from the
+    adjudication because it records what the system observed rather than what a
+    reviewer concluded, and it exists before any reviewer sees the row.
+    """
+    database_url = f"sqlite:///{tmp_path / 'harness_030_collision.db'}"
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision=CURRENT_HEAD_REVISION,
+    )
+
+    engine = create_engine(database_url, future=True)
+    try:
+        columns = {
+            column["name"]: column
+            for column in inspect(engine).get_columns("harness_proposals")
+        }
+    finally:
+        engine.dispose()
+
+    assert "identity_collision_payload" in columns
+    assert columns["identity_collision_payload"]["nullable"]
+    assert "identity_adjudication_payload" in columns, (
+        "the collision must not replace the adjudication trail"
+    )
+
+    _run_alembic(
+        database_url=database_url,
+        command="downgrade",
+        revision="029_proposal_identity_adjudication",
+    )
+    engine = create_engine(database_url, future=True)
+    try:
+        remaining = {
+            column["name"]
+            for column in inspect(engine).get_columns("harness_proposals")
+        }
+    finally:
+        engine.dispose()
+    assert "identity_collision_payload" not in remaining
+    assert "identity_adjudication_payload" in remaining
