@@ -306,6 +306,9 @@ def test_a_parked_proposal_can_be_released_as_a_distinct_fact() -> None:
     assert decided.json()["identity_adjudication"]["resolution"] == "distinct", (
         "the adjudication trail must outlive the later decision"
     )
+    assert decided.json()["identity_collision"] is not None, (
+        "so must what it was adjudicated against"
+    )
 
 
 def test_a_duplicate_cannot_be_claimed_without_a_counterpart() -> None:

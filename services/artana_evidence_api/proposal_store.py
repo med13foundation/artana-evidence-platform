@@ -788,10 +788,14 @@ class HarnessProposalStore:
                 decided_at=decision_timestamp,
                 decided_by=decided_by,
                 source_provenance=proposal.source_provenance,
-                # Survives the decision on purpose: a released proposal was
+                # Both survive the decision on purpose: a released proposal was
                 # adjudicated by one reviewer and decided by another, and the
-                # decision fields only have room for the second.
+                # decision fields only have room for the second.  The durable
+                # store mutates its row and keeps them without being asked, so
+                # this rebuild has to carry them or the two stores disagree on
+                # what a decision destroys.
                 identity_adjudication=proposal.identity_adjudication,
+                identity_collision=proposal.identity_collision,
                 created_at=proposal.created_at,
                 updated_at=decision_timestamp,
             )
