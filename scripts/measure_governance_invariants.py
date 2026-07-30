@@ -7,13 +7,18 @@ about whether it is *present*, and that difference decides whether each gap is a
 documentation note or a roadmap item.  This script answers that with counts
 rather than judgement.
 
-**This is a partial report, deliberately.**  It measures three conditions: one
-for invariant 3 (relations with no claim lineage) and two for invariant 1
-(evidence with no typed provenance, evidence with no snapshot).  It does *not*
-yet measure evidence missing a locator or span, accepted claim-to-claim edges
-with no source grounding, manual observations without provenance, or anything
-for invariant 4.  A low report here is not a clean bill of health for the
-README's Known Gaps section, and must not be quoted as one.
+**This is a partial report, deliberately.**  It measures four conditions: one
+for invariant 3 (relations with no claim lineage) and three for invariant 1
+(claim evidence with no typed provenance, claim evidence with no snapshot,
+relation evidence with no snapshot).  Both tables that carry
+``source_snapshot_id`` are covered; ``provenance_status`` exists only on claim
+evidence, so that signal is claim-evidence-only by construction rather than by
+omission.
+
+It does *not* measure evidence missing a locator or span, accepted
+claim-to-claim edges with no source grounding, manual observations without
+provenance, or anything for invariant 4.  A low report here is not a clean bill
+of health for the README's Known Gaps section, and must not be quoted as one.
 
 It is read-only.  Every query is a SELECT and the session is never committed,
 but it does set a graph RLS bypass on its own session, because a measurement
@@ -144,13 +149,14 @@ def _measure(session: Session, space_id: str | None) -> list[InvariantMeasuremen
         InvariantMeasurement(
             key="legacy_unverified_evidence",
             invariant="1 -- sources and evidence remain preserved",
-            question="How much stored evidence carries no typed provenance?",
+            question="How much claim evidence carries no typed provenance?",
             count=unverified_evidence,
             total=total_evidence,
             detail=(
                 "LEGACY_UNVERIFIED is the model default, so this counts rows "
                 "written before typed provenance as well as any written without "
-                "it since."
+                "it since. Claim evidence only: relation_evidence has no "
+                "provenance_status column, so this signal does not exist there."
             ),
         ),
     )
@@ -161,15 +167,55 @@ def _measure(session: Session, space_id: str | None) -> list[InvariantMeasuremen
 
     measurements.append(
         InvariantMeasurement(
-            key="evidence_without_snapshot",
+            key="claim_evidence_without_snapshot",
             invariant="1 -- sources and evidence remain preserved",
-            question="How much evidence has no verified source snapshot?",
+            question="How much claim evidence has no verified source snapshot?",
             count=unbound_evidence,
             total=total_evidence,
             detail=(
                 "Without a snapshot there is no custody of what the source said "
                 "at the time the claim was made, so the claim cannot be defended "
                 "once the source moves."
+            ),
+        ),
+    )
+
+    # The graph stores supporting evidence in two places, and only this one and
+    # claim_evidence carry source_snapshot_id -- checked across the whole
+    # service, not inferred. Counting claim evidence alone let a canonical
+    # relation whose evidence rows have no snapshot report as zero affected,
+    # which is precisely the custody question invariant 1 is about.
+    from artana_evidence_db.kernel_relation_models import RelationEvidenceModel
+
+    def _relation_evidence_count(*conditions: ColumnElement[bool]) -> int:
+        stmt = select(func.count(RelationEvidenceModel.id))
+        for condition in conditions:
+            stmt = stmt.where(condition)
+        if space_id is not None:
+            # relation_evidence has no space of its own; it inherits through
+            # the relation.
+            stmt = stmt.join(
+                RelationModel,
+                RelationModel.id == RelationEvidenceModel.relation_id,
+            ).where(RelationModel.research_space_id == space_id)
+        return int(session.scalar(stmt) or 0)
+
+    total_relation_evidence = _relation_evidence_count()
+    unbound_relation_evidence = _relation_evidence_count(
+        RelationEvidenceModel.source_snapshot_id.is_(None),
+    )
+
+    measurements.append(
+        InvariantMeasurement(
+            key="relation_evidence_without_snapshot",
+            invariant="1 -- sources and evidence remain preserved",
+            question="How much relation evidence has no verified source snapshot?",
+            count=unbound_relation_evidence,
+            total=total_relation_evidence,
+            detail=(
+                "Evidence attached directly to a canonical relation rather than "
+                "through a claim. It has no provenance_status column, so an "
+                "absent snapshot is the only custody signal available here."
             ),
         ),
     )
