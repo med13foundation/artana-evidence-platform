@@ -14,6 +14,10 @@ REPO_CONTROL_FILES = {
     "pytest.ini",
     "scripts/run_qa_report.sh",
     "tests/unit/test_control_files.py",
+    # Pins README claims to the code they depend on, so the normal way to change
+    # one -- editing README.md and its pin together -- planned every gate false
+    # and ran the assertions nowhere.
+    "tests/unit/test_governance_invariants.py",
     "tests/unit/test_coverage_enforcement_contract.py",
     "tests/unit/test_makefile_type_gate_contract.py",
     "tests/unit/test_agent_output_boundary_validator.py",
@@ -70,6 +74,11 @@ GRAPH_SERVICE_FILES = (
     "scripts/generate_ts_types.py",
     "scripts/validate_graph_phase6_release_contract.py",
     "scripts/validate_graph_service_boundary.py",
+    # Reads graph models and the graph schema, and its output is meant to be
+    # attached to readiness decisions. Without this entry a change touching only
+    # the script planned every gate false, so it had no lint, no type check and
+    # no test run at all.
+    "scripts/measure_governance_invariants.py",
 )
 TEST_PREFIXES = (
     "services/artana_evidence_api/tests/",

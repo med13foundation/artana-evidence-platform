@@ -153,6 +153,7 @@ jobs:
           venv/bin/python3 -m pytest \
             tests/unit/test_ci_service_check_planner.py \
             tests/unit/test_control_files.py \
+            tests/unit/test_governance_invariants.py \
             tests/unit/test_coverage_enforcement_contract.py \
             tests/unit/test_makefile_type_gate_contract.py \
             tests/unit/test_relation_feasibility_audit.py \

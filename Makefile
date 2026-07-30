@@ -58,6 +58,7 @@ GRAPH_SERVICE_LINT_PATHS := \
 	 services/artana_evidence_db/routers/entities.py \
 	 services/artana_evidence_db/routers/relations.py \
 	 scripts/export_graph_openapi.py \
+	 scripts/measure_governance_invariants.py \
 	 tests/e2e/graph_service/test_user_flows.py
 
 # Contract exports import the service package to read its live schema. Without
@@ -73,7 +74,8 @@ GRAPH_SERVICE_TEST_PATHS := \
 	 tests/e2e/graph_service \
 	 services/artana_evidence_db/tests/unit \
 	 services/artana_evidence_db/tests/integration \
-	 tests/unit/database/test_023_graph_external_fk_decoupling_contract.py
+	 tests/unit/database/test_023_graph_external_fk_decoupling_contract.py \
+	 tests/unit/test_governance_invariants.py
 
 ARTANA_EVIDENCE_API_LINT_PATHS := \
  services/artana_evidence_api \
@@ -123,7 +125,8 @@ ARTANA_EVIDENCE_API_TEST_PATHS := \
 	 tests/unit/test_nary_claim_scoring.py \
 	 tests/unit/test_restricted_corpus_text.py \
 	 tests/unit/test_restricted_corpus_scan.py \
-	 tests/unit/test_typing_any_ban.py
+	 tests/unit/test_typing_any_ban.py \
+	 tests/unit/test_governance_invariants.py
 
 LIVE_ENDPOINT_CONTRACT_TEST_PATH := tests/e2e/artana_evidence_api/test_live_endpoint_contract.py
 LIVE_EXTERNAL_API_TEST_PATH := services/artana_evidence_api/tests/integration/test_research_init_live_pipeline.py
@@ -326,6 +329,7 @@ graph-service-type-check: ## Run mypy on graph service paths
 	$(call check_venv)
 	cd services && $(USE_PYTHON_ABS) -m mypy -p artana_evidence_db --exclude '$(GRAPH_SERVICE_TYPE_EXCLUDE)' --no-warn-unused-configs $(GRAPH_SERVICE_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/export_graph_openapi.py --no-warn-unused-configs $(GRAPH_SERVICE_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/measure_governance_invariants.py --no-warn-unused-configs $(GRAPH_SERVICE_STRICT_IMPORT_MYPY_FLAGS)
 
 graph-service-type-check-strict-imports: ## Exploratory graph mypy check without skipped imports
 	$(call check_venv)
