@@ -172,6 +172,39 @@ def _measure(session: object, space_id: str | None) -> list[InvariantMeasurement
     return measurements
 
 
+def _apply_measurement_rls_context(session: object) -> None:
+    """Set the RLS session settings this read-only measurement needs.
+
+    ``artana_evidence_db.database.set_session_rls_context`` is the canonical
+    implementation and this deliberately does not call it, because importing
+    that module runs ``get_settings()`` at import time -- which resolves the
+    domain pack, the schema, and the JWT secret, and raises outright when
+    ``ARTANA_ENV`` is staging or production without ``GRAPH_JWT_SECRET``.  That
+    is the environment this script exists to measure, so booting the graph
+    service runtime to issue four ``set_config`` calls is both disproportionate
+    and self-defeating.
+
+    Graph tables are ``FORCE ROW LEVEL SECURITY``.  A session with none of these
+    settings sees zero rows under the normal service role, so without this a
+    populated production database reports as empty and the report reads as a
+    clean bill of health.  A read-only cross-space count is the justified system
+    use AGENTS.md requires a stated reason for; nothing here writes.
+    """
+
+    from sqlalchemy import text
+
+    for setting, value in (
+        ("app.current_user_id", ""),
+        ("app.has_phi_access", "false"),
+        ("app.is_admin", "true"),
+        ("app.bypass_rls", "true"),
+    ):
+        session.execute(  # type: ignore[attr-defined]
+            text("SELECT set_config(:setting, :value, false)"),
+            {"setting": setting, "value": value},
+        )
+
+
 def _safe_database_label(database_url: str) -> str:
     """Return a host/database label that cannot carry a credential.
 
@@ -200,12 +233,22 @@ def _safe_database_label(database_url: str) -> str:
     return f"{host}{port}/{url.database or '<no database>'}"
 
 
-def _render(measurements: list[InvariantMeasurement], database_label: str) -> str:
-    """Return the human-readable report."""
+def _render(
+    measurements: list[InvariantMeasurement],
+    database_label: str,
+    space_id: str | None,
+) -> str:
+    """Return the human-readable report.
+
+    The scope line is not decoration.  A ``--space`` run that a reader mistakes
+    for a global one turns "this space is clean" into "the platform is clean",
+    and the report is meant to be attached to readiness decisions.
+    """
 
     lines = [
         "Governance invariant measurement",
         f"  database: {database_label}",
+        f"  scope:    {f'research space {space_id}' if space_id else 'all spaces'}",
         "",
     ]
     for measurement in measurements:
@@ -220,10 +263,16 @@ def _render(measurements: list[InvariantMeasurement], database_label: str) -> st
         lines.append("")
 
     if all(measurement.total == 0 for measurement in measurements):
+        scope = (
+            f"research space {space_id} holds no graph data. Other spaces in "
+            f"this database may hold plenty; re-run without --space before "
+            f"drawing any platform-level conclusion."
+            if space_id
+            else "This database holds no graph data."
+        )
         lines.append(
-            "Every total is zero. This database holds no graph data, so the run "
-            "proves the queries execute and nothing else. Point it at a "
-            "populated environment before drawing a conclusion.",
+            f"Every total is zero. {scope} The run proves the queries execute "
+            f"and nothing else.",
         )
     return "\n".join(lines)
 
@@ -255,13 +304,6 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
-    # artana_evidence_db.database resolves graph settings at import time and
-    # hard-requires GRAPH_DATABASE_URL, so the documented DATABASE_URL fallback
-    # died on the import below rather than on a connection. Whichever variable
-    # the operator supplied is the database they meant; make it the graph one.
-    os.environ["GRAPH_DATABASE_URL"] = database_url
-
-    from artana_evidence_db.database import set_session_rls_context
     from sqlalchemy import create_engine, text
     from sqlalchemy.orm import Session
 
@@ -277,12 +319,7 @@ def main(argv: list[str] | None = None) -> int:
                     "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
                 ),
             )
-            # Graph tables are FORCE ROW LEVEL SECURITY. A session with no
-            # app.* settings sees zero rows under the normal service role, so
-            # without this a populated production database reports as empty and
-            # the report reads as a clean bill of health. Read-only bypass for a
-            # cross-space count is the justified system use AGENTS.md allows.
-            set_session_rls_context(session, is_admin=True, bypass_rls=True)
+            _apply_measurement_rls_context(session)
             measurements = _measure(session, args.space)
     finally:
         engine.dispose()
@@ -300,7 +337,7 @@ def main(argv: list[str] | None = None) -> int:
             ),
         )
     else:
-        print(_render(measurements, safe_label))
+        print(_render(measurements, safe_label, args.space))
     return 0
 
 

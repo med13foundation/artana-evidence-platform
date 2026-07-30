@@ -135,9 +135,12 @@ what that costs.
 
 **Canonical relations** are edges derived from eligible claims. Only support
 claims that are resolved, persistable, properly grounded, permitted by an exact
-relation constraint, and backed by eligible source evidence can materialize one
-through the claim path. Admin direct writes and pre-existing rows are the
-exceptions, both recorded under Known Gaps.
+relation constraint, and backed by eligible source evidence can materialize one.
+The admin direct-write route is not an exception to this: it validates the
+triple, requires a verified source snapshot, and materializes through the same
+claim projection service. It skips the review queue, not the eligibility rules.
+Relations stored before lineage was enforced are the real exception, and Known
+Gaps records them.
 
 **Scoping qualifiers change canonical identity.** "A activates B in humans" and
 "A activates B in mice" are distinct governed propositions, as are two claims

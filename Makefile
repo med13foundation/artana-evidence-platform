@@ -73,7 +73,8 @@ GRAPH_SERVICE_TEST_PATHS := \
 	 tests/e2e/graph_service \
 	 services/artana_evidence_db/tests/unit \
 	 services/artana_evidence_db/tests/integration \
-	 tests/unit/database/test_023_graph_external_fk_decoupling_contract.py
+	 tests/unit/database/test_023_graph_external_fk_decoupling_contract.py \
+	 tests/unit/test_governance_invariants.py
 
 ARTANA_EVIDENCE_API_LINT_PATHS := \
  services/artana_evidence_api \
