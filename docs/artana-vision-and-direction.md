@@ -152,14 +152,43 @@ Calibrate the scorer, publish what the importer excludes, preregister thresholds
 
 Deliberately lightweight. Its job is not to ship polish — it is to prevent the other two tracks from drifting away from anything a person would actually use.
 
-**The rule:** *at every phase, one real workflow must be usable end-to-end by a real person.* If no one can use it, we have built a specification, not a product.
+**The rule:** *at every phase, one real workflow must be answerable end-to-end
+against the real system.* If nothing can exercise it, we have built a
+specification, not a capability.
 
-- **PT-1 (weeks 1–4) — The reviewer surface.** The review queue is our first product, and reviewers are our first users. Minimal but genuinely usable: show the exact occurrence, the structured assertion, the verification result, and the proposed proposition together, and record a real decision with a real identity. No redesign — one honest screen.
-- **PT-2 (weeks 4–8) — "What do we know about X."** A read path over the pilot slice that answers a real question with traceable evidence. This is the first time the vision is visible to someone who is not building it.
-- **PT-3 (weeks 8–12) — The disagreement view.** Surface contradictions rather than resolving them. This is the capability no competing system has, and it falls out of the assertion layer almost for free.
-- **Cadence — weekly dogfood.** One real scientific question, asked against the real system, by someone who wants the answer. Log every place it fails. That log prioritizes the following week across all three tracks.
+**This repository builds no UI** (`AGENTS.md`). Each item below is therefore an
+API capability, and "usable" means the endpoint exists, its contract is in
+`openapi.json`, and a test or a scripted call drives the whole workflow against
+real data. Whether a person eventually sees it on a page is a separate question
+answered in a separate repository, and it is not a precondition for calling any
+of these done.
 
-**Explicitly not now:** broad reviewer UI redesign, general read/assembler layers, public-facing surfaces. Those wait until the data contract settles (v1.0 §14).
+This section previously described PT-1 as "one honest screen", which put it in
+direct conflict with the no-UI rule and left it ambiguous whether the phase could
+ever be finished here. It can: by the API.
+
+- **PT-1 — The reviewer capability.** The review queue is our first product and
+  reviewers are our first users. One request must return the exact occurrence,
+  the structured assertion, the verification result and the proposed proposition
+  together; one request must record a decision with a real identity; and the
+  promoted-and-rejected trail must be readable with its written reasons. *Status:
+  delivered as API (#214, #218, #220) — decisions carry their reviewer, and
+  `?status=decided` returns the trail.*
+- **PT-2 — "What do we know about X."** A read path over the pilot slice that
+  answers a real question with traceable evidence, callable end to end.
+- **PT-3 — Disagreement, represented.** Contradictions surfaced rather than
+  resolved: the data model and the read path must be able to return "these two
+  sources disagree" as a first-class answer. This is the capability no competing
+  system has, and it falls out of the assertion layer almost for free — but note
+  it is also the reason claim identity must never merge a finding with its
+  refutation (see the 2026-07-26 claim-identity report).
+- **Cadence — weekly dogfood.** One real scientific question, asked against the
+  real system through its API, by someone who wants the answer. Log every place
+  it fails. That log prioritizes the following week across all three tracks.
+
+**Explicitly not now, and not here:** any rendering layer, general
+read/assembler layers, public-facing surfaces. Presentation is out of scope for
+this repository entirely, not merely deferred.
 
 ---
 

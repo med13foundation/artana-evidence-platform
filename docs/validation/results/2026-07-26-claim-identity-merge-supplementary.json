@@ -1,0 +1,322 @@
+{
+  "READ_FIRST": "docs/validation/reports/2026-07-26-claim-identity-merge-measurement.md, section 'Do not quote these numbers' -- and, for the intra_document_collisions blocks specifically, blocker B3. The mention-label block reports 4.4% of documents and the mesh-label block reports 0.0% over the same 1500 documents and the same collision test; the only difference is which label keys the fingerprint. Neither figure may be quoted without the other, because the exposure belongs to the label rule and not to the corpus.",
+  "corpus_digests": {
+    "CDR_DevelopmentSet.PubTator.txt": "9e18d8e700168887a7919e62f67ac2ce2357e3f409a48ee992906abdd80fe3e5",
+    "CDR_TestSet.PubTator.txt": "a3c48d5f35bdfce20c2371778abedc9fd24d1da092207072e5181ad53c8d0e2f",
+    "CDR_TrainingSet.PubTator.txt": "7afcec134e3d4871e74b0398d92850d3c9ac94c0bdc780003f2d60184c012bd8"
+  },
+  "surface_form_ambiguity": {
+    "distinct_normalised_forms": 4929,
+    "forms_denoting_more_than_one_mesh_concept": 246,
+    "share_of_forms_ambiguous": 0.04990870359099209,
+    "mention_instances": 28849,
+    "mention_instances_carrying_an_ambiguous_form": 1435,
+    "share_of_mention_instances_ambiguous": 0.049741758813130435,
+    "worst_forms": [
+      {
+        "form": "colorectal, breast, pancreaticobiliary, gastric, renal cell and head and neck cancers",
+        "mesh_concepts": [
+          "D001943",
+          "D002292",
+          "D006258",
+          "D010190",
+          "D013274",
+          "D015179"
+        ],
+        "n_concepts": 6
+      },
+      {
+        "form": "haematological, renal, hepatic and gastrointestinal toxicities",
+        "mesh_concepts": [
+          "D005767",
+          "D006402",
+          "D007674",
+          "D056486"
+        ],
+        "n_concepts": 4
+      },
+      {
+        "form": "can",
+        "mesh_concepts": [
+          "D000431",
+          "D002188",
+          "D007674",
+          "D009538"
+        ],
+        "n_concepts": 4
+      },
+      {
+        "form": "liver, blood, skin, and renal disorders",
+        "mesh_concepts": [
+          "D006402",
+          "D007674",
+          "D008107",
+          "D012871"
+        ],
+        "n_concepts": 4
+      },
+      {
+        "form": "parkinsonism",
+        "mesh_concepts": [
+          "D010300",
+          "D010302",
+          "D020734"
+        ],
+        "n_concepts": 3
+      },
+      {
+        "form": "pd",
+        "mesh_concepts": [
+          "D010300",
+          "D010302",
+          "D016584"
+        ],
+        "n_concepts": 3
+      },
+      {
+        "form": "prostaglandin d2, e2, or f2 alpha",
+        "mesh_concepts": [
+          "D015230",
+          "D015232",
+          "D015237"
+        ],
+        "n_concepts": 3
+      },
+      {
+        "form": "hyperglycemic acidotic coma",
+        "mesh_concepts": [
+          "D000140",
+          "D003128",
+          "D006943"
+        ],
+        "n_concepts": 3
+      },
+      {
+        "form": "hemorrhagic strokes",
+        "mesh_concepts": [
+          "D006470",
+          "D020300",
+          "D020521"
+        ],
+        "n_concepts": 3
+      },
+      {
+        "form": "re, rg1, and rb1 ginsenosides",
+        "mesh_concepts": [
+          "C035054",
+          "C049864",
+          "C442759"
+        ],
+        "n_concepts": 3
+      },
+      {
+        "form": "cerebral and pulmonary hemorrhage",
+        "mesh_concepts": [
+          "D002543",
+          "D006470",
+          "D008171"
+        ],
+        "n_concepts": 3
+      },
+      {
+        "form": "impairment of learning and memory",
+        "mesh_concepts": [
+          "D003072",
+          "D007859",
+          "D008569"
+        ],
+        "n_concepts": 3
+      },
+      {
+        "form": "hepatic, neurologic and psychiatric disorders",
+        "mesh_concepts": [
+          "D001523",
+          "D009422",
+          "D056486"
+        ],
+        "n_concepts": 3
+      },
+      {
+        "form": "cancer of the renal pelvis, ureter or bladder",
+        "mesh_concepts": [
+          "D001749",
+          "D007680",
+          "D014516"
+        ],
+        "n_concepts": 3
+      },
+      {
+        "form": "colorectal, breast and head and neck cancers",
+        "mesh_concepts": [
+          "D001943",
+          "D006258",
+          "D015179"
+        ],
+        "n_concepts": 3
+      }
+    ]
+  },
+  "surface_form_variety": {
+    "distinct_mesh_concepts": 2350,
+    "mean_normalised_forms_per_concept": 2.2110638297872343,
+    "concepts_with_one_form_only": 1244,
+    "concepts_with_5_or_more_forms": 198
+  },
+  "intra_document_collisions_mention_labels": {
+    "documents_emitting_at_least_one_cid_draft": 1500,
+    "documents_with_an_intra_batch_collision": 66,
+    "share_of_documents": 0.044,
+    "drafts_that_would_be_parked_whole_batch": 241,
+    "total_cid_drafts": 3116,
+    "examples": [
+      {
+        "pmid": "10327032",
+        "drafts_in_batch": 2,
+        "gold_facts_fused": [
+          "D005472|D001927",
+          "D005472|D022124"
+        ],
+        "labels": [
+          [
+            "5-FU",
+            "hyperammonemic encephalopathy"
+          ]
+        ]
+      },
+      {
+        "pmid": "10401555",
+        "drafts_in_batch": 2,
+        "gold_facts_fused": [
+          "D012601|D007859",
+          "D012601|D008569"
+        ],
+        "labels": [
+          [
+            "scopolamine",
+            "impairment of learning and memory"
+          ]
+        ]
+      },
+      {
+        "pmid": "11263551",
+        "drafts_in_batch": 6,
+        "gold_facts_fused": [
+          "D016559|D001855",
+          "D016559|D004487"
+        ],
+        "labels": [
+          [
+            "tacrolimus",
+            "bone marrow oedema"
+          ]
+        ]
+      },
+      {
+        "pmid": "11263551",
+        "drafts_in_batch": 6,
+        "gold_facts_fused": [
+          "D016572|D001855",
+          "D016572|D004487"
+        ],
+        "labels": [
+          [
+            "cyclosporine",
+            "bone marrow oedema"
+          ]
+        ]
+      },
+      {
+        "pmid": "11271907",
+        "drafts_in_batch": 2,
+        "gold_facts_fused": [
+          "D003520|D006470",
+          "D003520|D009205"
+        ],
+        "labels": [
+          [
+            "cyclophosphamide",
+            "Haemorrhagic myocarditis"
+          ]
+        ]
+      },
+      {
+        "pmid": "11425091",
+        "drafts_in_batch": 3,
+        "gold_facts_fused": [
+          "D003042|D001927",
+          "D003042|D003560"
+        ],
+        "labels": [
+          [
+            "cocaine",
+            "subependymal cysts"
+          ]
+        ]
+      },
+      {
+        "pmid": "11587867",
+        "drafts_in_batch": 3,
+        "gold_facts_fused": [
+          "D014750|D003711",
+          "D014750|D009410"
+        ],
+        "labels": [
+          [
+            "vincristine",
+            "degeneration of myelin and axons"
+          ]
+        ]
+      },
+      {
+        "pmid": "11827497",
+        "drafts_in_batch": 4,
+        "gold_facts_fused": [
+          "D006493|D001157",
+          "D006493|D054556"
+        ],
+        "labels": [
+          [
+            "heparin",
+            "arterial or venous thromboemboli"
+          ]
+        ]
+      },
+      {
+        "pmid": "11847945",
+        "drafts_in_batch": 2,
+        "gold_facts_fused": [
+          "D007530|D002779",
+          "D007530|D056486"
+        ],
+        "labels": [
+          [
+            "isoflurane",
+            "cholestatic hepatitis"
+          ]
+        ]
+      },
+      {
+        "pmid": "12639165",
+        "drafts_in_batch": 3,
+        "gold_facts_fused": [
+          "D013988|D002779",
+          "D013988|D056486"
+        ],
+        "labels": [
+          [
+            "ticlopidine",
+            "cholestatic hepatitis"
+          ]
+        ]
+      }
+    ]
+  },
+  "intra_document_collisions_mesh_labels": {
+    "documents_emitting_at_least_one_cid_draft": 1500,
+    "documents_with_an_intra_batch_collision": 0,
+    "share_of_documents": 0.0,
+    "drafts_that_would_be_parked_whole_batch": 0,
+    "total_cid_drafts": 3116,
+    "examples": []
+  }
+}

@@ -11,7 +11,13 @@ CLAIM_INVENTORY_COMPLETENESS_PROMPT_VERSION: Final = (
 MISSING_CLAIM_RECOVERY_PROMPT_VERSION: Final = (
     "document_extraction.claim_inventory_recovery.v11"
 )
-CLAIM_FRAMING_PROMPT_VERSION: Final = "document_extraction.claim_framing.v7"
+#: v8 widened the framed relation endpoints from 50 characters to the argument
+#: span limit and reworded their instruction.  Both change what the model is
+#: sent, and the step key is derived from this version rather than from the
+#: prompt bytes -- so leaving it at v7 would let two materially different
+#: prompts share one identity, which is the defect #218 fixed for the
+#: finite-source-unit prompt and the same one over.
+CLAIM_FRAMING_PROMPT_VERSION: Final = "document_extraction.claim_framing.v8"
 CLAIM_FALSIFICATION_PROMPT_VERSION: Final = (
     "document_extraction.claim_falsification.v1"
 )

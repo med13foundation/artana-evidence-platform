@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime  # noqa: TC003
 from uuid import uuid4
 
+from artana_evidence_api.claim_fingerprint import MAX_FINGERPRINT_LENGTH
 from artana_evidence_api.db_schema import (
     harness_table_options,
     qualify_harness_foreign_key_target,
@@ -261,7 +262,30 @@ class HarnessProposalModel(Base):
         nullable=True,
         index=True,
     )
-    claim_fingerprint: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    claim_fingerprint: Mapped[str | None] = mapped_column(
+        String(MAX_FINGERPRINT_LENGTH),
+        nullable=True,
+    )
+    #: System-authored record of how a parked identity was adjudicated.
+    #:
+    #: Its own column rather than a metadata key, because metadata_payload is
+    #: caller-supplied and adjudication history must not be forgeable, and
+    #: because it has to outlive the promote or reject of a released proposal.
+    identity_adjudication_payload: Mapped[JSONObject | None] = mapped_column(
+        JSON,
+        nullable=True,
+    )
+    #: What this proposal collided with, snapshotted when it was parked.
+    #:
+    #: Separate from the adjudication above because it records what the system
+    #: observed, not what a reviewer concluded, and it has to exist before any
+    #: reviewer sees the record.  Snapshotted rather than resolved on read: the
+    #: intra-batch counterpart has no row yet when this is decided, and
+    #: releasing as distinct clears the fingerprint that would find it later.
+    identity_collision_payload: Mapped[JSONObject | None] = mapped_column(
+        JSON,
+        nullable=True,
+    )
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
     decided_by_user_id: Mapped[str | None] = mapped_column(
@@ -376,7 +400,10 @@ class HarnessReviewItemModel(Base):
         nullable=True,
         index=True,
     )
-    review_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    review_fingerprint: Mapped[str | None] = mapped_column(
+        String(MAX_FINGERPRINT_LENGTH),
+        nullable=True,
+    )
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
     decided_by_user_id: Mapped[str | None] = mapped_column(

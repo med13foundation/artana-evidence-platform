@@ -43,6 +43,10 @@ from .conversion import (
     convert_review_item_to_proposal,
     record_review_item_decision,
 )
+from .identity_adjudication import (
+    IDENTITY_ACTION_RESOLUTIONS,
+    adjudicate_parked_proposal_identity,
+)
 from .models import (
     HarnessReviewQueueActionRequest,
     HarnessReviewQueueBulkDecisionRequest,
@@ -121,13 +125,18 @@ _DECIDED_STATUSES = (
     "approved",
     "resolved",
     "dismissed",
+    # A parked proposal adjudicated as naming a fact the space already holds.
+    # Decided, not pending: a reviewer settled its identity, and the record says
+    # in identity_adjudication which proposal it duplicates.
+    "duplicate",
 )
 #: Held back from review rather than pending or decided.
 #:
-#: A cross-document fingerprint collision is parked here (ART-DATA-001): a second
-#: independent observation whose identity has not been adjudicated against the
-#: first.  Nobody can act on it yet, but it is not nothing either, so it needs a
-#: name a reviewer can ask for.
+#: A fingerprint collision is parked here (ART-DATA-001): a second observation
+#: whose identity has not been adjudicated against the first.  It cannot be
+#: promoted or rejected while that is unsettled, but it is not terminal either --
+#: a reviewer asks for this status and answers `resolve_as_duplicate` or
+#: `release_as_distinct`, which is why it needs a name of its own.
 _PARKED_STATUSES = ("identity_pending",)
 _STATUS_GROUPS = {
     "pending": _PENDING_STATUSES,
@@ -520,7 +529,11 @@ def get_review_queue_item(
         "to conversion, resolution, or dismissal, and approval items dispatch "
         "to run approval decisions. Use 'mark_resolved' as the canonical "
         "review-item resolve action; 'resolve' remains accepted as a "
-        "compatibility alias."
+        "compatibility alias. A proposal parked in identity_pending after a "
+        "claim-fingerprint collision takes 'resolve_as_duplicate' when it names "
+        "the same fact as the proposal it collided with, or "
+        "'release_as_distinct' when it names a different one, which returns it "
+        "to pending_review to be promoted or rejected normally."
     ),
 )
 def act_on_review_queue_item(  # noqa: PLR0913
@@ -545,6 +558,19 @@ def act_on_review_queue_item(  # noqa: PLR0913
 
     if item_type == "proposal":
         proposal_id = UUID(resource_key)
+        if normalized_action in IDENTITY_ACTION_RESOLUTIONS:
+            return HarnessReviewQueueItemResponse.from_proposal(
+                adjudicate_parked_proposal_identity(
+                    space_id=space_id,
+                    proposal_id=proposal_id,
+                    action=normalized_action,
+                    reason=request.reason,
+                    decided_by=decided_by,
+                    proposal_store=proposal_store,
+                    run_registry=run_registry,
+                    artifact_store=artifact_store,
+                ),
+            )
         if normalized_action == "promote":
             promote_proposal(
                 space_id=space_id,
@@ -578,8 +604,10 @@ def act_on_review_queue_item(  # noqa: PLR0913
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
-                    "Proposal-backed queue items only support the actions "
-                    "'promote' and 'reject'"
+                    "Proposal-backed queue items support the actions 'promote' "
+                    "and 'reject' once they are pending review, and "
+                    "'resolve_as_duplicate' or 'release_as_distinct' while they "
+                    "are parked awaiting identity adjudication"
                 ),
             )
         refreshed_proposal = proposal_store.get_proposal(

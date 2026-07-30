@@ -1,0 +1,173 @@
+{
+  "provenance": "pre-validation model output recovered from artana.kernel_events; no new provider calls",
+  "framing_calls_with_a_frame_body": 14,
+  "frames_recovered": 33,
+  "frames_located_in_bc5cdr": 33,
+  "distinct_documents_covered": 9,
+  "distinct_triple_fingerprints": 26,
+  "fingerprints_shared_by_more_than_one_frame": 7,
+  "cross_document_fingerprint_agreements": [],
+  "labels": [
+    [
+      "7e",
+      "SUPPORTS",
+      "a high reversal of catalepsy induced by haloperol"
+    ],
+    [
+      "7e",
+      "TREATS",
+      "catalepsy induced by haloperidol"
+    ],
+    [
+      "7e",
+      "TREATS",
+      "haloperidol"
+    ],
+    [
+      "A series of N-pyrimidinyl-2-phenoxyacetamide adeno",
+      "INHIBITS",
+      "adenosine A(2A)"
+    ],
+    [
+      "A series of N-pyrimidinyl-2-phenoxyacetamide adeno",
+      "TARGETS",
+      "adenosine A(2A)"
+    ],
+    [
+      "Ballistic and choreic dyskinesia",
+      "SUPPORTS",
+      "markedly ameliorated"
+    ],
+    [
+      "Calcitonin injection",
+      "TREATS",
+      "a partial prevention of apomorphine-induced hyper-"
+    ],
+    [
+      "Calcitonin injection",
+      "TREATS",
+      "a potentiation of haloperidol-induced catalepsy"
+    ],
+    [
+      "Compound 1",
+      "TARGETS",
+      "A(2A)/A(1) receptor"
+    ],
+    [
+      "Synthesis of N-pyrimidinyl-2-phenoxyacetamides",
+      "TARGETS",
+      "adenosine A2A receptor"
+    ],
+    [
+      "administration of low doses of beta-blockers",
+      "TREATS",
+      "levodopa-induced ballistic and choreic dyskinesia"
+    ],
+    [
+      "buspirone",
+      "INHIBITS",
+      "haloperidol"
+    ],
+    [
+      "buspirone",
+      "TREATS",
+      "catalepsy induced by haloperidol"
+    ],
+    [
+      "buspirone",
+      "TREATS",
+      "haloperidol"
+    ],
+    [
+      "dystonia",
+      "SUPPORTS",
+      "was not"
+    ],
+    [
+      "its",
+      "CAUSES",
+      "an unacceptable increase in disability from Parkin"
+    ],
+    [
+      "modulation of SMA excitability",
+      "REGULATES",
+      "a modification of a dyskinetic state"
+    ],
+    [
+      "modulation of SMA excitability",
+      "REGULATES",
+      "continuous apomorphine infusion"
+    ],
+    [
+      "optimization steps",
+      "ACTIVATES",
+      "compound 1"
+    ],
+    [
+      "optimization steps",
+      "ACTIVATES",
+      "the overall yield of 1 from 10.0% to 30.5%"
+    ],
+    [
+      "optimization steps",
+      "CAUSES",
+      "the overall yield of 1 from 10.0% to 30.5%"
+    ],
+    [
+      "rTMS of supplementary motor area",
+      "MODULATES",
+      "therapy-induced dyskinesias"
+    ],
+    [
+      "stereotaxic surgery using a microelectrode techniq",
+      "TREATS",
+      "Levodopa-induced dyskinesia of the limbs"
+    ],
+    [
+      "stereotaxic surgery using a microelectrode techniq",
+      "TREATS",
+      "the ventralis intermedius nucleus"
+    ],
+    [
+      "stereotaxic surgery using a microelectrode teknik?",
+      "TREATS",
+      "Levodopa-induced dyskinesia of the limbs"
+    ],
+    [
+      "the dopaminergic system",
+      "REGULATES",
+      "manipulation of the serotonergic system"
+    ]
+  ],
+  "documents_and_their_gold_facts": {
+    "18329269": [
+      "D006220|D002375"
+    ],
+    "2907585": [
+      "D006220|D002375"
+    ],
+    "6293644": [
+      "D001058|D006948",
+      "D006220|D002375"
+    ],
+    "20973483": [
+      "D006220|D002375",
+      "D012110|D004409"
+    ],
+    "10510854": [
+      "D006220|D002375"
+    ],
+    "6381653": [
+      "D007980|D004409"
+    ],
+    "8649546": [
+      "D007980|D004409"
+    ],
+    "458486": [
+      "D007980|D004409"
+    ],
+    "16116131": [
+      "D007980|D004409"
+    ]
+  }
+}

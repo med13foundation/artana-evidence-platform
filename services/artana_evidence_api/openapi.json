@@ -6615,6 +6615,34 @@
             "title": "Id",
             "type": "string"
           },
+          "identity_adjudication": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Output"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity Adjudication"
+          },
+          "identity_collision": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Output"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity Collision"
+          },
           "metadata": {
             "additionalProperties": {
               "$ref": "#/components/schemas/JSONValue-Output"
@@ -7166,6 +7194,34 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "identity_adjudication": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Output"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity Adjudication"
+          },
+          "identity_collision": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Output"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity Collision"
           },
           "item_type": {
             "title": "Item Type",
@@ -22677,7 +22733,7 @@
     },
     "/v1/spaces/{space_id}/review-queue/{item_id}/actions": {
       "post": {
-        "description": "Apply a review action through the unified queue surface. Proposal items dispatch to proposal promotion or rejection, review-only items dispatch to conversion, resolution, or dismissal, and approval items dispatch to run approval decisions. Use 'mark_resolved' as the canonical review-item resolve action; 'resolve' remains accepted as a compatibility alias.",
+        "description": "Apply a review action through the unified queue surface. Proposal items dispatch to proposal promotion or rejection, review-only items dispatch to conversion, resolution, or dismissal, and approval items dispatch to run approval decisions. Use 'mark_resolved' as the canonical review-item resolve action; 'resolve' remains accepted as a compatibility alias. A proposal parked in identity_pending after a claim-fingerprint collision takes 'resolve_as_duplicate' when it names the same fact as the proposal it collided with, or 'release_as_distinct' when it names a different one, which returns it to pending_review to be promoted or rejected normally.",
         "operationId": "act_on_review_queue_item_v1_spaces__space_id__review_queue__item_id__actions_post",
         "parameters": [
           {
@@ -27686,7 +27742,7 @@
     },
     "/v2/spaces/{space_id}/review-items/{item_id}/decision": {
       "post": {
-        "description": "Apply a review action through the unified queue surface. Proposal items dispatch to proposal promotion or rejection, review-only items dispatch to conversion, resolution, or dismissal, and approval items dispatch to run approval decisions. Use 'mark_resolved' as the canonical review-item resolve action; 'resolve' remains accepted as a compatibility alias.",
+        "description": "Apply a review action through the unified queue surface. Proposal items dispatch to proposal promotion or rejection, review-only items dispatch to conversion, resolution, or dismissal, and approval items dispatch to run approval decisions. Use 'mark_resolved' as the canonical review-item resolve action; 'resolve' remains accepted as a compatibility alias. A proposal parked in identity_pending after a claim-fingerprint collision takes 'resolve_as_duplicate' when it names the same fact as the proposal it collided with, or 'release_as_distinct' when it names a different one, which returns it to pending_review to be promoted or rejected normally.",
         "operationId": "v2_act_on_review_queue_item_v2_spaces__space_id__review_items__item_id__decision_post",
         "parameters": [
           {

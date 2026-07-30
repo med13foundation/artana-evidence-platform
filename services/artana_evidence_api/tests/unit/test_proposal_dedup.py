@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from typing import cast
 
+import pytest
 from artana_evidence_api.claim_fingerprint import compute_claim_fingerprint
 from artana_evidence_api.proposal_store import (
     IDENTITY_PENDING_STATUS,
@@ -93,6 +95,36 @@ class TestSameDocumentRederivation:
         assert len(corroborating) == 1, "a second source must never be dropped"
         assert corroborating[0].status == IDENTITY_PENDING_STATUS
         assert corroborating[0].document_id == "doc-xyz"
+        assert len(store.list_proposals(space_id=SPACE_ID)) == 2
+
+    def test_two_drafts_of_one_pass_over_one_document_are_both_kept(self) -> None:
+        """One pass emitting two colliding claims is not a re-extraction.
+
+        The re-derivation rule reads a shared document_id as "this observation
+        already arrived".  That is only true against an already-stored proposal.
+        Within a single call the two drafts were produced together, each with
+        its own evidence, so dropping the second deletes evidence that the first
+        does not carry -- and it would do so with no row and no log.
+        """
+
+        store = HarnessProposalStore()
+        first = replace(_make_draft(source_key="doc:1"), document_id="doc-abc")
+        second = replace(_make_draft(source_key="doc:2"), document_id="doc-abc")
+
+        created = store.create_proposals(
+            space_id=SPACE_ID,
+            run_id=RUN_A,
+            proposals=(first, second),
+        )
+
+        assert len(created) == 2, "nothing may be dropped"
+        by_source_key = {record.source_key: record for record in created}
+        assert by_source_key["doc:1"].status == "pending_review"
+        parked = by_source_key["doc:2"]
+        assert parked.status == IDENTITY_PENDING_STATUS
+        assert parked.claim_fingerprint == first.claim_fingerprint
+        assert parked.decision_reason is not None
+        assert "the same document" in parked.decision_reason
         assert len(store.list_proposals(space_id=SPACE_ID)) == 2
 
     def test_unknown_provenance_is_retained_rather_than_assumed_duplicate(
@@ -408,3 +440,59 @@ class TestAutoRejectOnPromotion:
         )
         assert len(rejected) == 1
         assert "Auto-rejected" in (rejected[0].decision_reason or "")
+
+
+class TestBulkRejectRefusesAnAbsentFingerprint:
+    """No fingerprint must mean "reject nothing", not "reject the unfingerprinted".
+
+    Both stores matched every fingerprint-less pending proposal when handed no
+    fingerprint -- the in-memory one because ``None == None``, the durable one
+    because SQLAlchemy renders ``column == None`` as ``IS NULL`` rather than as
+    a comparison that never matches.  They agreed on the wrong answer, which is
+    why nobody caught it: a single call rejected unrelated evidence in bulk and
+    stamped each row with a reason saying it duplicated something.
+    """
+
+    def test_a_null_fingerprint_is_refused_before_anything_is_rejected(
+        self,
+    ) -> None:
+        store = HarnessProposalStore()
+        created = store.create_proposals(
+            space_id=SPACE_ID,
+            run_id=RUN_A,
+            proposals=(
+                _make_draft(source_key="no-fp-1", fingerprint=False),
+                _make_draft(source_key="no-fp-2", fingerprint=False),
+                _make_draft(source_key="no-fp-3", fingerprint=False),
+            ),
+        )
+        assert len(created) == 3
+
+        with pytest.raises(ValueError, match="requires a non-empty"):
+            store.reject_pending_duplicates(
+                space_id=SPACE_ID,
+                claim_fingerprint=cast("str", None),
+                exclude_id=created[0].id,
+                reason="Auto-rejected: equivalent claim promoted",
+            )
+
+        assert [
+            record.status
+            for record in store.list_proposals(space_id=SPACE_ID)
+        ] == ["pending_review"] * 3, "nothing may be rejected"
+
+    def test_a_blank_fingerprint_is_refused_too(self) -> None:
+        store = HarnessProposalStore()
+        created = store.create_proposals(
+            space_id=SPACE_ID,
+            run_id=RUN_A,
+            proposals=(_make_draft(source_key="no-fp-1", fingerprint=False),),
+        )
+
+        with pytest.raises(ValueError, match="requires a non-empty"):
+            store.reject_pending_duplicates(
+                space_id=SPACE_ID,
+                claim_fingerprint="   ",
+                exclude_id=created[0].id,
+                reason="Auto-rejected",
+            )

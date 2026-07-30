@@ -91,9 +91,16 @@ from artana_evidence_api.document_extraction_support.review_policy.review_only_c
 )
 from pydantic import BaseModel, ValidationError
 
-LLM_EXTRACTION_PROMPT_VERSION = "document_extraction.llm_extraction.v12"
+# Both bumped because `LLMRelation`'s subject and object widened from 50
+# characters to the argument span limit, and both prompts embed that schema.  A
+# shared model change reaches every prompt carrying it, and the step key is
+# derived from the version rather than from the prompt bytes -- so a version
+# left alone here would let two materially different requests share one
+# identity.  The manifest caught this ripple; the framing schema was the only
+# one I had set out to change.
+LLM_EXTRACTION_PROMPT_VERSION = "document_extraction.llm_extraction.v13"
 LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION = (
-    "document_extraction.weak_review_extraction.v6"
+    "document_extraction.weak_review_extraction.v7"
 )
 CLAIM_FRAME_SOURCE_LOCATOR = "normalized_extraction_text"
 _MIN_ENTITY_LABEL_LENGTH = 2

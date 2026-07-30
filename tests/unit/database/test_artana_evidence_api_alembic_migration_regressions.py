@@ -13,7 +13,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import DBAPIError
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-CURRENT_HEAD_REVISION = "027_approval_superseded_decisions"
+CURRENT_HEAD_REVISION = "030_proposal_identity_collision"
 _DECISION_TABLES = (
     "harness_proposals",
     "harness_review_items",
@@ -692,3 +692,207 @@ def test_027_gives_an_approval_its_own_superseded_decision_column(
     assert "superseded_decisions_payload" in columns
     assert columns["superseded_decisions_payload"]["nullable"]
     assert "metadata_payload" in columns
+
+
+def test_028_widens_both_fingerprint_columns_without_losing_their_indexes(
+    tmp_path: Path,
+) -> None:
+    """Three writers outgrew these columns, so nothing they wrote could persist.
+
+    A ClaimFrame's dedupe identity is 64 characters and evidence-selection
+    staging writes 83 and 90, against declared widths of 32 and 64.  Postgres
+    rejected all of them.  Both columns carry a partial unique index that the
+    rebuild must not drop, and the seeded row must survive untouched -- this is
+    a width change, not a data change.
+    """
+    database_url = f"sqlite:///{tmp_path / 'harness_028_fingerprints.db'}"
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision="027_approval_superseded_decisions",
+    )
+    fingerprint = "c" * 32
+    proposal_id = str(uuid4())
+    _seed_harness_run_and_duplicate_proposals(
+        database_url=database_url,
+        space_id=str(uuid4()),
+        run_id=str(uuid4()),
+        claim_fingerprint=fingerprint,
+        proposals=(
+            {
+                "id": proposal_id,
+                "source_key": "narrow-column-era",
+                "title": "Written while the column was still varchar(32)",
+                "status": "pending_review",
+                "created_at": "2026-07-03 10:00:00",
+                "updated_at": "2026-07-03 10:00:00",
+            },
+        ),
+    )
+
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision="028_widen_fingerprint_columns",
+    )
+
+    engine = create_engine(database_url, future=True)
+    try:
+        inspector = inspect(engine)
+        widths = {
+            (table_name, column_name): inspector.get_columns(table_name)
+            for table_name, column_name in (
+                ("harness_proposals", "claim_fingerprint"),
+                ("harness_review_items", "review_fingerprint"),
+            )
+        }
+        index_names = {
+            table_name: {
+                index["name"] for index in inspector.get_indexes(table_name)
+            }
+            for table_name in ("harness_proposals", "harness_review_items")
+        }
+    finally:
+        engine.dispose()
+
+    for (table_name, column_name), columns in widths.items():
+        column = next(
+            candidate for candidate in columns if candidate["name"] == column_name
+        )
+        assert column["type"].length == 128, (table_name, column_name)
+
+    assert (
+        "uq_harness_proposals_active_space_claim_fingerprint"
+        in index_names["harness_proposals"]
+    )
+    assert (
+        "uq_harness_review_items_space_review_fingerprint"
+        in index_names["harness_review_items"]
+    )
+    assert _proposal_rows(
+        database_url=database_url,
+        claim_fingerprint=fingerprint,
+    ) == [{"id": proposal_id, "status": "pending_review", "decision_reason": None}]
+
+
+def test_028_downgrade_refuses_to_truncate_a_stored_identity(
+    tmp_path: Path,
+) -> None:
+    """Narrowing back must fail loudly rather than shorten a fingerprint.
+
+    A truncated fingerprint is not a shorter name for the same claim; it is a
+    different identity that will collide with strangers.
+    """
+    database_url = f"sqlite:///{tmp_path / 'harness_028_downgrade.db'}"
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision="028_widen_fingerprint_columns",
+    )
+    _seed_harness_run_and_duplicate_proposals(
+        database_url=database_url,
+        space_id=str(uuid4()),
+        run_id=str(uuid4()),
+        claim_fingerprint="d" * 64,
+        proposals=(
+            {
+                "id": str(uuid4()),
+                "source_key": "frame-backed",
+                "title": "Carries a full ClaimFrame dedupe identity",
+                "status": "pending_review",
+                "created_at": "2026-07-03 10:00:00",
+                "updated_at": "2026-07-03 10:00:00",
+            },
+        ),
+    )
+
+    completed = _run_alembic_process(
+        database_url=database_url,
+        command="downgrade",
+        revision="027_approval_superseded_decisions",
+        check=False,
+    )
+
+    assert completed.returncode != 0
+    assert "Cannot narrow" in completed.stderr
+
+
+def test_029_gives_a_parked_proposal_its_own_adjudication_column(
+    tmp_path: Path,
+) -> None:
+    """An identity adjudication must not share a column with caller metadata.
+
+    A reviewer settling a parked fingerprint collision (ART-DATA-001) is making
+    a system-recorded judgement, so it cannot live in metadata_payload, which
+    callers populate freely. It also has to outlive the later promote or reject
+    of a released proposal, which overwrites decision_reason and decided_by.
+    """
+    database_url = f"sqlite:///{tmp_path / 'harness_029_adjudication.db'}"
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision=CURRENT_HEAD_REVISION,
+    )
+
+    engine = create_engine(database_url, future=True)
+    try:
+        columns = {
+            column["name"]: column
+            for column in inspect(engine).get_columns("harness_proposals")
+        }
+    finally:
+        engine.dispose()
+
+    assert "identity_adjudication_payload" in columns
+    assert columns["identity_adjudication_payload"]["nullable"]
+    assert "metadata_payload" in columns
+
+
+def test_030_records_what_a_parked_proposal_collided_with(
+    tmp_path: Path,
+) -> None:
+    """A reviewer cannot judge "same fact?" against a counterpart nobody stored.
+
+    Migration 029 gave a parked proposal an exit; the evidence to take it lived
+    only in a prose decision_reason on one path and nowhere at all on the
+    intra-batch path. The collision gets its own column, separate from the
+    adjudication because it records what the system observed rather than what a
+    reviewer concluded, and it exists before any reviewer sees the row.
+    """
+    database_url = f"sqlite:///{tmp_path / 'harness_030_collision.db'}"
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision=CURRENT_HEAD_REVISION,
+    )
+
+    engine = create_engine(database_url, future=True)
+    try:
+        columns = {
+            column["name"]: column
+            for column in inspect(engine).get_columns("harness_proposals")
+        }
+    finally:
+        engine.dispose()
+
+    assert "identity_collision_payload" in columns
+    assert columns["identity_collision_payload"]["nullable"]
+    assert "identity_adjudication_payload" in columns, (
+        "the collision must not replace the adjudication trail"
+    )
+
+    _run_alembic(
+        database_url=database_url,
+        command="downgrade",
+        revision="029_proposal_identity_adjudication",
+    )
+    engine = create_engine(database_url, future=True)
+    try:
+        remaining = {
+            column["name"]
+            for column in inspect(engine).get_columns("harness_proposals")
+        }
+    finally:
+        engine.dispose()
+    assert "identity_collision_payload" not in remaining
+    assert "identity_adjudication_payload" in remaining

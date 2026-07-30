@@ -10,7 +10,10 @@ from __future__ import annotations
 from typing import Literal
 
 from artana_evidence_api.approval_store import HarnessApprovalRecord  # noqa: TC001
-from artana_evidence_api.proposal_store import HarnessProposalRecord  # noqa: TC001
+from artana_evidence_api.proposal_store import (
+    IDENTITY_PENDING_STATUS,
+    HarnessProposalRecord,  # noqa: TC001
+)
 from artana_evidence_api.review_item_store import (
     HarnessReviewItemRecord,  # noqa: TC001
 )
@@ -69,6 +72,12 @@ class HarnessReviewQueueItemResponse(BaseModel):
     evidence_grade: str | None
     evidence_bundle: list[JSONObject]
     source_provenance: ClaimSourceProvenance | None
+    #: What a parked proposal collided with: id, title, source document, status,
+    #: the shared fingerprint, and whether the counterpart arrived in the same
+    #: batch or was already stored.  Without it `resolve_as_duplicate` asks a
+    #: reviewer to judge two things the same when only one of them is on screen.
+    identity_collision: JSONObject | None = None
+    identity_adjudication: JSONObject | None = None
     decision_reason: str | None
     decided_at: str | None
     decided_by: ReviewActor | None
@@ -97,14 +106,14 @@ class HarnessReviewQueueItemResponse(BaseModel):
             source_kind=proposal.source_kind,
             source_key=proposal.source_key,
             linked_resource={"proposal_id": proposal.id},
-            available_actions=(
-                ["promote", "reject"] if proposal.status == "pending_review" else []
-            ),
+            available_actions=_proposal_available_actions(proposal),
             payload=proposal.payload,
             metadata=proposal.metadata,
             evidence_grade=proposal.evidence_grade,
             evidence_bundle=proposal.evidence_bundle,
             source_provenance=proposal.source_provenance,
+            identity_collision=proposal.identity_collision,
+            identity_adjudication=proposal.identity_adjudication,
             decision_reason=proposal.decision_reason,
             decided_at=serialize_optional_timestamp(proposal.decided_at),
             decided_by=proposal.decided_by,
@@ -289,6 +298,23 @@ def _linked_resource_for_review_item(
     return linked_resource or None
 
 
+#: What a reviewer can do about a parked proposal's unadjudicated identity.
+#:
+#: A parked item used to report no actions at all, which said the record was
+#: unactionable when it was really unreachable: it is a second independent
+#: observation (ART-DATA-001) that nobody had been given a way to judge.
+PARKED_PROPOSAL_ACTIONS = ("resolve_as_duplicate", "release_as_distinct")
+PENDING_PROPOSAL_ACTIONS = ("promote", "reject")
+
+
+def _proposal_available_actions(proposal: HarnessProposalRecord) -> list[str]:
+    if proposal.status == "pending_review":
+        return list(PENDING_PROPOSAL_ACTIONS)
+    if proposal.status == IDENTITY_PENDING_STATUS:
+        return list(PARKED_PROPOSAL_ACTIONS)
+    return []
+
+
 def _review_item_can_convert_to_proposal(
     review_item: HarnessReviewItemRecord,
 ) -> bool:
@@ -309,6 +335,8 @@ def _review_item_available_actions(
 
 
 __all__ = [
+    "PARKED_PROPOSAL_ACTIONS",
+    "PENDING_PROPOSAL_ACTIONS",
     "HarnessReviewQueueActionRequest",
     "HarnessReviewQueueBulkDecisionItem",
     "HarnessReviewQueueBulkDecisionRequest",
