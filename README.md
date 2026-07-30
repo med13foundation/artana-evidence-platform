@@ -334,8 +334,11 @@ The measurement plan behind this table is
 
 ## Known Gaps And Intended Integrations
 
-Nothing in this section is a current capability. These are the things standing
-between the code and the architecture above.
+This section is the distance between the code and the architecture above: what
+is missing, and which part of a partly-built thing is missing. Where something
+does work today the entry says so explicitly rather than being omitted — the
+ontology entry below is the case that matters, because MONDO ingestion runs and
+only the governance layer around it does not.
 
 ### Where the invariants do not hold yet
 
@@ -581,8 +584,10 @@ and endpoint index, as the integration surface.
 The Evidence API currently publishes OpenAPI only. TypeScript clients should
 generate from `services/artana_evidence_api/openapi.json`; the checked-in
 TypeScript artifact is specific to the graph service. If dedicated product,
-SDK, notebook, or domain-adapter repositories are created,
+SDK, or notebook repositories are created,
 link them here as client projects rather than adding them to this repository.
+Source and authority adapters are not clients and do not belong on that list:
+they are Evidence API code, as the opening section says.
 
 The public Evidence API surface is `/v2`; `/v1` remains only as a compatibility
 layer while the cutover finishes. See

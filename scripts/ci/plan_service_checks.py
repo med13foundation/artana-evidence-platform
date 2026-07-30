@@ -14,6 +14,10 @@ REPO_CONTROL_FILES = {
     "pytest.ini",
     "scripts/run_qa_report.sh",
     "tests/unit/test_control_files.py",
+    # Pins README claims to the code they depend on, so the normal way to change
+    # one -- editing README.md and its pin together -- planned every gate false
+    # and ran the assertions nowhere.
+    "tests/unit/test_governance_invariants.py",
     "tests/unit/test_coverage_enforcement_contract.py",
     "tests/unit/test_makefile_type_gate_contract.py",
     "tests/unit/test_agent_output_boundary_validator.py",

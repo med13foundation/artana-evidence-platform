@@ -266,6 +266,16 @@ def test_database_label_distinguishes_deployments() -> None:
     for part in ("db", "6543", "graph_a"):
         assert part in query_form, f"{part!r} missing from {query_form!r}"
 
+    # A libpq service name is a third mechanism: the endpoint lives in
+    # pg_service.conf, so no host or database appears in the URL and two
+    # service-backed deployments would otherwise be indistinguishable.
+    service_label = label("postgresql+psycopg2:///?service=graph_prod")
+    assert "graph_prod" in service_label, (
+        f"a service-backed URL carries its identity only in the service name, "
+        f"which is missing from {service_label!r}"
+    )
+    assert service_label != label("postgresql+psycopg2:///?service=graph_stage")
+
 
 def test_zero_report_does_not_claim_an_empty_graph() -> None:
     """A zero here covers two categories, not the whole graph.

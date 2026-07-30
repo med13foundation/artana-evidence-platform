@@ -258,6 +258,18 @@ def _safe_database_label(database_url: str) -> str:
     port = f":{raw_port}" if raw_port else ""
     database = _identity(url.database, "dbname", "database") or "<no database>"
 
+    # A libpq service name is a third mechanism, not a fourth field: the real
+    # host, port and database live in pg_service.conf and never appear in the
+    # URL at all, so the lookups above legitimately find nothing and two
+    # service-backed deployments would render identically. The service name is
+    # not a secret -- it is a key into a config file -- so it is safe to show,
+    # and it is the only endpoint identity such a URL carries.
+    service_name = _from_query("service")
+    if service_name and host == "<no host>" and database == "<no database>":
+        endpoint = f"service={service_name}"
+    else:
+        endpoint = f"{host}{port}/{database}"
+
     # Two graph deployments can share one database and differ only by
     # GRAPH_DB_SCHEMA, which README.md documents as a supported shape. The ORM
     # models qualify their tables with the resolved schema at import time, so
@@ -268,7 +280,7 @@ def _safe_database_label(database_url: str) -> str:
     from artana_evidence_db.schema_support import resolve_graph_db_schema
 
     schema = resolve_graph_db_schema()
-    return f"{host}{port}/{database}#{schema}"
+    return f"{endpoint}#{schema}"
 
 
 def _render(
