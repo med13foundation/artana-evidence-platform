@@ -46,6 +46,11 @@ import os
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlalchemy import ColumnElement
+    from sqlalchemy.orm import Session
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 for _path in (REPO_ROOT, REPO_ROOT / "services"):
@@ -74,7 +79,7 @@ class InvariantMeasurement:
         return self.count / self.total
 
 
-def _measure(session: object, space_id: str | None) -> list[InvariantMeasurement]:
+def _measure(session: Session, space_id: str | None) -> list[InvariantMeasurement]:
     """Return every invariant measurement for one database session."""
 
     from artana_evidence_db.kernel_claim_models import ClaimEvidenceModel
@@ -96,7 +101,7 @@ def _measure(session: object, space_id: str | None) -> list[InvariantMeasurement
         total_relations_stmt = total_relations_stmt.where(
             RelationModel.research_space_id == space_id,
         )
-    total_relations = int(session.scalar(total_relations_stmt) or 0)  # type: ignore[attr-defined]
+    total_relations = int(session.scalar(total_relations_stmt) or 0)
 
     measurements.append(
         InvariantMeasurement(
@@ -119,7 +124,7 @@ def _measure(session: object, space_id: str | None) -> list[InvariantMeasurement
     # than reporting nothing.
     from artana_evidence_db.kernel_claim_models import RelationClaimModel
 
-    def _evidence_count(*conditions: object) -> int:
+    def _evidence_count(*conditions: ColumnElement[bool]) -> int:
         stmt = select(func.count(ClaimEvidenceModel.id))
         for condition in conditions:
             stmt = stmt.where(condition)
@@ -128,7 +133,7 @@ def _measure(session: object, space_id: str | None) -> list[InvariantMeasurement
                 RelationClaimModel,
                 RelationClaimModel.id == ClaimEvidenceModel.claim_id,
             ).where(RelationClaimModel.research_space_id == space_id)
-        return int(session.scalar(stmt) or 0)  # type: ignore[attr-defined]
+        return int(session.scalar(stmt) or 0)
 
     unverified_evidence = _evidence_count(
         ClaimEvidenceModel.provenance_status == "LEGACY_UNVERIFIED",
@@ -172,7 +177,7 @@ def _measure(session: object, space_id: str | None) -> list[InvariantMeasurement
     return measurements
 
 
-def _apply_measurement_rls_context(session: object) -> None:
+def _apply_measurement_rls_context(session: Session) -> None:
     """Set the RLS session settings this read-only measurement needs.
 
     ``artana_evidence_db.database.set_session_rls_context`` is the canonical
@@ -199,7 +204,7 @@ def _apply_measurement_rls_context(session: object) -> None:
         ("app.is_admin", "true"),
         ("app.bypass_rls", "true"),
     ):
-        session.execute(  # type: ignore[attr-defined]
+        session.execute(
             text("SELECT set_config(:setting, :value, false)"),
             {"setting": setting, "value": value},
         )
@@ -238,7 +243,18 @@ def _safe_database_label(database_url: str) -> str:
     host = url.host or _from_query("host") or "<no host>"
     raw_port = url.port or _from_query("port")
     port = f":{raw_port}" if raw_port else ""
-    return f"{host}{port}/{url.database or '<no database>'}"
+
+    # Two graph deployments can share one database and differ only by
+    # GRAPH_DB_SCHEMA, which README.md documents as a supported shape. The ORM
+    # models qualify their tables with the resolved schema at import time, so
+    # the counts are already correct for whichever schema is configured -- but
+    # without it here, two datasets render identically and a report can be
+    # attached to the wrong one. schema_support does not resolve service
+    # settings, so importing it is safe in every environment.
+    from artana_evidence_db.schema_support import resolve_graph_db_schema
+
+    schema = resolve_graph_db_schema()
+    return f"{host}{port}/{url.database or '<no database>'}#{schema}"
 
 
 def _render(

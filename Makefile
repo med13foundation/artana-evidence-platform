@@ -58,6 +58,7 @@ GRAPH_SERVICE_LINT_PATHS := \
 	 services/artana_evidence_db/routers/entities.py \
 	 services/artana_evidence_db/routers/relations.py \
 	 scripts/export_graph_openapi.py \
+	 scripts/measure_governance_invariants.py \
 	 tests/e2e/graph_service/test_user_flows.py
 
 # Contract exports import the service package to read its live schema. Without
@@ -328,6 +329,7 @@ graph-service-type-check: ## Run mypy on graph service paths
 	$(call check_venv)
 	cd services && $(USE_PYTHON_ABS) -m mypy -p artana_evidence_db --exclude '$(GRAPH_SERVICE_TYPE_EXCLUDE)' --no-warn-unused-configs $(GRAPH_SERVICE_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/export_graph_openapi.py --no-warn-unused-configs $(GRAPH_SERVICE_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/measure_governance_invariants.py --no-warn-unused-configs $(GRAPH_SERVICE_STRICT_IMPORT_MYPY_FLAGS)
 
 graph-service-type-check-strict-imports: ## Exploratory graph mypy check without skipped imports
 	$(call check_venv)

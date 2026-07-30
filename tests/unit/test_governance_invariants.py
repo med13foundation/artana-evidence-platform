@@ -190,3 +190,94 @@ def test_readme_scoping_claim_matches_the_registry_that_computes_identity() -> N
         f"README.md treats it as scoping={readme_uses_tissue_as_scoping}. The "
         f"registry is what canonicalisation reads, so it wins."
     )
+
+
+# ---------------------------------------------------------------------------
+# Execution tests for scripts/measure_governance_invariants.py
+#
+# The tests above read files. These import and run the measurement script's
+# pure logic, because the script had no coverage at all: a pull request
+# touching only it planned every gate false, and the Makefile lint and type
+# lists did not mention it either. Governance reporting could regress with no
+# CI signal whatsoever, which is the same hole this module exists to close.
+#
+# The database-backed paths are not exercised here -- that needs a live graph
+# schema and belongs in the service suites. What is covered is everything that
+# decides whether a report can be trusted: credential redaction, deployment
+# identity, and the wording of the zero-data conclusion.
+# ---------------------------------------------------------------------------
+
+
+def _measurement_module() -> object:
+    import importlib
+    import sys
+
+    for path in (str(REPO_ROOT), str(REPO_ROOT / "services")):
+        if path not in sys.path:
+            sys.path.insert(0, path)
+    return importlib.import_module("scripts.measure_governance_invariants")
+
+
+def test_database_label_never_emits_a_credential() -> None:
+    """Credentials must not reach a report attached to a readiness decision.
+
+    Splitting on ``@`` missed the query-parameter form entirely, which is a
+    valid URL shape with no ``@`` in it at all.
+    """
+
+    label = _measurement_module()._safe_database_label
+
+    secretive = "postgresql+psycopg2:///graph?host=db&user=operator&password=hunter2"
+    rendered = label(secretive)
+    for secret in ("hunter2", "password", "operator"):
+        assert secret not in rendered, f"{secret!r} leaked into {rendered!r}"
+
+    userinfo = label("postgresql+psycopg2://someone:hunter2@prod-host:5432/artana")
+    assert "hunter2" not in userinfo
+    assert "prod-host:5432/artana" in userinfo
+
+
+def test_database_label_distinguishes_deployments() -> None:
+    """Host, port and schema all have to appear, wherever the URL carries them.
+
+    Port and host can both live in the query string, and two graph deployments
+    can share a database and differ only by schema. Any of those collapsing
+    makes two datasets render identically.
+    """
+
+    label = _measurement_module()._safe_database_label
+
+    assert "db:6543" in label("postgresql+psycopg2:///graph?host=db&port=6543")
+    assert "#" in label("postgresql://localhost:5432/artana"), (
+        "the resolved graph schema must appear, or two deployments sharing one "
+        "database are indistinguishable in the report"
+    )
+
+
+def test_zero_report_does_not_claim_an_empty_graph() -> None:
+    """A zero here covers two categories, not the whole graph.
+
+    Entities, and claims carrying neither evidence nor a materialized relation,
+    are ordinary states this script never counts. Reporting "no graph data"
+    would let an attachment conceal governed records.
+    """
+
+    module = _measurement_module()
+    empty = [
+        module.InvariantMeasurement(
+            key="orphan_relations",
+            invariant="3",
+            question="q",
+            count=0,
+            total=0,
+            detail="d",
+        ),
+    ]
+
+    global_report = module._render(empty, "host/db#graph_runtime", None)
+    assert "no canonical relations and no claim evidence" in global_report
+    assert "not the same as holding no graph data" in global_report
+
+    scoped_report = module._render(empty, "host/db#graph_runtime", "space-1")
+    assert "space-1" in scoped_report, "a scoped run must name its space"
+    assert "re-run without --space" in scoped_report
