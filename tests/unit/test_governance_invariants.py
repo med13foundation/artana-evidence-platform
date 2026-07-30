@@ -247,11 +247,24 @@ def test_database_label_distinguishes_deployments() -> None:
 
     label = _measurement_module()._safe_database_label
 
-    assert "db:6543" in label("postgresql+psycopg2:///graph?host=db&port=6543")
     assert "#" in label("postgresql://localhost:5432/artana"), (
         "the resolved graph schema must appear, or two deployments sharing one "
         "database are indistinguishable in the report"
     )
+
+    # Host, port and database can each arrive in the authority or as a libpq
+    # query parameter. This function was corrected three times, once per field,
+    # because each was read from only one place -- so assert the query form and
+    # the authority form render the same identity rather than testing whichever
+    # field was most recently reported.
+    authority = label("postgresql+psycopg2://db:6543/graph_a")
+    query_form = label("postgresql+psycopg2:///?host=db&port=6543&dbname=graph_a")
+    assert authority == query_form, (
+        f"the same deployment renders differently depending on URL style: "
+        f"{authority!r} vs {query_form!r}"
+    )
+    for part in ("db", "6543", "graph_a"):
+        assert part in query_form, f"{part!r} missing from {query_form!r}"
 
 
 def test_zero_report_does_not_claim_an_empty_graph() -> None:

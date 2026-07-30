@@ -236,13 +236,27 @@ def _safe_database_label(database_url: str) -> str:
             return value[0] if value else None
         return value
 
-    # Both host and port can live in the query string rather than the authority
-    # (`postgresql+psycopg2:///graph?host=db&port=6543`). Reading only the
-    # authority made two instances on the same host and database name render
-    # identically, which is how a report gets attached to the wrong decision.
-    host = url.host or _from_query("host") or "<no host>"
-    raw_port = url.port or _from_query("port")
+    # Every part of the connection identity can arrive either in the URL
+    # authority or as a libpq query parameter, and this function has now been
+    # corrected three times -- once for host, once for port, once for dbname --
+    # because each was read from only one of the two places. So all three
+    # resolve the same way rather than being patched one at a time:
+    # `postgresql+psycopg2:///?host=db&port=6543&dbname=graph_a` has to render
+    # exactly like the equivalent authority form, or two deployments become
+    # indistinguishable in a report meant to be attached to a decision.
+    def _identity(authority: object, *query_keys: str) -> str | None:
+        if authority not in (None, ""):
+            return str(authority)
+        for key in query_keys:
+            resolved = _from_query(key)
+            if resolved:
+                return resolved
+        return None
+
+    host = _identity(url.host, "host") or "<no host>"
+    raw_port = _identity(url.port, "port")
     port = f":{raw_port}" if raw_port else ""
+    database = _identity(url.database, "dbname", "database") or "<no database>"
 
     # Two graph deployments can share one database and differ only by
     # GRAPH_DB_SCHEMA, which README.md documents as a supported shape. The ORM
@@ -254,7 +268,7 @@ def _safe_database_label(database_url: str) -> str:
     from artana_evidence_db.schema_support import resolve_graph_db_schema
 
     schema = resolve_graph_db_schema()
-    return f"{host}{port}/{url.database or '<no database>'}#{schema}"
+    return f"{host}{port}/{database}#{schema}"
 
 
 def _render(

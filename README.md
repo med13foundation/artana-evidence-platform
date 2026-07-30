@@ -30,9 +30,20 @@ authoritative for *why* the system is shaped this way.
 This repository is the backend home for that work: an Evidence API plus a
 governed graph/evidence service. It runs as an independent project with its own
 local setup, service contracts, migrations, tests, and operational checks, and
-it is intentionally backend-only. Product apps, notebooks, SDKs, domain
-adapters, and other clients integrate through the generated OpenAPI contracts
-instead of living here.
+it is intentionally backend-only. Product apps, notebooks, SDKs, and other
+clients integrate through the generated OpenAPI contracts instead of living
+here.
+
+"Backend-only" is about *clients*, not about integrations. Source and authority
+adapters belong in this repository and are owned by the Evidence API — the
+typed registry in
+[`source_adapters.py`](services/artana_evidence_api/source_adapters.py), the
+plugins under
+[`source_plugins/`](services/artana_evidence_api/source_plugins/registry.py),
+and service-local runtimes such as
+[`mondo_runtime.py`](services/artana_evidence_api/mondo_runtime.py). New
+source-integration work goes here. What lives elsewhere is anything that
+*consumes* the API.
 
 ### How to read this README
 
