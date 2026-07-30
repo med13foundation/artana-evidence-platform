@@ -688,7 +688,7 @@ From your activated project environment — `venv/` and `.venv/` are both
 supported layouts, so use whichever `make install-dev` created:
 
 ```bash
-python3 -m pytest tests/unit/test_control_files.py -q
+python3 -m pytest tests/unit/test_control_files.py tests/unit/test_governance_invariants.py -q
 ```
 
 **Never commit licence-restricted corpus text.** This repository is public and

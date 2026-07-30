@@ -6,7 +6,7 @@ from current behaviour.  Every one was caught by a human or another model readin
 prose against source.  That is not a control -- it is a person remembering.
 
 These tests are the control.  Each one binds a specific README sentence to the
-code fact it depends on, and each fails in *both* directions:
+code fact it depends on.  Most fail in *both* directions:
 
 * the code changes and the README is now wrong, or
 * the gap the README documents is closed and the README is now stale.
@@ -14,6 +14,11 @@ code fact it depends on, and each fails in *both* directions:
 The second direction matters as much as the first.  A README that keeps
 apologising for a limitation somebody already fixed teaches readers to discount
 it, and a discounted honesty section is worse than none.
+
+One test is deliberately one-directional, and says so in its own docstring: the
+orphan-relation caveat, where no static signal can prove the bad state
+unreachable.  Claiming bidirectionality there would be the same overreach these
+tests exist to catch.
 
 These are deliberately not data tests.  Whether a *stored* graph violates an
 invariant is a question about an environment, not about the tree, and it is
@@ -95,10 +100,16 @@ def test_readme_does_not_claim_formal_runs_use_the_formal_model() -> None:
         if re.search(r"\bformal_model\s*\(", path.read_text(encoding="utf-8")):
             production_callers.append(relative)
 
+    stale_claims = ("declared but unread", "no runtime path reads it")
+
     if production_callers:
-        assert "declared but unread" not in readme, (
+        # Both phrasings have to go, not just whichever one this test happened
+        # to name first. Leaving one behind is the same stale guarantee.
+        remaining = [phrase for phrase in stale_claims if phrase in readme]
+        assert not remaining, (
             f"formal_model() now has production callers ({production_callers}), "
-            f"so the README must stop describing [models.formal] as unread"
+            f"so the README must stop describing [models.formal] as unread. "
+            f"Still present: {remaining}"
         )
     else:
         assert "declared but unread" in readme or "no runtime path reads it" in readme, (
@@ -108,14 +119,27 @@ def test_readme_does_not_claim_formal_runs_use_the_formal_model() -> None:
         )
 
 
-def test_readme_documents_the_orphan_relation_gap_while_it_exists() -> None:
-    """Keep the projection-lineage caveat honest in both directions.
+def test_readme_documents_the_orphan_relation_gap_while_repair_ships() -> None:
+    """Require the lineage caveat while the tree ships machinery to repair it.
 
-    Invariant 3 says canonical relations are projections of the claim ledger.
-    The readiness service audits relations that have no lineage, which means the
-    system knows that state is reachable.  While that audit exists, the README
-    has to admit it; when the audit becomes unnecessary, the README should stop
-    hedging.
+    This one is deliberately one-directional, unlike the others in this module,
+    and it is worth saying why rather than quietly asserting less.
+
+    The tempting version keys on the orphan *audit* and flips both ways: audit
+    present means the README must caveat, audit absent means it must not.  Both
+    halves are unsound.  A monitoring call can be kept as defence in depth long
+    after every write path is lineage-safe, which would force the README to keep
+    claiming a reachable state that is not; and renaming the function would
+    licence deleting a caveat that is still true.  Presence of a probe is not
+    evidence of the condition it probes for.
+
+    So this asserts the weaker claim that actually holds: while the service
+    ships both detection *and* a repair operation for unbacked relations, the
+    tree is telling us it expects to find them, and the README may not claim
+    invariant 3 holds universally.  It does not assert the reverse, because no
+    static signal proves the state unreachable.  Whether unbacked relations
+    exist in a given environment is a data question, answered by
+    ``scripts/measure_governance_invariants.py`` against that database.
     """
 
     readme = _read("README.md")
@@ -123,19 +147,16 @@ def test_readme_documents_the_orphan_relation_gap_while_it_exists() -> None:
         "services/artana_evidence_db/claim_projection_readiness_service.py",
     )
 
-    audit_exists = "count_orphan_relations" in readiness
-    readme_admits = "no claim-backed lineage" in readme
+    detects = "count_orphan_relations" in readiness
+    repairs = "orphan" in readiness and "repair" in readiness.lower()
 
-    if audit_exists:
-        assert readme_admits, (
-            "claim_projection_readiness_service.py still audits relations with no "
-            "claim-backed lineage, so README.md must disclose that invariant 3 "
-            "does not hold for every stored relation"
-        )
-    else:
-        assert not readme_admits, (
-            "the orphan-relation audit is gone, so README.md should stop "
-            "documenting it as a live gap"
+    if detects and repairs:
+        assert "no claim-backed lineage" in readme, (
+            "claim_projection_readiness_service.py ships both detection and "
+            "repair for canonical relations with no claim-backed lineage, so "
+            "README.md may not present invariant 3 as holding for every stored "
+            "relation. Removing this caveat needs a measured argument from "
+            "scripts/measure_governance_invariants.py, not a doc edit."
         )
 
 

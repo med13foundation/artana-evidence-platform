@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure how far the graph is from the invariants the README commits to.
+"""Measure how far the stored graph is from three README invariant conditions.
 
 The README states four invariants and, since the July 30 audit, admits that each
 has known violations in the code.  Knowing a violation is *possible* says nothing
@@ -7,7 +7,19 @@ about whether it is *present*, and that difference decides whether each gap is a
 documentation note or a roadmap item.  This script answers that with counts
 rather than judgement.
 
-It is read-only.  Every query is a SELECT, and the session is never committed.
+**This is a partial report, deliberately.**  It measures three conditions: one
+for invariant 3 (relations with no claim lineage) and two for invariant 1
+(evidence with no typed provenance, evidence with no snapshot).  It does *not*
+yet measure evidence missing a locator or span, accepted claim-to-claim edges
+with no source grounding, manual observations without provenance, or anything
+for invariant 4.  A low report here is not a clean bill of health for the
+README's Known Gaps section, and must not be quoted as one.
+
+It is read-only.  Every query is a SELECT and the session is never committed,
+but it does set a graph RLS bypass on its own session, because a measurement
+that respects per-space row filtering would silently undercount exactly what it
+exists to find.  That is the "explicit system reason" AGENTS.md requires for
+touching ``app.bypass_rls``; nothing else in this script writes.
 
 Run against whatever database you want to characterise::
 
@@ -19,8 +31,11 @@ readiness decision instead of retyped into one.  ``--space`` narrows every count
 to a single research space.
 
 Exit status is 0 whenever the measurement itself succeeded.  A non-zero count is
-a finding, not a failure -- this reports, it does not gate.  The gate that keeps
-these numbers from growing lives in ``tests/unit/test_governance_invariants.py``.
+a finding, not a failure -- this reports, it does not gate.  Nothing in CI gates
+these numbers: ``tests/unit/test_governance_invariants.py`` compares README
+prose against source text and never opens a database, so stored violations can
+grow without any test failing.  Closing that requires running this script against
+a real environment on a schedule, which does not exist yet.
 """
 
 from __future__ import annotations
@@ -98,12 +113,27 @@ def _measure(session: object, space_id: str | None) -> list[InvariantMeasurement
         ),
     )
 
-    unverified_stmt = select(func.count(ClaimEvidenceModel.id)).where(
+    # Evidence rows carry no space of their own; they inherit it through the
+    # claim. Without this join a --space run reports every other space's
+    # violations against the one space the operator asked about, which is worse
+    # than reporting nothing.
+    from artana_evidence_db.kernel_claim_models import RelationClaimModel
+
+    def _evidence_count(*conditions: object) -> int:
+        stmt = select(func.count(ClaimEvidenceModel.id))
+        for condition in conditions:
+            stmt = stmt.where(condition)
+        if space_id is not None:
+            stmt = stmt.join(
+                RelationClaimModel,
+                RelationClaimModel.id == ClaimEvidenceModel.claim_id,
+            ).where(RelationClaimModel.research_space_id == space_id)
+        return int(session.scalar(stmt) or 0)  # type: ignore[attr-defined]
+
+    unverified_evidence = _evidence_count(
         ClaimEvidenceModel.provenance_status == "LEGACY_UNVERIFIED",
     )
-    total_evidence_stmt = select(func.count(ClaimEvidenceModel.id))
-    unverified_evidence = int(session.scalar(unverified_stmt) or 0)  # type: ignore[attr-defined]
-    total_evidence = int(session.scalar(total_evidence_stmt) or 0)  # type: ignore[attr-defined]
+    total_evidence = _evidence_count()
 
     measurements.append(
         InvariantMeasurement(
@@ -120,10 +150,9 @@ def _measure(session: object, space_id: str | None) -> list[InvariantMeasurement
         ),
     )
 
-    unbound_stmt = select(func.count(ClaimEvidenceModel.id)).where(
+    unbound_evidence = _evidence_count(
         ClaimEvidenceModel.source_snapshot_id.is_(None),
     )
-    unbound_evidence = int(session.scalar(unbound_stmt) or 0)  # type: ignore[attr-defined]
 
     measurements.append(
         InvariantMeasurement(
@@ -198,12 +227,19 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
+    from artana_evidence_db.database import set_session_rls_context
     from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
 
     engine = create_engine(database_url)
     try:
         with Session(engine) as session:
+            # Graph tables are FORCE ROW LEVEL SECURITY. A session with no
+            # app.* settings sees zero rows under the normal service role, so
+            # without this a populated production database reports as empty and
+            # the report reads as a clean bill of health. Read-only bypass for a
+            # cross-space count is the justified system use AGENTS.md allows.
+            set_session_rls_context(session, is_admin=True, bypass_rls=True)
             measurements = _measure(session, args.space)
     finally:
         engine.dispose()
