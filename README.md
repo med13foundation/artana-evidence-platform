@@ -368,9 +368,10 @@ between the code and the architecture above.
 ### Intended integrations
 
 Artana is designed to consume domain-specific scientific systems without handing
-them governance authority. **No production adapter for any of them exists
-today.** They are recorded here because they define the intended boundary, and
-the invariant that boundary has to satisfy:
+them governance authority. **INDRA and DisMech have no production adapter
+today**; ontology authorities are partly built, and the entry below says which
+part. They are recorded here because they define the intended boundary, and the
+invariant that boundary has to satisfy:
 
 > Imported or machine-produced output keeps its native provenance and stays
 > distinct from Artana-reviewed knowledge until governed promotion occurs.
@@ -397,8 +398,13 @@ externally curated  ≠  imported  ≠  reviewed in this space  ≠  promoted
 - **Ontology authorities** — MONDO, HGNC, HPO, GO, UniProt contribute
   identifiers, labels, aliases, and hierarchy. They answer *what concept is
   this?* They do not answer *does this source support this claim?*, and an
-  ontology identifier alone is never evidence. Identifier-level ingestion works;
-  the governed authority layer around it does not yet.
+  ontology identifier alone is never evidence. Unlike the two above, this one is
+  partly built: MONDO has a working fetch, parse, and ingestion runtime
+  ([mondo_runtime.py](services/artana_evidence_api/mondo_runtime.py)) that pulls
+  a release over HTTP, and MONDO and HGNC are registered authority plugins. What
+  is missing is the governance layer around that ingestion — uniform identifier
+  normalization, release lineage, hierarchy materialization, and the
+  concept-to-entity identity contract, all listed under Identity gaps above.
 
 ## Repository Layout
 
@@ -515,7 +521,7 @@ user and key first with `POST /v2/auth/bootstrap` (see
 `X-Artana-Key` header:
 
 ```bash
-curl -H "X-Artana-Key: $ARTANA_EVIDENCE_API_KEY" http://127.0.0.1:8091/v2/sources
+curl -H "X-Artana-Key: $ARTANA_API_KEY" http://127.0.0.1:8091/v2/sources
 ```
 
 Without that header the request returns 401, not the registry.
@@ -621,8 +627,11 @@ change is planned as `docs_only`, which switches off the repo-control job — so
 the tests that pin exact strings in this file do not run in CI for the change
 that breaks them. They surface later on somebody else's unrelated PR.
 
+From your activated project environment — `venv/` and `.venv/` are both
+supported layouts, so use whichever `make install-dev` created:
+
 ```bash
-venv/bin/python3 -m pytest tests/unit/test_control_files.py -q
+python3 -m pytest tests/unit/test_control_files.py -q
 ```
 
 **Never commit licence-restricted corpus text.** This repository is public and
