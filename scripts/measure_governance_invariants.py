@@ -172,6 +172,34 @@ def _measure(session: object, space_id: str | None) -> list[InvariantMeasurement
     return measurements
 
 
+def _safe_database_label(database_url: str) -> str:
+    """Return a host/database label that cannot carry a credential.
+
+    Splitting on ``@`` treats userinfo as the only place a secret can hide.  It
+    is not: ``postgresql+psycopg2:///graph?host=db&user=x&password=secret`` is a
+    valid URL with no ``@`` at all, and that form would have printed the
+    password into both the report and the JSON an operator attaches to a
+    readiness decision.  So this allowlists two fields instead of trying to
+    strip the dangerous ones, because a strip has to be right every time and an
+    allowlist only has to be right once.
+    """
+
+    from sqlalchemy.engine import make_url
+    from sqlalchemy.exc import ArgumentError
+
+    try:
+        url = make_url(database_url)
+    except ArgumentError:
+        return "<unparseable database url>"
+
+    query_host = url.query.get("host")
+    if isinstance(query_host, tuple):
+        query_host = query_host[0] if query_host else None
+    host = url.host or query_host or "<no host>"
+    port = f":{url.port}" if url.port else ""
+    return f"{host}{port}/{url.database or '<no database>'}"
+
+
 def _render(measurements: list[InvariantMeasurement], database_label: str) -> str:
     """Return the human-readable report."""
 
@@ -227,13 +255,28 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
+    # artana_evidence_db.database resolves graph settings at import time and
+    # hard-requires GRAPH_DATABASE_URL, so the documented DATABASE_URL fallback
+    # died on the import below rather than on a connection. Whichever variable
+    # the operator supplied is the database they meant; make it the graph one.
+    os.environ["GRAPH_DATABASE_URL"] = database_url
+
     from artana_evidence_db.database import set_session_rls_context
-    from sqlalchemy import create_engine
+    from sqlalchemy import create_engine, text
     from sqlalchemy.orm import Session
 
     engine = create_engine(database_url)
     try:
         with Session(engine) as session:
+            # Every count has to describe one database state. Under the default
+            # READ COMMITTED each SELECT takes a fresh snapshot, so a numerator
+            # and its total can straddle concurrent writes and report a share
+            # above 100%. One read-only REPEATABLE READ transaction instead.
+            session.execute(
+                text(
+                    "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
+                ),
+            )
             # Graph tables are FORCE ROW LEVEL SECURITY. A session with no
             # app.* settings sees zero rows under the normal service role, so
             # without this a populated production database reports as empty and
@@ -244,7 +287,7 @@ def main(argv: list[str] | None = None) -> int:
     finally:
         engine.dispose()
 
-    safe_label = database_url.rsplit("@", maxsplit=1)[-1]
+    safe_label = _safe_database_label(database_url)
     if args.json:
         print(
             json.dumps(
