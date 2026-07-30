@@ -134,13 +134,14 @@ claims that are resolved, persistable, properly grounded, permitted by an exact
 relation constraint, and backed by eligible source evidence can materialize one.
 
 **Scoping qualifiers change canonical identity.** "A activates B in humans" and
-"A activates B in mice" are distinct governed propositions, as are two claims
-that differ by tissue. Descriptive qualifiers — effect size, p-value, sample
-size — do not split a relation. The fingerprint also folds in `CONTEXT`
-participant anchors and ordered participant sets, so identity is not qualifiers
-alone. Which qualifiers scope is scientific policy: see
-[`qualifier_registry.py`](services/artana_evidence_db/qualifier_registry.py),
-and read the qualifier caveat under Known Gaps before relying on it.
+"A activates B in mice" are intended to be distinct governed propositions, as
+are two claims that differ by tissue. Descriptive qualifiers — effect size,
+p-value, sample size — do not split a relation. The fingerprint also folds in
+`CONTEXT` participant anchors and ordered participant sets, so identity is not
+qualifiers alone. Which qualifiers scope is scientific policy: see
+[`qualifier_registry.py`](services/artana_evidence_db/qualifier_registry.py).
+Two caveats under Known Gaps qualify how far this holds today — the builtin
+sets disagree, and same-key values collapse across participants.
 
 **Observations** exist so that not every measurement is forced into a relation:
 subject, variable, typed value, unit, time, and provenance. Numbers, dates,
@@ -215,8 +216,10 @@ convention:
   principal must match the declared one, be trusted by space policy, carry a
   current input hash, stay inside the allowed risk tier and operating mode, and
   clear DB-computed policy thresholds.
-- **Rejected machine actions are retained.** Denied attempts are persisted for
-  audit before the error returns.
+- **Policy-rejected machine actions are retained.** An AI decision denied on
+  policy grounds is committed for audit before the error returns. This does not
+  extend to every denial: quarantine and validation failures roll the
+  transaction back, so those attempts leave no durable record. See Known Gaps.
 - **Confidence is computed, not self-reported.** Callers submit a qualitative
   `FactAssessment`; the graph service derives a deterministic governance weight.
   That number is not presented as a scientific probability.
@@ -257,7 +260,7 @@ above.
 - **AI-authored promotion is quarantined, deliberately.** Promotion of an
   agent-authored qualified claim returns HTTP 409
   `qualified_claim_persistence_not_ready`
-  ([proposal_actions.py:843](services/artana_evidence_api/proposal_actions.py:843),
+  ([proposal_actions.py:843](services/artana_evidence_api/proposal_actions.py#L843),
   enforced graph-side by
   [ai_persistence_quarantine.py](services/artana_evidence_db/validation/ai_persistence_quarantine.py)).
   The graph contract cannot yet persist a complete `ClaimFrame` without loss, so
@@ -282,9 +285,12 @@ The measurement plan behind this table is
 - **Trust ladder** — extracted candidates are tiered by hard floors the service
   computes; callers cannot self-declare a higher tier
   ([trust_ladder.py](services/artana_evidence_api/document_extraction_support/trust_ladder.py)).
-- **Reproducible model attempts** — every attempt records a request digest, the
-  formal-run model is named explicitly in `artana.toml`, and the two
-  environment bypasses of configured model selection are closed.
+- **Reproducible extraction attempts** — every model attempt on the
+  document-extraction path records a request digest
+  ([attempt_audit.py](services/artana_evidence_api/document_extraction_support/llm_extraction/attempt_audit.py)),
+  and two environment bypasses of configured model selection are closed. The
+  digest does not yet extend to the evidence-selection attempt ledger, and
+  `[models.formal]` is declared but unread — see Known Gaps.
 - **Measured noise floor** — replaying a sealed prompt byte-identically 20×
   per case reproduces the complete panel verdict **42.5%** of the time
   ([report](docs/validation/reports/2026-07-25-staged-generalization-v17-noise-floor.md)).
@@ -325,12 +331,34 @@ between the code and the architecture above.
   marks four and omits `tissue`, while carrying a `polarity` entry the registry
   does not define. Treat the registry as authoritative for what splits a
   relation until these are reconciled.
+- **Scoping values collapse across participants.** The fingerprint builder
+  merges each participant's qualifiers into one flat mapping, so when two
+  participants carry the same scoping key the last one wins. A claim whose
+  subject and object differ in `tissue` fingerprints identically to one where
+  only the object's value is set, which can merge canonical relations that the
+  scoping rule is supposed to keep apart. Scoping values need to be keyed by
+  participant before the tissue guarantee above holds in the general case.
 
 ### Measurement and reproducibility limits
 
-- **The formal model is named but not snapshot-pinned.** No dated snapshot is
-  published for it, so an alias can move underneath a run. Recorded in
-  `artana.toml` under `[models.formal]` rather than papered over.
+- **Formal runs do not use the formal model.** `[models.formal]` is declared in
+  `artana.toml`, but no production code path reads it — the only callers of
+  `ArtanaModelRegistry.formal_model()` are tests. Extraction and the claim
+  verification loop resolve `default_evidence_extraction` instead, so changing
+  a default *does* move formal traffic, and the `ARTANA_CLAIM_*_MODEL`
+  variables can still redirect verification even with runtime overrides
+  disabled. Until the formal profile is wired in, do not attribute a sealed
+  result to the model named there.
+- **The formal model is also not snapshot-pinned.** No dated snapshot is
+  published for it, so an alias can move underneath a run even once it is wired
+  in. Recorded in `artana.toml` rather than papered over.
+- **Request digests cover one path.** Document-extraction model attempts record
+  a request digest; the evidence-selection attempt ledger
+  (`SemanticModelAttemptContext`, `SemanticRuntimeModelAttempt`) does not, so
+  those attempts cannot be compared or replayed the same way.
+- **Not every denied machine action leaves a record.** Policy rejections are
+  committed before the error returns, but quarantine and validation failures
+  roll back, so no durable attempt record survives those paths.
 - **Extraction accuracy is an input, not the headline.** Progress is reported as
   traceability, identity correctness, qualifier preservation, review
   throughput, and disagreement surfaced.
@@ -437,11 +465,15 @@ curl http://127.0.0.1:8091/health
 ```
 
 Model and runtime defaults load from
-[`services/artana_evidence_api/artana.toml`](services/artana_evidence_api/artana.toml).
-Runtime model overrides are disabled by default, and formal runs — evaluation,
-verification feeding a trust decision, and any extraction eligible for graph
-promotion — name their model under `[models.formal]` so a change to the
-defaults cannot silently move what a sealed result was produced with.
+[`services/artana_evidence_api/artana.toml`](services/artana_evidence_api/artana.toml),
+and `allow_runtime_model_overrides` is `false` by default.
+
+What actually selects the model today: extraction resolves
+`default_evidence_extraction` through the registry's capability lookup and
+passes it down as the default for claim framing, verification, repair, and
+reverification. `[models.formal]` declares the model that formal runs are
+*meant* to name, but no runtime path reads it — see Known Gaps before
+attributing a sealed result to it.
 
 ## Client Integration
 
@@ -476,11 +508,17 @@ it does not automatically promote graph facts.
 
 Sources are plugin-owned and registered explicitly
 ([registry.py](services/artana_evidence_api/source_plugins/registry.py)). Ask
-the running service for the current set rather than trusting a list in prose:
+the running service for the current set rather than trusting a list in prose.
+`/v2/sources` requires read access like the rest of `/v2`, so create a local
+user and key first with `POST /v2/auth/bootstrap` (see
+[Getting Started](docs/user-guide/01-getting-started.md)), then pass it in the
+`X-Artana-Key` header:
 
 ```bash
-curl http://127.0.0.1:8091/v2/sources
+curl -H "X-Artana-Key: $ARTANA_EVIDENCE_API_KEY" http://127.0.0.1:8091/v2/sources
 ```
+
+Without that header the request returns 401, not the registry.
 
 At the status date above, direct search is enabled for PubMed, MARRVEL,
 Monarch, ClinVar, DrugBank, DrugMechDB, AlphaFold, gnomAD, UniProt,
