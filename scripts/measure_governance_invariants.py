@@ -1,0 +1,229 @@
+#!/usr/bin/env python3
+"""Measure how far the graph is from the invariants the README commits to.
+
+The README states four invariants and, since the July 30 audit, admits that each
+has known violations in the code.  Knowing a violation is *possible* says nothing
+about whether it is *present*, and that difference decides whether each gap is a
+documentation note or a roadmap item.  This script answers that with counts
+rather than judgement.
+
+It is read-only.  Every query is a SELECT, and the session is never committed.
+
+Run against whatever database you want to characterise::
+
+    GRAPH_DATABASE_URL=postgresql+psycopg2://... \\
+      python3 scripts/measure_governance_invariants.py
+
+``--json`` emits a machine-readable record so a run can be attached to a
+readiness decision instead of retyped into one.  ``--space`` narrows every count
+to a single research space.
+
+Exit status is 0 whenever the measurement itself succeeded.  A non-zero count is
+a finding, not a failure -- this reports, it does not gate.  The gate that keeps
+these numbers from growing lives in ``tests/unit/test_governance_invariants.py``.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from dataclasses import asdict, dataclass
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+for _path in (REPO_ROOT, REPO_ROOT / "services"):
+    _resolved = str(_path)
+    if _resolved not in sys.path:
+        sys.path.insert(0, _resolved)
+
+
+@dataclass(frozen=True, slots=True)
+class InvariantMeasurement:
+    """One measured distance between a README invariant and the stored graph."""
+
+    key: str
+    invariant: str
+    question: str
+    count: int
+    total: int
+    detail: str
+
+    @property
+    def share(self) -> float:
+        """Return the affected fraction, or 0.0 when nothing is stored yet."""
+
+        if self.total <= 0:
+            return 0.0
+        return self.count / self.total
+
+
+def _measure(session: object, space_id: str | None) -> list[InvariantMeasurement]:
+    """Return every invariant measurement for one database session."""
+
+    from artana_evidence_db.kernel_claim_models import ClaimEvidenceModel
+    from artana_evidence_db.relation_projection_source_repository import (
+        SqlAlchemyKernelRelationProjectionSourceRepository,
+    )
+    from sqlalchemy import func, select
+
+    measurements: list[InvariantMeasurement] = []
+
+    projection_repository = SqlAlchemyKernelRelationProjectionSourceRepository(session)
+    orphan_relations = projection_repository.count_orphan_relations(
+        research_space_id=space_id,
+    )
+    from artana_evidence_db.kernel_relation_models import RelationModel
+
+    total_relations_stmt = select(func.count(RelationModel.id))
+    if space_id is not None:
+        total_relations_stmt = total_relations_stmt.where(
+            RelationModel.research_space_id == space_id,
+        )
+    total_relations = int(session.scalar(total_relations_stmt) or 0)  # type: ignore[attr-defined]
+
+    measurements.append(
+        InvariantMeasurement(
+            key="orphan_relations",
+            invariant="3 -- canonical relations are rebuildable projections",
+            question="How many canonical relations have no claim-backed lineage?",
+            count=orphan_relations,
+            total=total_relations,
+            detail=(
+                "A relation with no row in relation_projection_sources cannot be "
+                "re-derived from the ledger, so dropping and rebuilding would "
+                "lose it."
+            ),
+        ),
+    )
+
+    unverified_stmt = select(func.count(ClaimEvidenceModel.id)).where(
+        ClaimEvidenceModel.provenance_status == "LEGACY_UNVERIFIED",
+    )
+    total_evidence_stmt = select(func.count(ClaimEvidenceModel.id))
+    unverified_evidence = int(session.scalar(unverified_stmt) or 0)  # type: ignore[attr-defined]
+    total_evidence = int(session.scalar(total_evidence_stmt) or 0)  # type: ignore[attr-defined]
+
+    measurements.append(
+        InvariantMeasurement(
+            key="legacy_unverified_evidence",
+            invariant="1 -- sources and evidence remain preserved",
+            question="How much stored evidence carries no typed provenance?",
+            count=unverified_evidence,
+            total=total_evidence,
+            detail=(
+                "LEGACY_UNVERIFIED is the model default, so this counts rows "
+                "written before typed provenance as well as any written without "
+                "it since."
+            ),
+        ),
+    )
+
+    unbound_stmt = select(func.count(ClaimEvidenceModel.id)).where(
+        ClaimEvidenceModel.source_snapshot_id.is_(None),
+    )
+    unbound_evidence = int(session.scalar(unbound_stmt) or 0)  # type: ignore[attr-defined]
+
+    measurements.append(
+        InvariantMeasurement(
+            key="evidence_without_snapshot",
+            invariant="1 -- sources and evidence remain preserved",
+            question="How much evidence has no verified source snapshot?",
+            count=unbound_evidence,
+            total=total_evidence,
+            detail=(
+                "Without a snapshot there is no custody of what the source said "
+                "at the time the claim was made, so the claim cannot be defended "
+                "once the source moves."
+            ),
+        ),
+    )
+
+    return measurements
+
+
+def _render(measurements: list[InvariantMeasurement], database_label: str) -> str:
+    """Return the human-readable report."""
+
+    lines = [
+        "Governance invariant measurement",
+        f"  database: {database_label}",
+        "",
+    ]
+    for measurement in measurements:
+        share = f"{measurement.share * 100:.1f}%" if measurement.total else "n/a"
+        lines.append(f"[{measurement.key}]")
+        lines.append(f"  invariant: {measurement.invariant}")
+        lines.append(f"  {measurement.question}")
+        lines.append(
+            f"  affected: {measurement.count} of {measurement.total} ({share})",
+        )
+        lines.append(f"  why it matters: {measurement.detail}")
+        lines.append("")
+
+    if all(measurement.total == 0 for measurement in measurements):
+        lines.append(
+            "Every total is zero. This database holds no graph data, so the run "
+            "proves the queries execute and nothing else. Point it at a "
+            "populated environment before drawing a conclusion.",
+        )
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Measure invariant distance and report it."""
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--space",
+        default=None,
+        help="Restrict every count to one research space id.",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit a machine-readable record instead of the report.",
+    )
+    args = parser.parse_args(argv)
+
+    database_url = os.environ.get("GRAPH_DATABASE_URL") or os.environ.get(
+        "DATABASE_URL",
+    )
+    if not database_url:
+        print(
+            "Set GRAPH_DATABASE_URL (or DATABASE_URL) to the database you want "
+            "to measure.",
+            file=sys.stderr,
+        )
+        return 2
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+
+    engine = create_engine(database_url)
+    try:
+        with Session(engine) as session:
+            measurements = _measure(session, args.space)
+    finally:
+        engine.dispose()
+
+    safe_label = database_url.rsplit("@", maxsplit=1)[-1]
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "database": safe_label,
+                    "space_id": args.space,
+                    "measurements": [asdict(m) for m in measurements],
+                },
+                indent=2,
+            ),
+        )
+    else:
+        print(_render(measurements, safe_label))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

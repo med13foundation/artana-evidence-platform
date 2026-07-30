@@ -84,7 +84,9 @@ why a merge policy can be revised and re-derived rather than migrated away.
 
 ### The invariants
 
-These are commitments, not descriptions of current coverage:
+These are commitments, not descriptions of current coverage. Each one has known
+violations in the code today; Known Gaps names them, and the invariant tests
+under `tests/unit/` are what keep the distance from closing silently:
 
 1. **Sources and evidence remain preserved.** Interpretations are revisable;
    what a source said is not. Custody of the exact snapshot, locator, and span
@@ -117,7 +119,7 @@ candidates. Embeddings may *propose* candidates; they never decide identity or
 perform unreviewed merges.
 
 **Claims** are the primary governed interpretation records — relation type,
-claim text, polarity, validation state, persistability, review status, source
+claim text, polarity, validation state, persistability, claim status, source
 reference, and optional link to a canonical relation. Claim *participants*
 carry role semantics beyond a binary triple: `SUBJECT`, `OBJECT`, `CONTEXT`,
 `QUALIFIER`, `MODIFIER`, `OUTCOME`. Claims can also relate to other claims, so
@@ -127,21 +129,23 @@ contradiction, refinement, and dependency are first-class rather than inferred.
 snapshot, locator, provenance status and reason codes, evidence tier, and model
 or agent-run provenance. Evidence required for promotion must be bound to a
 source; free text without custody may stay reviewable but is not persistable
-support.
+support. Source binding is enforced at the promotion boundary, not on every
+write — the evidence record itself permits an unbound row, and Known Gaps says
+what that costs.
 
 **Canonical relations** are edges derived from eligible claims. Only support
 claims that are resolved, persistable, properly grounded, permitted by an exact
-relation constraint, and backed by eligible source evidence can materialize one.
+relation constraint, and backed by eligible source evidence can materialize one
+through the claim path. Admin direct writes and pre-existing rows are the
+exceptions, both recorded under Known Gaps.
 
 **Scoping qualifiers change canonical identity.** "A activates B in humans" and
-"A activates B in mice" are intended to be distinct governed propositions, as
-are two claims that differ by tissue. Descriptive qualifiers — effect size,
-p-value, sample size — do not split a relation. The fingerprint also folds in
-`CONTEXT` participant anchors and ordered participant sets, so identity is not
-qualifiers alone. Which qualifiers scope is scientific policy: see
-[`qualifier_registry.py`](services/artana_evidence_db/qualifier_registry.py).
-Two caveats under Known Gaps qualify how far this holds today — the builtin
-sets disagree, and same-key values collapse across participants.
+"A activates B in mice" are distinct governed propositions, as are two claims
+that differ by tissue. Descriptive qualifiers — effect size, p-value, sample
+size — do not split a relation. Which qualifiers scope is scientific policy,
+and that policy is the durable commitment. How the current fingerprint computes
+it, and the two defects in that computation, are in Current Status and Known
+Gaps rather than here.
 
 **Observations** exist so that not every measurement is forced into a relation:
 subject, variable, typed value, unit, time, and provenance. Numbers, dates,
@@ -201,6 +205,14 @@ policy all sit between a proposal and the graph. AI workflows can search,
 screen, extract, ground, propose, compare, and prepare review packets. None of
 that becomes trusted graph knowledge by completing successfully.
 
+One documented exception, because "the trust gate" reads as universal and is
+not: a graph-service admin can `POST /v1/spaces/{space_id}/relations` to create
+a support claim and materialize a canonical relation in the same request, with
+no proposal and no queue decision
+([mutations.py](services/artana_evidence_db/routers/relation_routes/mutations.py#L190)).
+Non-admins get a 403 telling them to go through claims. It is a separate
+promotion path for operators, not a hole, but it is not the queue.
+
 Each of the following is enforced in code today, on the server rather than by
 convention:
 
@@ -232,6 +244,12 @@ Each graph space selects an operating mode — `manual`,
 `ai_full_evidence`, or `continuous_learning`. Modes decide what machines may
 prepare, recommend, repair, or apply. They do **not** override hard validation,
 evidence, identity, provenance, or quarantine requirements.
+
+Read the AI modes as configured policy rather than an available path. The mode
+evaluator will return `ai_allowed_when_low_risk`, and the quarantine then
+rejects the write anyway, because it fires on authorship regardless of mode. No
+AI-authored claim, claim-relation, or canonical-relation write can complete
+today. The modes describe what will be permitted once the quarantine lifts.
 
 ## Current Status
 
@@ -301,6 +319,45 @@ The measurement plan behind this table is
 
 Nothing in this section is a current capability. These are the things standing
 between the code and the architecture above.
+
+### Where the invariants do not hold yet
+
+These are the known violations of the four commitments in the Architecture
+section. They are listed first because the invariants are the product, and a
+reader who takes them literally today will be wrong in these specific ways.
+
+- **Canonical relations can exist with no claim-backed lineage.** Invariant 3
+  says relations are projections of the ledger. The projection-readiness service
+  has a dedicated audit that counts relations with no lineage and a repair
+  operation to fix them
+  ([claim_projection_readiness_service.py](services/artana_evidence_db/claim_projection_readiness_service.py#L251)),
+  and relation queries expose an option to include non-claim-backed rows.
+  Lineage is enforced for newly materialized projections; it is not a global
+  property of everything stored. Repair is an admin action, not automatic
+  reconciliation.
+- **Claim evidence permits an unbound row.** Invariant 1 says custody of the
+  snapshot, locator, and span outlives everything. In the evidence model those
+  fields are all optional and `provenance_status` defaults to
+  `LEGACY_UNVERIFIED` with reason code `legacy_evidence_without_typed_provenance`
+  ([claim_evidence_models.py](services/artana_evidence_db/claim_evidence_models.py#L26)).
+  Source binding is a promotion-boundary requirement, not a write-time one.
+- **Exact evidence validation is opt-in by payload shape.** The source-evidence
+  validator returns success immediately when a write carries no typed
+  source-evidence handoff
+  ([source_evidence_write_validation.py](services/artana_evidence_db/validation/source_evidence_write_validation.py#L41)).
+  "A quote is not proof" is enforced on the manual canonical-relation path, not
+  uniformly at claim creation.
+- **Claim-to-claim edges are not source-grounded or curator-approved by
+  construction.** Contradiction and refinement are first-class record types, but
+  the create request takes `review_status` as a free-form string defaulting to
+  `PROPOSED`, with source document fields optional
+  ([claim_graph_schemas.py](services/artana_evidence_db/graph_api_schemas/claim_graph_schemas.py#L107)).
+  A caller can submit an edge already marked accepted. This is the same shape as
+  the caller-supplied-support defect already closed for claim support.
+- **Observation provenance is origin-dependent.** Manual observations default to
+  `MANUAL` authorship and can be written without provenance; only AI-authored
+  observations must carry it. Observations are typed through dictionary
+  variables either way.
 
 ### Identity and persistence gaps
 
