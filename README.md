@@ -85,8 +85,11 @@ why a merge policy can be revised and re-derived rather than migrated away.
 ### The invariants
 
 These are commitments, not descriptions of current coverage. Each one has known
-violations in the code today; Known Gaps names them, and the invariant tests
-under `tests/unit/` are what keep the distance from closing silently:
+violations in the code today, and Known Gaps names them.
+`tests/unit/test_governance_invariants.py` pins four of those claims to the code
+they depend on; the rest — evidence validation, claim-to-claim edges,
+observation provenance — are unpinned, so closing one of those gaps will not
+fail any test and this section has to be updated by hand:
 
 1. **Sources and evidence remain preserved.** Interpretations are revisable;
    what a source said is not. Custody of the exact snapshot, locator, and span
@@ -357,10 +360,12 @@ reader who takes them literally today will be wrong in these specific ways.
   ([claim_graph_schemas.py](services/artana_evidence_db/graph_api_schemas/claim_graph_schemas.py#L107)).
   A caller can submit an edge already marked accepted. This is the same shape as
   the caller-supplied-support defect already closed for claim support.
-- **Observation provenance is origin-dependent.** Manual observations default to
-  `MANUAL` authorship and can be written without provenance; only AI-authored
-  observations must carry it. Observations are typed through dictionary
-  variables either way.
+- **Observation provenance is required for everything except manual entry.**
+  `validate_observation_write` rejects any observation whose origin is not
+  `MANUAL` and which carries neither a provenance record nor a provenance id,
+  with blocking code `missing_provenance`. That covers imported and AI-authored
+  observations alike. The gap is the `MANUAL` hole, not a narrow AI-only rule:
+  a human-entered observation can be stored with no provenance at all.
 
 ### Identity and persistence gaps
 
@@ -368,10 +373,19 @@ reader who takes them literally today will be wrong in these specific ways.
   AI-authored quarantine is waiting on, and it is the largest single item.
   Until the graph contract can round-trip a complete qualified claim, refusing
   the write is the correct behavior.
-- **Cross-document claim identity is zero by construction** while the claim
-  de-duplication key includes the source span — a span from paper A can never
-  equal a span from paper B, even when both support the same proposition. This
-  is what makes CONNECT unmeasurable end to end rather than merely inaccurate.
+- **Cross-document claim identity is detected but never adjudicated.**
+  `ClaimFrame.dedupe_identity` hashes the whole normalized frame, so two papers
+  carrying the same sentence and otherwise identical fields *do* collide, and
+  `proposal_store` catches that: the second proposal is parked as
+  `IDENTITY_PENDING` rather than dropped, because deciding whether it is
+  genuinely the same assertion needs an identity model that does not exist yet.
+  What is missing is the adjudication and merge, not the collision.
+  Do not plan a CONNECT experiment on the premise that two papers can never
+  produce the same key — they can, and the parked rows are where the evidence
+  for that is. Note that
+  [the July 25 measurement plan](docs/validation/2026-07-25-product-validation-read-ground-connect.md)
+  states this gap as identity being "zero by construction"; that framing is
+  stronger than the code supports and is being reconciled separately.
 - **Authority identifier normalization is not uniform.** Ontology loaders,
   extraction and CURIE linking, source plugins, and manual entity APIs need one
   canonical namespace and value representation for MONDO, HGNC, HPO, UniProt,

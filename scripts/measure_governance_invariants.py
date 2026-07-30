@@ -225,11 +225,19 @@ def _safe_database_label(database_url: str) -> str:
     except ArgumentError:
         return "<unparseable database url>"
 
-    query_host = url.query.get("host")
-    if isinstance(query_host, tuple):
-        query_host = query_host[0] if query_host else None
-    host = url.host or query_host or "<no host>"
-    port = f":{url.port}" if url.port else ""
+    def _from_query(key: str) -> str | None:
+        value = url.query.get(key)
+        if isinstance(value, tuple):
+            return value[0] if value else None
+        return value
+
+    # Both host and port can live in the query string rather than the authority
+    # (`postgresql+psycopg2:///graph?host=db&port=6543`). Reading only the
+    # authority made two instances on the same host and database name render
+    # identically, which is how a report gets attached to the wrong decision.
+    host = url.host or _from_query("host") or "<no host>"
+    raw_port = url.port or _from_query("port")
+    port = f":{raw_port}" if raw_port else ""
     return f"{host}{port}/{url.database or '<no database>'}"
 
 
@@ -263,16 +271,25 @@ def _render(
         lines.append("")
 
     if all(measurement.total == 0 for measurement in measurements):
-        scope = (
-            f"research space {space_id} holds no graph data. Other spaces in "
-            f"this database may hold plenty; re-run without --space before "
-            f"drawing any platform-level conclusion."
+        # Not the same as an empty graph: only relations and claim evidence are
+        # counted here, and entities or claims carrying neither are ordinary
+        # states. Saying "no graph data" would let a readiness attachment
+        # conceal governed records this script never looked at.
+        where = (
+            f"research space {space_id}" if space_id else "this database"
+        )
+        extra = (
+            " Other spaces may hold plenty; re-run without --space before "
+            "drawing any platform-level conclusion."
             if space_id
-            else "This database holds no graph data."
+            else ""
         )
         lines.append(
-            f"Every total is zero. {scope} The run proves the queries execute "
-            f"and nothing else.",
+            f"Every total is zero: {where} holds no canonical relations and no "
+            f"claim evidence. That is not the same as holding no graph data -- "
+            f"entities, and claims with neither evidence nor a materialized "
+            f"relation, are not counted here.{extra} The run proves the queries "
+            f"execute and nothing else.",
         )
     return "\n".join(lines)
 
