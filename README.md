@@ -14,19 +14,14 @@ wrong often enough that their output can never be authoritative on its own.
 They are also not the only thing that proposes. Specialized biomedical readers,
 curated knowledge bases, ontology authorities, structured databases, and
 analytical pipelines all produce candidate assertions, identity mappings, and
-evidence records. Artana governs all of them on the same terms.
+evidence records. Artana is designed to govern outputs from systems like these
+on the same terms it governs a language model's.
 
 Nothing becomes trusted merely because it was produced by a capable model,
 extracted by a domain reader, imported from a curated database, or stamped with
 an ontology identifier. Those outputs stay attributable *inputs* until their
 provenance is preserved, their identity and evidence bindings are verified, the
 research space's policy is applied, and the resulting decision is recorded.
-
-Everything in this repository is the *knowing* layer around those inputs:
-source custody, preserved qualifiers, authority-anchored identity, server-owned
-verification, explicit merge and projection rules, and attributed human review.
-A better extractor, reader, or knowledge base makes that substrate more
-productive; it cannot substitute for it.
 
 The full framing is in
 [Vision and Direction (v2.0)](docs/artana-vision-and-direction.md), which is
@@ -39,9 +34,27 @@ it is intentionally backend-only. Product apps, notebooks, SDKs, domain
 adapters, and other clients integrate through the generated OpenAPI contracts
 instead of living here.
 
-## Knowledge Authority Model
+### How to read this README
 
-The single most important thing to understand before reading any other section:
+Three different kinds of statement live below, and they are kept apart on
+purpose:
+
+| Section | What it tells you | How to read it |
+| --- | --- | --- |
+| **The Architecture We Are Building** | The durable design contract and its invariants. | Stable. Changes to this are product decisions, not implementation drift. |
+| **Current Status** | What the code demonstrably does today, with code references. | Dated and verifiable. Expect it to move. |
+| **Known Gaps And Intended Integrations** | What is missing, and what is designed for but not built. | Nothing here is a current capability. |
+
+Implementation gaps in the second and third sections do not narrow the first.
+The architecture is the thing being built toward; the status is how far along it
+is.
+
+## The Architecture We Are Building
+
+### The claim-first model
+
+The single most important design decision, and the one every other boundary
+follows from:
 
 > **Claims and their evidence are the governed record. Canonical graph
 > relations are projections derived from that record.**
@@ -56,144 +69,89 @@ Source artifact
   -> read models, paths, and exports
 ```
 
-A canonical relation can be rebuilt when supporting claims change, a claim is
+A canonical relation is rebuilt when supporting claims change, a claim is
 rejected or retracted, a source becomes ineligible, dictionary rules change, or
-a projection policy is updated. If no valid supporting claim remains, the
-derived relation can be removed **without** deleting the source evidence, the
-claim history, or the review record.
+a projection policy is updated. When no valid supporting claim remains, the
+derived relation is removed **without** deleting the source evidence, the claim
+history, or the review record.
 
 Reasoning paths, neighbor indexes, relation summaries, embeddings, and
-confidence aggregates are derived data too. Claim and projection changes mark
-affected paths `STALE` so they can be rebuilt from the ledger. They make
-retrieval better; they never become the record.
+confidence aggregates are derived in the same sense. They make retrieval
+better; they never become the record.
 
-This is what makes the system able to change its mind without losing history.
+This is what lets the system change its mind without losing history — and it is
+why a merge policy can be revised and re-derived rather than migrated away.
 
-## Status
+### The invariants
 
-Status date: **July 30, 2026.** This section is the honest read, not a roadmap.
+These are commitments, not descriptions of current coverage:
 
-The substrate is largely built. Governance defects called out in the July
-direction review have been closed one at a time, the reviewer surface exists,
-and the human-authored claim-to-graph path works end to end. The AI-authored
-path is **deliberately fail-closed** and not yet measurable.
+1. **Sources and evidence remain preserved.** Interpretations are revisable;
+   what a source said is not. Custody of the exact snapshot, locator, and span
+   outlives every model, prompt, and schema that read it.
+2. **Claims are governed interpretation records.** A claim carries its
+   participants, roles, qualifiers, polarity, and evidence bindings — not a
+   flattened triple. Discarding qualifiers to simplify storage manufactures
+   false claims, so the claim layer is where that is refused.
+3. **Canonical relations are rebuildable projections.** Nothing downstream of
+   the ledger is authoritative. Anything derived can be dropped and
+   regenerated under a better policy.
+4. **External systems do not become authorities by being structured or
+   curated.** A curated database, an ontology identifier, a specialized reader,
+   and a language model are all *proposers*. Governance is applied to their
+   output on identical terms.
 
-| Capability | Plain statement | State |
-| --- | --- | --- |
-| **READ** | Given one document's text, find the claims in it. | Runs; measurable. |
-| **GROUND** | Bind each claim to an exact span, with a receipt someone else can check. | Runs; emitted offsets are absolute and comparable to gold. |
-| **CONNECT** | Recognize an entity across papers; end with one node supported by five papers, not five nodes. | **Not measurable end to end on the AI-authored path.** |
+### Core concepts
 
-### Why CONNECT is blocked
+Enough to read the API without guessing. The authoritative lists live in code
+and in the generated contracts — this section deliberately does not restate
+them, because a third copy is a third thing to keep in sync.
 
-Verified properties of the current tree, not estimates:
+**Entities** are graph nodes scoped to a research space, each with a stable
+UUID, an approved dictionary entity type, normalized aliases, and zero or more
+authority identifiers. Entity creation is create-or-resolve: the server
+normalizes the type, loads the active resolution policy, checks identifier
+anchors first, falls back to normalized labels and aliases only when policy
+allows, and raises a conflict rather than guessing between multiple exact
+candidates. Embeddings may *propose* candidates; they never decide identity or
+perform unreviewed merges.
 
-- **AI-authored claim persistence is quarantined.** Promotion of an
-  agent-authored qualified claim returns HTTP 409
-  `qualified_claim_persistence_not_ready`
-  ([proposal_actions.py:843](services/artana_evidence_api/proposal_actions.py:843),
-  enforced graph-side by
-  [ai_persistence_quarantine.py](services/artana_evidence_db/validation/ai_persistence_quarantine.py)).
-  The graph contract cannot yet persist a complete `ClaimFrame` without loss, so
-  it refuses the write rather than silently dropping participants or qualifiers.
-- **Cross-document claim identity is zero by construction** while the claim
-  de-duplication key includes the source span — a span from paper A can never
-  equal a span from paper B, even when both support the same proposition.
-- The **human and curator path is not inert**: those claims create participants,
-  attach verified evidence, resolve into canonical relations, and read back
-  through the graph APIs. The wall is specific to agent-authored claims.
+**Claims** are the primary governed interpretation records — relation type,
+claim text, polarity, validation state, persistability, review status, source
+reference, and optional link to a canonical relation. Claim *participants*
+carry role semantics beyond a binary triple: `SUBJECT`, `OBJECT`, `CONTEXT`,
+`QUALIFIER`, `MODIFIER`, `OUTCOME`. Claims can also relate to other claims, so
+contradiction, refinement, and dependency are first-class rather than inferred.
 
-Three further identity risks must be resolved before cross-source identity can
-be called reliable on *any* ingestion path:
+**Claim evidence** is stored separately from the claim: exact span, verified
+snapshot, locator, provenance status and reason codes, evidence tier, and model
+or agent-run provenance. Evidence required for promotion must be bound to a
+source; free text without custody may stay reviewable but is not persistable
+support.
 
-- **Authority identifier normalization is not uniform.** Ontology loaders,
-  extraction and CURIE linking, source plugins, and manual entity APIs need one
-  canonical namespace and value representation for MONDO, HGNC, HPO, UniProt,
-  and ClinVar identifiers.
-- **Ontology hierarchy has no governed representation.** The builtin relation
-  set has `INSTANCE_OF` and no `SUBCLASS_OF`, so class hierarchy currently
-  depends on instance-level relations rather than an explicit, constrained edge.
-- **Graph entities and governed concept members are not unified by one identity
-  contract.** Whether concepts are canonical identities that entities reference,
-  or governed groupings of canonical entities, is not yet settled in one place.
+**Canonical relations** are edges derived from eligible claims. Only support
+claims that are resolved, persistable, properly grounded, permitted by an exact
+relation constraint, and backed by eligible source evidence can materialize one.
 
-The measurement plan is
-[Validating READ, GROUND, CONNECT](docs/validation/2026-07-25-product-validation-read-ground-connect.md).
+**Scoping qualifiers change canonical identity.** "A activates B in humans" and
+"A activates B in mice" are distinct governed propositions, as are two claims
+that differ by tissue. Descriptive qualifiers — effect size, p-value, sample
+size — do not split a relation. The fingerprint also folds in `CONTEXT`
+participant anchors and ordered participant sets, so identity is not qualifiers
+alone. Which qualifiers scope is scientific policy: see
+[`qualifier_registry.py`](services/artana_evidence_db/qualifier_registry.py),
+and read the qualifier caveat under Known Gaps before relying on it.
 
-### What has landed recently
+**Observations** exist so that not every measurement is forced into a relation:
+subject, variable, typed value, unit, time, and provenance. Numbers, dates,
+coded values, booleans, and structured JSON can be preserved before or
+independently of any higher-level claim.
 
-- **Server-owned support semantics** — claim support is no longer derived from
-  caller-supplied metadata.
-- **No silent loss** — colliding proposals are retained for review instead of
-  dropped during de-duplication.
-- **Attributed human judgment** — automated qualification and human acceptance
-  are separate paths, and the deciding identity is persisted rather than
-  replaced by a generic system actor
-  ([ReviewActor](services/artana_evidence_api/types/review_actor.py)).
-- **Honest evidence strength** — corroboration counts distinct documents and
-  source families rather than repeatedly counting rows from one source.
-- **Trust ladder** — extracted candidates are tiered by hard floors the service
-  computes; callers cannot self-declare a higher tier
-  ([trust_ladder.py](services/artana_evidence_api/document_extraction_support/trust_ladder.py)).
-- **Reproducible model attempts** — every attempt records a request digest, the
-  formal-run model is named explicitly in `artana.toml`, and the two
-  environment bypasses of configured model selection are closed.
-- **Measured noise floor** — replaying a sealed prompt byte-identically 20×
-  per case reproduces the complete panel verdict **42.5%** of the time
-  ([report](docs/validation/reports/2026-07-25-staged-generalization-v17-noise-floor.md)).
-  The standing rule: *a single run is a record of what happened, never evidence
-  about a configuration.*
-
-### Known limits, stated rather than implied
-
-- **The formal model is named but not snapshot-pinned.** No dated snapshot is
-  published for it, so an alias can move underneath a run. Recorded in
-  `artana.toml` under `[models.formal]` rather than papered over.
-- **Two builtin qualifier sets disagree.** Canonical identity is computed from
-  [`qualifier_registry.py`](services/artana_evidence_db/qualifier_registry.py),
-  which marks five qualifiers as scoping — including `tissue`. The dictionary
-  seed in
-  [`graph_domain_qualifiers.py`](services/artana_evidence_db/graph_domain_qualifiers.py)
-  marks four and omits `tissue`, while carrying a `polarity` entry the registry
-  does not define. Treat the registry as authoritative for what splits a
-  relation, and expect this to be reconciled.
-- **Extraction accuracy is an input, not the headline.** Progress is reported as
-  traceability, identity correctness, qualifier preservation, review
-  throughput, and disagreement surfaced.
-- **Broad AI persistence stays closed** until the gates pass. Fail-closed is the
-  default outside explicitly approved pilot paths.
-- **Ontology ingestion is not a complete authority layer.** Ontology-backed
-  entities and identifiers can be imported, but authority normalization, release
-  lineage, hierarchy materialization, and concept-to-entity identity still need
-  consolidation.
-
-## Repository Layout
-
-- `services/artana_evidence_api`: the Evidence API for research spaces, local
-  identity, document ingestion, source discovery, durable direct source-search
-  handoff, review queues, proposals, graph chat/search orchestration, guarded
-  AI runs, claim framing/verification/falsification, and user-facing workflow
-  state.
-- `services/artana_evidence_db`: the graph/evidence service for entities,
-  relations, observations, provenance, relation evidence, claims and claim
-  participants, dictionary governance, validation, graph views, operating
-  modes, and graph service API contracts.
-- `docs/`: direction, architecture notes, user guides, validation protocols and
-  reports, status, and operating guidance.
-- `scripts/`: repository checks, contract helpers, validation harnesses, and
-  local automation.
-- `tests/`: repository-level regression and boundary tests that do not belong
-  to one service tree. Service-specific tests live under each service.
-
-Keep workflow orchestration, source interaction, document processing, and
-machine-reading execution in `services/artana_evidence_api`.
-Keep graph persistence, entity identity, dictionary governance, claim
-semantics, validation, provenance eligibility, and canonical projections in
-`services/artana_evidence_db`.
-
-The Evidence API reaches the graph service through typed HTTP contracts. Normal
-runtime behavior must not import graph implementation internals across that
-boundary.
+**The dictionary** governs the vocabulary the graph may use — domain contexts,
+entity and relation types, synonyms, resolution policies, relation constraints,
+qualifier definitions, value sets, review state, and revocation history. A
+machine may propose a missing type or constraint; an undefined term never
+silently becomes graph vocabulary.
 
 ## System Shape
 
@@ -223,58 +181,6 @@ environments can give the graph service its own connection and schema through
 `GRAPH_DATABASE_URL` and `GRAPH_DB_SCHEMA`; each service owns its own migrations
 either way.
 
-## Core Concepts
-
-Enough to read the API without guessing. The authoritative lists live in code
-and in the generated contracts, not here — this section deliberately does not
-restate them.
-
-**Entities** are graph nodes scoped to a research space, each with a stable
-UUID, an approved dictionary entity type, normalized aliases, and zero or more
-authority identifiers. Entity creation is create-or-resolve: the server
-normalizes the type, loads the active resolution policy, checks identifier
-anchors first, falls back to normalized labels and aliases only when policy
-allows, and raises a conflict rather than guessing between multiple exact
-candidates. Embeddings may *propose* candidates; they never decide identity or
-perform unreviewed merges.
-
-**Claims** are the primary governed interpretation records — relation type,
-claim text, polarity, validation state, persistability, review status, source
-reference, and optional link to a canonical relation. Claim *participants*
-carry role semantics beyond a binary triple: `SUBJECT`, `OBJECT`, `CONTEXT`,
-`QUALIFIER`, `MODIFIER`, `OUTCOME`. Claims can also relate to other claims, so
-contradiction, refinement, and dependency are first-class rather than inferred.
-
-**Claim evidence** is stored separately from the claim: exact span, verified
-snapshot, locator, provenance status and reason codes, evidence tier, and model
-or agent-run provenance. Evidence required for promotion must be bound to a
-source; free text without custody may stay reviewable but is not persistable
-support.
-
-**Canonical relations** are edges derived from eligible claims. Only support
-claims that are resolved, persistable, properly grounded, permitted by an exact
-relation constraint, and backed by eligible source evidence can materialize one.
-
-**Scoping qualifiers change canonical identity.** "A activates B in humans" and
-"A activates B in mice" are distinct governed propositions. So are two claims
-that differ by tissue. Descriptive qualifiers — effect size, p-value, sample
-size — do not split a relation. The fingerprint also folds in `CONTEXT`
-participant anchors and ordered participant sets, so identity is not qualifiers
-alone. Which qualifiers scope is scientific policy: see
-[`qualifier_registry.py`](services/artana_evidence_db/qualifier_registry.py),
-and read the qualifier caveat under Known Limits before relying on it.
-
-**Observations** exist so that not every measurement is forced into a relation:
-subject, variable, typed value, unit, time, and provenance. Numbers, dates,
-coded values, booleans, and structured JSON can be preserved before or
-independently of any higher-level claim.
-
-**The dictionary** governs the vocabulary the graph may use — domain contexts,
-entity and relation types, synonyms, resolution policies, relation constraints,
-qualifier definitions, value sets, review state, and revocation history. A
-machine may propose a missing type or constraint; an undefined term never
-silently becomes graph vocabulary.
-
 ## Main Workflow
 
 ```mermaid
@@ -294,7 +200,8 @@ policy all sit between a proposal and the graph. AI workflows can search,
 screen, extract, ground, propose, compare, and prepare review packets. None of
 that becomes trusted graph knowledge by completing successfully.
 
-What the gate enforces on the server, rather than by convention:
+Each of the following is enforced in code today, on the server rather than by
+convention:
 
 - **A machine's judgment never wears a human's name.** Automated qualification
   and human acceptance are separate actions, and each recorded decision carries
@@ -317,41 +224,181 @@ What the gate enforces on the server, rather than by convention:
   relation-type, and target-type combination must be permitted by an active
   constraint.
 
-### Operating modes
-
 Each graph space selects an operating mode — `manual`,
 `ai_assist_human_batch`, `human_evidence_ai_graph`, `ai_full_graph`,
 `ai_full_evidence`, or `continuous_learning`. Modes decide what machines may
 prepare, recommend, repair, or apply. They do **not** override hard validation,
 evidence, identity, provenance, or quarantine requirements.
 
-## Integrating Domain Systems
+## Current Status
 
-Artana is built to consume domain-specific scientific systems without handing
-them governance authority. The invariant, whatever the source:
+Status date: **July 30, 2026.** This section describes demonstrated behavior,
+with references. It is not a roadmap, and it does not bound the architecture
+above.
+
+| Capability | Plain statement | State |
+| --- | --- | --- |
+| **READ** | Given one document's text, find the claims in it. | Runs; measurable. |
+| **GROUND** | Bind each claim to an exact span, with a receipt someone else can check. | Runs; emitted offsets are absolute and comparable to gold. |
+| **CONNECT** | Recognize an entity across papers; end with one node supported by five papers, not five nodes. | **Not measurable end to end on the AI-authored path.** |
+
+### What works today
+
+- **The human and curator path runs end to end.** Manually authored and
+  curator-resolved claims create participants, attach verified evidence, resolve
+  into canonical relations, and read back through the graph APIs.
+- **Entity resolution is identifier-first.** The create-or-resolve path
+  normalizes the type, applies the active resolution policy, prefers authority
+  identifier anchors over labels, and raises a conflict instead of guessing
+  between multiple exact candidates.
+- **Ontology-backed ingestion works at the identifier level.** Ontology entities
+  and identifiers can be imported and referenced. The authority layer around
+  them is incomplete — see Known Gaps.
+- **AI-authored promotion is quarantined, deliberately.** Promotion of an
+  agent-authored qualified claim returns HTTP 409
+  `qualified_claim_persistence_not_ready`
+  ([proposal_actions.py:843](services/artana_evidence_api/proposal_actions.py:843),
+  enforced graph-side by
+  [ai_persistence_quarantine.py](services/artana_evidence_db/validation/ai_persistence_quarantine.py)).
+  The graph contract cannot yet persist a complete `ClaimFrame` without loss, so
+  it refuses the write rather than silently dropping participants or qualifiers.
+  This is the fail-closed behavior working, not an outage.
+
+The measurement plan behind this table is
+[Validating READ, GROUND, CONNECT](docs/validation/2026-07-25-product-validation-read-ground-connect.md).
+
+### What has landed recently
+
+- **Server-owned support semantics** — claim support is no longer derived from
+  caller-supplied metadata.
+- **No silent loss** — colliding proposals are retained for review instead of
+  dropped during de-duplication.
+- **Attributed human judgment** — automated qualification and human acceptance
+  are separate paths, and the deciding identity is persisted rather than
+  replaced by a generic system actor
+  ([ReviewActor](services/artana_evidence_api/types/review_actor.py)).
+- **Honest evidence strength** — corroboration counts distinct documents and
+  source families rather than repeatedly counting rows from one source.
+- **Trust ladder** — extracted candidates are tiered by hard floors the service
+  computes; callers cannot self-declare a higher tier
+  ([trust_ladder.py](services/artana_evidence_api/document_extraction_support/trust_ladder.py)).
+- **Reproducible model attempts** — every attempt records a request digest, the
+  formal-run model is named explicitly in `artana.toml`, and the two
+  environment bypasses of configured model selection are closed.
+- **Measured noise floor** — replaying a sealed prompt byte-identically 20×
+  per case reproduces the complete panel verdict **42.5%** of the time
+  ([report](docs/validation/reports/2026-07-25-staged-generalization-v17-noise-floor.md)).
+  The standing rule: *a single run is a record of what happened, never evidence
+  about a configuration.*
+
+## Known Gaps And Intended Integrations
+
+Nothing in this section is a current capability. These are the things standing
+between the code and the architecture above.
+
+### Identity and persistence gaps
+
+- **Lossless `ClaimFrame` persistence does not exist.** This is what the
+  AI-authored quarantine is waiting on, and it is the largest single item.
+  Until the graph contract can round-trip a complete qualified claim, refusing
+  the write is the correct behavior.
+- **Cross-document claim identity is zero by construction** while the claim
+  de-duplication key includes the source span — a span from paper A can never
+  equal a span from paper B, even when both support the same proposition. This
+  is what makes CONNECT unmeasurable end to end rather than merely inaccurate.
+- **Authority identifier normalization is not uniform.** Ontology loaders,
+  extraction and CURIE linking, source plugins, and manual entity APIs need one
+  canonical namespace and value representation for MONDO, HGNC, HPO, UniProt,
+  and ClinVar identifiers before cross-source identity can be called reliable.
+- **Ontology hierarchy has no governed representation.** The builtin relation
+  set has `INSTANCE_OF` and no `SUBCLASS_OF`, so class hierarchy depends on
+  instance-level relations rather than an explicit, constrained edge with active
+  exact constraints.
+- **Graph entities and governed concept members are not unified by one identity
+  contract.** Whether concepts are canonical identities that entities reference,
+  or governed groupings of canonical entities, is not settled in one place.
+- **Two builtin qualifier sets disagree.** Canonical identity is computed from
+  [`qualifier_registry.py`](services/artana_evidence_db/qualifier_registry.py),
+  which marks five qualifiers as scoping — including `tissue`. The dictionary
+  seed in
+  [`graph_domain_qualifiers.py`](services/artana_evidence_db/graph_domain_qualifiers.py)
+  marks four and omits `tissue`, while carrying a `polarity` entry the registry
+  does not define. Treat the registry as authoritative for what splits a
+  relation until these are reconciled.
+
+### Measurement and reproducibility limits
+
+- **The formal model is named but not snapshot-pinned.** No dated snapshot is
+  published for it, so an alias can move underneath a run. Recorded in
+  `artana.toml` under `[models.formal]` rather than papered over.
+- **Extraction accuracy is an input, not the headline.** Progress is reported as
+  traceability, identity correctness, qualifier preservation, review
+  throughput, and disagreement surfaced.
+- **Broad AI persistence stays closed** until the gates pass. Fail-closed is the
+  default outside explicitly approved pilot paths.
+
+### Intended integrations
+
+Artana is designed to consume domain-specific scientific systems without handing
+them governance authority. **No production adapter for any of them exists
+today.** They are recorded here because they define the intended boundary, and
+the invariant that boundary has to satisfy:
 
 > Imported or machine-produced output keeps its native provenance and stays
 > distinct from Artana-reviewed knowledge until governed promotion occurs.
 
 ```text
-DisMech-curated  ≠  imported  ≠  reviewed in this space  ≠  promoted
+externally curated  ≠  imported  ≠  reviewed in this space  ≠  promoted
 ```
 
-What exists today:
-
-- **DisMech** documents have a real ingestion path.
-  [`dismech_structured.py`](services/artana_evidence_api/document_extraction_support/dismech_structured.py)
-  performs deterministic — not model-driven — extraction over DisMech LinkML
-  YAML, producing review-gated proposal drafts through
-  [routers/documents.py:715](services/artana_evidence_api/routers/documents.py:715).
-  Those drafts enter the same review queue as everything else.
-- **INDRA** is not integrated. There is no adapter and no INDRA code in this
-  repository. It is discussed in the validation docs as a comparable *system*
-  for head-to-head evaluation, not as a source of ground truth.
-- **Ontology authorities** — MONDO, HGNC, HPO, GO, UniProt — contribute
+- **INDRA** — intended as a domain processor, candidate generator, and
+  downstream assembler: mechanistic statements in as attributable candidates,
+  approved claims out for network or executable model assembly. Not built. There
+  is no INDRA code in this repository; it appears only in the validation docs as
+  a comparable *system* for eventual head-to-head evaluation, not as ground
+  truth.
+- **DisMech** — intended as a curated disease-mechanism source, a domain
+  profile, a benchmark corpus, and an export target, preserving native
+  identifiers, schema version, and source commit on import. Not built. What
+  exists today is narrower and should not be mistaken for it: a document already
+  uploaded to a space, tagged as DisMech or a YAML file titled as one, is parsed
+  deterministically into review-gated proposal drafts by
+  [`dismech_structured.py`](services/artana_evidence_api/document_extraction_support/dismech_structured.py).
+  That is document-format support with no network calls — nothing connects to
+  DisMech as a system, imports its corpus, or exports back to it.
+- **Ontology authorities** — MONDO, HGNC, HPO, GO, UniProt contribute
   identifiers, labels, aliases, and hierarchy. They answer *what concept is
   this?* They do not answer *does this source support this claim?*, and an
-  ontology identifier alone is never evidence.
+  ontology identifier alone is never evidence. Identifier-level ingestion works;
+  the governed authority layer around it does not yet.
+
+## Repository Layout
+
+- `services/artana_evidence_api`: the Evidence API for research spaces, local
+  identity, document ingestion, source discovery, durable direct source-search
+  handoff, review queues, proposals, graph chat/search orchestration, guarded
+  AI runs, claim framing/verification/falsification, and user-facing workflow
+  state.
+- `services/artana_evidence_db`: the graph/evidence service for entities,
+  relations, observations, provenance, relation evidence, claims and claim
+  participants, dictionary governance, validation, graph views, operating
+  modes, and graph service API contracts.
+- `docs/`: direction, architecture notes, user guides, validation protocols and
+  reports, status, and operating guidance.
+- `scripts/`: repository checks, contract helpers, validation harnesses, and
+  local automation.
+- `tests/`: repository-level regression and boundary tests that do not belong
+  to one service tree. Service-specific tests live under each service.
+
+Keep workflow orchestration, source interaction, document processing, and
+machine-reading execution in `services/artana_evidence_api`.
+Keep graph persistence, entity identity, dictionary governance, claim
+semantics, validation, provenance eligibility, and canonical projections in
+`services/artana_evidence_db`.
+
+The Evidence API reaches the graph service through typed HTTP contracts. Normal
+runtime behavior must not import graph implementation internals across that
+boundary.
 
 ## Start Locally
 
