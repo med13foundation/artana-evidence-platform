@@ -276,6 +276,15 @@ def test_database_label_distinguishes_deployments() -> None:
     )
     assert service_label != label("postgresql+psycopg2:///?service=graph_stage")
 
+    # A partial override is the case that collided: `?service=x&host=db`
+    # overrides only the host, so the service still selects the database and two
+    # services sharing a host must not render the same.
+    prod = label("postgresql+psycopg2:///?service=graph_prod&host=db")
+    stage = label("postgresql+psycopg2:///?service=graph_stage&host=db")
+    assert prod != stage, (
+        f"partially overridden service URLs collide: {prod!r} == {stage!r}"
+    )
+
 
 def test_zero_report_does_not_claim_an_empty_graph() -> None:
     """A zero here covers two categories, not the whole graph.

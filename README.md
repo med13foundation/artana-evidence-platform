@@ -54,7 +54,7 @@ purpose:
 | --- | --- | --- |
 | **The Architecture We Are Building** | The durable design contract and its invariants. | Stable. Changes to this are product decisions, not implementation drift. |
 | **Current Status** | What the code demonstrably does today, with code references. | Dated and verifiable. Expect it to move. |
-| **Known Gaps And Intended Integrations** | What is missing, and what is designed for but not built. | Nothing here is a current capability. |
+| **Known Gaps And Intended Integrations** | What is missing, and what is designed for but not built. | Read each entry for what *is* built: some describe a partly-working capability and name the missing part. |
 
 Implementation gaps in the second and third sections do not narrow the first.
 The architecture is the thing being built toward; the status is how far along it

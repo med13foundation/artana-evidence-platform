@@ -311,8 +311,19 @@ def _safe_database_label(database_url: str) -> str:
     # not a secret -- it is a key into a config file -- so it is safe to show,
     # and it is the only endpoint identity such a URL carries.
     service_name = _from_query("service")
-    if service_name and host == "<no host>" and database == "<no database>":
-        endpoint = f"service={service_name}"
+    supplies_something = (
+        host == "<no host>" or database == "<no database>" or raw_port is None
+    )
+    if service_name and supplies_something:
+        # Requiring *every* field to be unresolved was wrong: `?service=x&host=db`
+        # overrides only the host, so the service still chooses the database,
+        # and two services sharing a host rendered identically. The service name
+        # belongs in the identity whenever it supplies any field the URL does
+        # not, which includes the partially-overridden case.
+        if host == "<no host>" and database == "<no database>":
+            endpoint = f"service={service_name}"
+        else:
+            endpoint = f"{host}{port}/{database} [service={service_name}]"
     else:
         endpoint = f"{host}{port}/{database}"
 
